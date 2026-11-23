@@ -223,24 +223,18 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
 
 ## Sanitizers and CI
 
-- Supported sanitizers: `address`, `undefined`, `thread`, `leak`, `integer`, `cfi`, `hwaddress`,
-  `shadow-call-stack`. `hwaddress` is an experimental clang/aarch64 job; `shadow-call-stack` is a
-  blocking clang/aarch64 link-only check.
+- Supported sanitizers: `address`, `undefined`, `thread`, `leak`, `integer`, `cfi`, `hwaddress`.
+  `hwaddress` is an experimental clang/aarch64 job.
 - Zero-warning policy: `-Werror` on GCC/Clang, `/WX` on MSVC. Coverage uses GCC + gcovr and
   publishes Cobertura XML for Codecov.
 - Platform exceptions are handled in `cmake/ZenSanitizers.cmake`: Apple's ASAN runtime rejects
   `detect_leaks=1`, MSVC ASAN needs `/Zi` plus `/DEBUG` to avoid C5072 under `/WX`, and link-only
   flags such as `-fuse-ld=lld` belong in `ZEN_SANITIZER_LINK_FLAGS` (never in compile flags).
-- AArch64 shadow-call-stack needs `-ffixed-x18`; Clang rejects the sanitizer flag without it.
-  compiler-rt ships no SCS runtime, so `cmake/scs_runtime.S` provides a 64 KiB shadow stack and an
-  uninstrumented `main` wrapper that sets x18 before tail-calling `zen_main_impl`.
-  **SCS is a link-only check, not an execution test.** glibc is not built with `-ffixed-x18` and
-  clobbers x18 inside ordinary libc calls; wrapping a few functions would be endless whack-a-mole.
-  Real execution needs a sysroot whose libc and dynamic loader are built with x18 reserved, so the
-  `arm64-scs-link-check` job only verifies that instrumented executables build and link.
-- Not part of the matrix: MSan and DFSan require an instrumented libc (DFSan also needs explicit
-  tagging APIs and is x86-64/Linux-only); TypeSanitizer, RealtimeSanitizer and ConcurrencySanitizer
-  need a custom Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already
+- Not part of the matrix: MSan, DFSan and ShadowCallStack require an instrumented libc. SCS also
+  needs a dynamic loader built with x18 reserved; system glibc clobbers that register, and shimming
+  libc calls one by one would not scale. DFSan additionally needs explicit tagging APIs and is
+  x86-64/Linux-only. TypeSanitizer, RealtimeSanitizer and ConcurrencySanitizer need a custom
+  Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already
   covered by the standalone `leak` mode and by ASAN on supported hosts.
 - Target platforms in the matrix: amd64 and arm64 on Linux (glibc and musl), macOS, Windows
   (MSVC, clang-cl, MinGW), plus QEMU architectures and 32-bit x86. Windows uses every documented

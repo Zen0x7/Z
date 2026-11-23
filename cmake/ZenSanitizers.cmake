@@ -4,9 +4,9 @@
 include(CheckCSourceCompiles)
 
 set(ZEN_SANITIZER "none" CACHE STRING
-    "Sanitizer: none, address, undefined, thread, leak, integer, cfi, hwaddress, shadow-call-stack")
+    "Sanitizer: none, address, undefined, thread, leak, integer, cfi, hwaddress")
 set_property(CACHE ZEN_SANITIZER PROPERTY STRINGS
-    none address undefined thread leak integer cfi hwaddress shadow-call-stack)
+    none address undefined thread leak integer cfi hwaddress)
 
 set(ZEN_SANITIZER_FLAGS "")
 set(ZEN_SANITIZER_LINK_FLAGS "")
@@ -114,24 +114,10 @@ elseif(ZEN_SANITIZER STREQUAL "hwaddress")
     list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=hwaddress -fno-omit-frame-pointer)
     list(APPEND ZEN_SANITIZER_ENV "HWASAN_OPTIONS=halt_on_error=1")
 
-elseif(ZEN_SANITIZER STREQUAL "shadow-call-stack")
-    if(NOT _zen_is_clang OR NOT _zen_is_aarch64 OR APPLE)
-        message(FATAL_ERROR "shadow call stack requires Clang on 64-bit ARM Linux")
-    endif()
-    # Clang rejects -fsanitize=shadow-call-stack on AArch64 unless the shadow
-    # stack pointer register is explicitly reserved.
-    list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=shadow-call-stack -ffixed-x18)
-
-    # compiler-rt ships no SCS runtime: x18 must point to writable memory before
-    # the first instrumented function runs. This object library is linked into
-    # every test executable and installs the pointer from .init_array.
-    enable_language(ASM)
-    add_library(zen_scs_runtime OBJECT "${CMAKE_CURRENT_LIST_DIR}/scs_runtime.S")
-
 else()
     message(FATAL_ERROR
         "Unknown ZEN_SANITIZER='${ZEN_SANITIZER}'. Valid values: none, address, "
-        "undefined, thread, leak, integer, cfi, hwaddress, shadow-call-stack")
+        "undefined, thread, leak, integer, cfi, hwaddress")
 endif()
 
 # Make sure the toolchain can actually compile *and link* with the requested

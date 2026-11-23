@@ -34,10 +34,6 @@ static const zen_test_case_t cases_k[] = {
 };
 #undef ZEN_TEST_CASE
 
-#ifdef ZEN_SCS_MAIN
-int zen_main_impl(int argc, char **argv);
-#endif
-
 int main(const int argc, char **const argv) {
     return zen_test_main(argc, argv, "zen.version", cases_k, sizeof(cases_k) / sizeof(cases_k[0]));
 }

@@ -11,7 +11,7 @@ Basic workflow (Ninja, Clang):
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
 cmake --build build -j
-ctest --test-dir build --output-on-failure -j11
+ctest --test-dir build --output-on-failure -j13
 ```
 
 Run one sanitizer build:
@@ -77,7 +77,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/zlang.h` | Umbrella header; includes every public module and defines nothing |
 | `include/zlang/<module>/<module>.h` | Public API of one module |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
-| `compiler/` | Compiler core: inert AST, diagnostics, and the C emitter |
+| `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, and the C emitter |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |

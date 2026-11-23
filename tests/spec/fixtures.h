@@ -2,9 +2,8 @@
 #define ZLANG_SPEC_FIXTURES_H
 
 /* These literals are copied from the conformance examples in SPEC.md. The
-   parser is not implemented yet, so the tests build the equivalent AST by
-   hand; the strings keep the intended source and emitted C next to each other
-   until the parser can consume them directly. */
+   parser consumes the source strings and the emitter is checked against the
+   expected C strings, keeping the contract in one place. */
 
 #define ZLANG_SPEC_SCALAR_SOURCE "integer var = 10;"
 #define ZLANG_SPEC_SCALAR_EXPECTED "int32_t var = 10;"

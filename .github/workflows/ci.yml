@@ -8,9 +8,9 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+# Do not add workflow-level cancellation here. The matrix is long and a burst of pushes
+# (for example several merges in a row) would cancel valid runs, leave ci-green queued,
+# and block the next run on the same ref. Every push gets its own complete run.
 
 env:
   CMAKE_BUILD_PARALLEL_LEVEL: 2

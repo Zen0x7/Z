@@ -128,7 +128,10 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   queue failures; all jobs have explicit `timeout-minutes`.
 - **API docs are Vercel-ready**: `vercel.json` selects "Other" as the framework, skips the install
   step, runs `scripts/build_docs.sh`, and serves `build/docs/html`. The script pins Doxygen 1.18.0
-  with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. There is no
+  with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. It tries the
+  official doxygen.nl mirror first, then the GitHub release, then SourceForge; every source must
+  match the same SHA256. This keeps Vercel builds working when GitHub release assets return 404 from
+  the build region. There is no
   extra GitHub Actions step: Vercel's Git integration builds every push and PR directly. Vercel must
   still be connected to the GitHub repo in the Vercel dashboard; choose the repository root and keep
   preview deployments enabled so each PR gets its own URL. No Vercel secrets or deploy hooks are

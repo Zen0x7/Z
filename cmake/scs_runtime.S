@@ -32,11 +32,33 @@ zen_scs_runtime_init:
     .globl main
     .type main, @function
 main:
-    adrp x0, zen_scs_shadow_stack
-    add x0, x0, :lo12:zen_scs_shadow_stack
-    mov x18, x0
+    adrp x18, zen_scs_shadow_stack
+    add x18, x18, :lo12:zen_scs_shadow_stack
     b zen_main_impl
     .size main, .-main
+
+    // glibc is not built with -ffixed-x18 and clobbers it inside printf,
+    // fprintf and strcmp. Save x18 around each of those calls so instrumented
+    // code sees the shadow stack pointer again on return. Link with
+    // -Wl,--wrap=<name> for each shim.
+    .macro ZEN_SCS_LIBC_SHIM name, real
+    .globl \name
+    .type \name, @function
+\name:
+    sub sp, sp, #32
+    str x30, [sp, #24]
+    str x18, [sp, #16]
+    bl \real
+    ldr x18, [sp, #16]
+    ldr x30, [sp, #24]
+    add sp, sp, #32
+    ret
+    .size \name, .-\name
+    .endm
+
+    ZEN_SCS_LIBC_SHIM __wrap_printf, __real_printf
+    ZEN_SCS_LIBC_SHIM __wrap_fprintf, __real_fprintf
+    ZEN_SCS_LIBC_SHIM __wrap_strcmp, __real_strcmp
 
     .section .init_array, "aw"
     .balign 8

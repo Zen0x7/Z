@@ -233,8 +233,9 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
 - AArch64 shadow-call-stack needs `-ffixed-x18`; Clang rejects the sanitizer flag without it.
   compiler-rt ships no SCS runtime, so `cmake/scs_runtime.S` provides a 64 KiB shadow stack. It sets
   x18 from `.init_array` and again in an assembly `main` wrapper that tail-calls the C entry point
-  renamed to `zen_main_impl`; the second write is required because glibc is not built with
-  `-ffixed-x18` and may clobber x18 before `main`.
+  renamed to `zen_main_impl`. glibc is not built with `-ffixed-x18`, so `-Wl,--wrap` shims in
+  `cmake/scs_runtime.S` save and restore x18 around `printf`, `fprintf` and `strcmp`. The wrapper
+  writes x18 directly (never via x0) so `argc` and `argv` stay intact.
 - Not part of the matrix: MSan and DFSan require an instrumented libc (DFSan also needs explicit
   tagging APIs and is x86-64/Linux-only); TypeSanitizer, RealtimeSanitizer and ConcurrencySanitizer
   need a custom Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already

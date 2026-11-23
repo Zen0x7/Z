@@ -33,6 +33,20 @@ static bool zlang_report(zlang_semantic_context_t *context, uint16_t code,
     return false;
 }
 
+static bool zlang_report_expression(zlang_semantic_context_t *context, uint16_t code,
+                                    size_t expression_index, const zlang_ast_statement_t *statement,
+                                    const char *message) {
+    const zlang_ast_expression_t *const _expression_k =
+        expression_index < context->program_->expression_count_
+            ? &context->program_->expressions_[expression_index]
+            : NULL;
+    const uint32_t _line_k = _expression_k != NULL ? _expression_k->line_ : statement->line_;
+    const uint32_t _column_k = _expression_k != NULL ? _expression_k->column_ : statement->column_;
+
+    (void)zlang_diagnostics_add(context->diagnostics_, code, _line_k, _column_k, message);
+    return false;
+}
+
 static bool zlang_add_symbol(zlang_semantic_context_t *context,
                              const zlang_ast_statement_t *statement, uint32_t capacity,
                              bool is_sequence) {
@@ -74,8 +88,9 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_identifier_: {
         const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _expression_k->name_);
         if (_symbol_k == NULL) {
-            (void)zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                               "expression refers to an undeclared identifier");
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement,
+                                          "expression refers to an undeclared identifier");
             return NULL;
         }
         return _symbol_k->type_name_;
@@ -97,8 +112,9 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                 : NULL;
         if (_left_k == NULL || _left_k->kind_ != zlang_expression_identifier_ ||
             zlang_find_symbol(context, _left_k->name_) == NULL) {
-            (void)zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                               "assignment target is not a declared identifier");
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement,
+                                          "assignment target is not a declared identifier");
             return NULL;
         }
         return zlang_analyze_expression(context, _expression_k->right_, statement);
@@ -109,8 +125,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_append_call_: {
         const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
         if (_target_k == NULL || !_target_k->is_sequence_) {
-            (void)zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                               "append target is not a declared sequence");
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "append target is not a declared sequence");
             return NULL;
         }
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
@@ -123,8 +139,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                     context->program_->expressions_[_expression_k->left_].name_)
                 : NULL;
         if (_target_k == NULL || !_target_k->is_sequence_) {
-            (void)zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                               "index target is not a declared sequence");
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "index target is not a declared sequence");
             return NULL;
         }
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
@@ -152,8 +168,9 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             zlang_analyze_expression(context, statement->expression_, statement);
         if (statement->expression_ != ZLANG_NO_EXPRESSION &&
             !zlang_type_matches(statement->type_name_, _actual_k)) {
-            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
-                                     "initializer type does not match the declared type");
+            _result_k = zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement->expression_, statement,
+                "initializer type does not match the declared type");
         }
         if (_result_k) {
             _result_k = zlang_add_symbol(context, statement, 0U, false);
@@ -222,9 +239,12 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         context->symbol_count_ = _scope_start_k;
         break;
     }
-    case zlang_statement_block_:
+    case zlang_statement_block_: {
+        const size_t _scope_start_k = context->symbol_count_;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
+        context->symbol_count_ = _scope_start_k;
         break;
+    }
     default:
         break;
     }

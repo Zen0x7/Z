@@ -355,10 +355,10 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         }
         return zlang_append_text(emitter, ";\n");
     case zlang_statement_return_:
-        if (!zlang_append_text(emitter, "return ")) {
-            return false;
+        if (statement->expression_ == ZLANG_NO_EXPRESSION) {
+            return zlang_append_text(emitter, "return;\n");
         }
-        if (statement->expression_ != ZLANG_NO_EXPRESSION &&
+        if (!zlang_append_text(emitter, "return ") ||
             !zlang_emit_expression(program, statement->expression_, emitter)) {
             return false;
         }

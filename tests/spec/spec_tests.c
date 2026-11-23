@@ -1,3 +1,4 @@
+#include "zlang/compiler/diagnostics.h"
 #include "zlang/compiler/emitter.h"
 #include "zlang/compiler/parser.h"
 #include "zlang/compiler/planner.h"
@@ -31,6 +32,28 @@ typedef struct zlang_spec_session_t {
     char output_[2048];
     zlang_emitter_t emitter_;
 } zlang_spec_session_t;
+
+static const zlang_diagnostic_t *zlang_spec_find_diagnostic(const zlang_spec_session_t *session,
+                                                            uint16_t code) {
+    for (size_t _index = 0U; _index < session->diagnostics_.count_; ++_index) {
+        if (session->diagnostic_items_[_index].code_ == code) {
+            return &session->diagnostic_items_[_index];
+        }
+    }
+    return NULL;
+}
+
+static void zlang_spec_expect_diagnostic(zlang_test_context_t *context,
+                                         const zlang_spec_session_t *session, uint16_t code,
+                                         uint32_t line, uint32_t column) {
+    const zlang_diagnostic_t *const _item_k = zlang_spec_find_diagnostic(session, code);
+
+    ZLANG_CHECK(context, _item_k != NULL);
+    if (_item_k != NULL) {
+        ZLANG_CHECK(context, _item_k->line_ == line);
+        ZLANG_CHECK(context, _item_k->column_ == column);
+    }
+}
 
 static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *source) {
     session->output_[0] = '\0';
@@ -200,6 +223,77 @@ static void emits_function_and_return(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FUNCTION_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_RETURN_EXPECTED) != NULL);
+}
+
+static void covers_every_annex_a_production(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_CONFORMANCE_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_INTEGER_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_UNSIGNED_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_BOOLEAN_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_STRING_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_BLOCK_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_IF_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED) != NULL);
+}
+
+static void reports_syntax_diagnostics_with_source_locations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _unexpected;
+    zlang_spec_session_t _unterminated;
+    zlang_spec_session_t _invalid;
+    zlang_spec_session_t _unsupported;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unexpected, "integer var 10;"));
+    zlang_spec_expect_diagnostic(context, &_unexpected, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, 1U, 13U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unterminated, "print(\"oops);"));
+    zlang_spec_expect_diagnostic(context, &_unterminated, ZLANG_DIAGNOSTIC_UNTERMINATED_STRING, 1U,
+                                 7U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid, "integer var = @;"));
+    zlang_spec_expect_diagnostic(context, &_invalid, ZLANG_DIAGNOSTIC_INVALID_CHARACTER, 1U, 15U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unsupported, "break;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_unsupported.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+}
+
+static void
+reports_type_and_resource_diagnostics_with_source_locations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _range;
+    zlang_spec_session_t _duplicate;
+    zlang_spec_session_t _undefined;
+    zlang_spec_session_t _mismatch;
+    zlang_spec_session_t _unbounded;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_range, "integer var = 99999999999999999999;"));
+    zlang_spec_expect_diagnostic(context, &_range, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, 1U, 15U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_duplicate, "integer var = 10; integer var = 20;"));
+    zlang_spec_expect_diagnostic(context, &_duplicate, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, 1U,
+                                 19U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_undefined, "integer var = missing;"));
+    zlang_spec_expect_diagnostic(context, &_undefined, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, 1U,
+                                 15U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_mismatch, "integer var = \"text\";"));
+    zlang_spec_expect_diagnostic(context, &_mismatch, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 15U);
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unbounded, "integer values[];"));
+    zlang_spec_expect_diagnostic(context, &_unbounded, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, 1U, 1U);
 }
 
 static void emits_append_and_checked_index(zlang_test_context_t *const context) {

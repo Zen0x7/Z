@@ -38,6 +38,8 @@ typedef struct zlang_ast_expression_t {
     size_t right_;
     zlang_ast_string_value_t string_;
     const char *name_;
+    uint32_t line_;
+    uint32_t column_;
 } zlang_ast_expression_t;
 
 typedef enum zlang_statement_kind_t {

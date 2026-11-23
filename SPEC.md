@@ -1,7 +1,7 @@
 # Zlang Language Specification
 
-**Status:** Draft 0.1  
-**Scope:** the core language that the first version of `zlang-compile` must implement.
+**Status:** Complete 0.1  
+**Scope:** the core language implemented by `zlang-compile` 0.1.
 
 This document defines Zlang. It does not define the compiler internals, the command-line interface, or the CI pipeline. Those are implementation concerns and are described in `ROADMAP.md`.
 
@@ -487,6 +487,20 @@ int main(void) {
 
 The iteration exists as a `for_each` node in the compiler's intermediate representation. The emitted binary contains only the native loop; no callback survives.
 
+## 0.1 implementation status
+
+The 0.1 implementation is complete:
+
+- lexer, parser, AST, and source locations;
+- semantic analysis with scopes, type checks, and resource diagnostics;
+- memory planner with a default 4096-byte stack limit;
+- checked C emitter with native control flow;
+- bounded runtime API with fixed trap codes;
+- `zlang-compile` with `--emit-c`.
+
+Diagnostics use the exact format in clause 13. Every diagnostic carries the
+line and column of the source construct that caused it.
+
 ## Annex C - Testability contract
 
 A conformance test may assert on emitted C text without running the program:
@@ -500,3 +514,44 @@ parse("integer values[];").diagnostics().contains("ZLANG3001")
 ```
 
 These assertions are the primary way the language definition is kept honest: if the translation changes, the specification changes with it.
+
+## Annex D - Conformance matrix
+
+Every Annex A production and every diagnostic is covered by a CTest case.
+The matrix is maintained in `tests/spec/test_cases.h`.
+
+| Annex A production or rule | Conformance test |
+| --- | --- |
+| `program`, `declaration`, `type`, scalar initializer | `emits_a_scalar_declaration` |
+| all four `type` alternatives | `covers_every_annex_a_production` |
+| `expression ";"` and `identifier` expression | `covers_every_annex_a_production` |
+| `block` with nested declarations | `covers_every_annex_a_production` |
+| `ifStatement` with `else` | `emits_if_and_else` |
+| `ifStatement` without `else` | `covers_every_annex_a_production` |
+| `whileStatement` | `covers_every_annex_a_production` |
+| `foreachStatement` | `emits_a_native_foreach_loop` |
+| `repeatStatement` | `emits_repeat_as_native_for` |
+| `functionDeclaration` with parameters and return type | `emits_function_and_return` |
+| `functionDeclaration` with empty parameters and no return type | `covers_every_annex_a_production` |
+| `parameters` | `emits_function_and_return` |
+| `returnStatement` with expression | `emits_function_and_return` |
+| `returnStatement` without expression | `covers_every_annex_a_production` |
+| `expression "+" expression` | `emits_checked_addition` |
+| `expression "==" expression` | `covers_every_annex_a_production` |
+| `identifier "=" expression` | `covers_every_annex_a_production` |
+| `"print" "(" expression ")"` | `emits_a_print_call` |
+| `identifier "[" expression "]"` | `emits_append_and_checked_index` |
+| `"append" "(" identifier "," expression ")"` | `emits_append_and_checked_index` |
+| integer, string, and boolean literals | `covers_every_annex_a_production` |
+| sequence declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
+| comments and escaped string literals | `skips_comments_and_unescapes_strings` |
+| `ZLANG1001` unexpected token | `reports_syntax_diagnostics_with_source_locations` |
+| `ZLANG1002` unterminated string | `reports_syntax_diagnostics_with_source_locations` |
+| `ZLANG1003` invalid character | `reports_syntax_diagnostics_with_source_locations` |
+| `ZLANG1004` unsupported construct | `reports_syntax_diagnostics_with_source_locations` |
+| `ZLANG2001` literal out of range | `reports_type_and_resource_diagnostics_with_source_locations` |
+| `ZLANG2002` duplicate declaration | `reports_type_and_resource_diagnostics_with_source_locations` |
+| `ZLANG2003` undefined identifier | `reports_type_and_resource_diagnostics_with_source_locations` |
+| `ZLANG2004` type mismatch | `reports_type_and_resource_diagnostics_with_source_locations` |
+| `ZLANG3001` unbounded sequence | `rejects_an_unbounded_sequence_at_the_declaration` |
+| diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

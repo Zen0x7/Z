@@ -46,37 +46,32 @@ The C emitter has one rule: an operation is lowered to a call into the Zlang API
 1. **Foundation** *(in place)*
    CMake project, strict warning policy, CI matrix for amd64 and arm64, sanitizer modes, coverage with Codecov, static analysis, install/export checks, fuzz smoke target, and a module-based test layout.
 
-2. **Language front end**
+2. **Language front end** *(implemented)*
    Lexer, parser, AST, and source locations. Diagnostics for syntax errors expressed in Zlang terms. Outcome: the first minimal `.zlang` programs parse cleanly.
 
-3. **Semantic model**
+3. **Semantic model** *(implemented)*
    Scopes, symbol table, type checking, explicit capacity declarations, and range analysis. Outcome: unbounded allocation is rejected at the declaration site with a `file:line:column` diagnostic.
 
-4. **Memory planner**
+4. **Memory planner** *(implemented)*
    Compute sizes, offsets, and lifetimes. Decide stack placement for small bounded values and static regions for larger ones. Outcome: an allocation plan for every value, with no runtime decision left.
 
-5. **C emitter and `--emit-c`**
+5. **C emitter and `--emit-c`** *(implemented)*
    Lower the checked IR to valid C: `zlang_*` calls for operations, native `for`/`if` for control flow. Outcome: readable emitted C that can be inspected before compilation.
 
-6. **Zlang C API**
+6. **Zlang C API** *(implemented)*
    Implement bounded strings, vectors, arenas, print, and trap helpers as thin C functions. Outcome: an API that is fully covered by the existing sanitizer, Valgrind, and coverage jobs.
 
-7. **Tooling**
-   Implement `zlang-compile` and the GitHub Action. Outcome: local and CI builds use the same pipeline, and CI publishes the binary artifact.
+7. **Tooling** *(CLI implemented; GitHub Action deferred to 1.0)*
+   `zlang-compile` is implemented with `--emit-c` and direct native compilation. Packaging, release artifacts, and the Zlang GitHub Action are intentionally deferred to version 1.0.
 
-8. **Hardening**
-   Run emitted C through the same analysis jobs as the API. Extend fuzzing and static analysis to generated code. Document error codes and supported limits.
+8. **Hardening** *(implemented for 0.1)*
+   Lexer, parser, and emitter fuzz harnesses run in CI. Trap paths are covered in child processes. Diagnostics and supported limits are documented in `SPEC.md`, including the Annex D conformance matrix.
 
 ## Open design questions
 
-These are intentionally deferred until the corresponding phase:
+Resolved in 0.1: capacity syntax, the initial `zlang_*` API, unbounded-allocation rejection, and the fixed trap codes are all defined in `SPEC.md`.
 
-- The concrete syntax for declaring a capacity.
-- The exact initial surface of the `zlang_*` API.
-- How strict range analysis must be, and which unbounded constructs are rejected outright.
-- The fixed set of runtime trap codes.
-- Whether the API ships as headers, a static library, or both.
-- Whether generated C is published as a CI artifact by default.
+Deferred to 1.0: modules, classes, string concatenation, a third mapped-memory tier, incremental compilation, packaging/release, and the Zlang GitHub Action.
 
 ## Definition of done for v0.1
 

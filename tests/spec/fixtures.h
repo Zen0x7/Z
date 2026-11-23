@@ -58,6 +58,38 @@
 #define ZLANG_SPEC_APPEND_EXPECTED "zlang_array_append(values.data_, &values.length_, 4U"
 #define ZLANG_SPEC_INDEX_EXPECTED "values.data_[0]"
 
+#define ZLANG_SPEC_CONFORMANCE_SOURCE                                                              \
+    "integer first = 1;\n"                                                                         \
+    "unsigned count = 2U;\n"                                                                       \
+    "boolean ready = false;\n"                                                                     \
+    "string label = \"text\";\n"                                                                   \
+    "integer values[4];\n"                                                                         \
+    "{ integer scoped = 3; }\n"                                                                    \
+    "if (ready) { print(\"yes\"); }\n"                                                             \
+    "while (ready) { }\n"                                                                          \
+    "foreach (item in values) { print(label); }\n"                                                 \
+    "repeat (2U) { }\n"                                                                            \
+    "function noop() { return; }\n"                                                                \
+    "first = 4;\n"                                                                                 \
+    "boolean matched = first == 4;\n"
+
+#define ZLANG_SPEC_CONFORMANCE_INTEGER_EXPECTED "int32_t first = 1;"
+#define ZLANG_SPEC_CONFORMANCE_UNSIGNED_EXPECTED "uint32_t count = 2U;"
+#define ZLANG_SPEC_CONFORMANCE_BOOLEAN_EXPECTED "bool ready = false;"
+#define ZLANG_SPEC_CONFORMANCE_STRING_EXPECTED                                                     \
+    "zlang_string_t label = (zlang_string_t){ \"text\", 4U };"
+#define ZLANG_SPEC_CONFORMANCE_BLOCK_EXPECTED "{\n        int32_t scoped = 3;"
+#define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (ready) {"
+#define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (ready) {"
+#define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
+    "for (uint32_t index = 0U; index < values.length_; ++index)"
+#define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED "for (uint32_t _repeat = 0U; _repeat < 2U;"
+#define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void noop() {"
+#define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
+#define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "first = 4;"
+#define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "(first == 4)"
+#define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(label);"
+
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 
 #endif /* ZLANG_SPEC_FIXTURES_H */

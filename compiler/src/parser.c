@@ -41,6 +41,8 @@ static size_t zlang_parser_add_expression(zlang_parser_t *parser) {
     memset(_expression_k, 0, sizeof(*_expression_k));
     _expression_k->left_ = ZLANG_NO_EXPRESSION;
     _expression_k->right_ = ZLANG_NO_EXPRESSION;
+    _expression_k->line_ = zlang_parser_current(parser)->line_;
+    _expression_k->column_ = zlang_parser_current(parser)->column_;
     return parser->expression_count_++;
 }
 
@@ -170,6 +172,8 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         }
         parser->expressions_[_expression_k].kind_ = zlang_expression_identifier_;
         parser->expressions_[_expression_k].name_ = _token_k->text_;
+        parser->expressions_[_expression_k].line_ = _token_k->line_;
+        parser->expressions_[_expression_k].column_ = _token_k->column_;
 
         if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
             zlang_parser_advance(parser);

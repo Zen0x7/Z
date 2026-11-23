@@ -65,6 +65,7 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
     if (data == NULL || length == NULL || value == NULL || element_size == 0U ||
         *length >= capacity) {
         zlang_trap(ZLANG_TRAP_CAPACITY);
+        return;
     }
     memcpy((char *)data + ((size_t)(*length) * element_size), value, element_size);
     ++(*length);

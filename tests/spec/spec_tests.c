@@ -49,10 +49,8 @@ static void zlang_spec_expect_diagnostic(zlang_test_context_t *context,
     const zlang_diagnostic_t *const _item_k = zlang_spec_find_diagnostic(session, code);
 
     ZLANG_CHECK(context, _item_k != NULL);
-    if (_item_k != NULL) {
-        ZLANG_CHECK(context, _item_k->line_ == line);
-        ZLANG_CHECK(context, _item_k->column_ == column);
-    }
+    ZLANG_CHECK(context, _item_k->line_ == line);
+    ZLANG_CHECK(context, _item_k->column_ == column);
 }
 
 static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *source) {

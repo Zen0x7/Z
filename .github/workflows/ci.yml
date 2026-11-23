@@ -496,6 +496,7 @@ jobs:
             -DCMAKE_C_STANDARD_REQUIRED=ON \
             -DCMAKE_C_EXTENSIONS=OFF \
             -DZLANG_BUILD_TESTS=OFF
+          cmake --build build
           cmake --install build --prefix "$PWD/install"
           cmake -Wdev --warn-uninitialized -S tests/consumer -B build-consumer -G Ninja \
             -DCMAKE_C_COMPILER=gcc \

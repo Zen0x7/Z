@@ -27,9 +27,6 @@ static void write_copies_the_exact_declared_byte_count(zlang_test_context_t *con
     FILE *const _stream_k = tmpfile();
 
     ZLANG_CHECK(context, _stream_k != NULL);
-    if (_stream_k == NULL) {
-        return;
-    }
     const bool _write_ok_k = zlang_write(_stream_k, _message_k);
     const bool _seek_ok_k = fseek(_stream_k, 0L, SEEK_SET) == 0;
     const size_t _read_count_k = fread(_buffer, 1U, sizeof(_buffer), _stream_k);

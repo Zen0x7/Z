@@ -12,22 +12,55 @@ include(ZenCoverage)
 add_compile_options(${ZEN_SANITIZER_FLAGS})
 add_link_options(${ZEN_SANITIZER_FLAGS} ${ZEN_SANITIZER_LINK_FLAGS})
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 add_library(zen INTERFACE)
 add_library(zen::zen ALIAS zen)
 
 target_include_directories(zen INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>")
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
 # C99 is the canonical standard: static inline + <stdint.h> are enough and it is
 # the widest common denominator across every platform in the CI matrix.
 target_compile_features(zen INTERFACE c_std_99)
+
+install(TARGETS zen EXPORT zenTargets)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+install(EXPORT zenTargets
+        FILE zenTargets.cmake
+        NAMESPACE zen::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zen")
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/zenConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/zenConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zen")
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/zenConfigVersion.cmake"
+    VERSION "${PROJECT_VERSION}"
+    COMPATIBILITY SameMajorVersion)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/zenConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/zenConfigVersion.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zen")
 
 option(ZEN_BUILD_TESTS "Build the zen test suite" ON)
 
 if(ZEN_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+option(ZEN_BUILD_FUZZERS "Build libFuzzer targets (Clang only)" OFF)
+
+if(ZEN_BUILD_FUZZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "ZEN_BUILD_FUZZERS requires Clang")
+    endif()
+    add_subdirectory(fuzz)
 endif()
 
 if(ZEN_COVERAGE)

@@ -1,16 +1,16 @@
 PROJECT_NAME           = "Z / libzlang"
 PROJECT_NUMBER         = 0.0.0
-PROJECT_BRIEF          = "Header-only C99 library"
+PROJECT_BRIEF          = "C99 runtime library and the Zlang 0.1 source-to-source compiler"
 
 OUTPUT_DIRECTORY       = build/docs
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 
-INPUT                  = docs include
-FILE_PATTERNS          = *.h *.md
+INPUT                  = docs include compiler/include compiler/src tools
+FILE_PATTERNS          = *.h *.c *.md
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = docs/index.md
-STRIP_FROM_PATH        = include
+STRIP_FROM_PATH        = include compiler/include tools
 FULL_PATH_NAMES        = NO
 
 EXTRACT_ALL            = YES

@@ -1,3 +1,7 @@
+/** @file
+ * @brief Scope, binding, type and resource checks for Zlang 0.1.
+ */
+
 #include "zlang/compiler/semantics.h"
 
 #include <string.h>

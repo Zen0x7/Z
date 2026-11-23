@@ -1,3 +1,7 @@
+/** @file
+ * @brief Stable diagnostic codes and source locations.
+ */
+
 #ifndef ZLANG_COMPILER_DIAGNOSTICS_H
 #define ZLANG_COMPILER_DIAGNOSTICS_H
 

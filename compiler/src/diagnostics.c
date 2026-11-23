@@ -1,3 +1,7 @@
+/** @file
+ * @brief Storage and lookup of stable Zlang diagnostic codes.
+ */
+
 #include "zlang/compiler/diagnostics.h"
 
 void zlang_diagnostics_init(zlang_diagnostics_t *diagnostics, zlang_diagnostic_t *items,

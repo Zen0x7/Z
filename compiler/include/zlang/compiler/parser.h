@@ -1,3 +1,7 @@
+/** @file
+ * @brief Parser API for the Zlang 0.1 grammar.
+ */
+
 #ifndef ZLANG_COMPILER_PARSER_H
 #define ZLANG_COMPILER_PARSER_H
 

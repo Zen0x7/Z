@@ -1,3 +1,7 @@
+/** @file
+ * @brief Tokenization for Zlang 0.1 source text.
+ */
+
 #include "zlang/compiler/lexer.h"
 
 #include <string.h>

@@ -1,3 +1,7 @@
+/** @file
+ * @brief Flat abstract syntax tree used by the compiler.
+ */
+
 #ifndef ZLANG_COMPILER_AST_H
 #define ZLANG_COMPILER_AST_H
 

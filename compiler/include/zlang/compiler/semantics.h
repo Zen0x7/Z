@@ -1,3 +1,7 @@
+/** @file
+ * @brief Semantic analysis API for Zlang 0.1.
+ */
+
 #ifndef ZLANG_COMPILER_SEMANTICS_H
 #define ZLANG_COMPILER_SEMANTICS_H
 

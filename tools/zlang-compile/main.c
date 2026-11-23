@@ -1,3 +1,7 @@
+/** @file
+ * @brief Command line driver that emits C or builds a native binary.
+ */
+
 #include "zlang/compiler/diagnostics.h"
 #include "zlang/compiler/emitter.h"
 #include "zlang/compiler/parser.h"

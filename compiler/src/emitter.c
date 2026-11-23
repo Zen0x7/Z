@@ -1,3 +1,7 @@
+/** @file
+ * @brief C99 emitter for the Zlang 0.1 abstract syntax tree.
+ */
+
 #include "zlang/compiler/emitter.h"
 
 #include <stdio.h>

@@ -1,3 +1,7 @@
+/** @file
+ * @brief Recursive-descent parser for the Zlang 0.1 grammar.
+ */
+
 #include "zlang/compiler/parser.h"
 
 #include <string.h>

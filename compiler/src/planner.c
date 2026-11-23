@@ -1,3 +1,7 @@
+/** @file
+ * @brief Compile-time storage placement for Zlang declarations.
+ */
+
 #include "zlang/compiler/planner.h"
 
 #include <string.h>

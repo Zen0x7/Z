@@ -1,3 +1,7 @@
+/** @file
+ * @brief Compile-time memory placement API.
+ */
+
 #ifndef ZLANG_COMPILER_PLANNER_H
 #define ZLANG_COMPILER_PLANNER_H
 

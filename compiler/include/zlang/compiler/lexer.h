@@ -1,3 +1,7 @@
+/** @file
+ * @brief Token definitions and the Zlang 0.1 lexer API.
+ */
+
 #ifndef ZLANG_COMPILER_LEXER_H
 #define ZLANG_COMPILER_LEXER_H
 

@@ -1,3 +1,7 @@
+/** @file
+ * @brief C99 source emitter API.
+ */
+
 #ifndef ZLANG_COMPILER_EMITTER_H
 #define ZLANG_COMPILER_EMITTER_H
 

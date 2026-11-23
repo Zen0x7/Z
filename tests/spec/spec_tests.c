@@ -16,8 +16,9 @@
 
 typedef struct zlang_spec_session_t {
     zlang_token_t tokens_[128];
-    zlang_ast_expression_t expressions_[32];
-    zlang_ast_statement_t statements_[32];
+    zlang_ast_expression_t expressions_[64];
+    zlang_ast_statement_t statements_[64];
+    zlang_parameter_t parameters_[32];
     zlang_diagnostic_t diagnostic_items_[8];
     zlang_symbol_t symbols_[32];
     zlang_memory_plan_entry_t plan_entries_[32];
@@ -40,6 +41,7 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
         &session->parser_, session->tokens_, sizeof(session->tokens_) / sizeof(session->tokens_[0]),
         session->expressions_, sizeof(session->expressions_) / sizeof(session->expressions_[0]),
         session->statements_, sizeof(session->statements_) / sizeof(session->statements_[0]),
+        session->parameters_, sizeof(session->parameters_) / sizeof(session->parameters_[0]),
         &session->diagnostics_);
 
     if (!zlang_parse(&session->parser_, source, session->scratch_, sizeof(session->scratch_),
@@ -49,7 +51,7 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
 
     zlang_semantic_context_init(&session->semantic_, session->symbols_,
                                 sizeof(session->symbols_) / sizeof(session->symbols_[0]),
-                                &session->diagnostics_);
+                                &session->diagnostics_, &session->result_.program_);
     if (!zlang_analyze_program(&session->result_.program_, &session->semantic_)) {
         return false;
     }
@@ -118,18 +120,16 @@ static void rejects_an_unbounded_sequence_at_the_declaration(zlang_test_context_
     ZLANG_CHECK(context, strstr(_session.output_, "values") == NULL);
 }
 
-static void reports_lexer_and_parser_diagnostics(zlang_test_context_t *const context) {
+static void reports_lexer_diagnostics_and_emits_while(zlang_test_context_t *const context) {
     zlang_spec_session_t _invalid_character_session;
-    zlang_spec_session_t _unsupported_statement_session;
+    zlang_spec_session_t _while_session;
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid_character_session, "integer var = @;"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_invalid_character_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_INVALID_CHARACTER));
 
-    ZLANG_CHECK(context,
-                !zlang_spec_transpile(&_unsupported_statement_session, "while (true) { }"));
-    ZLANG_CHECK(context, zlang_diagnostics_contains(&_unsupported_statement_session.diagnostics_,
-                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+    ZLANG_CHECK(context, zlang_spec_transpile(&_while_session, "while (true) { }"));
+    ZLANG_CHECK(context, strstr(_while_session.output_, "while (true) {") != NULL);
 }
 
 static void skips_comments_and_unescapes_strings(zlang_test_context_t *const context) {
@@ -168,6 +168,46 @@ static void rejects_a_type_mismatch(zlang_test_context_t *const context) {
     ZLANG_CHECK(context,
                 zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
     ZLANG_CHECK(context, _session.output_[0] == '\0');
+}
+
+static void emits_checked_addition(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_ADD_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ADD_EXPECTED) != NULL);
+}
+
+static void emits_if_and_else(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_IF_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_IF_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_IF_ELSE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "\"yes\"") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "\"no\"") != NULL);
+}
+
+static void emits_repeat_as_native_for(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_REPEAT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_REPEAT_EXPECTED) != NULL);
+}
+
+static void emits_function_and_return(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FUNCTION_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_RETURN_EXPECTED) != NULL);
+}
+
+static void emits_append_and_checked_index(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_APPEND_INDEX_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_APPEND_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEX_EXPECTED) != NULL);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

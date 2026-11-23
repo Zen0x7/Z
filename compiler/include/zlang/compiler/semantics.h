@@ -20,10 +20,12 @@ typedef struct zlang_semantic_context_t {
     size_t symbol_capacity_;
     size_t symbol_count_;
     zlang_diagnostics_t *diagnostics_;
+    const zlang_program_t *program_;
 } zlang_semantic_context_t;
 
 void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol_t *symbols,
-                                 size_t symbol_capacity, zlang_diagnostics_t *diagnostics);
+                                 size_t symbol_capacity, zlang_diagnostics_t *diagnostics,
+                                 const zlang_program_t *program);
 
 /* Checks declarations, identifier use, and bounded sequence capacity before
    emission. Returns false when any semantic diagnostic was added. */

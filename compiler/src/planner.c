@@ -27,8 +27,8 @@ static uint32_t zlang_element_size(const char *type_name) {
 }
 
 static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {
-    return statement->kind_ == zlang_ast_statement_declaration_ ||
-           statement->kind_ == zlang_ast_statement_sequence_declaration_;
+    return statement->kind_ == zlang_statement_declaration_ ||
+           statement->kind_ == zlang_statement_sequence_declaration_;
 }
 
 static bool zlang_declaration_size(const zlang_ast_statement_t *statement, uint32_t *size) {
@@ -37,7 +37,7 @@ static bool zlang_declaration_size(const zlang_ast_statement_t *statement, uint3
         return false;
     }
 
-    if (statement->kind_ == zlang_ast_statement_declaration_) {
+    if (statement->kind_ == zlang_statement_declaration_) {
         *size = _element_size_k;
         return true;
     }

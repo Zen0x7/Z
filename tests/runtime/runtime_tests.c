@@ -53,6 +53,26 @@ static void trap_codes_are_fixed(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, ZLANG_TRAP_INVALID_ARGUMENT == 4U);
 }
 
+static void checked_addition_returns_the_sum(zlang_test_context_t *const context) {
+    ZLANG_CHECK(context, zlang_add_i32(1, 2) == 3);
+    ZLANG_CHECK(context, zlang_add_i32(-5, 2) == -3);
+    ZLANG_CHECK(context, zlang_add_u32(10U, 20U) == 30U);
+}
+
+static void array_append_writes_and_increments_length(zlang_test_context_t *const context) {
+    int32_t _data[2] = {0, 0};
+    uint32_t _length = 0U;
+    const int32_t _first_k = 7;
+    const int32_t _second_k = 9;
+
+    zlang_array_append(_data, &_length, 2U, sizeof(_data[0]), &_first_k);
+    zlang_array_append(_data, &_length, 2U, sizeof(_data[0]), &_second_k);
+
+    ZLANG_CHECK(context, _length == 2U);
+    ZLANG_CHECK(context, _data[0] == 7);
+    ZLANG_CHECK(context, _data[1] == 9);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

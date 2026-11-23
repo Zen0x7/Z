@@ -293,7 +293,7 @@ Every generated C file begins with:
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zlang/runtime.h>
+#include <zlang/runtime/runtime.h>
 ```
 
 ### 12.2 Type mapping
@@ -330,9 +330,17 @@ Every generated C file begins with:
 The only runtime functions that generated code may call in 0.1 are:
 
 ```c
-void zlang_print(zlang_string_t value);
-_Noreturn void zlang_trap(uint32_t code);
+bool zlang_print(zlang_string_t value);
+int32_t zlang_add_i32(int32_t left, int32_t right);
+uint32_t zlang_add_u32(uint32_t left, uint32_t right);
+void zlang_array_append(void *data, uint32_t *length, uint32_t capacity,
+                        size_t element_size, const void *value);
+void zlang_trap(uint8_t code);
 ```
+
+`zlang_array_append` implements `CheckCapacity`; checked indexing is emitted as
+inline C with `zlang_trap(ZLANG_TRAP_BOUNDS)`. These helpers contain no
+allocation, formatting, or dynamic dispatch.
 
 Any additional `zlang_*` call requires an amendment to this specification.
 
@@ -456,7 +464,7 @@ Expected emitted C, ignoring whitespace:
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zlang/runtime.h>
+#include <zlang/runtime/runtime.h>
 
 int32_t var = 10;
 

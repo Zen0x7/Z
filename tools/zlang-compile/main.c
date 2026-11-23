@@ -18,6 +18,7 @@
 #define ZLANG_CLI_TOKEN_CAPACITY 512U
 #define ZLANG_CLI_EXPRESSION_CAPACITY 256U
 #define ZLANG_CLI_STATEMENT_CAPACITY 256U
+#define ZLANG_CLI_PARAMETER_CAPACITY 128U
 #define ZLANG_CLI_SYMBOL_CAPACITY 256U
 #define ZLANG_CLI_DIAGNOSTIC_CAPACITY 64U
 #define ZLANG_CLI_PLAN_CAPACITY 256U
@@ -198,6 +199,7 @@ int main(int argc, char **argv) {
     static zlang_token_t _tokens[ZLANG_CLI_TOKEN_CAPACITY];
     static zlang_ast_expression_t _expressions[ZLANG_CLI_EXPRESSION_CAPACITY];
     static zlang_ast_statement_t _statements[ZLANG_CLI_STATEMENT_CAPACITY];
+    static zlang_parameter_t _parameters[ZLANG_CLI_PARAMETER_CAPACITY];
     static zlang_symbol_t _symbols[ZLANG_CLI_SYMBOL_CAPACITY];
     static zlang_memory_plan_entry_t _plan_entries[ZLANG_CLI_PLAN_CAPACITY];
     static zlang_diagnostic_t _diagnostics[ZLANG_CLI_DIAGNOSTIC_CAPACITY];
@@ -235,13 +237,14 @@ int main(int argc, char **argv) {
                            sizeof(_diagnostics) / sizeof(_diagnostics[0]));
     zlang_parser_init(&_parser, _tokens, sizeof(_tokens) / sizeof(_tokens[0]), _expressions,
                       sizeof(_expressions) / sizeof(_expressions[0]), _statements,
-                      sizeof(_statements) / sizeof(_statements[0]), &_diagnostic_state);
+                      sizeof(_statements) / sizeof(_statements[0]), _parameters,
+                      sizeof(_parameters) / sizeof(_parameters[0]), &_diagnostic_state);
 
     if (!zlang_parse(&_parser, _source, _scratch, sizeof(_scratch), &_result)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 3 : 2;
     }
     zlang_semantic_context_init(&_semantic, _symbols, sizeof(_symbols) / sizeof(_symbols[0]),
-                                &_diagnostic_state);
+                                &_diagnostic_state, &_result.program_);
     if (!zlang_analyze_program(&_result.program_, &_semantic)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 4 : 2;
     }

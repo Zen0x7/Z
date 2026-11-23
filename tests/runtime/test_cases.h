@@ -5,3 +5,5 @@
 ZLANG_TEST_CASE(write_copies_the_exact_declared_byte_count)
 ZLANG_TEST_CASE(write_handles_empty_and_invalid_arguments)
 ZLANG_TEST_CASE(trap_codes_are_fixed)
+ZLANG_TEST_CASE(checked_addition_returns_the_sum)
+ZLANG_TEST_CASE(array_append_writes_and_increments_length)

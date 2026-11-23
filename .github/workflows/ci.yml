@@ -20,6 +20,7 @@ jobs:
   # ---------------------------------------------------------------- glibc ----
   linux-glibc:
     name: glibc ${{ matrix.arch }} / ${{ matrix.compiler }} / C${{ matrix.std }} / ${{ matrix.build_type }}
+    timeout-minutes: 20
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
@@ -31,14 +32,14 @@ jobs:
         std: [99, 11, 17, 23]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc clang
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_C_STANDARD=${{ matrix.std }}
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -52,6 +53,7 @@ jobs:
   # ------------------------------------------------------------ sanitizers ---
   linux-sanitizers:
     name: sanitizer ${{ matrix.arch }} / ${{ matrix.compiler }} / ${{ matrix.sanitizer }}
+    timeout-minutes: 20
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     env:
       CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
@@ -71,14 +73,14 @@ jobs:
           - { arch: amd64, compiler: clang, sanitizer: cfi }
           - { arch: arm64, compiler: clang, sanitizer: cfi }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc clang lld
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -92,6 +94,7 @@ jobs:
   # ------------------------------------------------- arm64-only experiments ---
   arm64-sanitizer-experiments:
     name: experimental ${{ matrix.arch }} / clang / ${{ matrix.sanitizer }}
+    timeout-minutes: 20
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
@@ -103,14 +106,14 @@ jobs:
         arch: [arm64]
         sanitizer: [hwaddress, shadow-call-stack]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build clang lld
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -124,6 +127,7 @@ jobs:
   # ------------------------------------------------------------- musl/Alpine ---
   linux-musl:
     name: musl ${{ matrix.arch }} / ${{ matrix.compiler }} / C${{ matrix.std }}
+    timeout-minutes: 20
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     env:
       ZEN_CC: ${{ matrix.compiler }}
@@ -135,12 +139,12 @@ jobs:
         compiler: [gcc, clang]
         std: [99, 11, 17, 23]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Build and test inside Alpine (musl)
         run: |
           docker run --rm -e ZEN_CC -e ZEN_STD -v "$PWD:/src" -w /src alpine:3.21 sh -ec '
             apk add --no-cache build-base cmake ninja clang
-            cmake -S . -B build -G Ninja \
+            cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
               -DCMAKE_C_COMPILER="$ZEN_CC" \
               -DCMAKE_C_STANDARD="$ZEN_STD" \
               -DCMAKE_C_STANDARD_REQUIRED=ON \
@@ -153,17 +157,18 @@ jobs:
   # ----------------------------------------------------------------- macOS ----
   macos:
     name: ${{ matrix.os }} / clang / ${{ matrix.sanitizer }}
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-15-intel]
+        os: [macos-14, macos-15-intel]
         sanitizer: [none, address, undefined]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -177,6 +182,7 @@ jobs:
   # ---------------------------------------------------------------- Windows ----
   windows:
     name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.sanitizer }}
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -187,8 +193,8 @@ jobs:
           - { os: windows-2022, arch: x64, compiler: clang-cl, sanitizer: none }
           - { os: windows-11-arm, arch: arm64, compiler: msvc, sanitizer: none }
     steps:
-      - uses: actions/checkout@v4
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
         with:
           arch: ${{ matrix.arch }}
       - name: Select clang-cl
@@ -196,7 +202,7 @@ jobs:
         run: echo "CC=clang-cl" >> $env:GITHUB_ENV
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_STANDARD=11
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -208,10 +214,11 @@ jobs:
 
   windows-mingw:
     name: windows-2022 / mingw-gcc
+    timeout-minutes: 20
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
-      - uses: msys2/setup-msys2@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2
         with:
           msystem: MINGW64
           update: true
@@ -222,7 +229,7 @@ jobs:
       - name: Build and test with MinGW GCC
         shell: msys2 {0}
         run: |
-          cmake -S . -B build -G Ninja \
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_STANDARD=99 \
@@ -234,14 +241,15 @@ jobs:
   # --------------------------------------------------- QEMU (non-native CPUs) ---
   qemu:
     name: qemu linux/${{ matrix.arch }} / ubuntu
+    timeout-minutes: 30
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         arch: [arm/v7, s390x, ppc64le, riscv64]
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
       - name: Build and test under emulation
         run: |
           docker run --rm --platform "linux/${{ matrix.arch }}" -v "$PWD:/src" -w /src \
@@ -249,7 +257,7 @@ jobs:
               apt-get update -qq
               DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
                 cmake ninja-build gcc libc6-dev
-              cmake -S . -B build -G Ninja \
+              cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
                 -DCMAKE_BUILD_TYPE=Debug \
                 -DCMAKE_C_STANDARD=99 \
                 -DCMAKE_C_STANDARD_REQUIRED=ON \
@@ -261,18 +269,19 @@ jobs:
   # ------------------------------------------------------------ 32-bit x86 ----
   x86-32bit:
     name: ubuntu-24.04 / gcc / -m32
+    timeout-minutes: 20
     runs-on: ubuntu-24.04
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc gcc-multilib
       - name: Build and test
         run: |
-          cmake -S . -B build -G Ninja \
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_FLAGS=-m32 \
             -DCMAKE_C_STANDARD=99 \
@@ -284,18 +293,19 @@ jobs:
   # ----------------------------------------------------------- valgrind (extra) ---
   valgrind:
     name: ubuntu-24.04 / gcc / valgrind memcheck
+    timeout-minutes: 20
     runs-on: ubuntu-24.04
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc valgrind
       - name: Build
         run: |
-          cmake -S . -B build -G Ninja \
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_C_STANDARD=99 \
             -DCMAKE_C_STANDARD_REQUIRED=ON \
@@ -311,19 +321,20 @@ jobs:
   # ---------------------------------------------------------------- coverage ---
   coverage:
     name: coverage / gcc / gcovr
+    timeout-minutes: 20
     runs-on: ubuntu-24.04
     env:
       CC: gcc
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc gcovr
       - name: Configure
         run: >-
-          cmake -S . -B build -G Ninja
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=Debug
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
@@ -331,13 +342,13 @@ jobs:
           -DZEN_COVERAGE=ON
       - name: Build, test and generate reports
         run: cmake --build build --target zen_coverage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-report
           path: build/coverage/
       - name: Upload to Codecov (only when a token is configured)
         if: ${{ env.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
         with:
           token: ${{ env.CODECOV_TOKEN }}
           files: build/coverage/coverage.xml
@@ -346,9 +357,10 @@ jobs:
   # --------------------------------------------------- static analysis / lint ---
   analysis:
     name: clang-tidy / cppcheck / clang-format
+    timeout-minutes: 20
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -357,18 +369,191 @@ jobs:
       - name: clang-format check
         run: >-
           clang-format --dry-run --Werror
-          include/zen/*.h include/zen/*/*.h tests/*/*.c tests/*/*.h
+          include/zen/*.h include/zen/*/*.h
+          tests/*/*.c tests/*/*.h fuzz/*.c
       - name: cppcheck
         run: >-
           cppcheck --enable=warning,style,performance,portability
           --error-exitcode=1 --inline-suppr --suppress=missingIncludeSystem
-          --std=c99 -Iinclude include tests
+          --std=c99 -Iinclude include tests fuzz
       - name: clang-tidy
         run: |
-          cmake -S . -B build-tidy -G Ninja \
+          cmake -Wdev --warn-uninitialized -S . -B build-tidy -G Ninja \
             -DCMAKE_C_COMPILER=clang \
             -DCMAKE_C_CLANG_TIDY=clang-tidy \
             -DCMAKE_C_STANDARD=99 \
             -DCMAKE_C_STANDARD_REQUIRED=ON \
             -DCMAKE_C_EXTENSIONS=OFF
           cmake --build build-tidy
+
+  # ------------------------------------------- strict CMake configuration ----
+  cmake-dev-warnings:
+    name: cmake -Werror=dev
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends cmake ninja-build clang
+      - name: Configure with developer warnings as errors
+        run: >-
+          cmake -Wdev --warn-uninitialized -Werror=dev -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_COMPILER=clang
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+      - name: Build and test
+        run: |
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+  # --------------------------------------------------- GCC static analyzer ---
+  gcc-analyzer:
+    name: ubuntu-24.04 / gcc / -fanalyzer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends cmake ninja-build gcc
+      - name: Configure and build with -fanalyzer
+        run: |
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_C_FLAGS=-fanalyzer \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF
+          cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ------------------------------------------------- Clang static analyzer ---
+  clang-static-analyzer:
+    name: ubuntu-24.04 / clang / --analyze
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends clang
+      - name: Analyze all translation units
+        run: >-
+          clang --analyze -std=c99 -Iinclude -Wall -Wextra -Werror
+          -Xanalyzer -analyzer-output=text
+          tests/version/version_tests.c
+          tests/testing/testing_tests.c
+          tests/consumer/main.c
+          fuzz/version_fuzz.c
+
+  # ------------------------------------------------ header self-containment ---
+  header-self-containment:
+    name: standalone header compilation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends clang gcc
+      - name: Compile every public header in isolation
+        run: ./scripts/check_headers.sh clang gcc
+
+  # -------------------------------------------------- exported package test ---
+  package-consumer:
+    name: install and find_package(zen)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends cmake ninja-build gcc
+      - name: Install and consume the exported package
+        run: |
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF \
+            -DZEN_BUILD_TESTS=OFF
+          cmake --install build --prefix "$PWD/install"
+          cmake -Wdev --warn-uninitialized -S tests/consumer -B build-consumer -G Ninja \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF \
+            -DCMAKE_PREFIX_PATH="$PWD/install"
+          cmake --build build-consumer
+          ./build-consumer/zen_consumer
+
+  # ------------------------------------------------------- libFuzzer smoke ---
+  fuzz-smoke:
+    name: ubuntu-24.04 / clang / libFuzzer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Toolchain
+        run: >-
+          sudo apt-get update -qq && sudo apt-get install -y -qq
+          --no-install-recommends cmake ninja-build clang
+      - name: Build the fuzz target
+        run: |
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF \
+            -DZEN_BUILD_TESTS=OFF \
+            -DZEN_BUILD_FUZZERS=ON
+          cmake --build build
+      - name: Run libFuzzer
+        run: ./build/fuzz/zen_version_fuzz -max_total_time=30 -rss_limit_mb=2048
+
+  # ------------------------------------------------------------- all-green ---
+  ci-green:
+    name: ci-green
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - linux-glibc
+      - linux-sanitizers
+      - arm64-sanitizer-experiments
+      - linux-musl
+      - macos
+      - windows
+      - windows-mingw
+      - qemu
+      - x86-32bit
+      - valgrind
+      - coverage
+      - analysis
+      - cmake-dev-warnings
+      - gcc-analyzer
+      - clang-static-analyzer
+      - header-self-containment
+      - package-consumer
+      - fuzz-smoke
+    steps:
+      - name: Verify every required job succeeded
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ] || \
+             [ "${{ contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "At least one required job did not succeed"
+            exit 1
+          fi
+          echo "All required jobs succeeded"

@@ -130,6 +130,7 @@ endif()
 
 # Make sure the toolchain can actually compile *and link* with the requested
 # sanitizer (the runtime may be missing even when the driver accepts the flag).
+set(_zen_required_flags "")
 if(NOT ZEN_SANITIZER STREQUAL "none")
     string(REPLACE ";" " " _zen_required_flags "${ZEN_SANITIZER_FLAGS};${ZEN_SANITIZER_LINK_FLAGS}")
     set(CMAKE_REQUIRED_FLAGS "${_zen_required_flags}")

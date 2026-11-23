@@ -31,6 +31,29 @@ cmake --build build-coverage --target zen_coverage
 
 The coverage target writes text, Cobertura XML, and HTML reports under `<build-dir>/coverage/`.
 
+Check that the installed package works for an external consumer:
+
+```sh
+cmake -S . -B build-package -G Ninja -DCMAKE_INSTALL_PREFIX="$PWD/install" -DZEN_BUILD_TESTS=OFF
+cmake --install build-package
+cmake -S tests/consumer -B build-consumer -G Ninja -DCMAKE_PREFIX_PATH="$PWD/install"
+cmake --build build-consumer && ./build-consumer/zen_consumer
+```
+
+Build and run the libFuzzer smoke target (Clang only):
+
+```sh
+cmake -S . -B build-fuzz -G Ninja -DCMAKE_C_COMPILER=clang -DZEN_BUILD_TESTS=OFF -DZEN_BUILD_FUZZERS=ON
+cmake --build build-fuzz
+./build-fuzz/fuzz/zen_version_fuzz -max_total_time=30
+```
+
+Compile every public header on its own:
+
+```sh
+./scripts/check_headers.sh clang gcc
+```
+
 ## Repository map
 
 | Path | Purpose |
@@ -40,11 +63,19 @@ The coverage target writes text, Cobertura XML, and HTML reports under `<build-d
 | `cmake/ZenWarnings.cmake` | One strict warning set (`-Werror` / `/WX`) shared by all builds |
 | `cmake/ZenCoverage.cmake` | GCC + gcovr instrumentation gate |
 | `cmake/ZenTesting.cmake` | `zen_add_test_module()`: builds one test executable and registers its cases |
+| `cmake/zenConfig.cmake.in` | Template for the installed CMake package config |
 | `include/zen/zen.h` | Umbrella header; includes every public module and defines nothing |
 | `include/zen/<module>/<module>.h` | Public API of one module |
 | `include/zen/detail/inline.h` | Private shared helper for `static inline` across compilers |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
-| `.github/workflows/ci.yml` | Build/test/coverage/sanitizer matrix |
+| `tests/consumer/` | Standalone project that verifies `find_package(zen)` after install |
+| `fuzz/` | Clang libFuzzer smoke target for the public API |
+| `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
+| `.github/workflows/ci.yml` | Build/test/coverage/sanitizer matrix plus review-gate jobs |
+| `.github/workflows/codeql.yml` | C/C++ CodeQL analysis with security events upload |
+| `.github/CODEOWNERS`, `.github/dependabot.yml` | Review ownership and weekly action updates |
+| `.pre-commit-config.yaml` | Local clang-format and cppcheck hooks |
+| `codecov.yml` | Coverage gate: 100% project and patch target |
 | `.clang-format`, `.clang-tidy` | Mechanically enforced style and naming |
 
 ## Project facts
@@ -72,6 +103,17 @@ The coverage target writes text, Cobertura XML, and HTML reports under `<build-d
   instrumentation, which violates the "no toolchain rebuild" requirement. Do not add combined
   sanitizer modes such as `address+undefined`; each sanitizer already has its own matrix entry.
 - **No README, no license**: explicit project decisions. Do not reintroduce either.
+- **Pinned actions**: every `uses:` in a workflow names a full commit SHA followed by a version
+  comment. Dependabot proposes weekly bumps; never replace a SHA with a floating tag.
+- **All-green gate**: the `ci-green` job must be listed as a required status check in the GitHub
+  ruleset for `master`. CodeQL is a separate workflow, so its own check must also be required.
+  Repository files cannot create that ruleset without an admin token.
+- **Layered static analysis**: clang-tidy, cppcheck, GCC `-fanalyzer`, `clang --analyze`, and
+  CodeQL all run in CI. A new defect class should get a mechanical check, not only a test.
+- **Installed-package and header checks**: `tests/consumer/` catches broken exports; scripts/
+  check_headers.sh catches hidden header dependencies. Both are cheap required jobs.
+- **macOS arm64 capacity**: the arm64 label is `macos-14`, not `macos-15`, to reduce hosted-runner
+  queue failures; all jobs have explicit `timeout-minutes`.
 
 ## Language and naming
 
@@ -170,3 +212,5 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
 2. Ask the user before inventing public API, changing the stated contract, or adding a dependency.
 3. Run `cmake --build`, `ctest --output-on-failure`, and, when touching style-sensitive code, the
    `analysis` job commands: `clang-format --dry-run --Werror`, `cppcheck`, and a clang-tidy build.
+4. If public headers changed, run `./scripts/check_headers.sh`; if install rules changed, run the
+   package-consumer commands; if the public API changed, run the libFuzzer smoke target.

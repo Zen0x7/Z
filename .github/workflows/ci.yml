@@ -125,6 +125,16 @@ jobs:
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
+      - name: Backtrace for SCS crashes
+        if: failure() && matrix.sanitizer == 'shadow-call-stack'
+        run: |
+          sudo apt-get install -y -qq --no-install-recommends gdb
+          gdb -q -batch \
+            -ex 'set pagination off' \
+            -ex 'run --case macros_have_the_expected_values' \
+            -ex 'bt 20' \
+            -ex 'info registers x18 x30' \
+            --args build/tests/version/zen_version_tests
 
   # ------------------------------------------------------------- musl/Alpine ---
   linux-musl:

@@ -95,6 +95,12 @@ static bool zlang_emit_expression(const zlang_ast_expression_t *expression,
                                   zlang_emitter_t *emitter) {
     switch (expression->kind_) {
     case zlang_ast_expression_integer_literal_:
+        if (expression->is_unsigned_) {
+            if (!zlang_append_unsigned(emitter, (uint32_t)expression->integer_value_)) {
+                return false;
+            }
+            return zlang_append_text(emitter, "U");
+        }
         return zlang_append_integer(emitter, expression->integer_value_);
     case zlang_ast_expression_string_literal_:
         if (!zlang_append_text(emitter, "(zlang_string_t){ \"")) {
@@ -173,10 +179,8 @@ static bool zlang_emit_declaration(const zlang_ast_statement_t *statement, zlang
 
 static bool zlang_emit_sequence_declaration(const zlang_ast_statement_t *statement,
                                             zlang_emitter_t *emitter, uint32_t depth) {
+    /* Semantic analysis rejects ZLANG3001 before emission. */
     if (statement->capacity_ == 0U) {
-        (void)zlang_diagnostics_add(emitter->diagnostics_, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE,
-                                    statement->line_, statement->column_,
-                                    "unbounded sequence requires an explicit capacity.");
         return false;
     }
 
@@ -322,7 +326,7 @@ static bool zlang_emit_foreach(const zlang_ast_statement_t *statement, zlang_emi
 
 static bool zlang_emit_prologue(zlang_emitter_t *emitter) {
     return zlang_append_text(emitter, "#include <stdbool.h>\n#include <stdint.h>\n\n"
-                                      "#include <zlang/runtime.h>\n\n");
+                                      "#include <zlang/runtime/runtime.h>\n\n");
 }
 
 static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {

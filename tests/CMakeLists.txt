@@ -4,4 +4,5 @@ include(ZlangTesting)
 # test_cases.h, <module>_tests.c}. No other module is touched.
 add_subdirectory(version)
 add_subdirectory(testing)
+add_subdirectory(runtime)
 add_subdirectory(spec)

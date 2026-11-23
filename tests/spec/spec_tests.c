@@ -1,5 +1,6 @@
 #include "zlang/compiler/emitter.h"
 #include "zlang/compiler/parser.h"
+#include "zlang/compiler/semantics.h"
 #include "zlang/testing/testing.h"
 
 #include "fixtures.h"
@@ -17,7 +18,9 @@ typedef struct zlang_spec_session_t {
     zlang_ast_expression_t expressions_[32];
     zlang_ast_statement_t statements_[32];
     zlang_diagnostic_t diagnostic_items_[8];
+    zlang_symbol_t symbols_[32];
     zlang_diagnostics_t diagnostics_;
+    zlang_semantic_context_t semantic_;
     zlang_parser_t parser_;
     zlang_parse_result_t result_;
     char scratch_[1024];
@@ -35,13 +38,19 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
         session->statements_, sizeof(session->statements_) / sizeof(session->statements_[0]),
         &session->diagnostics_);
 
+    zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
+                       &session->diagnostics_);
     if (!zlang_parse(&session->parser_, source, session->scratch_, sizeof(session->scratch_),
                      &session->result_)) {
         return false;
     }
 
-    zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
-                       &session->diagnostics_);
+    zlang_semantic_context_init(&session->semantic_, session->symbols_,
+                                sizeof(session->symbols_) / sizeof(session->symbols_[0]),
+                                &session->diagnostics_);
+    if (!zlang_analyze_program(&session->result_.program_, &session->semantic_)) {
+        return false;
+    }
     return zlang_emit_program(&session->result_.program_, &session->emitter_);
 }
 
@@ -105,6 +114,33 @@ static void skips_comments_and_unescapes_strings(zlang_test_context_t *const con
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "say \\\"hi\\\"") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ", 8U });") != NULL);
+}
+
+static void rejects_a_duplicate_declaration(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = 10; integer var = 20;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION));
+    ZLANG_CHECK(context, _session.output_[0] == '\0');
+}
+
+static void rejects_an_undefined_initializer(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = missing;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER));
+    ZLANG_CHECK(context, _session.output_[0] == '\0');
+}
+
+static void rejects_a_type_mismatch(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = \"text\";"));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+    ZLANG_CHECK(context, _session.output_[0] == '\0');
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

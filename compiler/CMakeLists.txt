@@ -2,7 +2,8 @@ add_library(zlang_compiler_core STATIC
     src/diagnostics.c
     src/emitter.c
     src/lexer.c
-    src/parser.c)
+    src/parser.c
+    src/semantics.c)
 
 add_library(zlang::compiler_core ALIAS zlang_compiler_core)
 

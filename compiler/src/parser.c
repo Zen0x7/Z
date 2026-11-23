@@ -64,6 +64,7 @@ static const zlang_ast_expression_t *zlang_parse_expression(zlang_parser_t *pars
         }
         _expression->kind_ = zlang_ast_expression_integer_literal_;
         _expression->integer_value_ = _token->integer_value_;
+        _expression->is_unsigned_ = _token->is_unsigned_;
         zlang_parser_advance(parser);
         return _expression;
     case zlang_token_string_literal_:

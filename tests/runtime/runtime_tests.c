@@ -1,0 +1,65 @@
+#include "zlang/runtime/runtime.h"
+#include "zlang/testing/testing.h"
+
+#include <stdio.h>
+#include <string.h>
+
+#define ZLANG_TEST_CASE(name) static void name(zlang_test_context_t *const context);
+#include "test_cases.h"
+#undef ZLANG_TEST_CASE
+
+static void write_copies_the_exact_declared_byte_count(zlang_test_context_t *const context) {
+    const zlang_string_t _message_k = {"hello", 5U};
+    char _buffer[16];
+    FILE *const _stream_k = tmpfile();
+
+    ZLANG_CHECK(context, _stream_k != NULL);
+    if (_stream_k == NULL) {
+        return;
+    }
+    const bool _write_ok_k = zlang_write(_stream_k, _message_k);
+    const bool _seek_ok_k = fseek(_stream_k, 0L, SEEK_SET) == 0;
+    const size_t _read_count_k = fread(_buffer, 1U, sizeof(_buffer), _stream_k);
+    const bool _compare_ok_k = memcmp(_buffer, "hello", 5U) == 0;
+    (void)fclose(_stream_k);
+
+    ZLANG_CHECK(context, _write_ok_k);
+    ZLANG_CHECK(context, _seek_ok_k);
+    ZLANG_CHECK(context, _read_count_k == 5U);
+    ZLANG_CHECK(context, _compare_ok_k);
+}
+
+static void write_handles_empty_and_invalid_arguments(zlang_test_context_t *const context) {
+    const zlang_string_t _empty_k = {NULL, 0U};
+    const zlang_string_t _message_k = {"hello", 5U};
+    FILE *const _stream_k = tmpfile();
+
+    const bool _invalid_ok_k = !zlang_write(NULL, _message_k);
+    const bool _empty_ok_k = zlang_write(_stream_k, _empty_k);
+    const bool _print_ok_k = zlang_print(_empty_k);
+    if (_stream_k != NULL) {
+        (void)fclose(_stream_k);
+    }
+
+    ZLANG_CHECK(context, _invalid_ok_k);
+    ZLANG_CHECK(context, _empty_ok_k);
+    ZLANG_CHECK(context, _print_ok_k);
+}
+
+static void trap_codes_are_fixed(zlang_test_context_t *const context) {
+    ZLANG_CHECK(context, ZLANG_TRAP_OVERFLOW == 1U);
+    ZLANG_CHECK(context, ZLANG_TRAP_BOUNDS == 2U);
+    ZLANG_CHECK(context, ZLANG_TRAP_CAPACITY == 3U);
+    ZLANG_CHECK(context, ZLANG_TRAP_INVALID_ARGUMENT == 4U);
+}
+
+#define ZLANG_TEST_CASE(name) {#name, name},
+static const zlang_test_case_t cases_k[] = {
+#include "test_cases.h"
+};
+#undef ZLANG_TEST_CASE
+
+int main(const int argc, char **const argv) {
+    return zlang_test_main(argc, argv, "zlang.runtime", cases_k,
+                           sizeof(cases_k) / sizeof(cases_k[0]));
+}

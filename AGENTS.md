@@ -76,8 +76,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `cmake/zlangConfig.cmake.in` | Template for the installed CMake package config |
 | `include/zlang/zlang.h` | Umbrella header; includes every public module and defines nothing |
 | `include/zlang/<module>/<module>.h` | Public API of one module |
+| `include/zlang/runtime/runtime.h` | Public runtime primitives used by emitted C: bounded strings, print, traps |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
-| `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, and the C emitter |
+| `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, and C emitter |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
@@ -97,8 +98,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 ## Project facts
 
 - The project is **Z**; the library target is **libzlang** (`zlang::zlang`), version **0.0.0**.
-- Public headers are grouped by module: `include/zlang/version/version.h` and
-  `include/zlang/testing/testing.h`. `include/zlang/zlang.h` is the umbrella header. The version API is
+- Public headers are grouped by module: `include/zlang/version/version.h`,
+  `include/zlang/testing/testing.h`, and `include/zlang/runtime/runtime.h`.
+  `include/zlang/zlang.h` is the umbrella header. The version API is
   `LIBZLANG_VERSION_MAJOR`, `LIBZLANG_VERSION_MINOR`, `LIBZLANG_VERSION_PATCH` and
   `zlang_version_t zlang_get_version(void)`.
 - The library is header-only. Keep it that way unless the user explicitly asks otherwise.

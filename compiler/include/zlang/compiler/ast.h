@@ -1,6 +1,7 @@
 #ifndef ZLANG_COMPILER_AST_H
 #define ZLANG_COMPILER_AST_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -21,6 +22,7 @@ typedef struct zlang_ast_string_value_t {
 typedef struct zlang_ast_expression_t {
     zlang_ast_expression_kind_t kind_;
     int32_t integer_value_;
+    bool is_unsigned_;
     zlang_ast_string_value_t string_;
     const char *name_;
 } zlang_ast_expression_t;

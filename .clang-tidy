@@ -1,0 +1,68 @@
+Checks: >-
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  cppcoreguidelines-avoid-goto,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-interfaces-global-init,
+  cppcoreguidelines-no-malloc,
+  cppcoreguidelines-pro-type-member-init,
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-crtp-constructor-accessibility,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-suspicious-include,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-macro-usage,
+  -misc-include-cleaner,
+  -misc-non-private-member-variables-in-classes,
+  -readability-avoid-const-params-in-decls,
+  -readability-braces-around-statements,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(include|tests)/.*'
+FormatStyle: file
+
+# The style in AGENTS.md, enforced mechanically by readability-identifier-naming.
+# C++-only options (modernize-*, Namespace, CXXMethod, Template, ...) are omitted.
+# readability-avoid-const-params-in-decls is off: declarations intentionally
+# repeat the top-level const that is meaningful in the definitions.
+CheckOptions:
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+
+  readability-identifier-naming.StructCase: lower_case
+  readability-identifier-naming.StructSuffix: '_t'
+  readability-identifier-naming.UnionCase: lower_case
+  readability-identifier-naming.UnionSuffix: '_t'
+  readability-identifier-naming.EnumCase: lower_case
+  readability-identifier-naming.EnumSuffix: '_t'
+  readability-identifier-naming.EnumConstantCase: lower_case
+  readability-identifier-naming.EnumConstantSuffix: '_'
+
+  readability-identifier-naming.MemberCase: lower_case
+  readability-identifier-naming.MemberSuffix: '_'
+  readability-identifier-naming.StaticMemberCase: lower_case
+  readability-identifier-naming.StaticMemberSuffix: '_'
+
+  readability-identifier-naming.LocalVariableCase: lower_case
+  readability-identifier-naming.LocalVariablePrefix: '_'
+  readability-identifier-naming.LocalConstantCase: lower_case
+  readability-identifier-naming.LocalConstantPrefix: '_'
+  readability-identifier-naming.LocalConstantSuffix: '_k'
+
+  readability-identifier-naming.GlobalConstantCase: lower_case
+  readability-identifier-naming.GlobalConstantSuffix: '_k'
+  readability-identifier-naming.StaticConstantCase: lower_case
+  readability-identifier-naming.StaticConstantSuffix: '_k'
+
+  readability-identifier-naming.ParameterCase: lower_case
+
+  readability-identifier-naming.FunctionCase: lower_case
+
+  readability-identifier-naming.TypedefCase: lower_case
+  readability-identifier-naming.TypedefSuffix: '_t'

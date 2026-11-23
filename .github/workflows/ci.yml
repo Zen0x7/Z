@@ -1,0 +1,374 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_BUILD_PARALLEL_LEVEL: 2
+  CTEST_OUTPUT_ON_FAILURE: 1
+
+jobs:
+  # ---------------------------------------------------------------- glibc ----
+  linux-glibc:
+    name: glibc ${{ matrix.arch }} / ${{ matrix.compiler }} / C${{ matrix.std }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    env:
+      CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        compiler: [gcc, clang]
+        std: [99, 11, 17, 23]
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc clang
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_C_STANDARD=${{ matrix.std }}
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_SANITIZER=none
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ------------------------------------------------------------ sanitizers ---
+  linux-sanitizers:
+    name: sanitizer ${{ matrix.arch }} / ${{ matrix.compiler }} / ${{ matrix.sanitizer }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    env:
+      CC: ${{ matrix.compiler == 'gcc' && 'gcc' || 'clang' }}
+      ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:abort_on_error=1
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+      TSAN_OPTIONS: halt_on_error=1
+      LSAN_OPTIONS: halt_on_error=1
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        compiler: [gcc, clang]
+        sanitizer: [address, undefined, thread, leak]
+        include:
+          - { arch: amd64, compiler: clang, sanitizer: integer }
+          - { arch: arm64, compiler: clang, sanitizer: integer }
+          - { arch: amd64, compiler: clang, sanitizer: cfi }
+          - { arch: arm64, compiler: clang, sanitizer: cfi }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc clang lld
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ------------------------------------------------- arm64-only experiments ---
+  arm64-sanitizer-experiments:
+    name: experimental ${{ matrix.arch }} / clang / ${{ matrix.sanitizer }}
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    env:
+      CC: clang
+      HWASAN_OPTIONS: halt_on_error=1
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64]
+        sanitizer: [hwaddress, shadow-call-stack]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build clang lld
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ------------------------------------------------------------- musl/Alpine ---
+  linux-musl:
+    name: musl ${{ matrix.arch }} / ${{ matrix.compiler }} / C${{ matrix.std }}
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    env:
+      ZEN_CC: ${{ matrix.compiler }}
+      ZEN_STD: ${{ matrix.std }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        compiler: [gcc, clang]
+        std: [99, 11, 17, 23]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test inside Alpine (musl)
+        run: |
+          docker run --rm -e ZEN_CC -e ZEN_STD -v "$PWD:/src" -w /src alpine:3.21 sh -ec '
+            apk add --no-cache build-base cmake ninja clang
+            cmake -S . -B build -G Ninja \
+              -DCMAKE_C_COMPILER="$ZEN_CC" \
+              -DCMAKE_C_STANDARD="$ZEN_STD" \
+              -DCMAKE_C_STANDARD_REQUIRED=ON \
+              -DCMAKE_C_EXTENSIONS=OFF \
+              -DCMAKE_BUILD_TYPE=Debug
+            cmake --build build
+            ctest --test-dir build --output-on-failure
+          '
+
+  # ----------------------------------------------------------------- macOS ----
+  macos:
+    name: ${{ matrix.os }} / clang / ${{ matrix.sanitizer }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+        sanitizer: [none, address, undefined]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # ---------------------------------------------------------------- Windows ----
+  windows:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.sanitizer }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-2022, arch: x64, compiler: msvc, sanitizer: none }
+          - { os: windows-2022, arch: x64, compiler: msvc, sanitizer: address }
+          - { os: windows-2022, arch: x64, compiler: clang-cl, sanitizer: none }
+          - { os: windows-11-arm, arch: arm64, compiler: msvc, sanitizer: none }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Select clang-cl
+        if: matrix.compiler == 'clang-cl'
+        run: echo "CC=clang-cl" >> $env:GITHUB_ENV
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_STANDARD=11
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  windows-mingw:
+    name: windows-2022 / mingw-gcc
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+      - name: Build and test with MinGW GCC
+        shell: msys2 {0}
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+  # --------------------------------------------------- QEMU (non-native CPUs) ---
+  qemu:
+    name: qemu linux/${{ matrix.arch }} / debian
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm/v7, s390x, ppc64le, riscv64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - name: Build and test under emulation
+        run: |
+          docker run --rm --platform "linux/${{ matrix.arch }}" -v "$PWD:/src" -w /src \
+            debian:bookworm-slim sh -ec '
+              apt-get update -qq
+              DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+                cmake ninja-build gcc libc6-dev
+              cmake -S . -B build -G Ninja \
+                -DCMAKE_BUILD_TYPE=Debug \
+                -DCMAKE_C_STANDARD=99 \
+                -DCMAKE_C_STANDARD_REQUIRED=ON \
+                -DCMAKE_C_EXTENSIONS=OFF
+              cmake --build build
+              ctest --test-dir build --output-on-failure
+            '
+
+  # ------------------------------------------------------------ 32-bit x86 ----
+  x86-32bit:
+    name: ubuntu-24.04 / gcc / -m32
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc gcc-multilib
+      - name: Build and test
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS=-m32 \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+
+  # ----------------------------------------------------------- valgrind (extra) ---
+  valgrind:
+    name: ubuntu-24.04 / gcc / valgrind memcheck
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc valgrind
+      - name: Build
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF
+          cmake --build build
+      - name: Memcheck
+        run: |
+          for binary in build/tests/*/zen_*_tests; do
+            valgrind --error-exitcode=99 --leak-check=full \
+              --show-leak-kinds=all --errors-for-leak-kinds=all "$binary"
+          done
+
+  # ---------------------------------------------------------------- coverage ---
+  coverage:
+    name: coverage / gcc / gcovr
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build gcc gcovr
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_COVERAGE=ON
+      - name: Build, test and generate reports
+        run: cmake --build build --target zen_coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: build/coverage/
+      - name: Upload to Codecov (only when a token is configured)
+        if: ${{ env.CODECOV_TOKEN != '' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: build/coverage/coverage.xml
+          fail_ci_if_error: false
+
+  # --------------------------------------------------- static analysis / lint ---
+  analysis:
+    name: clang-tidy / cppcheck / clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            cmake ninja-build clang clang-tidy clang-format cppcheck
+      - name: clang-format check
+        run: >-
+          clang-format --dry-run --Werror
+          include/zen/*.h include/zen/*/*.h tests/*/*.c tests/*/*.h
+      - name: cppcheck
+        run: >-
+          cppcheck --enable=warning,style,performance,portability
+          --error-exitcode=1 --inline-suppr --suppress=missingIncludeSystem
+          --std=c99 -Iinclude include tests
+      - name: clang-tidy
+        run: |
+          cmake -S . -B build-tidy -G Ninja \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_C_CLANG_TIDY=clang-tidy \
+            -DCMAKE_C_STANDARD=99 \
+            -DCMAKE_C_STANDARD_REQUIRED=ON \
+            -DCMAKE_C_EXTENSIONS=OFF
+          cmake --build build-tidy

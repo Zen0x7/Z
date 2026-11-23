@@ -1,19 +1,19 @@
-# Z / libzen API reference
+# Z / libzlang API reference
 
-Z is a header-only C99 library. The CMake target is `zen::zen`; include the umbrella header to
+Z is a header-only C99 library. The CMake target is `zlang::zlang`; include the umbrella header to
 reach every public module:
 
 ```c
-#include <zen/zen.h>
+#include <zlang/zlang.h>
 ```
 
 ## Public modules
 
-- `zen/version/version.h` — compile-time version macros and `zen_get_version()`.
-- `zen/testing/testing.h` — the header-only test runner used by the project's own test modules.
+- `zlang/version/version.h` — compile-time version macros and `zlang_get_version()`.
+- `zlang/testing/testing.h` — the header-only test runner used by the project's own test modules.
 
-Each module keeps its header at `include/zen/<module>/<module>.h`. Private helpers live under
-`include/zen/detail/` and are not part of the public API.
+Each module keeps its header at `include/zlang/<module>/<module>.h`. Private helpers live under
+`include/zlang/detail/` and are not part of the public API.
 
 ## Building
 

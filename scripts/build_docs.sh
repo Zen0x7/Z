@@ -11,7 +11,7 @@ archive_urls=(
 )
 cache_dir="${root}/build/.doxygen"
 archive="${cache_dir}/doxygen.tar.gz"
-doxygen_bin=${ZEN_DOXYGEN:-}
+doxygen_bin=${ZLANG_DOXYGEN:-}
 
 if [[ -z "${doxygen_bin}" ]]; then
     if command -v doxygen >/dev/null 2>&1 &&

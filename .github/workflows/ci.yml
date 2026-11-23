@@ -46,7 +46,7 @@ jobs:
           -DCMAKE_C_STANDARD=${{ matrix.std }}
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_SANITIZER=none
+          -DZLANG_SANITIZER=none
       - name: Build
         run: cmake --build build
       - name: Test
@@ -87,7 +87,7 @@ jobs:
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+          -DZLANG_SANITIZER=${{ matrix.sanitizer }}
       - name: Build
         run: cmake --build build
       - name: Test
@@ -115,7 +115,7 @@ jobs:
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_SANITIZER=hwaddress
+          -DZLANG_SANITIZER=hwaddress
       - name: Build
         run: cmake --build build
       - name: Test
@@ -127,8 +127,8 @@ jobs:
     timeout-minutes: 20
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     env:
-      ZEN_CC: ${{ matrix.compiler }}
-      ZEN_STD: ${{ matrix.std }}
+      ZLANG_CC: ${{ matrix.compiler }}
+      ZLANG_STD: ${{ matrix.std }}
     strategy:
       fail-fast: false
       matrix:
@@ -139,11 +139,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build and test inside Alpine (musl)
         run: |
-          docker run --rm -e ZEN_CC -e ZEN_STD -v "$PWD:/src" -w /src alpine:3.21 sh -ec '
+          docker run --rm -e ZLANG_CC -e ZLANG_STD -v "$PWD:/src" -w /src alpine:3.21 sh -ec '
             apk add --no-cache build-base cmake ninja clang
             cmake -Wdev --warn-uninitialized -S . -B build -G Ninja \
-              -DCMAKE_C_COMPILER="$ZEN_CC" \
-              -DCMAKE_C_STANDARD="$ZEN_STD" \
+              -DCMAKE_C_COMPILER="$ZLANG_CC" \
+              -DCMAKE_C_STANDARD="$ZLANG_STD" \
               -DCMAKE_C_STANDARD_REQUIRED=ON \
               -DCMAKE_C_EXTENSIONS=OFF \
               -DCMAKE_BUILD_TYPE=Debug
@@ -170,7 +170,7 @@ jobs:
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+          -DZLANG_SANITIZER=${{ matrix.sanitizer }}
       - name: Build
         run: cmake --build build
       - name: Test
@@ -209,7 +209,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_STANDARD=11
           -DCMAKE_C_STANDARD_REQUIRED=ON
-          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+          -DZLANG_SANITIZER=${{ matrix.sanitizer }}
       - name: Build
         run: cmake --build build
       - name: Test
@@ -320,7 +320,7 @@ jobs:
           cmake --build build
       - name: Memcheck
         run: |
-          for binary in build/tests/*/zen_*_tests; do
+          for binary in build/tests/*/zlang_*_tests; do
             valgrind --error-exitcode=99 --leak-check=full \
               --show-leak-kinds=all --errors-for-leak-kinds=all "$binary"
           done
@@ -346,9 +346,9 @@ jobs:
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_COVERAGE=ON
+          -DZLANG_COVERAGE=ON
       - name: Build, test and generate reports
-        run: cmake --build build --target zen_coverage
+        run: cmake --build build --target zlang_coverage
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-report
@@ -376,7 +376,7 @@ jobs:
       - name: clang-format check
         run: >-
           clang-format --dry-run --Werror
-          include/zen/*.h include/zen/*/*.h
+          include/zlang/*.h include/zlang/*/*.h
           tests/*/*.c tests/*/*.h fuzz/*.c
       - name: cppcheck
         run: >-
@@ -477,7 +477,7 @@ jobs:
 
   # -------------------------------------------------- exported package test ---
   package-consumer:
-    name: install and find_package(zen)
+    name: install and find_package(zlang)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -494,7 +494,7 @@ jobs:
             -DCMAKE_C_STANDARD=99 \
             -DCMAKE_C_STANDARD_REQUIRED=ON \
             -DCMAKE_C_EXTENSIONS=OFF \
-            -DZEN_BUILD_TESTS=OFF
+            -DZLANG_BUILD_TESTS=OFF
           cmake --install build --prefix "$PWD/install"
           cmake -Wdev --warn-uninitialized -S tests/consumer -B build-consumer -G Ninja \
             -DCMAKE_C_COMPILER=gcc \
@@ -503,7 +503,7 @@ jobs:
             -DCMAKE_C_EXTENSIONS=OFF \
             -DCMAKE_PREFIX_PATH="$PWD/install"
           cmake --build build-consumer
-          ./build-consumer/zen_consumer
+          ./build-consumer/zlang_consumer
 
   # ------------------------------------------------------- libFuzzer smoke ---
   fuzz-smoke:
@@ -524,11 +524,11 @@ jobs:
             -DCMAKE_C_STANDARD=99 \
             -DCMAKE_C_STANDARD_REQUIRED=ON \
             -DCMAKE_C_EXTENSIONS=OFF \
-            -DZEN_BUILD_TESTS=OFF \
-            -DZEN_BUILD_FUZZERS=ON
+            -DZLANG_BUILD_TESTS=OFF \
+            -DZLANG_BUILD_FUZZERS=ON
           cmake --build build
       - name: Run libFuzzer
-        run: ./build/fuzz/zen_version_fuzz -max_total_time=30 -rss_limit_mb=2048
+        run: ./build/fuzz/zlang_version_fuzz -max_total_time=30 -rss_limit_mb=2048
 
   # ------------------------------------------------------------- all-green ---
   ci-green:

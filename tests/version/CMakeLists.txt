@@ -1,1 +1,1 @@
-zen_add_test_module(version)
+zlang_add_test_module(version)

@@ -1,4 +1,4 @@
-PROJECT_NAME           = "Z / libzen"
+PROJECT_NAME           = "Z / libzlang"
 PROJECT_NUMBER         = 0.0.0
 PROJECT_BRIEF          = "Header-only C99 library"
 

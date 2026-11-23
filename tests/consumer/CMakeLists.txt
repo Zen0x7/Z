@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(zen_consumer LANGUAGES C)
+project(zlang_consumer LANGUAGES C)
 
-find_package(zen REQUIRED CONFIG)
+find_package(zlang REQUIRED CONFIG)
 
-add_executable(zen_consumer main.c)
-target_link_libraries(zen_consumer PRIVATE zen::zen)
-target_compile_features(zen_consumer PRIVATE c_std_99)
+add_executable(zlang_consumer main.c)
+target_link_libraries(zlang_consumer PRIVATE zlang::zlang)
+target_compile_features(zlang_consumer PRIVATE c_std_99)

@@ -150,3 +150,13 @@ These are recommendations, not locked decisions. Once confirmed, append the reso
 ### Definition of done
 
 The examples from the 0.2 scope compile and run on the existing CI matrix. Generated C stays readable and direct. Inferred capacities are visible in `--emit-c`. New diagnostics include source locations. Coverage remains at 100% for public headers, and the fuzz harnesses cover the new lexer and parser paths.
+
+## 0.2 — Locked decisions
+
+Status: Locked.
+
+- `1B`: shadowing is rejected with `ZLANG2005 shadowed declaration`.
+- `2A`: `integer values[5] = {1, 2, 3};` means `capacity_ = 5` and `length_ = 3`. An explicit capacity that is never mutated emits a warning so accidental oversized declarations are visible.
+- `3A`: string concatenation infers capacity when every operand is a literal. When any operand is a variable, the declaration must use explicit capacity syntax such as `string[32]`. This leaves room for later interpolation.
+- `4A`: `integer values[] = {};` is rejected with `ZLANG3001`.
+- `5A`: implementation order is comments, scopes, initializers, index assignment, strings, calls, operators.

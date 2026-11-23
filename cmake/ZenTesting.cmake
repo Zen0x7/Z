@@ -12,6 +12,9 @@ function(zen_add_test_module module_name)
     set(_target zen_${module_name}_tests)
     add_executable(${_target} ${module_name}_tests.c)
     target_link_libraries(${_target} PRIVATE zen::zen)
+    if(ZEN_SANITIZER STREQUAL "shadow-call-stack")
+        target_link_libraries(${_target} PRIVATE zen_scs_runtime)
+    endif()
 
     file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/test_cases.h" _case_lines
          REGEX "^ZEN_TEST_CASE\\([a-z0-9_]+\\)$")

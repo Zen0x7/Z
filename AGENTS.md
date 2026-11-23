@@ -230,6 +230,8 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
   `detect_leaks=1`, MSVC ASAN needs `/Zi` plus `/DEBUG` to avoid C5072 under `/WX`, and link-only
   flags such as `-fuse-ld=lld` belong in `ZEN_SANITIZER_LINK_FLAGS` (never in compile flags).
 - AArch64 shadow-call-stack needs `-ffixed-x18`; Clang rejects the sanitizer flag without it.
+  compiler-rt ships no SCS runtime, so `cmake/scs_runtime.S` installs a writable shadow stack in x18
+  from `.init_array` and is linked into every test executable in this mode.
 - Not part of the matrix: MSan and DFSan require an instrumented libc (DFSan also needs explicit
   tagging APIs and is x86-64/Linux-only); TypeSanitizer, RealtimeSanitizer and ConcurrencySanitizer
   need a custom Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already

@@ -122,6 +122,12 @@ elseif(ZEN_SANITIZER STREQUAL "shadow-call-stack")
     # stack pointer register is explicitly reserved.
     list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=shadow-call-stack -ffixed-x18)
 
+    # compiler-rt ships no SCS runtime: x18 must point to writable memory before
+    # the first instrumented function runs. This object library is linked into
+    # every test executable and installs the pointer from .init_array.
+    enable_language(ASM)
+    add_library(zen_scs_runtime OBJECT "${CMAKE_CURRENT_LIST_DIR}/scs_runtime.S")
+
 else()
     message(FATAL_ERROR
         "Unknown ZEN_SANITIZER='${ZEN_SANITIZER}'. Valid values: none, address, "

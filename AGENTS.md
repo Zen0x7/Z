@@ -117,9 +117,11 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 - **No README, no license**: explicit project decisions. Do not reintroduce either.
 - **Pinned actions**: every `uses:` in a workflow names a full commit SHA followed by a version
   comment. Dependabot proposes weekly bumps; never replace a SHA with a floating tag.
-- **No workflow-level cancellation**: `ci.yml` deliberately has no `concurrency` block. With
-  `cancel-in-progress: true`, a burst of pushes cancels matrix runs mid-flight, leaves `ci-green`
-  queued, and blocks later runs on the same ref. Every push gets its own complete run.
+- **Per-ref workflow cancellation**: every workflow uses
+  `concurrency.group: ${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`.
+  `github.ref` differs for `master`, each branch and each pull request, so a branch never blocks
+  main; only superseded runs on the same ref are cancelled. If a run on one ref is ever stuck in
+  `queued`, cancel that run in the Actions UI; other refs are unaffected.
 - **All-green gate**: the `ci-green` job must be listed as a required status check in the GitHub
   ruleset for `master`. CodeQL is a separate workflow, so its own check must also be required.
   Repository files cannot create that ruleset without an admin token.

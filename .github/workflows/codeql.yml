@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Same policy as CI: cancel superseded runs on this ref only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: C/C++ CodeQL

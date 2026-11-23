@@ -33,13 +33,17 @@ if(ZEN_SANITIZER STREQUAL "none")
 
 elseif(ZEN_SANITIZER STREQUAL "address")
     if(_zen_is_msvc)
-        list(APPEND ZEN_SANITIZER_FLAGS /fsanitize=address)
+        # /WX promotes C5072 to an error, so MSVC ASAN always needs debug info
+        # even in Release builds.
+        list(APPEND ZEN_SANITIZER_FLAGS /fsanitize=address /Zi)
+        list(APPEND ZEN_SANITIZER_LINK_FLAGS /DEBUG)
     elseif(_zen_is_gcc OR _zen_is_clang)
         list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=address -fno-omit-frame-pointer)
     else()
         message(FATAL_ERROR "address sanitizer requires GCC, Clang or MSVC")
     endif()
-    if(_zen_is_msvc)
+    # Neither MSVC's runtime nor Apple's Clang runtime supports detect_leaks.
+    if(_zen_is_msvc OR APPLE)
         list(APPEND ZEN_SANITIZER_ENV "ASAN_OPTIONS=halt_on_error=1:abort_on_error=1")
     else()
         list(APPEND ZEN_SANITIZER_ENV "ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:abort_on_error=1")
@@ -90,7 +94,9 @@ elseif(ZEN_SANITIZER STREQUAL "cfi")
     endif()
     find_program(ZEN_LLD_EXECUTABLE ld.lld)
     if(ZEN_LLD_EXECUTABLE)
-        list(APPEND ZEN_SANITIZER_FLAGS -fuse-ld=lld)
+        # Linker selection is a link-only flag: passing it to the compiler
+        # triggers -Wunused-command-line-argument under -Werror.
+        list(APPEND ZEN_SANITIZER_LINK_FLAGS -fuse-ld=lld)
     endif()
     list(APPEND ZEN_SANITIZER_FLAGS
         -fsanitize=cfi -flto -fvisibility=hidden -fno-sanitize-recover=all)
@@ -102,7 +108,8 @@ elseif(ZEN_SANITIZER STREQUAL "hwaddress")
     endif()
     find_program(ZEN_LLD_EXECUTABLE ld.lld)
     if(ZEN_LLD_EXECUTABLE)
-        list(APPEND ZEN_SANITIZER_FLAGS -fuse-ld=lld)
+        # Link-only flag; see the CFI branch above.
+        list(APPEND ZEN_SANITIZER_LINK_FLAGS -fuse-ld=lld)
     endif()
     list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=hwaddress -fno-omit-frame-pointer)
     list(APPEND ZEN_SANITIZER_ENV "HWASAN_OPTIONS=halt_on_error=1")

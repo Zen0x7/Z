@@ -233,7 +233,7 @@ jobs:
 
   # --------------------------------------------------- QEMU (non-native CPUs) ---
   qemu:
-    name: qemu linux/${{ matrix.arch }} / debian
+    name: qemu linux/${{ matrix.arch }} / ubuntu
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -245,7 +245,7 @@ jobs:
       - name: Build and test under emulation
         run: |
           docker run --rm --platform "linux/${{ matrix.arch }}" -v "$PWD:/src" -w /src \
-            debian:bookworm-slim sh -ec '
+            ubuntu:24.04 sh -ec '
               apt-get update -qq
               DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
                 cmake ninja-build gcc libc6-dev

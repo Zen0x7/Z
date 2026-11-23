@@ -153,6 +153,9 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
   `shadow-call-stack` (the last two are clang/aarch64 experiments in CI).
 - Zero-warning policy: `-Werror` on GCC/Clang, `/WX` on MSVC. Coverage uses GCC + gcovr and
   publishes Cobertura XML for Codecov.
+- Platform exceptions are handled in `cmake/ZenSanitizers.cmake`: Apple's ASAN runtime rejects
+  `detect_leaks=1`, MSVC ASAN needs `/Zi` plus `/DEBUG` to avoid C5072 under `/WX`, and link-only
+  flags such as `-fuse-ld=lld` belong in `ZEN_SANITIZER_LINK_FLAGS` (never in compile flags).
 - Target platforms in the matrix: amd64 and arm64 on Linux (glibc and musl), macOS, Windows
   (MSVC, clang-cl, MinGW), plus QEMU architectures and 32-bit x86.
 

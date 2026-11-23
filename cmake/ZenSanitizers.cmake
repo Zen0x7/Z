@@ -118,7 +118,9 @@ elseif(ZEN_SANITIZER STREQUAL "shadow-call-stack")
     if(NOT _zen_is_clang OR NOT _zen_is_aarch64 OR APPLE)
         message(FATAL_ERROR "shadow call stack requires Clang on 64-bit ARM Linux")
     endif()
-    list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=shadow-call-stack)
+    # Clang rejects -fsanitize=shadow-call-stack on AArch64 unless the shadow
+    # stack pointer register is explicitly reserved.
+    list(APPEND ZEN_SANITIZER_FLAGS -fsanitize=shadow-call-stack -ffixed-x18)
 
 else()
     message(FATAL_ERROR

@@ -156,6 +156,11 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
 - Platform exceptions are handled in `cmake/ZenSanitizers.cmake`: Apple's ASAN runtime rejects
   `detect_leaks=1`, MSVC ASAN needs `/Zi` plus `/DEBUG` to avoid C5072 under `/WX`, and link-only
   flags such as `-fuse-ld=lld` belong in `ZEN_SANITIZER_LINK_FLAGS` (never in compile flags).
+- AArch64 shadow-call-stack needs `-ffixed-x18`; Clang rejects the sanitizer flag without it.
+- Not part of the matrix: MSan and DFSan require an instrumented libc (DFSan also needs explicit
+  tagging APIs and is x86-64/Linux-only); TypeSanitizer, RealtimeSanitizer and ConcurrencySanitizer
+  need a custom Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already
+  covered by the standalone `leak` mode and by ASAN on supported hosts.
 - Target platforms in the matrix: amd64 and arm64 on Linux (glibc and musl), macOS, Windows
   (MSVC, clang-cl, MinGW), plus QEMU architectures and 32-bit x86.
 

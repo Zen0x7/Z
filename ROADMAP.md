@@ -1,12 +1,20 @@
 # Zlang Roadmap
 
-## Purpose
+This file is append-only. Each version gets one section, appended at the bottom. Earlier sections are a historical record: do not rewrite them when plans change. If a decision is superseded, append a new entry that says so.
+
+Status labels: `Implemented`, `In progress`, `Planned`, `Deferred`.
+
+## 0.1 — Foundation and language baseline
+
+Status: Implemented.
+
+### Purpose
 
 Zlang is a source-to-source language for bounded, deterministic applications. A Zlang program is compiled to valid, readable C that calls a small, audited C API (`zlang_*`). The generated C is an intermediate representation: it is not a runtime, and it is not code the application author is expected to maintain.
 
 The promise is simple: **no magic**. `--emit-c` shows exactly which C will be compiled. Without that flag, `zlang-compile` goes directly from `.zlang` source to a native binary.
 
-## Locked decisions
+### Locked decisions
 
 - **Transpilation, not interpretation.** There is no VM, no opcode dispatch, no runtime class or type registration, and no garbage collector.
 - **Generated C is transport.** Every Zlang operation lowers to a call into the Zlang C API. Control flow (`if`, loops) is emitted as native C from compiler IR nodes. There is no callback-based `zlang_for_each` and no indirect dispatch.
@@ -17,7 +25,7 @@ The promise is simple: **no magic**. `--emit-c` shows exactly which C will be co
 - **The C API is thin and auditable.** It is small, readable, and verified by the existing CI: sanitizers, coverage, Valgrind, and the multi-platform matrix.
 - **Distribution is twofold.** A local `zlang-compile` binary compiles `.zlang` files, and a provided GitHub Action does the same in CI and publishes the resulting artifact.
 
-## Non-goals
+### Non-goals
 
 - A general-purpose interpreted language.
 - Hidden heap growth, reference counting, or garbage collection.
@@ -25,7 +33,7 @@ The promise is simple: **no magic**. `--emit-c` shows exactly which C will be co
 - Runtime reflection or dynamic dispatch as a default mechanism.
 - Hard realtime timing guarantees beyond predictable memory behavior.
 
-## Architecture
+### Architecture
 
 ```text
 main.zlang
@@ -41,38 +49,104 @@ main.zlang
 
 The C emitter has one rule: an operation is lowered to a call into the Zlang API, while control flow stays as ordinary C. A loop exists as a `for_each` node in the IR so the compiler can validate its range, but the emitted C is a plain `for` with a checked bound. This keeps the contract enforceable without giving up optimizer visibility.
 
-## Phases
+### Delivered scope
 
-1. **Foundation** *(in place)*
+1. **Foundation**
    CMake project, strict warning policy, CI matrix for amd64 and arm64, sanitizer modes, coverage with Codecov, static analysis, install/export checks, fuzz smoke target, and a module-based test layout.
 
-2. **Language front end** *(implemented)*
-   Lexer, parser, AST, and source locations. Diagnostics for syntax errors expressed in Zlang terms. Outcome: the first minimal `.zlang` programs parse cleanly.
+2. **Language front end**
+   Lexer, parser, AST, and source locations. Diagnostics for syntax errors expressed in Zlang terms.
 
-3. **Semantic model** *(implemented)*
-   Scopes, symbol table, type checking, explicit capacity declarations, and range analysis. Outcome: unbounded allocation is rejected at the declaration site with a `file:line:column` diagnostic.
+3. **Semantic model**
+   Scopes, symbol table, type checking, explicit capacity declarations, and range analysis. Unbounded allocation is rejected at the declaration site with a `file:line:column` diagnostic.
 
-4. **Memory planner** *(implemented)*
-   Compute sizes, offsets, and lifetimes. Decide stack placement for small bounded values and static regions for larger ones. Outcome: an allocation plan for every value, with no runtime decision left.
+4. **Memory planner**
+   Sizes, offsets, and lifetimes. Stack placement for small bounded values and static regions for larger ones.
 
-5. **C emitter and `--emit-c`** *(implemented)*
-   Lower the checked IR to valid C: `zlang_*` calls for operations, native `for`/`if` for control flow. Outcome: readable emitted C that can be inspected before compilation.
+5. **C emitter and `--emit-c`**
+   Checked IR lowered to valid C: `zlang_*` calls for operations, native `for`/`if` for control flow.
 
-6. **Zlang C API** *(implemented)*
-   Implement bounded strings, vectors, arenas, print, and trap helpers as thin C functions. Outcome: an API that is fully covered by the existing sanitizer, Valgrind, and coverage jobs.
+6. **Zlang C API**
+   Bounded strings, sequences, print, trap, and checked arithmetic helpers as thin C functions.
 
-7. **Tooling** *(CLI implemented; GitHub Action deferred to 1.0)*
-   `zlang-compile` is implemented with `--emit-c` and direct native compilation. Packaging, release artifacts, and the Zlang GitHub Action are intentionally deferred to version 1.0.
+7. **Tooling**
+   `zlang-compile` with `--emit-c` and direct native compilation. Packaging, release artifacts, and the Zlang GitHub Action were intentionally deferred to version 1.0.
 
-8. **Hardening** *(implemented for 0.1)*
-   Lexer, parser, and emitter fuzz harnesses run in CI. Trap paths are covered in child processes. Diagnostics and supported limits are documented in `SPEC.md`, including the Annex D conformance matrix.
+8. **Hardening**
+   Lexer, parser, and emitter fuzz harnesses. Trap paths covered in child processes. Diagnostics and supported limits documented in `SPEC.md`, including the Annex D conformance matrix.
 
-## Open design questions
-
-Resolved in 0.1: capacity syntax, the initial `zlang_*` API, unbounded-allocation rejection, and the fixed trap codes are all defined in `SPEC.md`.
-
-Deferred to 1.0: modules, classes, string concatenation, a third mapped-memory tier, incremental compilation, packaging/release, and the Zlang GitHub Action.
-
-## Definition of done for v0.1
+### Definition of done
 
 A bounded `.zlang` program compiles to native C-backed code; `--emit-c` shows the generated C; the binary performs zero dynamic allocation; an unbounded program is rejected with a source location; and the whole path runs through the existing CI matrix.
+
+## 0.2 — Practical language ergonomics
+
+Status: Planned.
+
+### Goal
+
+Make 0.1 programs pleasant to write without changing the core promise: no runtime allocation, no hidden dispatch, and no magic in the generated C.
+
+### Scope
+
+1. **Comments**
+   Support `//` line comments and `/* ... */` block comments in the lexer. Comments are discarded before parsing and do not affect the AST.
+
+2. **Lexical scopes**
+   Introduce explicit block scopes in semantic analysis and unique C identifier generation in the emitter. Nested declarations must not collide in generated C.
+
+3. **Sequence initializers with inferred capacity**
+   Support:
+
+   ```zlang
+   integer values[] = {1, 2, 3};
+   ```
+
+   The compiler counts the initializers and emits a sequence with capacity 3. An unbounded declaration without an initializer remains a `ZLANG3001` error. Support explicit capacity with a partial initializer:
+
+   ```zlang
+   integer values[5] = {1, 2, 3};
+   ```
+
+4. **Index assignment**
+   Make `values[0] = 10;` emit valid C with an explicit bounds check followed by a direct store. Remove the current conditional-expression form, which is not an lvalue.
+
+5. **String concatenation**
+   Support compile-time concatenation of string literals:
+
+   ```zlang
+   string message = "temp_" + "_01";
+   ```
+
+   Support concatenation involving variables only through an explicit capacity:
+
+   ```zlang
+   string[32] label = prefix + "sensor";
+   ```
+
+   The compiler reserves a fixed backing buffer and calls a bounded runtime helper. Overflow traps instead of growing a buffer.
+
+6. **Function calls**
+   Lower calls to user-defined functions to direct C calls. The call graph stays static and visible in `--emit-c`.
+
+7. **Ordering and inequality operators**
+   Add `<`, `>`, `<=`, `>=`, and `!=`, emitted as native C comparisons.
+
+### Proposed decisions pending confirmation
+
+- Allow shadowing in child blocks and rename generated C identifiers automatically.
+- For `integer values[5] = {1, 2, 3};`, set `capacity_ = 5` and `length_ = 3`.
+- Require `string[N]` when concatenation involves a variable; infer capacity only when every operand is a literal.
+
+These are recommendations, not locked decisions. Once confirmed, append the resolution to this section or to a later version section. Do not rewrite this entry.
+
+### Non-goals for 0.2
+
+- `module`, `import`, and `export`.
+- Classes, `self`, and methods.
+- Heap-backed strings or vectors.
+- Packaging, releases, and the Zlang GitHub Action.
+
+### Definition of done
+
+The examples from the 0.2 scope compile and run on the existing CI matrix. Generated C stays readable and direct. Inferred capacities are visible in `--emit-c`. New diagnostics include source locations. Coverage remains at 100% for public headers, and the fuzz harnesses cover the new lexer and parser paths.

@@ -3,8 +3,8 @@
 ## Start here
 
 Z is a header-only C99 library. The CMake target is `zen::zen`; there is no compiled library to
-install and no ABI to manage. There is **no README** by project decision, so this file is the entry
-point for contributors and agents. Read it before changing anything.
+install and no ABI to manage. This file is the entry point for contributors and agents; read it
+before changing anything. `README.md` holds status badges only.
 
 Basic workflow (Ninja, Clang):
 
@@ -114,7 +114,8 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 - **MSAN is intentionally excluded**: it requires rebuilding the C/C++ standard library with
   instrumentation, which violates the "no toolchain rebuild" requirement. Do not add combined
   sanitizer modes such as `address+undefined`; each sanitizer already has its own matrix entry.
-- **No README, no license**: explicit project decisions. Do not reintroduce either.
+- **README and license**: `README.md` is badges-only by explicit decision and is not a substitute
+  for this guide. The project remains unlicensed; do not add a license file.
 - **Pinned actions**: every `uses:` in a workflow names a full commit SHA followed by a version
   comment. Dependabot proposes weekly bumps; never replace a SHA with a floating tag. All
   `github/codeql-action/*` steps are grouped in `.github/dependabot.yml` because `init`, `analyze`

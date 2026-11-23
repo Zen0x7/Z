@@ -4,9 +4,18 @@ coverage:
       default:
         target: 100%
         threshold: 0%
+        paths:
+          - include/
     patch:
       default:
         target: 100%
+        paths:
+          - include/
+
+ignore:
+  - "tests/**"
+  - "fuzz/**"
+  - "cmake/**"
 
 comment:
   layout: reach, diff, flags, files

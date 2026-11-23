@@ -25,6 +25,19 @@ zen_scs_runtime_init:
     ret
     .size zen_scs_runtime_init, .-zen_scs_runtime_init
 
+    // glibc is not built with -ffixed-x18 and may use x18 between the
+    // .init_array constructor and main(). Reset it in an uninstrumented
+    // assembly wrapper that tail-calls the real C entry point. The macro
+    // `main=zen_main_impl` is defined by ZenTesting.cmake in this mode.
+    .globl main
+    .type main, @function
+main:
+    adrp x0, zen_scs_shadow_stack
+    add x0, x0, :lo12:zen_scs_shadow_stack
+    mov x18, x0
+    b zen_main_impl
+    .size main, .-main
+
     .section .init_array, "aw"
     .balign 8
     .quad zen_scs_runtime_init

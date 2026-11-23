@@ -101,7 +101,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `.github/workflows/codeql.yml` | C/C++ CodeQL analysis with security events upload |
 | `.github/CODEOWNERS`, `.github/dependabot.yml` | Review ownership and weekly action updates |
 | `.pre-commit-config.yaml` | Local clang-format and cppcheck hooks |
-| `codecov.yml` | Coverage gate: 100% project and patch target |
+| `codecov.yml` | Coverage gate: 100% project and patch target for `include/`; Codecov ignores tests, fuzz, cmake, compiler, and tools |
 | `.clang-format`, `.clang-tidy` | Mechanically enforced style and naming |
 
 ## Project facts

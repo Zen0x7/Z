@@ -16,6 +16,8 @@ ignore:
   - "tests/**"
   - "fuzz/**"
   - "cmake/**"
+  - "compiler/**"
+  - "tools/**"
 
 comment:
   layout: reach, diff, flags, files

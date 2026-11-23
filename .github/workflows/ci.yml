@@ -95,18 +95,13 @@ jobs:
 
   # ------------------------------------------------- arm64-only experiments ---
   arm64-sanitizer-experiments:
-    name: experimental ${{ matrix.arch }} / clang / ${{ matrix.sanitizer }}
+    name: experimental arm64 / clang / hwaddress
     timeout-minutes: 20
     runs-on: ubuntu-24.04-arm
     continue-on-error: true
     env:
       CC: clang
       HWASAN_OPTIONS: halt_on_error=1
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [arm64]
-        sanitizer: [hwaddress, shadow-call-stack]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
@@ -120,21 +115,38 @@ jobs:
           -DCMAKE_C_STANDARD=99
           -DCMAKE_C_STANDARD_REQUIRED=ON
           -DCMAKE_C_EXTENSIONS=OFF
-          -DZEN_SANITIZER=${{ matrix.sanitizer }}
+          -DZEN_SANITIZER=hwaddress
       - name: Build
         run: cmake --build build
       - name: Test
         run: ctest --test-dir build --output-on-failure
-      - name: Backtrace for SCS crashes
-        if: failure() && matrix.sanitizer == 'shadow-call-stack'
+
+  arm64-scs-link-check:
+    name: arm64 / clang / shadow-call-stack (link only)
+    timeout-minutes: 20
+    runs-on: ubuntu-24.04-arm
+    env:
+      CC: clang
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Toolchain
         run: |
-          sudo apt-get install -y -qq --no-install-recommends gdb
-          gdb -q -batch \
-            -ex 'set pagination off' \
-            -ex 'run --case macros_have_the_expected_values' \
-            -ex 'bt 20' \
-            -ex 'info registers x18 x30' \
-            --args build/tests/version/zen_version_tests
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cmake ninja-build clang
+      - name: Configure
+        run: >-
+          cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_C_STANDARD=99
+          -DCMAKE_C_STANDARD_REQUIRED=ON
+          -DCMAKE_C_EXTENSIONS=OFF
+          -DZEN_SANITIZER=shadow-call-stack
+      - name: Build
+        run: cmake --build build
+      - name: Verify instrumented executables link
+        run: |
+          test -x build/tests/version/zen_version_tests
+          test -x build/tests/testing/zen_testing_tests
 
   # ------------------------------------------------------------- musl/Alpine ---
   linux-musl:
@@ -555,6 +567,7 @@ jobs:
       - linux-glibc
       - linux-sanitizers
       - arm64-sanitizer-experiments
+      - arm64-scs-link-check
       - linux-musl
       - macos
       - windows

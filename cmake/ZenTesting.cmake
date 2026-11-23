@@ -16,8 +16,6 @@ function(zen_add_test_module module_name)
         # Rename the C entry point so the assembly wrapper can set x18 in the
         # same thread, immediately before any instrumented code runs.
         target_compile_definitions(${_target} PRIVATE main=zen_main_impl ZEN_SCS_MAIN=1)
-        target_link_options(${_target} PRIVATE
-            -Wl,--wrap=printf -Wl,--wrap=fprintf -Wl,--wrap=strcmp)
         target_link_libraries(${_target} PRIVATE zen_scs_runtime)
     endif()
 

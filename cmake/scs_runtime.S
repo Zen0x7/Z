@@ -1,11 +1,15 @@
-// Minimal AArch64 shadow-call-stack runtime.
+// AArch64 shadow-call-stack link-check runtime.
 //
 // Clang's ShadowCallStack instrumentation uses x18 as the shadow stack pointer,
-// but compiler-rt does not provide a startup runtime. Without this constructor
-// x18 is zero on entry to the first instrumented function and every test
-// segfaults. The constructor is plain assembly, so it is not instrumented
-// itself, and it runs from .init_array before main() and before any other
-// instrumented code.
+// but compiler-rt does not provide a startup runtime. This object exists so the
+// instrumented test executables can be linked in CI; the shadow-call-stack job
+// verifies compilation and linking only, not execution.
+//
+// Execution is not supported with system glibc: glibc is not built with
+// -ffixed-x18 and clobbers x18 inside ordinary libc calls, so an instrumented
+// caller loses its shadow stack pointer. A real runtime would require a libc
+// and dynamic loader built with x18 reserved, not just wrappers around a few
+// functions.
 
     .section .bss
     .balign 16
@@ -25,10 +29,9 @@ zen_scs_runtime_init:
     ret
     .size zen_scs_runtime_init, .-zen_scs_runtime_init
 
-    // glibc is not built with -ffixed-x18 and may use x18 between the
-    // .init_array constructor and main(). Reset it in an uninstrumented
-    // assembly wrapper that tail-calls the real C entry point. The macro
-    // `main=zen_main_impl` is defined by ZenTesting.cmake in this mode.
+    // Uninstrumented entry point for the link check. x18 is written directly
+    // instead of through x0 so argc and argv stay intact. The C entry point is
+    // renamed to zen_main_impl by ZenTesting.cmake in this mode.
     .globl main
     .type main, @function
 main:
@@ -36,29 +39,6 @@ main:
     add x18, x18, :lo12:zen_scs_shadow_stack
     b zen_main_impl
     .size main, .-main
-
-    // glibc is not built with -ffixed-x18 and clobbers it inside printf,
-    // fprintf and strcmp. Save x18 around each of those calls so instrumented
-    // code sees the shadow stack pointer again on return. Link with
-    // -Wl,--wrap=<name> for each shim.
-    .macro ZEN_SCS_LIBC_SHIM name, real
-    .globl \name
-    .type \name, @function
-\name:
-    sub sp, sp, #32
-    str x30, [sp, #24]
-    str x18, [sp, #16]
-    bl \real
-    ldr x18, [sp, #16]
-    ldr x30, [sp, #24]
-    add sp, sp, #32
-    ret
-    .size \name, .-\name
-    .endm
-
-    ZEN_SCS_LIBC_SHIM __wrap_printf, __real_printf
-    ZEN_SCS_LIBC_SHIM __wrap_fprintf, __real_fprintf
-    ZEN_SCS_LIBC_SHIM __wrap_strcmp, __real_strcmp
 
     .section .init_array, "aw"
     .balign 8

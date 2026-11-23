@@ -116,7 +116,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   sanitizer modes such as `address+undefined`; each sanitizer already has its own matrix entry.
 - **No README, no license**: explicit project decisions. Do not reintroduce either.
 - **Pinned actions**: every `uses:` in a workflow names a full commit SHA followed by a version
-  comment. Dependabot proposes weekly bumps; never replace a SHA with a floating tag.
+  comment. Dependabot proposes weekly bumps; never replace a SHA with a floating tag. All
+  `github/codeql-action/*` steps are grouped in `.github/dependabot.yml` because `init`, `analyze`
+  and other CodeQL steps must run at the same version.
 - **Per-ref workflow cancellation**: every workflow uses
   `concurrency.group: ${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`.
   `github.ref` differs for `master`, each branch and each pull request, so a branch never blocks

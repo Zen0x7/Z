@@ -193,7 +193,13 @@ jobs:
           - { os: windows-2022, arch: x64, compiler: msvc, sanitizer: none }
           - { os: windows-2022, arch: x64, compiler: msvc, sanitizer: address }
           - { os: windows-2022, arch: x64, compiler: clang-cl, sanitizer: none }
+          - { os: windows-2025, arch: x64, compiler: msvc, sanitizer: none }
+          - { os: windows-2025, arch: x64, compiler: msvc, sanitizer: address }
+          - { os: windows-2025, arch: x64, compiler: clang-cl, sanitizer: none }
+          - { os: windows-2025-vs2026, arch: x64, compiler: msvc, sanitizer: none }
+          - { os: windows-2025-vs2026, arch: x64, compiler: clang-cl, sanitizer: none }
           - { os: windows-11-arm, arch: arm64, compiler: msvc, sanitizer: none }
+          - { os: windows-11-vs2026-arm, arch: arm64, compiler: msvc, sanitizer: none }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
@@ -215,9 +221,13 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
   windows-mingw:
-    name: windows-2022 / mingw-gcc
+    name: ${{ matrix.os }} / mingw-gcc
     timeout-minutes: 20
-    runs-on: windows-2022
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2

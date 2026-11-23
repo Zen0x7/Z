@@ -235,7 +235,9 @@ it from `include/zen/zen.h`, and add tests in the corresponding `tests/<module>/
   need a custom Clang/compiler-rt build, and CSan is x86-64/Linux-only. LeakSanitizer is already
   covered by the standalone `leak` mode and by ASAN on supported hosts.
 - Target platforms in the matrix: amd64 and arm64 on Linux (glibc and musl), macOS, Windows
-  (MSVC, clang-cl, MinGW), plus QEMU architectures and 32-bit x86.
+  (MSVC, clang-cl, MinGW), plus QEMU architectures and 32-bit x86. Windows uses every documented
+  hosted label: `windows-2022`, `windows-2025` and `windows-2025-vs2026` for x64, and
+  `windows-11-arm` plus `windows-11-vs2026-arm` for arm64; MinGW runs on both 2022 and 2025.
 
 ## Before changing code
 

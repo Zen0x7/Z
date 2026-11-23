@@ -1,6 +1,7 @@
 #include "zlang/compiler/diagnostics.h"
 #include "zlang/compiler/emitter.h"
 #include "zlang/compiler/parser.h"
+#include "zlang/compiler/planner.h"
 #include "zlang/compiler/semantics.h"
 
 #include <stdbool.h>
@@ -19,6 +20,7 @@
 #define ZLANG_CLI_STATEMENT_CAPACITY 256U
 #define ZLANG_CLI_SYMBOL_CAPACITY 256U
 #define ZLANG_CLI_DIAGNOSTIC_CAPACITY 64U
+#define ZLANG_CLI_PLAN_CAPACITY 256U
 
 #ifndef ZLANG_RUNTIME_INCLUDE_DIR
 #define ZLANG_RUNTIME_INCLUDE_DIR "include"
@@ -197,6 +199,7 @@ int main(int argc, char **argv) {
     static zlang_ast_expression_t _expressions[ZLANG_CLI_EXPRESSION_CAPACITY];
     static zlang_ast_statement_t _statements[ZLANG_CLI_STATEMENT_CAPACITY];
     static zlang_symbol_t _symbols[ZLANG_CLI_SYMBOL_CAPACITY];
+    static zlang_memory_plan_entry_t _plan_entries[ZLANG_CLI_PLAN_CAPACITY];
     static zlang_diagnostic_t _diagnostics[ZLANG_CLI_DIAGNOSTIC_CAPACITY];
 
     if (argc < 2 || strcmp(argv[1], "--help") == 0) {
@@ -226,13 +229,13 @@ int main(int argc, char **argv) {
     zlang_parser_t _parser;
     zlang_parse_result_t _result;
     zlang_semantic_context_t _semantic;
+    zlang_memory_plan_t _plan;
     zlang_emitter_t _emitter;
     zlang_diagnostics_init(&_diagnostic_state, _diagnostics,
                            sizeof(_diagnostics) / sizeof(_diagnostics[0]));
     zlang_parser_init(&_parser, _tokens, sizeof(_tokens) / sizeof(_tokens[0]), _expressions,
                       sizeof(_expressions) / sizeof(_expressions[0]), _statements,
                       sizeof(_statements) / sizeof(_statements[0]), &_diagnostic_state);
-    zlang_emitter_init(&_emitter, _output, sizeof(_output), &_diagnostic_state);
 
     if (!zlang_parse(&_parser, _source, _scratch, sizeof(_scratch), &_result)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 3 : 2;
@@ -242,6 +245,13 @@ int main(int argc, char **argv) {
     if (!zlang_analyze_program(&_result.program_, &_semantic)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 4 : 2;
     }
+
+    zlang_memory_plan_init(&_plan, _plan_entries, sizeof(_plan_entries) / sizeof(_plan_entries[0]),
+                           ZLANG_DEFAULT_STACK_LIMIT);
+    if (!zlang_plan_memory(&_result.program_, &_plan)) {
+        return 2;
+    }
+    zlang_emitter_init(&_emitter, _output, sizeof(_output), &_diagnostic_state, &_plan);
     if (!zlang_emit_program(&_result.program_, &_emitter)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 5 : 2;
     }

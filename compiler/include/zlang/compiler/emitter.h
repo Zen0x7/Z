@@ -3,6 +3,7 @@
 
 #include "zlang/compiler/ast.h"
 #include "zlang/compiler/diagnostics.h"
+#include "zlang/compiler/planner.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -16,11 +17,12 @@ typedef struct zlang_emitter_t {
     size_t capacity_;
     size_t length_;
     zlang_diagnostics_t *diagnostics_;
+    const zlang_memory_plan_t *plan_;
     uint32_t next_index_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
-                        zlang_diagnostics_t *diagnostics);
+                        zlang_diagnostics_t *diagnostics, const zlang_memory_plan_t *plan);
 
 bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter);
 

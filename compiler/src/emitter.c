@@ -4,11 +4,12 @@
 #include <string.h>
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
-                        zlang_diagnostics_t *diagnostics) {
+                        zlang_diagnostics_t *diagnostics, const zlang_memory_plan_t *plan) {
     emitter->buffer_ = buffer;
     emitter->capacity_ = capacity;
     emitter->length_ = 0U;
     emitter->diagnostics_ = diagnostics;
+    emitter->plan_ = plan;
     emitter->next_index_ = 0U;
     if (capacity > 0U) {
         buffer[0] = '\0';
@@ -73,6 +74,28 @@ static const char *zlang_c_type(const char *type_name) {
         return "zlang_string_t";
     }
     return "void";
+}
+
+static const char *zlang_default_initializer(const char *type_name) {
+    if (strcmp(type_name, "integer") == 0) {
+        return "0";
+    }
+    if (strcmp(type_name, "unsigned") == 0) {
+        return "0U";
+    }
+    if (strcmp(type_name, "boolean") == 0) {
+        return "false";
+    }
+    if (strcmp(type_name, "string") == 0) {
+        return "(zlang_string_t){ 0, 0U }";
+    }
+    return "0";
+}
+
+static bool zlang_is_static(const zlang_emitter_t *emitter,
+                            const zlang_ast_statement_t *statement) {
+    return emitter->plan_ != NULL &&
+           zlang_plan_storage_for(emitter->plan_, statement) == zlang_storage_static_;
 }
 
 static const char *zlang_type_suffix(const char *type_name) {
@@ -157,6 +180,9 @@ static bool zlang_emit_declaration(const zlang_ast_statement_t *statement, zlang
     if (!zlang_append_indent(emitter, depth)) {
         return false;
     }
+    if (zlang_is_static(emitter, statement) && !zlang_append_text(emitter, "static ")) {
+        return false;
+    }
     if (!zlang_append_text(emitter, zlang_c_type(statement->type_name_))) {
         return false;
     }
@@ -166,13 +192,15 @@ static bool zlang_emit_declaration(const zlang_ast_statement_t *statement, zlang
     if (!zlang_append_text(emitter, statement->name_)) {
         return false;
     }
+    if (!zlang_append_text(emitter, " = ")) {
+        return false;
+    }
     if (statement->initializer_ != NULL) {
-        if (!zlang_append_text(emitter, " = ")) {
-            return false;
-        }
         if (!zlang_emit_expression(statement->initializer_, emitter)) {
             return false;
         }
+    } else if (!zlang_append_text(emitter, zlang_default_initializer(statement->type_name_))) {
+        return false;
     }
     return zlang_append_text(emitter, ";\n");
 }
@@ -221,6 +249,9 @@ static bool zlang_emit_sequence_declaration(const zlang_ast_statement_t *stateme
         return false;
     }
     if (!zlang_append_indent(emitter, depth)) {
+        return false;
+    }
+    if (zlang_is_static(emitter, statement) && !zlang_append_text(emitter, "static ")) {
         return false;
     }
     if (!zlang_append_sequence_type(emitter, statement)) {
@@ -349,6 +380,10 @@ static bool zlang_emit_file_scope(const zlang_ast_statement_t *statement,
 static bool zlang_emit_main_scope(const zlang_ast_statement_t *statement,
                                   zlang_emitter_t *emitter) {
     switch (statement->kind_) {
+    case zlang_ast_statement_declaration_:
+        return zlang_emit_declaration(statement, emitter, 1U);
+    case zlang_ast_statement_sequence_declaration_:
+        return zlang_emit_sequence_declaration(statement, emitter, 1U);
     case zlang_ast_statement_print_:
         return zlang_emit_print(statement, emitter, 1U);
     case zlang_ast_statement_foreach_:
@@ -359,13 +394,14 @@ static bool zlang_emit_main_scope(const zlang_ast_statement_t *statement,
 }
 
 bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter) {
-    if (!zlang_emit_prologue(emitter)) {
+    if (emitter->plan_ == NULL || !zlang_emit_prologue(emitter)) {
         return false;
     }
 
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (zlang_is_declaration(_statement_k) && !zlang_emit_file_scope(_statement_k, emitter)) {
+        if (zlang_is_declaration(_statement_k) && zlang_is_static(emitter, _statement_k) &&
+            !zlang_emit_file_scope(_statement_k, emitter)) {
             return false;
         }
     }
@@ -376,7 +412,10 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
 
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (!zlang_is_declaration(_statement_k) && !zlang_emit_main_scope(_statement_k, emitter)) {
+        if (zlang_is_declaration(_statement_k) && zlang_is_static(emitter, _statement_k)) {
+            continue;
+        }
+        if (!zlang_emit_main_scope(_statement_k, emitter)) {
             return false;
         }
     }

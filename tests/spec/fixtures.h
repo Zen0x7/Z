@@ -26,4 +26,8 @@
 #define ZLANG_SPEC_UNBOUNDED_SOURCE "integer values[];"
 #define ZLANG_SPEC_UNBOUNDED_EXPECTED_CODE 3001U
 
+#define ZLANG_SPEC_STATIC_SEQUENCE_SOURCE "integer values[32];"
+#define ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED "static struct zlang_sequence_i32_32_t values ="
+#define ZLANG_SPEC_TEST_STACK_LIMIT 64U
+
 #endif /* ZLANG_SPEC_FIXTURES_H */

@@ -1,5 +1,6 @@
 #include "zlang/compiler/emitter.h"
 #include "zlang/compiler/parser.h"
+#include "zlang/compiler/planner.h"
 #include "zlang/compiler/semantics.h"
 #include "zlang/testing/testing.h"
 
@@ -19,8 +20,10 @@ typedef struct zlang_spec_session_t {
     zlang_ast_statement_t statements_[32];
     zlang_diagnostic_t diagnostic_items_[8];
     zlang_symbol_t symbols_[32];
+    zlang_memory_plan_entry_t plan_entries_[32];
     zlang_diagnostics_t diagnostics_;
     zlang_semantic_context_t semantic_;
+    zlang_memory_plan_t plan_;
     zlang_parser_t parser_;
     zlang_parse_result_t result_;
     char scratch_[1024];
@@ -29,6 +32,7 @@ typedef struct zlang_spec_session_t {
 } zlang_spec_session_t;
 
 static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *source) {
+    session->output_[0] = '\0';
     zlang_diagnostics_init(&session->diagnostics_, session->diagnostic_items_,
                            sizeof(session->diagnostic_items_) /
                                sizeof(session->diagnostic_items_[0]));
@@ -38,8 +42,6 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
         session->statements_, sizeof(session->statements_) / sizeof(session->statements_[0]),
         &session->diagnostics_);
 
-    zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
-                       &session->diagnostics_);
     if (!zlang_parse(&session->parser_, source, session->scratch_, sizeof(session->scratch_),
                      &session->result_)) {
         return false;
@@ -51,7 +53,32 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
     if (!zlang_analyze_program(&session->result_.program_, &session->semantic_)) {
         return false;
     }
+
+    zlang_memory_plan_init(&session->plan_, session->plan_entries_,
+                           sizeof(session->plan_entries_) / sizeof(session->plan_entries_[0]),
+                           ZLANG_SPEC_TEST_STACK_LIMIT);
+    if (!zlang_plan_memory(&session->result_.program_, &session->plan_)) {
+        return false;
+    }
+
+    zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
+                       &session->diagnostics_, &session->plan_);
     return zlang_emit_program(&session->result_.program_, &session->emitter_);
+}
+
+static void
+uses_static_storage_for_sequences_over_the_stack_limit(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STATIC_SEQUENCE_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED) != NULL);
+}
+
+static void keeps_small_sequences_automatic(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FOREACH_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, "static ") == NULL);
 }
 
 static void emits_a_scalar_declaration(zlang_test_context_t *const context) {

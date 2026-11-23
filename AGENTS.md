@@ -86,7 +86,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/<module>/<module>.h` | Public API of one module |
 | `include/zlang/runtime/runtime.h` | Public runtime primitives used by emitted C: bounded strings, print, traps |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
-| `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, and C emitter |
+| `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, memory planner, and C emitter |
 | `tools/zlang-compile/` | Compiler driver: `--emit-c` writes `<stem>.c`; default mode also links a binary |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
@@ -126,6 +126,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 - **One CTest test per test case**: `ctest -jX` then means exactly X cases running concurrently.
   Linker-section auto-registration was rejected because it needs platform-specific linker scripts,
   has fragile initialization order, and reintroduces globals.
+- **Compile-time memory plan**: declarations get automatic storage at or below
+  `ZLANG_DEFAULT_STACK_LIMIT` (4096 bytes) and `static` storage above it. The emitter consumes the
+  plan; it never allocates memory or guesses storage at runtime.
 - **MSAN is intentionally excluded**: it requires rebuilding the C/C++ standard library with
   instrumentation, which violates the "no toolchain rebuild" requirement. Do not add combined
   sanitizer modes such as `address+undefined`; each sanitizer already has its own matrix entry.

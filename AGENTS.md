@@ -11,7 +11,7 @@ Basic workflow (Ninja, Clang):
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
 cmake --build build -j
-ctest --test-dir build --output-on-failure -j7
+ctest --test-dir build --output-on-failure -j11
 ```
 
 Run one sanitizer build:
@@ -66,7 +66,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 
 | Path | Purpose |
 | --- | --- |
-| `CMakeLists.txt` | Project definition, `zlang::zlang` interface target, coverage target |
+| `CMakeLists.txt` | Project definition, `zlang::zlang` interface target, compiler core, coverage target |
+| `SPEC.md` | Normative language contract emitted C must satisfy |
+| `ROADMAP.md` | Implementation phases and deferred design questions |
 | `cmake/ZlangSanitizers.cmake` | `ZLANG_SANITIZER` options, compiler/platform gates, CTest runtime env |
 | `cmake/ZlangWarnings.cmake` | One strict warning set (`-Werror` / `/WX`) shared by all builds |
 | `cmake/ZlangCoverage.cmake` | GCC + gcovr instrumentation gate |
@@ -75,7 +77,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/zlang.h` | Umbrella header; includes every public module and defines nothing |
 | `include/zlang/<module>/<module>.h` | Public API of one module |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
+| `compiler/` | Compiler core: inert AST, diagnostics, and the C emitter |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
+| `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
 | `fuzz/` | Clang libFuzzer smoke target for the public API |
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |

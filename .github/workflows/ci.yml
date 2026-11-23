@@ -377,12 +377,13 @@ jobs:
         run: >-
           clang-format --dry-run --Werror
           include/zlang/*.h include/zlang/*/*.h
+          compiler/include/zlang/compiler/*.h compiler/src/*.c
           tests/*/*.c tests/*/*.h fuzz/*.c
       - name: cppcheck
         run: >-
           cppcheck --enable=warning,style,performance,portability
           --error-exitcode=1 --inline-suppr --suppress=missingIncludeSystem
-          --std=c99 -Iinclude include tests fuzz
+          --std=c99 -Iinclude -Icompiler/include include compiler tests fuzz
       - name: clang-tidy
         run: |
           cmake -Wdev --warn-uninitialized -S . -B build-tidy -G Ninja \

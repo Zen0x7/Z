@@ -32,7 +32,7 @@ jobs:
         std: [99, 11, 17, 23]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -73,7 +73,7 @@ jobs:
           - { arch: amd64, compiler: clang, sanitizer: cfi }
           - { arch: arm64, compiler: clang, sanitizer: cfi }
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -106,7 +106,7 @@ jobs:
         arch: [arm64]
         sanitizer: [hwaddress, shadow-call-stack]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -139,7 +139,7 @@ jobs:
         compiler: [gcc, clang]
         std: [99, 11, 17, 23]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build and test inside Alpine (musl)
         run: |
           docker run --rm -e ZEN_CC -e ZEN_STD -v "$PWD:/src" -w /src alpine:3.21 sh -ec '
@@ -165,7 +165,7 @@ jobs:
         os: [macos-14, macos-15-intel]
         sanitizer: [none, address, undefined]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure
         run: >-
           cmake -Wdev --warn-uninitialized -S . -B build -G Ninja
@@ -193,7 +193,7 @@ jobs:
           - { os: windows-2022, arch: x64, compiler: clang-cl, sanitizer: none }
           - { os: windows-11-arm, arch: arm64, compiler: msvc, sanitizer: none }
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
         with:
           arch: ${{ matrix.arch }}
@@ -217,7 +217,7 @@ jobs:
     timeout-minutes: 20
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: msys2/setup-msys2@3c51bf698df1e37b2261f53cb67797b97761185c # v2
         with:
           msystem: MINGW64
@@ -248,7 +248,7 @@ jobs:
       matrix:
         arch: [arm/v7, s390x, ppc64le, riscv64]
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - name: Build and test under emulation
         run: |
@@ -274,7 +274,7 @@ jobs:
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -298,7 +298,7 @@ jobs:
     env:
       CC: gcc
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -327,7 +327,7 @@ jobs:
       CC: gcc
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -360,7 +360,7 @@ jobs:
     timeout-minutes: 20
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: |
           sudo apt-get update -qq
@@ -392,7 +392,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq
@@ -416,7 +416,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq
@@ -440,7 +440,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq
@@ -460,7 +460,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq
@@ -474,7 +474,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq
@@ -504,7 +504,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain
         run: >-
           sudo apt-get update -qq && sudo apt-get install -y -qq

@@ -131,8 +131,10 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   CodeQL all run in CI. A new defect class should get a mechanical check, not only a test.
 - **Installed-package and header checks**: `tests/consumer/` catches broken exports; scripts/
   check_headers.sh catches hidden header dependencies. Both are cheap required jobs.
-- **macOS arm64 capacity**: the arm64 label is `macos-14`, not `macos-15`, to reduce hosted-runner
-  queue failures; all jobs have explicit `timeout-minutes`.
+- **macOS runners**: hosted arm64 labels such as `macos-14` and `macos-15` are not available for
+  this repository (`The configuration 'macos-14-arm64-us-default' is not supported`), so the matrix
+  uses the Intel labels `macos-13` and `macos-15-intel`. arm64 is still covered by the Linux jobs;
+  all jobs have explicit `timeout-minutes`.
 - **API docs are Vercel-ready**: `vercel.json` selects "Other" as the framework, skips the install
   step, runs `scripts/build_docs.sh`, and serves `build/docs/html`. The script pins Doxygen 1.18.0
   with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. It tries the

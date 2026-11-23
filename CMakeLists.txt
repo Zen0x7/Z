@@ -47,12 +47,16 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/zlangConfigVersion.cmake"
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/zlang")
 
-add_subdirectory(compiler)
-
 option(ZLANG_BUILD_TESTS "Build the zlang test suite" ON)
 
 if(ZLANG_BUILD_TESTS)
     enable_testing()
+endif()
+
+add_subdirectory(compiler)
+add_subdirectory(tools/zlang-compile)
+
+if(ZLANG_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 

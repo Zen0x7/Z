@@ -37,14 +37,14 @@ typedef enum zlang_ast_statement_kind_t {
 struct zlang_ast_statement_t;
 
 typedef struct zlang_ast_statement_t {
-    zlang_ast_statement_kind_t kind_;
     const char *type_name_;
     const char *name_;
     const zlang_ast_expression_t *initializer_;
-    uint32_t capacity_;
     const char *iterable_name_;
     const struct zlang_ast_statement_t *body_;
     size_t body_count_;
+    zlang_ast_statement_kind_t kind_;
+    uint32_t capacity_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

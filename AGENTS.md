@@ -31,6 +31,14 @@ cmake --build build-coverage --target zlang_coverage
 
 The coverage target writes text, Cobertura XML, and HTML reports under `<build-dir>/coverage/`.
 
+Use the compiler driver. `--emit-c` writes `<stem>.c` next to the source; without it,
+the driver also invokes `$ZLANG_CC` (or `cc`, `cl` on Windows) to produce the executable:
+
+```sh
+./build/tools/zlang-compile/zlang-compile example.zlang --emit-c
+./build/tools/zlang-compile/zlang-compile example.zlang
+```
+
 Check that the installed package works for an external consumer:
 
 ```sh
@@ -79,6 +87,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/runtime/runtime.h` | Public runtime primitives used by emitted C: bounded strings, print, traps |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
 | `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, and C emitter |
+| `tools/zlang-compile/` | Compiler driver: `--emit-c` writes `<stem>.c`; default mode also links a binary |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |

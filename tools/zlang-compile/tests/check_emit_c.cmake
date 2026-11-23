@@ -1,0 +1,8 @@
+if(NOT EXISTS "${EXPECTED_FILE}")
+    message(FATAL_ERROR "Expected emitted C file at ${EXPECTED_FILE}")
+endif()
+file(READ "${EXPECTED_FILE}" emitted_c)
+string(FIND "${emitted_c}" "int32_t var = 10;" declaration_position)
+if(declaration_position EQUAL -1)
+    message(FATAL_ERROR "Emitted C does not contain 'int32_t var = 10;'")
+endif()

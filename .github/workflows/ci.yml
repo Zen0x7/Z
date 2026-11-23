@@ -378,7 +378,7 @@ jobs:
           clang-format --dry-run --Werror
           include/zlang/*.h include/zlang/*/*.h
           compiler/include/zlang/compiler/*.h compiler/src/*.c
-          tests/*/*.c tests/*/*.h fuzz/*.c tools/zlang-compile/*.c
+          tests/*/*.c tests/*/*.h fuzz/*.c fuzz/*.h tools/zlang-compile/*.c
       - name: cppcheck
         run: >-
           cppcheck --enable=warning,style,performance,portability
@@ -528,8 +528,11 @@ jobs:
             -DZLANG_BUILD_TESTS=OFF \
             -DZLANG_BUILD_FUZZERS=ON
           cmake --build build
-      - name: Run libFuzzer
-        run: ./build/fuzz/zlang_version_fuzz -max_total_time=30 -rss_limit_mb=2048
+      - name: Run libFuzzer targets
+        run: |
+          for target in build/fuzz/zlang_*_fuzz; do
+            ./"$target" -max_total_time=10 -rss_limit_mb=2048 -timeout=5
+          done
 
   # ------------------------------------------------------------- all-green ---
   ci-green:

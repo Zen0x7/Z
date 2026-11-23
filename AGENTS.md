@@ -53,7 +53,7 @@ Build and run the libFuzzer smoke target (Clang only):
 ```sh
 cmake -S . -B build-fuzz -G Ninja -DCMAKE_C_COMPILER=clang -DZLANG_BUILD_TESTS=OFF -DZLANG_BUILD_FUZZERS=ON
 cmake --build build-fuzz
-./build-fuzz/fuzz/zlang_version_fuzz -max_total_time=30
+for target in build-fuzz/fuzz/zlang_*_fuzz; do ./"$target" -max_total_time=30; done
 ```
 
 Compile every public header on its own:
@@ -91,7 +91,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
-| `fuzz/` | Clang libFuzzer smoke target for the public API |
+| `fuzz/` | Clang libFuzzer harnesses for the public API, lexer, parser and emitter |
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
 | `Doxyfile` | Doxygen configuration; writes HTML into `build/docs/html` |
 | `docs/index.md` | API reference landing page |

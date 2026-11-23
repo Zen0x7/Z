@@ -1,0 +1,63 @@
+#include "fuzz_support.h"
+
+#include <zlang/compiler/diagnostics.h>
+#include <zlang/compiler/emitter.h>
+#include <zlang/compiler/parser.h>
+#include <zlang/compiler/planner.h>
+#include <zlang/compiler/semantics.h>
+
+#define ZLANG_FUZZ_TOKEN_CAPACITY 512U
+#define ZLANG_FUZZ_EXPRESSION_CAPACITY 512U
+#define ZLANG_FUZZ_STATEMENT_CAPACITY 512U
+#define ZLANG_FUZZ_PARAMETER_CAPACITY 64U
+#define ZLANG_FUZZ_SCRATCH_CAPACITY 1024U
+#define ZLANG_FUZZ_DIAGNOSTIC_CAPACITY 32U
+#define ZLANG_FUZZ_SYMBOL_CAPACITY 128U
+#define ZLANG_FUZZ_PLAN_CAPACITY 128U
+#define ZLANG_FUZZ_OUTPUT_CAPACITY 8192U
+
+int LLVMFuzzerTestOneInput(const uint8_t *const data, size_t size);
+
+int LLVMFuzzerTestOneInput(const uint8_t *const data, size_t size) {
+    char _source_k[ZLANG_FUZZ_SOURCE_CAPACITY];
+    char _scratch_k[ZLANG_FUZZ_SCRATCH_CAPACITY];
+    char _output_k[ZLANG_FUZZ_OUTPUT_CAPACITY];
+    zlang_token_t _tokens_k[ZLANG_FUZZ_TOKEN_CAPACITY];
+    zlang_ast_expression_t _expressions_k[ZLANG_FUZZ_EXPRESSION_CAPACITY];
+    zlang_ast_statement_t _statements_k[ZLANG_FUZZ_STATEMENT_CAPACITY];
+    zlang_parameter_t _parameters_k[ZLANG_FUZZ_PARAMETER_CAPACITY];
+    zlang_diagnostic_t _diagnostics_k[ZLANG_FUZZ_DIAGNOSTIC_CAPACITY];
+    zlang_symbol_t _symbols_k[ZLANG_FUZZ_SYMBOL_CAPACITY];
+    zlang_memory_plan_entry_t _plan_entries_k[ZLANG_FUZZ_PLAN_CAPACITY];
+    zlang_parser_t _parser_k;
+    zlang_diagnostics_t _diagnostic_sink_k;
+    zlang_parse_result_t _result_k;
+    zlang_semantic_context_t _semantic_k;
+    zlang_memory_plan_t _plan_k;
+    zlang_emitter_t _emitter_k;
+
+    zlang_fuzz_source(_source_k, sizeof(_source_k), data, size);
+    zlang_diagnostics_init(&_diagnostic_sink_k, _diagnostics_k, ZLANG_FUZZ_DIAGNOSTIC_CAPACITY);
+    zlang_parser_init(&_parser_k, _tokens_k, ZLANG_FUZZ_TOKEN_CAPACITY, _expressions_k,
+                      ZLANG_FUZZ_EXPRESSION_CAPACITY, _statements_k, ZLANG_FUZZ_STATEMENT_CAPACITY,
+                      _parameters_k, ZLANG_FUZZ_PARAMETER_CAPACITY, &_diagnostic_sink_k);
+    if (!zlang_parse(&_parser_k, _source_k, _scratch_k, sizeof(_scratch_k), &_result_k)) {
+        return 0;
+    }
+
+    zlang_semantic_context_init(&_semantic_k, _symbols_k, ZLANG_FUZZ_SYMBOL_CAPACITY,
+                                &_diagnostic_sink_k, &_result_k.program_);
+    if (!zlang_analyze_program(&_result_k.program_, &_semantic_k)) {
+        return 0;
+    }
+
+    zlang_memory_plan_init(&_plan_k, _plan_entries_k, ZLANG_FUZZ_PLAN_CAPACITY,
+                           ZLANG_DEFAULT_STACK_LIMIT);
+    if (!zlang_plan_memory(&_result_k.program_, &_plan_k)) {
+        return 0;
+    }
+
+    zlang_emitter_init(&_emitter_k, _output_k, sizeof(_output_k), &_diagnostic_sink_k, &_plan_k);
+    (void)zlang_emit_program(&_result_k.program_, &_emitter_k);
+    return 0;
+}

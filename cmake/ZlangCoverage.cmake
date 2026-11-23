@@ -11,6 +11,7 @@ if(ZLANG_COVERAGE)
 
     find_program(GCOVR_EXECUTABLE gcovr REQUIRED)
 
+    add_compile_definitions(ZLANG_COVERAGE=1)
     add_compile_options(-O0 -g --coverage)
     add_link_options(--coverage)
 endif()

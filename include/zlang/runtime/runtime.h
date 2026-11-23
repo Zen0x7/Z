@@ -35,9 +35,13 @@ ZLANG_STATIC_INLINE bool zlang_write(FILE *stream, zlang_string_t value) {
 
 ZLANG_STATIC_INLINE bool zlang_print(zlang_string_t value) { return zlang_write(stdout, value); }
 
+#ifndef ZLANG_TRAP_SINK
+#define ZLANG_TRAP_SINK(code) abort()
+#endif
+
 ZLANG_STATIC_INLINE void zlang_trap(uint8_t code) {
     (void)code;
-    abort();
+    ZLANG_TRAP_SINK(code);
 }
 
 ZLANG_STATIC_INLINE int32_t zlang_add_i32(int32_t left, int32_t right) {

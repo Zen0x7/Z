@@ -1,6 +1,19 @@
+#ifdef ZLANG_COVERAGE
+#include <sys/wait.h>
+#include <unistd.h>
+
+extern void __gcov_dump(void);
+#define ZLANG_TRAP_SINK(code)                                                                      \
+    do {                                                                                           \
+        __gcov_dump();                                                                             \
+        _exit(128 + (int)(code));                                                                  \
+    } while (0)
+#endif
+
 #include "zlang/runtime/runtime.h"
 #include "zlang/testing/testing.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -71,6 +84,47 @@ static void array_append_writes_and_increments_length(zlang_test_context_t *cons
     ZLANG_CHECK(context, _length == 2U);
     ZLANG_CHECK(context, _data[0] == 7);
     ZLANG_CHECK(context, _data[1] == 9);
+}
+
+#ifdef ZLANG_COVERAGE
+static void trap_direct(void) { zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT); }
+
+static void trap_overflow_i32(void) { (void)zlang_add_i32(INT32_MAX, 1); }
+
+static void trap_overflow_u32(void) { (void)zlang_add_u32(UINT32_MAX, 1U); }
+
+static void trap_append_capacity(void) {
+    int32_t _data[1] = {0};
+    uint32_t _length = 1U;
+    const int32_t _value_k = 7;
+
+    zlang_array_append(_data, &_length, 1U, sizeof(_data[0]), &_value_k);
+}
+
+static bool trap_exits_with_code(void (*function)(void), uint8_t code) {
+    const pid_t _child_k = fork();
+    int _status_k = 0;
+
+    if (_child_k == 0) {
+        function();
+        _exit(0);
+    }
+    if (_child_k < 0 || waitpid(_child_k, &_status_k, 0) < 0) {
+        return false;
+    }
+    return WIFEXITED(_status_k) && WEXITSTATUS(_status_k) == (128 + (int)code);
+}
+#endif
+
+static void traps_terminate_with_the_declared_code(zlang_test_context_t *const context) {
+#ifdef ZLANG_COVERAGE
+    ZLANG_CHECK(context, trap_exits_with_code(trap_direct, ZLANG_TRAP_INVALID_ARGUMENT));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_overflow_i32, ZLANG_TRAP_OVERFLOW));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_overflow_u32, ZLANG_TRAP_OVERFLOW));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_append_capacity, ZLANG_TRAP_CAPACITY));
+#else
+    ZLANG_CHECK(context, true);
+#endif
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

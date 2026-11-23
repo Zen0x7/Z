@@ -60,10 +60,15 @@ static void write_handles_empty_and_invalid_arguments(zlang_test_context_t *cons
 }
 
 static void trap_codes_are_fixed(zlang_test_context_t *const context) {
-    ZLANG_CHECK(context, ZLANG_TRAP_OVERFLOW == 1U);
-    ZLANG_CHECK(context, ZLANG_TRAP_BOUNDS == 2U);
-    ZLANG_CHECK(context, ZLANG_TRAP_CAPACITY == 3U);
-    ZLANG_CHECK(context, ZLANG_TRAP_INVALID_ARGUMENT == 4U);
+    const uint8_t _overflow_k = ZLANG_TRAP_OVERFLOW;
+    const uint8_t _bounds_k = ZLANG_TRAP_BOUNDS;
+    const uint8_t _capacity_k = ZLANG_TRAP_CAPACITY;
+    const uint8_t _invalid_k = ZLANG_TRAP_INVALID_ARGUMENT;
+
+    ZLANG_CHECK(context, _overflow_k == 1U);
+    ZLANG_CHECK(context, _bounds_k == 2U);
+    ZLANG_CHECK(context, _capacity_k == 3U);
+    ZLANG_CHECK(context, _invalid_k == 4U);
 }
 
 static void checked_addition_returns_the_sum(zlang_test_context_t *const context) {

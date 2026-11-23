@@ -1,5 +1,6 @@
 # Zero tolerance for warnings: every diagnostic is an error on every toolchain.
 if(MSVC)
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
     add_compile_options(/W4 /WX /permissive- /utf-8)
 elseif(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(

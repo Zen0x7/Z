@@ -16,13 +16,16 @@ typedef struct zlang_symbol_t {
     const char *name_;
     const char *type_name_;
     uint32_t capacity_;
+    size_t scope_depth_;
     bool is_sequence_;
+    bool is_function_;
 } zlang_symbol_t;
 
 typedef struct zlang_semantic_context_t {
     zlang_symbol_t *symbols_;
     size_t symbol_capacity_;
     size_t symbol_count_;
+    size_t scope_depth_;
     zlang_diagnostics_t *diagnostics_;
     const zlang_program_t *program_;
 } zlang_semantic_context_t;

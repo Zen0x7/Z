@@ -120,10 +120,13 @@ static bool zlang_cli_report_diagnostics(const zlang_diagnostics_t *diagnostics,
     bool _reported_k = false;
     for (size_t _index = 0U; _index < diagnostics->count_; ++_index) {
         const zlang_diagnostic_t *const _item_k = &diagnostics->items_[_index];
-        (void)fprintf(stderr, "%s:%u:%u: error[ZLANG%04u]: %s\n", source_path, _item_k->line_,
-                      _item_k->column_, (unsigned int)_item_k->code_,
+        (void)fprintf(stderr, "%s:%u:%u: %s[ZLANG%04u]: %s\n", source_path, _item_k->line_,
+                      _item_k->column_, _item_k->is_warning_ ? "warning" : "error",
+                      (unsigned int)_item_k->code_,
                       _item_k->message_ != NULL ? _item_k->message_ : "diagnostic");
-        _reported_k = true;
+        if (!_item_k->is_warning_) {
+            _reported_k = true;
+        }
     }
     return _reported_k;
 }

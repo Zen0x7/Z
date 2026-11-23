@@ -18,10 +18,14 @@
 #define ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION 2002U
 #define ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER 2003U
 #define ZLANG_DIAGNOSTIC_TYPE_MISMATCH 2004U
+#define ZLANG_DIAGNOSTIC_SHADOWED_DECLARATION 2005U
+#define ZLANG_DIAGNOSTIC_STRING_CAPACITY_REQUIRED 2006U
 #define ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE 3001U
+#define ZLANG_DIAGNOSTIC_UNUSED_CAPACITY 3002U
 
 typedef struct zlang_diagnostic_t {
     uint16_t code_;
+    bool is_warning_;
     uint32_t line_;
     uint32_t column_;
     const char *message_;
@@ -38,6 +42,9 @@ void zlang_diagnostics_init(zlang_diagnostics_t *diagnostics, zlang_diagnostic_t
 
 bool zlang_diagnostics_add(zlang_diagnostics_t *diagnostics, uint16_t code, uint32_t line,
                            uint32_t column, const char *message);
+
+bool zlang_diagnostics_add_warning(zlang_diagnostics_t *diagnostics, uint16_t code, uint32_t line,
+                                   uint32_t column, const char *message);
 
 bool zlang_diagnostics_contains(const zlang_diagnostics_t *diagnostics, uint16_t code);
 

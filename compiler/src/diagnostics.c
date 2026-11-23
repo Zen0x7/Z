@@ -19,10 +19,20 @@ bool zlang_diagnostics_add(zlang_diagnostics_t *diagnostics, uint16_t code, uint
 
     zlang_diagnostic_t *const _item_k = &diagnostics->items_[diagnostics->count_];
     _item_k->code_ = code;
+    _item_k->is_warning_ = false;
     _item_k->line_ = line;
     _item_k->column_ = column;
     _item_k->message_ = message;
     ++diagnostics->count_;
+    return true;
+}
+
+bool zlang_diagnostics_add_warning(zlang_diagnostics_t *diagnostics, uint16_t code, uint32_t line,
+                                   uint32_t column, const char *message) {
+    if (!zlang_diagnostics_add(diagnostics, code, line, column, message)) {
+        return false;
+    }
+    diagnostics->items_[diagnostics->count_ - 1U].is_warning_ = true;
     return true;
 }
 

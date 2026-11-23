@@ -12,6 +12,7 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->symbols_ = symbols;
     context->symbol_capacity_ = symbol_capacity;
     context->symbol_count_ = 0U;
+    context->scope_depth_ = 0U;
     context->diagnostics_ = diagnostics;
     context->program_ = program;
 }
@@ -54,9 +55,16 @@ static bool zlang_report_expression(zlang_semantic_context_t *context, uint16_t 
 static bool zlang_add_symbol(zlang_semantic_context_t *context,
                              const zlang_ast_statement_t *statement, uint32_t capacity,
                              bool is_sequence) {
-    if (zlang_find_symbol(context, statement->name_) != NULL) {
-        return zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, statement,
-                            "declaration redefines an existing name");
+    const zlang_symbol_t *const _existing_k = zlang_find_symbol(context, statement->name_);
+    if (_existing_k != NULL) {
+        return zlang_report(context,
+                            _existing_k->scope_depth_ == context->scope_depth_
+                                ? ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION
+                                : ZLANG_DIAGNOSTIC_SHADOWED_DECLARATION,
+                            statement,
+                            _existing_k->scope_depth_ == context->scope_depth_
+                                ? "declaration redefines an existing name in this scope"
+                                : "declaration shadows a visible name");
     }
     if (context->symbol_count_ >= context->symbol_capacity_) {
         return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
@@ -66,6 +74,8 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
     _symbol_k->name_ = statement->name_;
     _symbol_k->type_name_ = statement->type_name_;
     _symbol_k->capacity_ = capacity;
+    _symbol_k->scope_depth_ = context->scope_depth_;
+    _symbol_k->is_function_ = false;
     _symbol_k->is_sequence_ = is_sequence;
     return true;
 }
@@ -208,6 +218,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                                 "foreach iterable refers to an undeclared name");
         }
         const size_t _scope_start_k = context->symbol_count_;
+        ++context->scope_depth_;
         const zlang_ast_statement_t _item_k = {
             .kind_ = zlang_statement_declaration_,
             .type_name_ = "integer",
@@ -220,10 +231,12 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
         context->symbol_count_ = _scope_start_k;
+        --context->scope_depth_;
         break;
     }
     case zlang_statement_function_: {
         const size_t _scope_start_k = context->symbol_count_;
+        ++context->scope_depth_;
         for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
             const zlang_parameter_t *const _parameter_k =
                 &context->program_->parameters_[statement->parameter_start_ + _index];
@@ -241,12 +254,15 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
         context->symbol_count_ = _scope_start_k;
+        --context->scope_depth_;
         break;
     }
     case zlang_statement_block_: {
         const size_t _scope_start_k = context->symbol_count_;
+        ++context->scope_depth_;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
         context->symbol_count_ = _scope_start_k;
+        --context->scope_depth_;
         break;
     }
     default:

@@ -54,6 +54,14 @@ Compile every public header on its own:
 ./scripts/check_headers.sh clang gcc
 ```
 
+Build the API reference (set `ZEN_DOXYGEN=doxygen` to use a local install; otherwise the script
+downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
+
+```sh
+./scripts/build_docs.sh
+# output: build/docs/html/index.html
+```
+
 ## Repository map
 
 | Path | Purpose |
@@ -71,6 +79,10 @@ Compile every public header on its own:
 | `tests/consumer/` | Standalone project that verifies `find_package(zen)` after install |
 | `fuzz/` | Clang libFuzzer smoke target for the public API |
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
+| `Doxyfile` | Doxygen configuration; writes HTML into `build/docs/html` |
+| `docs/index.md` | API reference landing page |
+| `scripts/build_docs.sh` | Reproducible Doxygen build used by CI and Vercel |
+| `vercel.json` | Vercel static build command and output directory for the API reference |
 | `.github/workflows/ci.yml` | Build/test/coverage/sanitizer matrix plus review-gate jobs |
 | `.github/workflows/codeql.yml` | C/C++ CodeQL analysis with security events upload |
 | `.github/CODEOWNERS`, `.github/dependabot.yml` | Review ownership and weekly action updates |
@@ -114,6 +126,13 @@ Compile every public header on its own:
   check_headers.sh catches hidden header dependencies. Both are cheap required jobs.
 - **macOS arm64 capacity**: the arm64 label is `macos-14`, not `macos-15`, to reduce hosted-runner
   queue failures; all jobs have explicit `timeout-minutes`.
+- **API docs are Vercel-ready**: `vercel.json` selects "Other" as the framework, skips the install
+  step, runs `scripts/build_docs.sh`, and serves `build/docs/html`. The script pins Doxygen 1.18.0
+  with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. There is no
+  extra GitHub Actions step: Vercel's Git integration builds every push and PR directly. Vercel must
+  still be connected to the GitHub repo in the Vercel dashboard; choose the repository root and keep
+  preview deployments enabled so each PR gets its own URL. No Vercel secrets or deploy hooks are
+  required.
 
 ## Language and naming
 

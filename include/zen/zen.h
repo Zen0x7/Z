@@ -1,7 +1,9 @@
 #ifndef ZEN_ZEN_H
 #define ZEN_ZEN_H
 
-/* Umbrella header: one include for every public zen module. */
+/** @file
+ *  @brief Umbrella header: one include for every public zen module.
+ */
 #include "zen/testing/testing.h"
 #include "zen/version/version.h"
 

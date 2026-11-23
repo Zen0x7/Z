@@ -1,6 +1,10 @@
 #ifndef ZEN_TESTING_TESTING_H
 #define ZEN_TESTING_TESTING_H
 
+/** @file
+ *  @brief Minimal header-only test runner shared by all test modules.
+ */
+
 #include "zen/detail/inline.h"
 
 #include <inttypes.h>
@@ -9,17 +13,21 @@
 #include <stdio.h>
 #include <string.h>
 
+/** Mutable state for one test case; no shared globals are used. */
 typedef struct zen_test_context_t {
     unsigned int failure_count_;
 } zen_test_context_t;
 
+/** Signature of a single test case. */
 typedef void (*zen_test_fn_t)(zen_test_context_t *const context);
 
+/** Name and implementation of one test case. */
 typedef struct zen_test_case_t {
     const char *name_;
     zen_test_fn_t run_;
 } zen_test_case_t;
 
+/** Record a failed boolean check and print its source location. */
 ZEN_STATIC_INLINE void zen_test_report_failure(zen_test_context_t *const context,
                                                const char *const file, const unsigned int line,
                                                const char *const expression) {
@@ -27,6 +35,7 @@ ZEN_STATIC_INLINE void zen_test_report_failure(zen_test_context_t *const context
     fprintf(stderr, "%s:%u: check failed: %s\n", file, line, expression);
 }
 
+/** Record a failed integer check and print expected and actual values. */
 ZEN_STATIC_INLINE void zen_test_report_failure_uint(zen_test_context_t *const context,
                                                     const char *const file, const unsigned int line,
                                                     const char *const expression,
@@ -37,6 +46,7 @@ ZEN_STATIC_INLINE void zen_test_report_failure_uint(zen_test_context_t *const co
             line, expression, expected, actual);
 }
 
+/** Run every case, or only the case named by requested_case. */
 ZEN_STATIC_INLINE int zen_test_run_cases(const char *const suite,
                                          const zen_test_case_t *const cases,
                                          const size_t case_count,
@@ -77,6 +87,7 @@ ZEN_STATIC_INLINE int zen_test_run_cases(const char *const suite,
     return 0;
 }
 
+/** Test executable entry point; accepts --case NAME to select one case. */
 ZEN_STATIC_INLINE int zen_test_main(const int argc, char *const *const argv,
                                     const char *const suite, const zen_test_case_t *const cases,
                                     const size_t case_count) {
@@ -88,6 +99,7 @@ ZEN_STATIC_INLINE int zen_test_main(const int argc, char *const *const argv,
     return zen_test_run_cases(suite, cases, case_count, _requested_case);
 }
 
+/** Fail the current case when condition is false. */
 #define ZEN_CHECK(context, condition)                                                              \
     do {                                                                                           \
         if (!(condition)) {                                                                        \
@@ -96,6 +108,7 @@ ZEN_STATIC_INLINE int zen_test_main(const int argc, char *const *const argv,
         }                                                                                          \
     } while (0)
 
+/** Fail the current case when two unsigned values differ. */
 #define ZEN_CHECK_UINT(context, expected, actual)                                                  \
     do {                                                                                           \
         const uintmax_t _expected_k = (uintmax_t)(expected);                                       \

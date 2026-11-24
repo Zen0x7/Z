@@ -57,12 +57,13 @@ when traceability is not needed.
 
 ## Language tour
 
-This program uses every construct in the current grammar: comments, `const`, records, enums, all
-four scalar types, leading `sequence[N]` declarations, bounded string elements, functions and
-`return`, scopes, assignments, indexed access and assignment, field access and assignment,
-`append`, arithmetic, compound assignment, comparisons, logical operators, `length`, string
-indexing, scalar and string printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`,
-indexed `foreach`, nested loops, `break` and `continue`.
+This program uses every construct in the current grammar: comments attached to their source
+constructs, `const`, records, enums, all four scalar types, leading `sequence[N]` declarations,
+bounded string elements, functions and `return`, user-defined function parameter and return types,
+scopes, assignments, indexed access and assignment, field access and assignment, `append`,
+arithmetic, compound assignment, comparisons, logical operators, `length`, string indexing, scalar
+and string printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`,
+nested loops, `break` and `continue`.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source comments are preserved in the
@@ -77,12 +78,22 @@ genuinely unused.
 ```zlang
 // A guided tour of the language.
 const integer base = 2;
+
+// A fixed point type.
 record Point {
+    // Horizontal coordinate.
     integer x;
+    /* Vertical coordinate
+       in the same record. */
     integer y;
 }
+
+// A named color set.
 enum Color {
+    // First color.
     RED,
+    // Primary colors
+    // in order.
     GREEN,
     BLUE
 }
@@ -96,9 +107,30 @@ string[32] label = name + " tour";
 sequence[3] string[8] names = {"a", "b"};
 sequence[2] Point points;
 
+// Adds two integers.
 function add(integer left, integer right): integer {
+    // Checked addition lowers to a runtime call.
     return left + right;
 }
+
+// Creates a point.
+function make(): Point {
+    Point result;
+    result.x = 1;
+    result.y = 2;
+    return result;
+}
+
+// Paints a copy; the color parameter is deliberately unused.
+function paint(Point value, Color color): Point {
+    value.x = 2;
+    return value;
+}
+
+Point made = make();
+Color chosen = GREEN;
+Point painted = paint(made, chosen);
+append(points, made);
 
 fixed[0] = add(values[1], base);
 append(fixed, 9);
@@ -157,6 +189,8 @@ print(ok);
 print(label);
 print(names[0]);
 print(points[0].x);
+print(made.x);
+print(painted.x);
 print(current);
 ```
 
@@ -174,13 +208,21 @@ print(current);
 #define ZLANG_TWO 2U
 
 /* generated user types */
+// A fixed point type.
 typedef struct zlang_point_t {
+    // Horizontal coordinate.
     int32_t x;
+    /* Vertical coordinate
+       in the same record. */
     int32_t y;
 } zlang_point_t;
 
+// A named color set.
 typedef enum zlang_color_t {
+    // First color.
     ZLANG_COLOR_RED = 0U,
+    // Primary colors
+    // in order.
     ZLANG_COLOR_GREEN = 1U,
     ZLANG_COLOR_BLUE = 2U,
 } zlang_color_t;
@@ -242,8 +284,27 @@ static const zlang_string_t _zlang_literal_5 = { _zlang_literal_5_data, ZLANG_LI
 static const char _zlang_literal_6_data[] = "small";
 static const zlang_string_t _zlang_literal_6 = { _zlang_literal_6_data, ZLANG_LITERAL_6_LENGTH };
 
+// Adds two integers.
 int32_t _u_add(int32_t _u_left, int32_t _u_right) {
+    // Checked addition lowers to a runtime call.
     return zlang_add_i32(_u_left, _u_right);
+}
+
+// Creates a point.
+zlang_point_t _u_make(void) {
+    zlang_point_t _u_result = { ZLANG_ZERO };
+    _u_result.x = 1;
+    _u_result.y = 2;
+
+    return _u_result;
+}
+
+// Paints a copy; the color parameter is deliberately unused.
+zlang_point_t _u_paint(zlang_point_t _u_value, zlang_color_t _u_color) {
+    (void)_u_color;
+    _u_value.x = 2;
+
+    return _u_value;
 }
 
 int main(void) {
@@ -262,6 +323,10 @@ int main(void) {
     _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
     _u_names.length_ = ZLANG_NAMES_LENGTH;
     zlang_points_t _u_points = { { { ZLANG_ZERO }, { ZLANG_ZERO } }, ZLANG_POINTS_LENGTH };
+    zlang_point_t _u_made = _u_make();
+    zlang_color_t _u_chosen = ZLANG_COLOR_GREEN;
+    zlang_point_t _u_painted = _u_paint(_u_made, _u_chosen);
+    zlang_array_append(_u_points.data_, &_u_points.length_, ZLANG_POINTS_CAPACITY, sizeof(_u_points.data_[0]), (zlang_point_t[]){ (_u_made) });
 
     {
         uint32_t _zlang_index_9 = 0;
@@ -348,6 +413,8 @@ int main(void) {
     zlang_print(_u_label);
     zlang_print(zlang_array_get_string(_u_names.data_, 0, _u_names.length_));
     zlang_print_i32((*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x);
+    zlang_print_i32(_u_made.x);
+    zlang_print_i32(_u_painted.x);
     zlang_print_u32(_u_current);
 
     return ZLANG_ZERO;

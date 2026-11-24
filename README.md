@@ -24,14 +24,14 @@ capacities and storage decisions are resolved by the compiler. Generated C calls
 Z aims to make the "compile-time decisions, ordinary C output" idea pleasant to use:
 
 - explicit value types: `integer`, `unsigned`, `boolean`, `string`;
-- fixed-capacity sequences with compile-time memory planning;
+- fixed-capacity arrays with compile-time memory planning;
 - native C control flow, including `else if` chains;
 - bounded string concatenation instead of heap-backed strings;
 - direct C calls to user-defined functions;
 - fixed numeric traps when a declared limit is violated.
 
 The current language adds comments preserved in generated C, lexical scopes with unique generated
-identifiers, sequence initializers, checked index assignment, bounded strings, records, enums, field
+identifiers, array initializers, checked index assignment, bounded strings, records, enums, field
 access, user-defined function parameter and return types, logical operators, expression grouping,
 loop control and checked arithmetic.
 
@@ -58,10 +58,10 @@ when traceability is not needed.
 ## Language tour
 
 This program exercises the language end to end: comments attached to their source constructs,
-`const`, records, enums, all four scalar types, leading `sequence[N]` declarations, bounded string
+`const`, records, enums, all four scalar types, leading `array[N]` declarations, bounded string
 elements, functions with `clone` and `reference` parameters, `return`, user-defined function
 parameter and return types, scopes,
-assignments, indexed access and assignment, field access and assignment, `append`, arithmetic,
+assignments, indexed access and assignment, field access and assignment, arithmetic,
 compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
 printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
 `break` and `continue`.
@@ -74,14 +74,14 @@ argument must be an lvalue. The compiler warns with `ZLANG3004` when a reference
 type has no mutational purpose.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
-sequence typedefs, named string literals and user functions. Source comments are preserved in the
+array typedefs, named string literals and user functions. Source comments are preserved in the
 generated C next to the construct they document, or omitted with `--disable-comments`.
 Local source symbols use a leading `_`, function parameters are emitted exactly as written, record
 members use a trailing `_`, user functions use `_u_`, compiler temporaries use `_zlang_`, generated
 types use `zlang_` and runtime calls use `zlang_*`. The `zlang`, `_zlang` and `ZLANG` identifier
 namespaces are reserved, so generated names cannot collide with source names. Only source blocks
 emit `{}`; compiler temporaries are declared directly in the enclosing C block. Zero-argument
-functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters. References to sequence elements are
+functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters. References to array elements are
 resolved once per context: a checked pointer temporary is materialized at the first field access and
 reused by later accesses to the same element until an index dependency changes or the scope ends.
 Repeated index reads also share one local temporary across a condition chain and its branch bodies,
@@ -109,15 +109,14 @@ enum Color {
     GREEN,
     BLUE
 }
-sequence[4] integer values = {1, 2, 3};
-append(values, 4);
-sequence[5] integer fixed = {4, 5};
+array[4] integer values = {1, 2, 3};
+array[5] integer fixed = {4, 5};
 unsigned limit = 3U;
 boolean ready = true;
 string name = "z" + "lang";
 string[32] label = name + " tour";
-sequence[3] string[8] names = {"a", "b"};
-sequence[2] Point points;
+array[3] string[8] names = {"a", "b"};
+array[2] Point points;
 
 // Adds two integers.
 function add(clone integer left, clone integer right): integer {
@@ -147,12 +146,9 @@ function shift(reference Point point, clone integer amount) {
 Point made = make();
 Color chosen = GREEN;
 Point painted = paint(made, chosen);
-append(points, made);
 shift(made, 3);
 
 fixed[0] = add(values[1], base);
-append(fixed, 9);
-append(names, name);
 names[0] = "z";
 points[0].x = 9;
 points[0].y = add(points[0].x, base);
@@ -247,36 +243,36 @@ typedef enum zlang_color_t {
 
 /* generated capacities */
 #define ZLANG_VALUES_CAPACITY 4U
-#define ZLANG_VALUES_LENGTH 3U
+#define ZLANG_VALUES_LENGTH ZLANG_VALUES_EXTENT_0
+#define ZLANG_VALUES_EXTENT_0 4U
 #define ZLANG_FIXED_CAPACITY 5U
-#define ZLANG_FIXED_LENGTH 2U
+#define ZLANG_FIXED_LENGTH ZLANG_FIXED_EXTENT_0
+#define ZLANG_FIXED_EXTENT_0 5U
 #define ZLANG_NAMES_CAPACITY 3U
-#define ZLANG_NAMES_LENGTH 2U
+#define ZLANG_NAMES_LENGTH ZLANG_NAMES_EXTENT_0
+#define ZLANG_NAMES_EXTENT_0 3U
 #define ZLANG_NAMES_ELEMENT_CAPACITY 8U
 #define ZLANG_POINTS_CAPACITY 2U
-#define ZLANG_POINTS_LENGTH 0U
+#define ZLANG_POINTS_LENGTH ZLANG_POINTS_EXTENT_0
+#define ZLANG_POINTS_EXTENT_0 2U
 #define ZLANG_LABEL_CAPACITY 32U
 
 /* generated sequence types */
 typedef struct zlang_values_t {
     int32_t data_[ZLANG_VALUES_CAPACITY];
-    uint32_t length_;
 } zlang_values_t;
 
 typedef struct zlang_fixed_t {
     int32_t data_[ZLANG_FIXED_CAPACITY];
-    uint32_t length_;
 } zlang_fixed_t;
 
 typedef struct zlang_names_t {
     char storage_[ZLANG_NAMES_CAPACITY][ZLANG_NAMES_ELEMENT_CAPACITY + ZLANG_ONE];
     zlang_string_t data_[ZLANG_NAMES_CAPACITY];
-    uint32_t length_;
 } zlang_names_t;
 
 typedef struct zlang_points_t {
     zlang_point_t data_[ZLANG_POINTS_CAPACITY];
-    uint32_t length_;
 } zlang_points_t;
 
 /* generated string literals */
@@ -333,9 +329,8 @@ void _u_shift(zlang_point_t *point, int32_t amount) {
 int main(void) {
     // A guided tour of the language.
     const int32_t _base = 2;
-    zlang_values_t _values = { { 1, 2, 3, 0 }, ZLANG_VALUES_LENGTH };
-    zlang_array_append(_values.data_, &_values.length_, ZLANG_VALUES_CAPACITY, sizeof(_values.data_[0]), (int32_t[]){ (4) });
-    zlang_fixed_t _fixed = { { 4, 5, 0, 0, 0 }, ZLANG_FIXED_LENGTH };
+    zlang_values_t _values = { { 1, 2, 3, 0 } };
+    zlang_fixed_t _fixed = { { 4, 5, 0, 0, 0 } };
     uint32_t _limit = 3U;
     bool _ready = true;
     zlang_string_t _name = _zlang_literal_0;
@@ -344,32 +339,27 @@ int main(void) {
     zlang_names_t _names = { ZLANG_ZERO };
     _names.data_[0] = zlang_string_concat(_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, ZLANG_ONE);
     _names.data_[1] = zlang_string_concat(_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
-    _names.length_ = ZLANG_NAMES_LENGTH;
-    zlang_points_t _points = { { { ZLANG_ZERO }, { ZLANG_ZERO } }, ZLANG_POINTS_LENGTH };
+    zlang_points_t _points = { { { ZLANG_ZERO }, { ZLANG_ZERO } } };
     zlang_point_t _made = _u_make();
     zlang_color_t _chosen = ZLANG_COLOR_GREEN;
     zlang_point_t _painted = _u_paint(_made, _chosen);
-    zlang_array_append(_points.data_, &_points.length_, ZLANG_POINTS_CAPACITY, sizeof(_points.data_[0]), (zlang_point_t[]){ (_made) });
     _u_shift(&_made, 3);
 
     uint32_t _zlang_index_9 = 0;
-    if (_zlang_index_9 < _fixed.length_) {
-        _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, _values.length_), _base);
+    if (_zlang_index_9 < ZLANG_FIXED_EXTENT_0) {
+        _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, ZLANG_VALUES_EXTENT_0), _base);
     } else {
         zlang_trap(ZLANG_TRAP_BOUNDS);
     }
 
-    zlang_array_append(_fixed.data_, &_fixed.length_, ZLANG_FIXED_CAPACITY, sizeof(_fixed.data_[0]), (int32_t[]){ (9) });
-    zlang_string_array_append((char *)_names.storage_, _names.data_, &_names.length_, ZLANG_NAMES_CAPACITY, ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _name }, ZLANG_ONE);
-
     uint32_t _zlang_index_10 = 0;
-    if (_zlang_index_10 < _names.length_) {
+    if (_zlang_index_10 < ZLANG_NAMES_EXTENT_0) {
         _names.data_[_zlang_index_10] = zlang_string_concat(_names.storage_[_zlang_index_10], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
     } else {
         zlang_trap(ZLANG_TRAP_BOUNDS);
     }
 
-    zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
+    zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_points.data_, 0, ZLANG_POINTS_EXTENT_0, sizeof(_points.data_[0]));
     _zlang_field_ptr_11->x_ = 9;
     _zlang_field_ptr_11->y_ = _u_add(_zlang_field_ptr_11->x_, _base);
     int32_t _total = 1;
@@ -381,7 +371,7 @@ int main(void) {
     }
 
 
-    int32_t _zlang_value_12 = zlang_array_get_i32(_fixed.data_, 0, _fixed.length_);
+    int32_t _zlang_value_12 = zlang_array_get_i32(_fixed.data_, 0, ZLANG_FIXED_EXTENT_0);
     if (_zlang_value_12 > 3) {
         zlang_print(_zlang_literal_5);
     } else if (_zlang_value_12 == 3) {
@@ -405,10 +395,10 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_14 = ZLANG_ZERO; _zlang_foreach_14 < _values.length_; ++_zlang_foreach_14) {
+    for (uint32_t _zlang_foreach_14 = ZLANG_ZERO; _zlang_foreach_14 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_14) {
         uint32_t _row = _zlang_foreach_14;
         int32_t _item = _values.data_[_zlang_foreach_14];
-        for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < _values.length_; ++_zlang_foreach_15) {
+        for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_15) {
             uint32_t _column = _zlang_foreach_15;
             int32_t _other = _values.data_[_zlang_foreach_15];
             zlang_print_u32(_row);
@@ -418,15 +408,15 @@ int main(void) {
         }
     }
 
-    uint32_t _count = _values.length_;
+    uint32_t _count = ZLANG_VALUES_EXTENT_0;
     uint32_t _first = zlang_string_byte(_label, 0);
-    bool _ok = ((!(_ready && (!_ready))) || zlang_array_get_i32(_fixed.data_, 0, _fixed.length_) != 99);
+    bool _ok = ((!(_ready && (!_ready))) || zlang_array_get_i32(_fixed.data_, 0, ZLANG_FIXED_EXTENT_0) != 99);
     zlang_color_t _current = ZLANG_COLOR_GREEN;
     zlang_print_u32(_count);
     zlang_print_u32(_first);
     zlang_print_bool(_ok);
     zlang_print(_label);
-    zlang_print(zlang_array_get_string(_names.data_, 0, _names.length_));
+    zlang_print(zlang_array_get_string(_names.data_, 0, ZLANG_NAMES_EXTENT_0));
     zlang_print_i32(_zlang_field_ptr_11->x_);
     zlang_print_i32(_made.x_);
     zlang_print_i32(_painted.x_);

@@ -12,7 +12,7 @@ made by the compiler.
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
 `foreach`, `function`, `if`, `in`, `integer`, `length`, `print`, `record`, `reference`, `repeat`,
-`return`, `sequence`, `string`, `true`, `unsigned` and `while`.
+`return`, `array`, `string`, `true`, `unsigned` and `while`.
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
@@ -31,20 +31,20 @@ boolean ready = true;
 string label = "z" + "lang";
 string[32] bounded = label + " value";
 
-sequence[4] integer values;
-sequence[] integer inferred = {1, 2, 3};
-sequence[5] integer partial = {1, 2, 3};
-sequence[2] string[8] names = {"a", "b"};
+array[4] integer values;
+array[] integer inferred = {1, 2, 3};
+array[5] integer partial = {1, 2, 3};
+array[2] string[8] names = {"a", "b"};
 ```
 
-`sequence[N]` declares a fixed number of elements. An empty capacity infers N from a brace
+`array[N]` declares a fixed number of elements. An empty capacity infers N from a brace
 initializer. `string[M]` declares a bounded string with M content bytes. Applied inside a sequence
 declaration, it sets the capacity of each string element.
 
 A `const` declaration requires an initializer and cannot be assigned to.
 
 A `record` declares a fixed aggregate with named fields. An `enum` declares named integer values
-and a user type. Both can be used as declaration types, sequence element types, function parameter
+and a user type. Both can be used as declaration types, array element types, function parameter
 types and function return types:
 
 ```zlang
@@ -59,7 +59,7 @@ enum Color {
     BLUE
 }
 
-sequence[4] Point points;
+array[4] Point points;
 Color current = GREEN;
 ```
 
@@ -74,8 +74,8 @@ needed.
 | Syntax | Meaning |
 | --- | --- |
 | `type name = expression;` | Scalar declaration |
-| `sequence[N] type name;` | Fixed-capacity sequence |
-| `sequence[] type name = {...};` | Sequence with inferred capacity |
+| `array[N] type name;` | Fixed-shape array |
+| `array[] type name = {...};` | Array with inferred extent |
 | `if (expression) {...} else if (expression) {...} else {...}` | Conditional chain |
 | `while (expression) {...}` | Pre-tested loop |
 | `for (init; condition; update) {...}` | Native C-style loop |
@@ -87,17 +87,16 @@ needed.
 | `function name(const? reference type name, ...): type {...}` | Function with caller-owned references |
 | `return expression;` / `return;` | Return from a function |
 | `print(expression);` | Write a string or scalar |
-| `append(sequence, expression);` | Append with capacity trap |
 | `name = expression;` | Assignment |
 | `record Name { field* }` | Fixed aggregate type |
 | `enum Name { VALUE, ... }` | Named integer values and their type |
 | `value.field` | Field read |
-| `value.field = expression;` | Field assignment; checked for sequence elements |
+| `value.field = expression;` | Field assignment; checked for array elements |
 
 ## Expressions
 
 Supported forms are literals, identifiers, grouping, indexing, field access and assignment, calls
-to user functions, `print`, `append`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
+to user functions, `print`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
 `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`. Compound assignment is available for arithmetic
 operators.
 
@@ -111,7 +110,7 @@ as `unsigned` with a bounds trap; string elements are read-only.
 
 ## Builtins
 
-`length(sequence)` emits the native sequence `length_` field as an unsigned value. `print`
+`length(sequence)` emits the native first extent macro as an unsigned value. `print`
 accepts strings, integers, unsigned integers and booleans, using fixed-stack runtime helpers.
 
 ## Diagnostics
@@ -128,7 +127,7 @@ accepts strings, integers, unsigned integers and booleans, using fixed-stack run
 | `ZLANG2004` | Type mismatch |
 | `ZLANG2005` | Shadowed declaration |
 | `ZLANG2006` | Explicit string capacity required |
-| `ZLANG3001` | Unbounded sequence |
+| `ZLANG3001` | Unbounded array |
 | `ZLANG3002` | Unused capacity warning |
 | `ZLANG3003` | Initializer too long |
 | `ZLANG3004` | Unnecessary reference parameter warning |

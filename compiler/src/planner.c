@@ -89,7 +89,7 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
 
 static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {
     return statement->kind_ == zlang_statement_declaration_ ||
-           statement->kind_ == zlang_statement_sequence_declaration_;
+           statement->kind_ == zlang_statement_array_declaration_;
 }
 
 static bool zlang_declaration_size(const zlang_program_t *program,

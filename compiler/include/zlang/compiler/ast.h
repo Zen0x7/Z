@@ -16,6 +16,7 @@
 #define ZLANG_NO_EXPRESSION ((size_t) - 1)
 #define ZLANG_NO_STATEMENT ((size_t) - 1)
 #define ZLANG_CALL_ARGUMENT_CAPACITY 32U
+#define ZLANG_ARRAY_MAX_RANK 4U
 
 typedef enum zlang_expression_kind_t {
     zlang_expression_integer_literal_,
@@ -76,7 +77,7 @@ typedef struct zlang_ast_expression_t {
 
 typedef enum zlang_statement_kind_t {
     zlang_statement_declaration_,
-    zlang_statement_sequence_declaration_,
+    zlang_statement_array_declaration_,
     zlang_statement_expression_,
     zlang_statement_if_,
     zlang_statement_while_,
@@ -120,6 +121,8 @@ typedef struct zlang_ast_statement_t {
     zlang_statement_kind_t kind_;
     uint32_t capacity_;
     uint32_t element_capacity_;
+    uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t rank_;
     bool has_explicit_capacity_;
     bool has_element_capacity_;
     bool is_const_;

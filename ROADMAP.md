@@ -428,7 +428,7 @@ reference that actually mutates caller-owned state remains valid and warning-fre
 
 ## 0.14 — Array model — Design note
 
-Status: Design locked except for append semantics.
+Status: Locked.
 
 - Use one container name: `array`. Do not introduce `vector`.
 - Declare rank in the type, for example `array[N] T`, `array[A][B] T`, `array[A][B][C] T`.
@@ -442,8 +442,16 @@ Status: Design locked except for append semantics.
 - Keep `array_get` and `array_set` as the generic operations; source indexing and tuple access lower
   to the same helpers.
 
-Open decision before implementation:
+Decision: `array` is purely fixed-shape. It has no logical length and no append operation. The
+programmer owns the write index. Bounds are checked per dimension, and `length(array)` reports the
+first extent.
 
-- Should `array` keep a logical length and support `array_append`, or should it be purely fixed-shape
-  with no append operation? The recommended default is purely fixed-shape in 0.14, with `append`
-  deferred until length semantics are defined.
+## 0.14 — Completion
+
+Status: Implemented.
+
+`sequence` was replaced by fixed-shape `array`, including multidimensional declarations and
+indexing. Generated C no longer stores a mutable `length_` field for arrays. Extents are emitted as
+macros, rank-2 and higher access uses generated offset helpers, and typed get/set helpers are emitted
+per rank and element type. `array_get` and `array_set` source forms are reserved for the next
+refinement; source indexing already lowers to the same checked paths.

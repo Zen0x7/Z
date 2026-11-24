@@ -35,7 +35,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_repeat_,
     zlang_token_return_,
     zlang_token_length_,
-    zlang_token_sequence_,
+    zlang_token_array_,
     zlang_token_string_,
     zlang_token_true_,
     zlang_token_unsigned_,

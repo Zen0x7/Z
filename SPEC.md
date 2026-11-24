@@ -23,7 +23,7 @@ Zlang has no virtual machine, no intermediate bytecode, no runtime type metadata
 An implementation conforms to this specification if and only if it:
 
 1. accepts every program described by the grammar in Annex A;
-2. rejects every unbounded sequence at the declaration site with a resource diagnostic;
+2. rejects every unbounded array at the declaration site with a resource diagnostic;
 3. emits C that contains no call to `malloc`, `calloc`, `realloc`, `free`, or any equivalent allocation service;
 4. emits native C control flow for all control structures, with no callback indirection;
 5. makes the output of `--emit-c` byte-for-byte identical to the C that is compiled by default;
@@ -128,24 +128,24 @@ A string literal is interned by the compiler and emitted in read-only storage. S
 
 ### 7.5 Sequence values
 
-A sequence is a fixed-capacity container written as `<type>[<capacity>]`. Capacity is part of the type, not a dynamic property.
+An array is a fixed-shape container written as `<type>[<capacity>]`. Capacity is part of the type, not a dynamic property.
 
 ```zlang
-sequence[4] integer values;
-sequence[8] string[32] names;
+array[4] integer values;
+array[8] string[32] names;
 ```
 
-The capacity must be a positive integer literal. `sequence[] integer values;` is illegal and produces a resource diagnostic. A sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `sequence[] integer values = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
+The capacity must be a positive integer literal. `array[] integer values;` is illegal and produces a resource diagnostic. A sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `array[] integer values = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
 
-A sequence has a current length that starts at zero and never exceeds its capacity. Its storage is decided at compile time:
+An array has no logical length. Every extent is fixed at compile time and every index is bounds checked. Its storage is decided at compile time:
 
 - total size at or below `ZLANG_STACK_LIMIT` (default `4096` bytes) is emitted as a local C aggregate;
-- larger sequences are emitted as `static` storage with internal linkage;
+- larger arrays are emitted as `static` storage with internal linkage;
 - the compiler must document the threshold used when it differs from the default.
 
 ### 7.6 Type compatibility
 
-There is no implicit conversion between `integer` and `unsigned`, or between numeric types and `boolean`. A string can only be used where a `string` is expected. Sequence types with different capacities are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
+There is no implicit conversion between `integer` and `unsigned`, or between numeric types and `boolean`. A string can only be used where a `string` is expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
 
 ---
 
@@ -163,7 +163,7 @@ Examples:
 integer count = 10;
 boolean ready = true;
 string greeting = "Hello";
-sequence[4] integer values;
+array[4] integer values;
 ```
 
 A declaration introduces a compile-time symbol. The name is never emitted as a string. Generated C uses the same source identifier when it is available; otherwise the compiler appends a numeric suffix and records the mapping internally. Sibling scopes may reuse the same source name without colliding in generated C.
@@ -213,7 +213,7 @@ Terminate the process by calling `zlang_trap(code)`. The runtime must not constr
 
 ### 9.5 `EmitForEach(node)`
 
-Validate that the iterable is a sequence and that the iteration variable has the sequence element type. Emit a native C `for` loop over indices from `0` to `length_ - 1`. The loop must not become a runtime callback.
+Validate that the iterable is a sequence and that the iteration variable has the array element type. Emit a native C `for` loop over indices from `0` to `length_ - 1`. The loop must not become a runtime callback.
 
 ---
 
@@ -222,7 +222,7 @@ Validate that the iterable is a sequence and that the iteration variable has the
 ### 10.1 Expression statements
 
 An expression followed by `;`. Expression statements include assignment, indexed assignment,
-`print`, `append`, and calls to user-defined functions.
+`print` and calls to user-defined functions.
 
 ### 10.2 `if`
 
@@ -253,7 +253,7 @@ foreach (<name> in <sequence>) {
 }
 ```
 
-The iteration variable is a fresh local of the sequence element type. It is a copy; assigning to it does not modify the sequence.
+The iteration variable is a fresh local of the array element type. It is a copy; assigning to it does not modify the sequence.
 
 ### 10.5 `repeat`
 
@@ -336,7 +336,7 @@ Every generated C file begins with:
 | `unsigned` | `uint32_t` |
 | `boolean` | `bool` |
 | `string` | `zlang_string_t` |
-| `sequence[N] T name` | generated typedef `zlang_name_t` with a `ZLANG_NAME_CAPACITY` macro |
+| `array[N] T name` | generated typedef `zlang_name_t` with a `ZLANG_NAME_CAPACITY` macro |
 
 ### 12.3 Construct mapping
 
@@ -361,7 +361,6 @@ Every generated C file begins with:
 | `values[2]` | bounded typed getter such as `zlang_array_get_i32(values.data_, 2U, values.length_)` |
 | `text[0]` | `zlang_string_byte(text, 0U)` |
 | `values[0] = x` | checked index statement, then direct store to `values.data_[0]` |
-| `append(values, x)` | `CheckCapacity` then `values.data_[values.length_++] = x;` |
 | `foreach (x in values)` | `for (uint32_t _zlang_foreach_N = ZLANG_ZERO; ... ) { T _x = values.data_[_zlang_foreach_N]; ... }` |
 | `if`, `while`, `repeat` | native C `if`, `while`, `for` |
 | `function f(...)` | C function `_u_f(...)` |
@@ -417,7 +416,7 @@ zlang_string_t zlang_string_array_append(char *storage, zlang_string_t *data,
 void zlang_trap(uint8_t code);
 ```
 
-`zlang_array_append` implements `CheckCapacity`; checked indexing and indexed
+checked indexing and indexed
 stores use inline C with `zlang_trap(ZLANG_TRAP_BOUNDS)`. `zlang_string_concat`
 copies into caller-owned storage and traps on overflow or insufficient
 capacity. These helpers contain no allocation, formatting, or dynamic dispatch.
@@ -457,16 +456,16 @@ string, `ZLANG1003` invalid character, `ZLANG1004` unsupported construct,
 `ZLANG2001` literal out of range, `ZLANG2002` duplicate declaration,
 `ZLANG2003` undefined identifier, `ZLANG2004` type mismatch,
 `ZLANG2005` shadowed declaration, `ZLANG2006` string capacity required,
-`ZLANG3001` unbounded sequence, `ZLANG3002` unused capacity, and
+`ZLANG3001` unbounded array, `ZLANG3002` unused capacity, and
 `ZLANG3003` initializer too long. `ZLANG3004` warns about an unnecessary reference parameter.
-Legacy postfix sequence declarations use `ZLANG1004`.
+Legacy postfix array declarations use `ZLANG1004`.
 `ZLANG3002` is a warning: it is printed with
 the `warning[...]` prefix and does not stop compilation.
 
 Resource errors point at the declaration that needs a limit, not at the later use.
 
 ```text
-main.zlang:3:9: error[ZLANG3001]: unbounded sequence 'values' requires an explicit capacity.
+main.zlang:3:9: error[ZLANG3001]: unbounded array 'values' requires an explicit capacity.
 ```
 
 The compiler may emit more than one diagnostic, but it must not generate C for a program that has any error.
@@ -508,7 +507,7 @@ statement      = declaration
 
 block          = "{" statement* "}" ;
 
-declaration    = "const"? sequenceModifier? typeName typeModifier? identifier
+declaration    = "const"? arrayModifier? typeName typeModifier? identifier
                  ( "=" expression )? ";" ;
 
 typeName       = builtinType | identifier ;
@@ -518,10 +517,10 @@ recordDeclaration = "record" identifier "{" declaration* "}" ;
 
 enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
 
-sequenceModifier = "sequence" "[" integerLiteral? "]" ;
+arrayModifier = "sequence" "[" integerLiteral? "]" ;
 typeModifier     = "[" integerLiteral "]" ;
 
-sequenceInitializer = "{" ( expression ( "," expression )* )? "}" ;
+arrayInitializer = "{" ( expression ( "," expression )* )? "}" ;
 
 type           = typeName ;
 
@@ -564,7 +563,6 @@ expression     = literal
                | "length" "(" identifier ")"
                | identifier "[" expression "]"
                | expression "." identifier
-               | "append" "(" identifier "," expression ")" ;
 
 literal        = integerLiteral | stringLiteral | "true" | "false" ;
 ```
@@ -580,7 +578,7 @@ Source:
 
 ```zlang
 integer var = 10;
-sequence[4] integer values;
+array[4] integer values;
 
 foreach (item in values) {
     print("Hello");
@@ -632,7 +630,7 @@ parse("integer var = 10;").transpile().contains("int32_t var = 10;")
 ```
 
 ```text
-parse("sequence[] integer values;").diagnostics().contains("ZLANG3001")
+parse("array[] integer values;").diagnostics().contains("ZLANG3001")
 ```
 
 These assertions are the primary way the language definition is kept honest: if the translation changes, the specification changes with it.
@@ -665,7 +663,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `identifier "[" expression "]"` | `emits_append_and_checked_index` |
 | `"append" "(" identifier "," expression ")"` | `emits_append_and_checked_index` |
 | integer, string, and boolean literals | `covers_every_annex_a_production` |
-| sequence declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
+| array declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
 | preserved comments and escaped string literals | `preserves_comments_and_unescapes_strings` |
 | comments attached to source constructs | `attaches_comments_to_source_constructs` |
 | user-defined function parameters and returns | `emits_functions_with_user_defined_types`, `zlang.cli.compiles_user_types` |
@@ -679,7 +677,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `ZLANG2002` duplicate declaration | `reports_type_and_resource_diagnostics_with_source_locations` |
 | `ZLANG2003` undefined identifier | `reports_type_and_resource_diagnostics_with_source_locations` |
 | `ZLANG2004` type mismatch | `reports_type_and_resource_diagnostics_with_source_locations` |
-| `ZLANG3001` unbounded sequence | `rejects_an_unbounded_sequence_at_the_declaration`, `rejects_an_empty_inferred_sequence` |
+| `ZLANG3001` unbounded array | `rejects_an_unbounded_sequence_at_the_declaration`, `rejects_an_empty_inferred_sequence` |
 | `ZLANG2005` shadowed declaration | `rejects_a_shadowed_declaration` |
 | `ZLANG2006` string capacity required | `rejects_variable_concatenation_without_capacity` |
 | `ZLANG3002` unused capacity warning | `warns_about_unused_explicit_capacity` |
@@ -705,7 +703,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | compound assignment | `emits_compound_assignments` |
 | `length(sequence)` | `emits_length_builtin` |
 | scalar printing | `emits_scalar_print` |
-| string sequence elements | `emits_string_sequence_operations` |
+| string array elements | `emits_string_sequence_operations` |
 | legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
 | native `for` loop | `emits_native_for_loops` |
@@ -737,7 +735,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 ## 0.6 implementation status
 
 Zlang 0.6 adds record and enum declarations, user-defined declaration types, field reads and field
-assignments, and sequences of records. Record fields are scalar or enum types. Enums emit named C
+assignments, and arrays of records. Record fields are scalar or enum types. Enums emit named C
 constants, and records emit named C typedefs.
 
 

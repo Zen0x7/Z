@@ -1,6 +1,6 @@
 const integer base = 2;
-sequence[] integer values = {1, 2, 3};
-sequence[5] integer fixed = {4, 5};
+array[] integer values = {1, 2, 3};
+array[5] integer fixed = {4, 5};
 fixed[0] = values[1];
 string message = "temp_" + "_01";
 string[32] label = message + "sensor";

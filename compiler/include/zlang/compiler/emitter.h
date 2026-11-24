@@ -42,6 +42,7 @@ typedef struct zlang_emitted_sequence_t {
     char capacity_macro_[ZLANG_EMITTED_NAME_CAPACITY];
     char element_macro_[ZLANG_EMITTED_NAME_CAPACITY];
     char length_macro_[ZLANG_EMITTED_NAME_CAPACITY];
+    char extent_macros_[ZLANG_ARRAY_MAX_RANK][ZLANG_EMITTED_NAME_CAPACITY];
 } zlang_emitted_sequence_t;
 
 typedef struct zlang_emitted_literal_t {
@@ -99,6 +100,7 @@ typedef struct zlang_emitter_t {
     size_t cse_pointer_count_;
     bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
     bool emit_comments_;
+    bool emitted_array_ranks_[ZLANG_ARRAY_MAX_RANK + 1U];
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

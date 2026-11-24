@@ -94,7 +94,7 @@ static bool zlang_parser_is_declaration_type(const zlang_parser_t *parser,
 
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
     const zlang_token_t *const _token_k = zlang_parser_current(parser);
-    if (_token_k->kind_ == zlang_token_const_ || _token_k->kind_ == zlang_token_sequence_ ||
+    if (_token_k->kind_ == zlang_token_const_ || _token_k->kind_ == zlang_token_array_ ||
         zlang_token_is_type(_token_k)) {
         return true;
     }
@@ -300,40 +300,7 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         break;
     }
     case zlang_token_identifier_: {
-        const bool _is_append_k = zlang_token_is(_token_k, "append");
-        if (_is_append_k && parser->position_ + 1U < parser->token_count_ &&
-            parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_) {
-            zlang_parser_advance(parser);
-            zlang_parser_advance(parser);
-            const zlang_token_t *const _target_k = zlang_parser_current(parser);
-            if (_target_k->kind_ != zlang_token_identifier_) {
-                zlang_parser_unsupported(parser, "append expects a sequence name");
-                return false;
-            }
-            zlang_parser_advance(parser);
-            if (!zlang_parser_expect(parser, zlang_token_comma_,
-                                     "expected ',' after append target")) {
-                return false;
-            }
-            size_t _value_k = ZLANG_NO_EXPRESSION;
-            if (!zlang_parse_expression(parser, &_value_k)) {
-                return false;
-            }
-            if (!zlang_parser_expect(parser, zlang_token_right_paren_,
-                                     "expected ')' after append arguments")) {
-                return false;
-            }
-            _expression_k = zlang_parser_add_expression(parser);
-            if (_expression_k == ZLANG_NO_EXPRESSION) {
-                return false;
-            }
-            parser->expressions_[_expression_k].kind_ = zlang_expression_append_call_;
-            parser->expressions_[_expression_k].name_ = _target_k->text_;
-            parser->expressions_[_expression_k].right_ = _value_k;
-            break;
-        }
-
-        if (!_is_append_k && parser->position_ + 1U < parser->token_count_ &&
+        if (parser->position_ + 1U < parser->token_count_ &&
             parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_) {
             zlang_parser_advance(parser);
             size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
@@ -370,7 +337,7 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].line_ = _token_k->line_;
         parser->expressions_[_expression_k].column_ = _token_k->column_;
 
-        if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+        while (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
             zlang_parser_advance(parser);
             size_t _index_k = ZLANG_NO_EXPRESSION;
             if (!zlang_parse_expression(parser, &_index_k)) {
@@ -380,8 +347,16 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                                      "expected ']' after index expression")) {
                 return false;
             }
-            parser->expressions_[_expression_k].kind_ = zlang_expression_index_;
-            parser->expressions_[_expression_k].right_ = _index_k;
+            zlang_ast_expression_t *const _index_ptr_k = &parser->expressions_[_expression_k];
+            if (_index_ptr_k->argument_count_ >= ZLANG_CALL_ARGUMENT_CAPACITY) {
+                zlang_parser_unsupported(parser, "array rank exceeds the supported limit");
+                return false;
+            }
+            if (_index_ptr_k->argument_count_ == 0U) {
+                _index_ptr_k->right_ = _index_k;
+            }
+            _index_ptr_k->kind_ = zlang_expression_index_;
+            _index_ptr_k->argument_indices_[_index_ptr_k->argument_count_++] = _index_k;
         }
         while (zlang_parser_current(parser)->kind_ == zlang_token_dot_) {
             const zlang_token_t *const _dot_k = zlang_parser_current(parser);
@@ -692,24 +667,42 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
         _is_const_k = true;
         zlang_parser_advance(parser);
     }
-    bool _is_sequence_k = false;
-    bool _has_sequence_capacity_k = false;
-    uint32_t _sequence_capacity_k = 0U;
-    if (zlang_parser_current(parser)->kind_ == zlang_token_sequence_ ||
-        zlang_parser_current(parser)->kind_ == zlang_token_const_) {
+    bool _is_array_k = false;
+    uint32_t _extents_k[ZLANG_ARRAY_MAX_RANK];
+    uint32_t _rank_k = 0U;
+    bool _has_explicit_extents_k = true;
+    if (zlang_parser_current(parser)->kind_ == zlang_token_array_) {
         zlang_parser_advance(parser);
-        _is_sequence_k = true;
-        if (!zlang_parser_expect(parser, zlang_token_left_bracket_,
-                                 "expected '[' after sequence")) {
-            return false;
-        }
-        if (zlang_parser_current(parser)->kind_ == zlang_token_integer_literal_) {
-            _sequence_capacity_k = (uint32_t)zlang_parser_current(parser)->integer_value_;
-            _has_sequence_capacity_k = true;
+        _is_array_k = true;
+        while (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+            if (_rank_k >= ZLANG_ARRAY_MAX_RANK) {
+                zlang_parser_unsupported(parser, "array rank exceeds the supported limit");
+                return false;
+            }
             zlang_parser_advance(parser);
+            if (zlang_parser_current(parser)->kind_ != zlang_token_integer_literal_) {
+                if (_rank_k != 0U) {
+                    zlang_parser_unsupported(parser, "only the first array extent may be inferred");
+                    return false;
+                }
+                _has_explicit_extents_k = false;
+                _extents_k[_rank_k++] = 0U;
+            } else {
+                const uint64_t _extent_k = (uint64_t)zlang_parser_current(parser)->integer_value_;
+                if (_extent_k == 0U || _extent_k > UINT32_MAX) {
+                    zlang_parser_unsupported(parser, "array extent must fit in uint32_t");
+                    return false;
+                }
+                _extents_k[_rank_k++] = (uint32_t)_extent_k;
+                zlang_parser_advance(parser);
+            }
+            if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
+                                     "expected ']' after array extent")) {
+                return false;
+            }
         }
-        if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
-                                 "expected ']' after sequence capacity")) {
+        if (_rank_k == 0U) {
+            zlang_parser_unsupported(parser, "array requires at least one extent");
             return false;
         }
     }
@@ -747,8 +740,8 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a declaration name")) {
         return false;
     }
-    if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
-        zlang_parser_unsupported(parser, "sequence syntax uses a leading sequence[N] modifier");
+    if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_ && !_is_string_k) {
+        zlang_parser_unsupported(parser, "array syntax uses a leading array[N] modifier");
         return false;
     }
 
@@ -762,21 +755,33 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     _statement_ptr_k->line_ = _start_k->line_;
     _statement_ptr_k->column_ = _start_k->column_;
     _statement_ptr_k->kind_ =
-        _is_sequence_k ? zlang_statement_sequence_declaration_ : zlang_statement_declaration_;
+        _is_array_k ? zlang_statement_array_declaration_ : zlang_statement_declaration_;
     _statement_ptr_k->is_const_ = _is_const_k;
-    _statement_ptr_k->capacity_ = _is_sequence_k ? _sequence_capacity_k : _element_capacity_k;
+    _statement_ptr_k->rank_ = _rank_k;
+    for (uint32_t _index = 0U; _index < _rank_k; ++_index) {
+        _statement_ptr_k->extents_[_index] = _extents_k[_index];
+    }
+    uint64_t _capacity_k = 1U;
+    for (uint32_t _index = 0U; _index < _rank_k; ++_index) {
+        _capacity_k *= (uint64_t)_extents_k[_index];
+        if (_capacity_k > UINT32_MAX) {
+            zlang_parser_unsupported(parser, "array total size exceeds uint32_t");
+            return false;
+        }
+    }
+    _statement_ptr_k->capacity_ = _is_array_k ? (uint32_t)_capacity_k : _element_capacity_k;
     _statement_ptr_k->has_explicit_capacity_ =
-        _is_sequence_k ? _has_sequence_capacity_k : _has_element_capacity_k;
+        _is_array_k ? _has_explicit_extents_k : _has_element_capacity_k;
     _statement_ptr_k->element_capacity_ = _element_capacity_k;
     _statement_ptr_k->has_element_capacity_ = _has_element_capacity_k;
 
-    if (_is_string_k && !_is_sequence_k) {
+    if (_is_string_k && !_is_array_k) {
         zlang_parser_remember_string(parser, _name_k->text_);
     }
 
     if (zlang_parser_current(parser)->kind_ == zlang_token_equal_) {
         zlang_parser_advance(parser);
-        if (_is_sequence_k && zlang_parser_current(parser)->kind_ == zlang_token_left_brace_) {
+        if (_is_array_k && zlang_parser_current(parser)->kind_ == zlang_token_left_brace_) {
             zlang_parser_advance(parser);
             _statement_ptr_k->initializer_start_ = parser->expression_count_;
             if (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_) {
@@ -797,6 +802,7 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
                 return false;
             }
             if (!_statement_ptr_k->has_explicit_capacity_) {
+                _statement_ptr_k->extents_[0] = (uint32_t)_statement_ptr_k->initializer_count_;
                 _statement_ptr_k->capacity_ = (uint32_t)_statement_ptr_k->initializer_count_;
             }
         } else if (!zlang_parse_expression(parser, &_statement_ptr_k->expression_)) {
@@ -966,7 +972,7 @@ static bool zlang_parse_simple_block_statement(zlang_parser_t *parser,
 static const char *zlang_parser_sequence_type(const zlang_parser_t *parser, const char *name) {
     for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
-        if (_statement_k->kind_ == zlang_statement_sequence_declaration_ &&
+        if (_statement_k->kind_ == zlang_statement_array_declaration_ &&
             _statement_k->name_ != NULL && strcmp(_statement_k->name_, name) == 0) {
             return _statement_k->type_name_;
         }
@@ -1169,7 +1175,7 @@ zlang_parse_for(zlang_parser_t *parser) { // NOLINT(misc-no-recursion)
     if (zlang_parser_current(parser)->kind_ == zlang_token_semicolon_) {
         zlang_parser_advance(parser);
     } else if (zlang_token_is_type(zlang_parser_current(parser)) ||
-               zlang_parser_current(parser)->kind_ == zlang_token_sequence_ ||
+               zlang_parser_current(parser)->kind_ == zlang_token_array_ ||
                zlang_parser_current(parser)->kind_ == zlang_token_const_) {
         _initializer_k = parser->statement_count_;
         if (!zlang_parse_declaration(parser)) {

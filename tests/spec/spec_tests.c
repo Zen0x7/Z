@@ -127,14 +127,14 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
 }
 
 static void
-uses_static_storage_for_sequences_over_the_stack_limit(zlang_test_context_t *const context) {
+uses_static_storage_for_arrays_over_the_stack_limit(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STATIC_SEQUENCE_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED) != NULL);
 }
 
-static void keeps_small_sequences_automatic(zlang_test_context_t *const context) {
+static void keeps_small_arrays_automatic(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FOREACH_SOURCE));
@@ -166,7 +166,7 @@ static void emits_a_native_foreach_loop(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FOREACH_CALLBACK) == NULL);
 }
 
-static void rejects_an_unbounded_sequence_at_the_declaration(zlang_test_context_t *const context) {
+static void rejects_an_unbounded_array_at_the_declaration(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, ZLANG_SPEC_UNBOUNDED_SOURCE));
@@ -320,10 +320,9 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
     const char *const _source_k =
         "record Point { integer x; integer y; }\n"
         "const integer base = 2;\n"
-        "sequence[2] Point points;\n"
+        "array[2] Point points;\n"
         "function add(clone integer left, clone integer right): integer { return left + right; }\n"
         "Point origin;\n"
-        "append(points, origin);\n"
         "points[0].x = 9;\n"
         "points[0].y = add(points[0].x, base);";
 
@@ -335,11 +334,10 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
 static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "record Point { integer x; }\n"
-                                  "sequence[4] integer values;\n"
+                                  "array[4] integer values;\n"
                                   "values[0] = 1;\n"
-                                  "sequence[2] Point points;\n"
+                                  "array[2] Point points;\n"
                                   "Point origin;\n"
-                                  "append(points, origin);\n"
                                   "points[0].x = 2;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -353,9 +351,8 @@ static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *con
 static void reuses_field_pointers_contextually(zlang_test_context_t *const context) {
     zlang_spec_session_t _reuse;
     const char *const _reuse_source_k = "record Point { integer x; integer y; }\n"
-                                        "sequence[2] Point points;\n"
+                                        "array[2] Point points;\n"
                                         "Point origin;\n"
-                                        "append(points, origin);\n"
                                         "points[0].x = 9;\n"
                                         "points[0].y = 3;";
 
@@ -367,10 +364,8 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
 
     zlang_spec_session_t _invalidate;
     const char *const _invalidate_source_k = "record Point { integer x; }\n"
-                                             "sequence[2] Point points;\n"
+                                             "array[2] Point points;\n"
                                              "Point origin;\n"
-                                             "append(points, origin);\n"
-                                             "append(points, origin);\n"
                                              "unsigned index = 0U;\n"
                                              "points[index].x = 1;\n"
                                              "index = 1U;\n"
@@ -383,7 +378,7 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
 
 static void reuses_index_values_across_if_branches(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "sequence[4] integer values = {1, 2, 3};\n"
+    const char *const _source_k = "array[4] integer values = {1, 2, 3};\n"
                                   "if (values[0] > 3) {\n"
                                   "    print(\"big\");\n"
                                   "} else if (values[0] == 3) {\n"
@@ -404,7 +399,7 @@ static void reuses_index_values_across_if_branches(zlang_test_context_t *const c
 static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "boolean ready = true;\n"
-                                  "sequence[4] integer values = {1};\n"
+                                  "array[4] integer values = {1};\n"
                                   "boolean ok = ready || values[0] == 1;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -481,6 +476,22 @@ static void accepts_mutated_scalar_reference(zlang_test_context_t *const context
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_count_diagnostics(
                              &_session, ZLANG_DIAGNOSTIC_UNNECESSARY_REFERENCE) == 0U);
+}
+
+static void emits_fixed_multidimensional_arrays(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array[2][3] integer grid;\n"
+                                  "grid[1][2] = 7;\n"
+                                  "integer value = grid[1][2];";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_offset_2") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_get_2_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_set_2_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "_grid.data_[_zlang_array_offset_2(ZLANG_GRID_EXTENT_0") != NULL);
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
@@ -562,7 +573,7 @@ reports_type_and_resource_diagnostics_with_source_locations(zlang_test_context_t
     ZLANG_CHECK(context, !zlang_spec_transpile(&_mismatch, "integer var = \"text\";"));
     zlang_spec_expect_diagnostic(context, &_mismatch, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 15U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_unbounded, "sequence[] integer values;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unbounded, "array[] integer values;"));
     zlang_spec_expect_diagnostic(context, &_unbounded, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, 1U, 1U);
 }
 
@@ -574,7 +585,7 @@ static void emits_append_and_checked_index(zlang_test_context_t *const context) 
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEX_EXPECTED) != NULL);
 }
 
-static void emits_an_inferred_sequence_initializer(zlang_test_context_t *const context) {
+static void emits_an_inferred_array_initializer(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE));
@@ -582,7 +593,7 @@ static void emits_an_inferred_sequence_initializer(zlang_test_context_t *const c
                 strstr(_session.output_, ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED) != NULL);
 }
 
-static void emits_a_partial_explicit_sequence_initializer(zlang_test_context_t *const context) {
+static void emits_a_partial_explicit_array_initializer(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE));
@@ -669,16 +680,15 @@ static void warns_about_unused_explicit_capacity(zlang_test_context_t *const con
 static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context,
-                !zlang_spec_transpile(&_session, "sequence[2] integer values = {1, 2, 3};"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[2] integer values = {1, 2, 3};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_INITIALIZER_TOO_LONG));
 }
 
-static void rejects_an_empty_inferred_sequence(zlang_test_context_t *const context) {
+static void rejects_an_empty_inferred_array(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "sequence[] integer values = {};"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[] integer values = {};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
 }
@@ -815,7 +825,7 @@ static void emits_scalar_print(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_PRINT_BOOL_EXPECTED) != NULL);
 }
 
-static void emits_string_sequence_operations(zlang_test_context_t *const context) {
+static void emits_string_array_operations(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STRING_SEQUENCE_SOURCE));
@@ -827,7 +837,7 @@ static void emits_string_sequence_operations(zlang_test_context_t *const context
                 strstr(_session.output_, ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED) != NULL);
 }
 
-static void rejects_legacy_sequence_syntax(zlang_test_context_t *const context) {
+static void rejects_legacy_array_syntax(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE));
@@ -903,7 +913,7 @@ static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
                              _type_position_k < _main_position_k);
 }
 
-static void emits_unique_sequence_types_for_sibling_scopes(zlang_test_context_t *const context) {
+static void emits_unique_array_types_for_sibling_scopes(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE));

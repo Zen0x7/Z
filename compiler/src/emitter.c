@@ -1274,9 +1274,33 @@ static bool zlang_is_nested_in_body(const zlang_program_t *program, size_t index
     return false;
 }
 
+static bool zlang_is_grouped_statement(const zlang_program_t *program,
+                                       const zlang_ast_statement_t *statement) {
+    if (statement->kind_ == zlang_statement_if_ || statement->kind_ == zlang_statement_while_ ||
+        statement->kind_ == zlang_statement_for_ || statement->kind_ == zlang_statement_foreach_ ||
+        statement->kind_ == zlang_statement_repeat_ || statement->kind_ == zlang_statement_block_) {
+        return true;
+    }
+    return statement->kind_ == zlang_statement_expression_ &&
+           statement->expression_ < program->expression_count_ &&
+           program->expressions_[statement->expression_].kind_ ==
+               zlang_expression_index_assignment_;
+}
+
+static bool zlang_should_insert_blank_line(bool has_previous, bool previous_grouped,
+                                           bool current_grouped,
+                                           zlang_statement_kind_t current_kind) {
+    if (!has_previous) {
+        return false;
+    }
+    return previous_grouped || current_grouped || current_kind == zlang_statement_return_;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_body(const zlang_program_t *program, size_t start, size_t count,
                             zlang_emitter_t *emitter, uint32_t depth) { // NOLINT(misc-no-recursion)
+    bool _has_previous_k = false;
+    bool _previous_grouped_k = false;
     for (size_t _index = 0U; _index < count; ++_index) {
         const size_t _statement_index_k = start + _index;
         if (_statement_index_k >= program->statement_count_) {
@@ -1285,10 +1309,18 @@ static bool zlang_emit_body(const zlang_program_t *program, size_t start, size_t
         if (zlang_is_nested_in_body(program, _statement_index_k, start, count)) {
             continue;
         }
-        if (!zlang_emit_statement(program, &program->statements_[_statement_index_k], emitter,
-                                  depth)) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_statement_index_k];
+        const bool _grouped_k = zlang_is_grouped_statement(program, _statement_k);
+        if (zlang_should_insert_blank_line(_has_previous_k, _previous_grouped_k, _grouped_k,
+                                           _statement_k->kind_) &&
+            !zlang_append_text(emitter, "\n")) {
             return false;
         }
+        if (!zlang_emit_statement(program, _statement_k, emitter, depth)) {
+            return false;
+        }
+        _previous_grouped_k = _grouped_k;
+        _has_previous_k = true;
     }
     return true;
 }
@@ -1930,14 +1962,27 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
     if (!zlang_append_text(emitter, "int main(void) {\n")) {
         return false;
     }
+    bool _has_previous_k = false;
+    bool _previous_grouped_k = false;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if (zlang_is_nested(program, _index) || zlang_is_file_scope(emitter, _statement_k)) {
             continue;
         }
+        const bool _grouped_k = zlang_is_grouped_statement(program, _statement_k);
+        if (zlang_should_insert_blank_line(_has_previous_k, _previous_grouped_k, _grouped_k,
+                                           _statement_k->kind_) &&
+            !zlang_append_text(emitter, "\n")) {
+            return false;
+        }
         if (!zlang_emit_statement(program, _statement_k, emitter, 1U)) {
             return false;
         }
+        _previous_grouped_k = _grouped_k;
+        _has_previous_k = true;
+    }
+    if (_has_previous_k && !zlang_append_text(emitter, "\n")) {
+        return false;
     }
     return zlang_append_text(emitter, "    return 0;\n}\n");
 }

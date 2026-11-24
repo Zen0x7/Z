@@ -645,6 +645,7 @@ static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_get_i32") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_values") == NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_label") == NULL);
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "\n\n    ") > 0U);
     ZLANG_CHECK(context, _type_position_k != NULL && _main_position_k != NULL &&
                              _type_position_k < _main_position_k);
 }

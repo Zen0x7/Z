@@ -203,6 +203,7 @@ int main(void) {
     _u_names.data_[0] = zlang_string_concat(_u_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, 1U);
     _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, 1U);
     _u_names.length_ = 2U;
+
     {
         uint32_t _zlang_index_9 = 0;
         if (_zlang_index_9 < _u_fixed.length_) {
@@ -211,8 +212,10 @@ int main(void) {
             zlang_trap(ZLANG_TRAP_BOUNDS);
         }
     }
+
     zlang_array_append(_u_fixed.data_, &_u_fixed.length_, ZLANG_FIXED_CAPACITY, sizeof(_u_fixed.data_[0]), (int32_t[]){ (9) });
     zlang_string_array_append((char *)_u_names.storage_, _u_names.data_, &_u_names.length_, ZLANG_NAMES_CAPACITY, ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _u_name }, 1U);
+
     {
         uint32_t _zlang_index_10 = 0;
         if (_zlang_index_10 < _u_names.length_) {
@@ -221,13 +224,16 @@ int main(void) {
             zlang_trap(ZLANG_TRAP_BOUNDS);
         }
     }
+
     int32_t _u_total = 1;
     (void)_u_total;
     _u_total = zlang_add_i32(_u_total, _u_base);
+
     {
         int32_t _u_scoped = zlang_mul_i32(_u_add(1, 2), 3);
         zlang_print_i32(_u_scoped);
     }
+
     if (zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) > 3) {
         zlang_print(_zlang_literal_5);
     } else if (zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) == 3) {
@@ -235,18 +241,22 @@ int main(void) {
     } else {
         zlang_print(_zlang_literal_6);
     }
+
     while (_u_ready) {
         break;
     }
+
     for (uint32_t _zlang_repeat_11 = 0U; _zlang_repeat_11 < _u_limit; ++_zlang_repeat_11) {
         continue;
     }
+
     for (uint32_t _u_outer = 0U; (_u_outer < 2U); _u_outer = zlang_add_u32(_u_outer, 1U)) {
         for (uint32_t _u_inner = 0U; (_u_inner < 2U); _u_inner = zlang_add_u32(_u_inner, 1U)) {
             zlang_print_u32(_u_outer);
             zlang_print_u32(_u_inner);
         }
     }
+
     for (uint32_t _zlang_foreach_12 = 0U; _zlang_foreach_12 < _u_values.length_; ++_zlang_foreach_12) {
         uint32_t _u_row = _zlang_foreach_12;
         int32_t _u_item = _u_values.data_[_zlang_foreach_12];
@@ -259,6 +269,7 @@ int main(void) {
             zlang_print_i32(_u_other);
         }
     }
+
     uint32_t _u_count = _u_values.length_;
     uint32_t _u_first = zlang_string_byte(_u_label, 0);
     bool _u_ok = ((!(_u_ready && (!_u_ready))) || zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) != 99);
@@ -267,6 +278,7 @@ int main(void) {
     zlang_print_bool(_u_ok);
     zlang_print(_u_label);
     zlang_print(zlang_array_get_string(_u_names.data_, 0, _u_names.length_));
+
     return 0;
 }
 ```

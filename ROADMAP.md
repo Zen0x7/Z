@@ -253,3 +253,10 @@ Status: Implemented.
 Index reads now lower to bounded typed getters instead of nested ternaries. Comparisons are emitted
 without redundant outer parentheses, and `(void)` guards are emitted only for declarations that
 are actually unused in the generated C.
+
+## Emitted C readability — Statement spacing
+
+Status: Implemented.
+
+The emitter inserts blank lines around structured statements and before the final `return`, so the
+body of `main` reads as separated logical blocks instead of a dense statement list.

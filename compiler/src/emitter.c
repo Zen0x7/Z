@@ -87,6 +87,9 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
 
 static bool zlang_array_type_suffix(const char *type_name, char *output, size_t capacity);
 
+static const char *zlang_generated_type(const zlang_program_t *program,
+                                        const zlang_emitter_t *emitter, const char *type_name);
+
 static bool zlang_same_text(const char *left, const char *right);
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -716,6 +719,51 @@ zlang_emit_array_offset_call(const zlang_program_t *program, zlang_emitter_t *em
     return zlang_append_text(emitter, ")");
 }
 
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
+zlang_emit_array_typed_call(const zlang_program_t *program, zlang_emitter_t *emitter,
+                            const zlang_emitted_symbol_t *symbol,
+                            const zlang_ast_expression_t *tuple, bool is_set,
+                            size_t value_expression) {
+    if (symbol == NULL || tuple == NULL || tuple->argument_count_ < 2U) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _statement_k =
+        zlang_find_sequence(emitter, symbol->source_name_);
+    const zlang_emitted_sequence_t *const _entry_k =
+        _statement_k != NULL ? zlang_find_sequence_entry(NULL, emitter, _statement_k) : NULL;
+    const char *const _type_k = zlang_generated_type(program, emitter, symbol->type_name_);
+    char _suffix_k[ZLANG_EMITTED_NAME_CAPACITY];
+    if (_entry_k == NULL || _statement_k->rank_ != tuple->argument_count_ || _type_k == NULL ||
+        !zlang_array_type_suffix(_type_k, _suffix_k, sizeof(_suffix_k))) {
+        return false;
+    }
+    if (!zlang_append_text(emitter, is_set ? "_zlang_array_set_" : "_zlang_array_get_") ||
+        !zlang_append_unsigned(emitter, (uint32_t)_statement_k->rank_) ||
+        !zlang_append_text(emitter, "_") || !zlang_append_text(emitter, _suffix_k) ||
+        !zlang_append_text(emitter, "(") || !zlang_append_text(emitter, symbol->generated_name_) ||
+        !zlang_append_text(emitter, ".data_")) {
+        return false;
+    }
+    for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
+        if (!zlang_append_text(emitter, ", ") ||
+            !zlang_append_text(emitter, _entry_k->extent_macros_[_axis])) {
+            return false;
+        }
+    }
+    for (uint32_t _axis = 0U; _axis < tuple->argument_count_; ++_axis) {
+        if (!zlang_append_text(emitter, ", ") ||
+            !zlang_emit_expression(program, tuple->argument_indices_[_axis], emitter)) {
+            return false;
+        }
+    }
+    if (is_set && (!zlang_append_text(emitter, ", ") ||
+                   !zlang_emit_expression(program, value_expression, emitter))) {
+        return false;
+    }
+    return zlang_append_text(emitter, ")");
+}
+
 static bool zlang_sequence_capacity_text(const zlang_program_t *program,
                                          const zlang_emitter_t *emitter,
                                          const zlang_ast_statement_t *statement, char *output,
@@ -1019,6 +1067,15 @@ static const char *zlang_expression_type(const zlang_program_t *program,
             zlang_find_active_symbol(emitter, _expression_k->name_);
         return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
     }
+    case zlang_expression_index_tuple_:
+        return NULL;
+    case zlang_expression_array_get_: {
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _expression_k->name_);
+        return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
+    }
+    case zlang_expression_array_set_:
+        return "void";
     default:
         return NULL;
     }
@@ -1470,6 +1527,19 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         }
         return zlang_append_text(emitter, ")");
     }
+    case zlang_expression_index_tuple_:
+        return false;
+    case zlang_expression_array_get_:
+    case zlang_expression_array_set_: {
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _expression_k->name_);
+        if (_symbol_k == NULL || _expression_k->left_ >= program->expression_count_) {
+            return false;
+        }
+        return zlang_emit_array_typed_call(
+            program, emitter, _symbol_k, &program->expressions_[_expression_k->left_],
+            _expression_k->kind_ == zlang_expression_array_set_, _expression_k->right_);
+    }
     default:
         return false;
     }
@@ -1575,8 +1645,9 @@ static bool zlang_array_type_suffix(const char *type_name, char *output, size_t 
 static bool zlang_collect_array_ranks(const zlang_program_t *program, zlang_emitter_t *emitter) {
     for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
         const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
-        if (_expression_k->kind_ != zlang_expression_index_ ||
-            _expression_k->argument_count_ <= 1U ||
+        if ((_expression_k->kind_ != zlang_expression_index_ &&
+             _expression_k->kind_ != zlang_expression_index_tuple_) ||
+            _expression_k->argument_count_ < 2U ||
             _expression_k->argument_count_ > ZLANG_ARRAY_MAX_RANK) {
             continue;
         }
@@ -1689,8 +1760,12 @@ static bool zlang_emit_array_helpers(const zlang_program_t *program, zlang_emitt
         }
         for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
             if (!zlang_append_text(emitter, ", uint32_t extent_") ||
-                !zlang_append_unsigned(emitter, _axis) ||
-                !zlang_append_text(emitter, ", uint32_t index_") ||
+                !zlang_append_unsigned(emitter, _axis)) {
+                return false;
+            }
+        }
+        for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
+            if (!zlang_append_text(emitter, ", uint32_t index_") ||
                 !zlang_append_unsigned(emitter, _axis)) {
                 return false;
             }
@@ -1702,8 +1777,12 @@ static bool zlang_emit_array_helpers(const zlang_program_t *program, zlang_emitt
         }
         for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
             if ((_axis > 0U && !zlang_append_text(emitter, ", ")) ||
-                !zlang_append_text(emitter, "extent_") || !zlang_append_unsigned(emitter, _axis) ||
-                !zlang_append_text(emitter, ", index_") || !zlang_append_unsigned(emitter, _axis)) {
+                !zlang_append_text(emitter, "extent_") || !zlang_append_unsigned(emitter, _axis)) {
+                return false;
+            }
+        }
+        for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
+            if (!zlang_append_text(emitter, ", index_") || !zlang_append_unsigned(emitter, _axis)) {
                 return false;
             }
         }
@@ -1717,8 +1796,12 @@ static bool zlang_emit_array_helpers(const zlang_program_t *program, zlang_emitt
         }
         for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
             if (!zlang_append_text(emitter, ", uint32_t extent_") ||
-                !zlang_append_unsigned(emitter, _axis) ||
-                !zlang_append_text(emitter, ", uint32_t index_") ||
+                !zlang_append_unsigned(emitter, _axis)) {
+                return false;
+            }
+        }
+        for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
+            if (!zlang_append_text(emitter, ", uint32_t index_") ||
                 !zlang_append_unsigned(emitter, _axis)) {
                 return false;
             }
@@ -1731,8 +1814,12 @@ static bool zlang_emit_array_helpers(const zlang_program_t *program, zlang_emitt
         }
         for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
             if ((_axis > 0U && !zlang_append_text(emitter, ", ")) ||
-                !zlang_append_text(emitter, "extent_") || !zlang_append_unsigned(emitter, _axis) ||
-                !zlang_append_text(emitter, ", index_") || !zlang_append_unsigned(emitter, _axis)) {
+                !zlang_append_text(emitter, "extent_") || !zlang_append_unsigned(emitter, _axis)) {
+                return false;
+            }
+        }
+        for (uint32_t _axis = 0U; _axis < _statement_k->rank_; ++_axis) {
+            if (!zlang_append_text(emitter, ", index_") || !zlang_append_unsigned(emitter, _axis)) {
                 return false;
             }
         }
@@ -2075,7 +2162,7 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
         return false;
     }
     if (_string_element_k) {
-        char _slot[ZLANG_EMITTED_NAME_CAPACITY + 32];
+        char _slot[ZLANG_EMITTED_NAME_CAPACITY + 64];
         const int _slot_written_k =
             snprintf(_slot, sizeof(_slot), "%s.storage_[%s]", _generated_k, _index_name);
         if (_slot_written_k < 0 || (size_t)_slot_written_k >= sizeof(_slot) ||
@@ -2745,6 +2832,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             &program->expressions_[statement->expression_];
         _writes_k = _expression_k->kind_ == zlang_expression_index_assignment_ ||
                     _expression_k->kind_ == zlang_expression_field_assignment_ ||
+                    _expression_k->kind_ == zlang_expression_array_set_ ||
                     _expression_k->kind_ == zlang_expression_append_call_;
         if ((_expression_k->kind_ == zlang_expression_assignment_ ||
              _expression_k->kind_ == zlang_expression_compound_assignment_) &&
@@ -2895,7 +2983,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             return false;
         }
         for (size_t _index = 0U; _index < statement->initializer_count_; ++_index) {
-            char _slot[ZLANG_EMITTED_NAME_CAPACITY + 32];
+            char _slot[ZLANG_EMITTED_NAME_CAPACITY + 64];
             const int _written_k = snprintf(_slot, sizeof(_slot), "%s.storage_[%lu]",
                                             _symbol_k->generated_name_, (unsigned long)_index);
             if (_written_k < 0 || (size_t)_written_k >= sizeof(_slot) ||

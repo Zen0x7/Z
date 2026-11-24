@@ -19,6 +19,7 @@ static void zlang_parser_advance(zlang_parser_t *parser) {
 static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *arguments, size_t *count,
                                        size_t capacity);
 static bool zlang_parse_expression(zlang_parser_t *parser, size_t *expression);
+static bool zlang_parse_index_tuple(zlang_parser_t *parser, size_t *expression);
 
 static bool zlang_parser_expect(zlang_parser_t *parser, const zlang_token_kind_t kind,
                                 const char *message) {
@@ -167,6 +168,45 @@ static bool zlang_parse_statements(zlang_parser_t *parser);
 
 /* Recursive descent mirrors Annex A directly. NOLINT keeps the policy check
    local: nesting is bounded by the caller-owned AST capacity. */
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
+zlang_parse_index_tuple(zlang_parser_t *parser, size_t *expression) { // NOLINT(misc-no-recursion)
+    const zlang_token_t *const _start_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_left_brace_,
+                             "expected '{' before array index tuple")) {
+        return false;
+    }
+    const size_t _tuple_k = zlang_parser_add_expression(parser);
+    if (_tuple_k == ZLANG_NO_EXPRESSION) {
+        return false;
+    }
+    parser->expressions_[_tuple_k].kind_ = zlang_expression_index_tuple_;
+    parser->expressions_[_tuple_k].line_ = _start_k->line_;
+    parser->expressions_[_tuple_k].column_ = _start_k->column_;
+    while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_) {
+        size_t _index_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_expression(parser, &_index_k)) {
+            return false;
+        }
+        zlang_ast_expression_t *const _tuple_ptr_k = &parser->expressions_[_tuple_k];
+        if (_tuple_ptr_k->argument_count_ >= ZLANG_ARRAY_MAX_RANK) {
+            zlang_parser_unsupported(parser, "array index tuple exceeds the rank limit");
+            return false;
+        }
+        _tuple_ptr_k->argument_indices_[_tuple_ptr_k->argument_count_++] = _index_k;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    if (!zlang_parser_expect(parser, zlang_token_right_brace_,
+                             "expected '}' after array index tuple")) {
+        return false;
+    }
+    *expression = _tuple_k;
+    return true;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_parse_primary(zlang_parser_t *parser,
                                 size_t *expression) { // NOLINT(misc-no-recursion)
@@ -174,6 +214,53 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
     size_t _expression_k = ZLANG_NO_EXPRESSION;
 
     switch (_token_k->kind_) {
+    case zlang_token_array_get_:
+    case zlang_token_array_set_: {
+        const bool _is_set_k = _token_k->kind_ == zlang_token_array_set_;
+        zlang_parser_advance(parser);
+        if (!zlang_parser_expect(parser, zlang_token_left_paren_,
+                                 _is_set_k ? "expected '(' after array_set"
+                                           : "expected '(' after array_get")) {
+            return false;
+        }
+        const zlang_token_t *const _target_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an array name")) {
+            return false;
+        }
+        if (!zlang_parser_expect(parser, zlang_token_comma_, "expected ',' after array name")) {
+            return false;
+        }
+        size_t _tuple_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_index_tuple(parser, &_tuple_k)) {
+            return false;
+        }
+        size_t _value_k = ZLANG_NO_EXPRESSION;
+        if (_is_set_k) {
+            if (!zlang_parser_expect(parser, zlang_token_comma_,
+                                     "expected ',' after array index tuple")) {
+                return false;
+            }
+            if (!zlang_parse_expression(parser, &_value_k)) {
+                return false;
+            }
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                                 "expected ')' after array access")) {
+            return false;
+        }
+        _expression_k = zlang_parser_add_expression(parser);
+        if (_expression_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_expression_k].kind_ =
+            _is_set_k ? zlang_expression_array_set_ : zlang_expression_array_get_;
+        parser->expressions_[_expression_k].name_ = _target_k->text_;
+        parser->expressions_[_expression_k].left_ = _tuple_k;
+        parser->expressions_[_expression_k].right_ = _value_k;
+        parser->expressions_[_expression_k].line_ = _token_k->line_;
+        parser->expressions_[_expression_k].column_ = _token_k->column_;
+        break;
+    }
     case zlang_token_left_paren_: {
         zlang_parser_advance(parser);
         size_t _inner_k = ZLANG_NO_EXPRESSION;

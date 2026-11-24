@@ -61,7 +61,7 @@ This program exercises the language end to end: comments attached to their sourc
 `const`, records, enums, all four scalar types, leading `array[N]` declarations, bounded string
 elements, functions with `clone` and `reference` parameters, `return`, user-defined function
 parameter and return types, scopes,
-assignments, indexed access and assignment, field access and assignment, arithmetic,
+assignments, indexed access and assignment, `array_get`, `array_set`, field access and assignment, arithmetic,
 compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
 printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
 `break` and `continue`.
@@ -70,8 +70,9 @@ Every parameter states its qualifier: `clone` is a mutable local copy, `const cl
 copy, `reference` is a mutable alias to caller-owned storage and `const reference` is a read-only
 alias. There are no `*` or `&` operators in Zlang; the emitter uses them internally when lowering a
 reference. References are parameter-only: they cannot be stored or returned, and a reference
-argument must be an lvalue. The compiler warns with `ZLANG3004` when a reference to a small value
-type has no mutational purpose.
+argument must be an lvalue. `array_get` and `array_set` accept index tuples such as `{row, column}`
+and lower to generated typed helpers. The compiler warns with `ZLANG3004` when a reference to a small
+value type has no mutational purpose.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 array typedefs, named string literals and user functions. Source comments are preserved in the
@@ -147,6 +148,8 @@ Point made = make();
 Color chosen = GREEN;
 Point painted = paint(made, chosen);
 shift(made, 3);
+array[2][3] integer grid;
+array_set(grid, {0, 1}, 5);
 
 fixed[0] = add(values[1], base);
 names[0] = "z";
@@ -205,6 +208,7 @@ print(names[0]);
 print(points[0].x);
 print(made.x);
 print(painted.x);
+print(array_get(grid, {0, 1}));
 print(current);
 ```
 
@@ -220,6 +224,22 @@ print(current);
 #define ZLANG_ZERO 0U
 #define ZLANG_ONE 1U
 #define ZLANG_TWO 2U
+
+/* generated array helpers */
+static inline uint32_t _zlang_array_offset_2(uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
+    if (index_0 >= extent_0 || index_1 >= extent_1) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+    }
+    return extent_1 * index_0 + index_1;
+}
+
+static inline int32_t _zlang_array_get_2_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
+    return data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)];
+}
+
+static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1, int32_t value_) {
+    data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
+}
 
 /* generated user types */
 // A fixed point type.
@@ -255,6 +275,10 @@ typedef enum zlang_color_t {
 #define ZLANG_POINTS_CAPACITY 2U
 #define ZLANG_POINTS_LENGTH ZLANG_POINTS_EXTENT_0
 #define ZLANG_POINTS_EXTENT_0 2U
+#define ZLANG_GRID_CAPACITY 6U
+#define ZLANG_GRID_LENGTH ZLANG_GRID_EXTENT_0
+#define ZLANG_GRID_EXTENT_0 2U
+#define ZLANG_GRID_EXTENT_1 3U
 #define ZLANG_LABEL_CAPACITY 32U
 
 /* generated sequence types */
@@ -274,6 +298,10 @@ typedef struct zlang_names_t {
 typedef struct zlang_points_t {
     zlang_point_t data_[ZLANG_POINTS_CAPACITY];
 } zlang_points_t;
+
+typedef struct zlang_grid_t {
+    int32_t data_[ZLANG_GRID_CAPACITY];
+} zlang_grid_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 5U
@@ -344,6 +372,9 @@ int main(void) {
     zlang_color_t _chosen = ZLANG_COLOR_GREEN;
     zlang_point_t _painted = _u_paint(_made, _chosen);
     _u_shift(&_made, 3);
+    zlang_grid_t _grid = { { 0, 0, 0, 0, 0, 0 } };
+    (void)_grid;
+    _zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, 0, 1, 5);
 
     uint32_t _zlang_index_9 = 0;
     if (_zlang_index_9 < ZLANG_FIXED_EXTENT_0) {
@@ -420,6 +451,7 @@ int main(void) {
     zlang_print_i32(_zlang_field_ptr_11->x_);
     zlang_print_i32(_made.x_);
     zlang_print_i32(_painted.x_);
+    zlang_print_i32(_zlang_array_get_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, 0, 1));
     zlang_print_u32(_current);
 
     return ZLANG_ZERO;

@@ -63,6 +63,21 @@ static const zlang_ast_statement_t *zlang_find_record(const zlang_program_t *pro
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_array(const zlang_program_t *program,
+                                                     const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_array_declaration_ &&
+            _statement_k->name_ != NULL && strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *program,
                                                     const char *name) {
     if (program == NULL || name == NULL) {
@@ -666,6 +681,53 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             }
         }
         return _function_k->type_name_;
+    }
+    case zlang_expression_index_tuple_: {
+        for (size_t _axis = 0U;
+             _axis < _expression_k->argument_count_ && _axis < ZLANG_CALL_ARGUMENT_CAPACITY;
+             ++_axis) {
+            const size_t _index_k = _expression_k->argument_indices_[_axis];
+            const char *const _actual_k = zlang_analyze_expression(context, _index_k, statement);
+            if (!zlang_type_matches("integer", _actual_k) &&
+                !zlang_type_matches("unsigned", _actual_k)) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, _index_k,
+                                              statement, "array index must be integer or unsigned");
+            }
+        }
+        return "array_index_tuple";
+    }
+    case zlang_expression_array_get_:
+    case zlang_expression_array_set_: {
+        const zlang_symbol_t *const _array_symbol_k =
+            zlang_find_symbol(context, _expression_k->name_);
+        const zlang_ast_statement_t *const _array_k =
+            zlang_find_array(context->program_, _expression_k->name_);
+        if (_array_symbol_k == NULL || !_array_symbol_k->is_sequence_ || _array_k == NULL) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "array access target is not a declared array");
+            return NULL;
+        }
+        if (_expression_k->left_ >= context->program_->expression_count_ ||
+            context->program_->expressions_[_expression_k->left_].kind_ !=
+                zlang_expression_index_tuple_ ||
+            context->program_->expressions_[_expression_k->left_].argument_count_ !=
+                _array_k->rank_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "array index tuple rank does not match the array");
+            return NULL;
+        }
+        (void)zlang_analyze_expression(context, _expression_k->left_, statement);
+        if (_expression_k->kind_ == zlang_expression_array_get_) {
+            return _array_symbol_k->type_name_;
+        }
+        zlang_mark_mutated(context, _array_symbol_k->name_);
+        const char *const _value_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_array_symbol_k->type_name_, _value_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "array_set value does not match the element type");
+        }
+        return "void";
     }
     default:
         return NULL;

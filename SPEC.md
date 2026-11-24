@@ -561,8 +561,12 @@ expression     = literal
                | identifier "(" ( expression ( "," expression )* )? ")"
                | "print" "(" expression ")"
                | "length" "(" identifier ")"
+               | "array_get" "(" identifier "," indexTuple ")"
+               | "array_set" "(" identifier "," indexTuple "," expression ")"
                | identifier "[" expression "]"
-               | expression "." identifier
+               | expression "." identifier ;
+
+indexTuple     = "{" expression ( "," expression )* "}" ;
 
 literal        = integerLiteral | stringLiteral | "true" | "false" ;
 ```
@@ -724,6 +728,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | contextual field-pointer CSE | `reuses_field_pointers_contextually` |
 | contextual index-value CSE across branches | `reuses_index_values_across_if_branches` |
 | reserved generated namespace | `rejects_reserved_identifiers` |
+| tuple array access | `emits_array_get_and_set`, `rejects_array_tuple_rank_mismatch` |
 | short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
 | parameter qualifiers | `emits_parameter_qualifiers` |
 | missing parameter qualifier rejection | `rejects_missing_parameter_qualifier` |
@@ -793,6 +798,20 @@ Zlang 0.13 warns with `ZLANG3004` when a `reference` parameter of a small value 
 mutational purpose. `const reference` to a scalar, string or enum is always warned about; a mutable
 `reference` is warned about only when the function body never mutates it. Mutated reference
 parameters and references to records are accepted without this warning.
+
+
+## 0.14 implementation status
+
+Zlang 0.14 replaces `sequence` with fixed-shape `array`, adds multidimensional declarations and
+indexing, emits extent macros, and lowers rank-2 and higher access through generated offset helpers
+and typed get/set helpers. Arrays have no logical length and no append operation.
+
+
+## 0.15 implementation status
+
+Zlang 0.15 adds source-level `array_get(array, {i, ...})` and `array_set(array, {i, ...}, value)`.
+The tuple rank must match the declared array rank, and both operations lower to the generated typed
+helpers. `array_set` participates in mutation tracking and CSE invalidation.
 
 
 ## Emitted comments

@@ -455,3 +455,20 @@ indexing. Generated C no longer stores a mutable `length_` field for arrays. Ext
 macros, rank-2 and higher access uses generated offset helpers, and typed get/set helpers are emitted
 per rank and element type. `array_get` and `array_set` source forms are reserved for the next
 refinement; source indexing already lowers to the same checked paths.
+
+## 0.15 — Tuple array access
+
+Status: Locked.
+
+- Add `array_get(array, {i, ...})`.
+- Add `array_set(array, {i, ...}, value)`.
+- Check tuple rank against the declared array rank.
+- Lower both forms to generated typed `get` and `set` helpers.
+- Include `array_set` in mutation tracking and CSE invalidation.
+
+## 0.15 — Completion
+
+Status: Implemented.
+
+Source code can use explicit index tuples with `array_get` and `array_set`. Rank mismatches are type
+diagnostics, and both operations use the same generated typed helpers as multidimensional indexing.

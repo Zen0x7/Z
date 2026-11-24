@@ -58,7 +58,7 @@ when traceability is not needed.
 ## Language tour
 
 This program exercises the language end to end: comments attached to their source constructs,
-`const`, records, enums, all four scalar types, leading `array[N]` declarations, bounded string
+`const`, records, enums, all four scalar types, explicit and inferred array declarations, bounded string
 elements, functions with `clone` and `reference` parameters, `return`, user-defined function
 parameter and return types, scopes,
 assignments, indexed access and assignment, `array_get`, `array_set`, field access and assignment, arithmetic,

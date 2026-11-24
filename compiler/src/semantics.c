@@ -1056,6 +1056,15 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 zlang_find_mutable_symbol(context, _parameter_k->name_);
             if (_parameter_symbol_k != NULL) {
                 _parameter_symbol_k->is_reference_ = _parameter_k->is_reference_;
+                if (_parameter_k->is_array_) {
+                    uint32_t _capacity_k = 1U;
+                    for (uint32_t _axis = 0U; _axis < _parameter_k->rank_; ++_axis) {
+                        _capacity_k *= _parameter_k->extents_[_axis];
+                    }
+                    _parameter_symbol_k->is_sequence_ = true;
+                    _parameter_symbol_k->capacity_ = _capacity_k;
+                    _parameter_symbol_k->declaration_ = statement;
+                }
             }
         }
         const char *const _previous_return_k = context->current_return_type_;

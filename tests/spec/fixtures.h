@@ -113,7 +113,7 @@
 #define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(_label);"
 
 #define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "array[] integer values = {1, 2, 3};"
-#define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED "zlang_values_t _values = { { 1, 2, 3 } };"
+#define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED "zlang_array_i32_3_t _values = { { 1, 2, 3 } };"
 
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "array[5] integer values = {1, 2, 3};"
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED "zlang_values_t _values = { { 1, 2, 3, 0, 0 } };"

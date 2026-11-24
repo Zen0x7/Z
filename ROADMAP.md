@@ -472,3 +472,21 @@ Status: Implemented.
 
 Source code can use explicit index tuples with `array_get` and `array_set`. Rank mismatches are type
 diagnostics, and both operations use the same generated typed helpers as multidimensional indexing.
+
+## 0.16 — Inferred arrays
+
+Status: Locked.
+
+- Allow `array T name;` with rank and extents inferred from initializer, constant indices and
+  canonical loop induction ranges.
+- Allow `array` as an inferred parameter and return type in function signatures.
+- Infer one concrete array shape per inferred function from call arguments or return assignment.
+- Emit canonical array typedefs by shape so inferred locals, parameters and returns share one C type.
+- Report `ZLANG3001` when rank or extent cannot be proved at compile time.
+
+## 0.16 — Completion
+
+Status: Implemented.
+
+Local inferred arrays and inferred array function signatures are resolved before semantic analysis.
+Function signatures use one inferred shape; conflicting specializations are deferred.

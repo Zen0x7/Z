@@ -99,10 +99,13 @@ typedef enum zlang_statement_kind_t {
 typedef struct zlang_parameter_t {
     const char *type_name_;
     const char *name_;
+    uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t rank_;
     uint32_t line_;
     uint32_t column_;
     bool is_const_;
     bool is_reference_;
+    bool is_array_;
 } zlang_parameter_t;
 
 typedef struct zlang_ast_statement_t {
@@ -129,6 +132,11 @@ typedef struct zlang_ast_statement_t {
     bool has_explicit_capacity_;
     bool has_element_capacity_;
     bool is_const_;
+    bool is_inferred_;
+    bool use_canonical_type_;
+    bool is_array_return_;
+    uint32_t return_extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t return_rank_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;
@@ -143,11 +151,11 @@ typedef struct zlang_comment_t {
 } zlang_comment_t;
 
 typedef struct zlang_program_t {
-    const zlang_ast_statement_t *statements_;
+    zlang_ast_statement_t *statements_;
     size_t statement_count_;
-    const zlang_ast_expression_t *expressions_;
+    zlang_ast_expression_t *expressions_;
     size_t expression_count_;
-    const zlang_parameter_t *parameters_;
+    zlang_parameter_t *parameters_;
     size_t parameter_count_;
     const zlang_comment_t *comments_;
     size_t comment_count_;

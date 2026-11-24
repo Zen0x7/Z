@@ -517,7 +517,7 @@ recordDeclaration = "record" identifier "{" declaration* "}" ;
 
 enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
 
-arrayModifier = "sequence" "[" integerLiteral? "]" ;
+arrayModifier = "array" ( "[" integerLiteral "]" )* ;
 typeModifier     = "[" integerLiteral "]" ;
 
 arrayInitializer = "{" ( expression ( "," expression )* )? "}" ;
@@ -541,7 +541,7 @@ functionDeclaration = "function" identifier "(" parameters ")"
                       ( ":" type )? block ;
 
 parameterMode  = "clone" | "reference" ;
-parameter      = "const"? parameterMode type identifier ;
+parameter      = "const"? parameterMode ( "array" | type ) identifier ;
 parameters     = ( parameter ( "," parameter )* )? ;
 
 returnStatement = "return" expression? ";" ;
@@ -729,6 +729,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | contextual index-value CSE across branches | `reuses_index_values_across_if_branches` |
 | reserved generated namespace | `rejects_reserved_identifiers` |
 | tuple array access | `emits_array_get_and_set`, `rejects_array_tuple_rank_mismatch` |
+| inferred local array shape | `infers_local_array_shape`, `rejects_unknown_array_extent` |
+| inferred array function shape | `infers_array_function_shape` |
 | short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
 | parameter qualifiers | `emits_parameter_qualifiers` |
 | missing parameter qualifier rejection | `rejects_missing_parameter_qualifier` |
@@ -812,6 +814,15 @@ and typed get/set helpers. Arrays have no logical length and no append operation
 Zlang 0.15 adds source-level `array_get(array, {i, ...})` and `array_set(array, {i, ...}, value)`.
 The tuple rank must match the declared array rank, and both operations lower to the generated typed
 helpers. `array_set` participates in mutation tracking and CSE invalidation.
+
+
+## 0.16 implementation status
+
+Zlang 0.16 infers array rank and extents before semantic analysis. Declarations written as
+`array T name;` use initializer count, constant indices and canonical loop induction ranges as
+evidence. Function parameters and returns written as `array` infer one concrete shape from call
+sites or return assignment. Canonical array typedefs keep locals, parameters and returns type
+compatible in generated C.
 
 
 ## Emitted comments

@@ -34,6 +34,9 @@ typedef struct zlang_emitted_symbol_t {
     bool has_explicit_capacity_;
     bool is_sequence_;
     bool is_reference_;
+    bool is_array_;
+    uint32_t array_rank_;
+    uint32_t array_extents_[ZLANG_ARRAY_MAX_RANK];
 } zlang_emitted_symbol_t;
 
 typedef struct zlang_emitted_sequence_t {

@@ -519,6 +519,49 @@ static void rejects_array_tuple_rank_mismatch(zlang_test_context_t *const contex
                 zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
 }
 
+static void infers_local_array_shape(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array integer grid;\n"
+                                  "for (integer row = 0; row < 2; row += 1) {\n"
+                                  "    for (integer col = 0; col < 3; col += 1) {\n"
+                                  "        grid[row][col] = row + col;\n"
+                                  "    }\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_grid.data_[_zlang_array_offset_2") != NULL);
+}
+
+static void infers_array_function_shape(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function abc(clone array value): array {\n"
+                                  "    array result;\n"
+                                  "    return result;\n"
+                                  "}\n"
+                                  "array[2][3] integer grid;\n"
+                                  "array[2][3] integer copied = abc(grid);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "zlang_array_i32_2_3_t _u_abc(zlang_array_i32_2_3_t value)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_array_i32_2_3_t _copied = _u_abc(_grid);") != NULL);
+}
+
+static void rejects_unknown_array_extent(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "integer index = 1;\n"
+                                  "array integer values;\n"
+                                  "values[index] = 3;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
+}
+
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
     static const char *const sources_k[] = {"integer zlang_value = 1;", "integer _zlang_value = 1;",
                                             "integer ZLANG_VALUE = 1;"};

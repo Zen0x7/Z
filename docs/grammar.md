@@ -74,7 +74,8 @@ needed.
 | Syntax | Meaning |
 | --- | --- |
 | `type name = expression;` | Scalar declaration |
-| `array[N] type name;` | Fixed-shape array |
+| `array[N] type name;` | Fixed-shape array with explicit extents |
+| `array type name;` | Array with inferred rank and extents |
 | `array_get(name, {i, ...})` | Read through a checked typed helper |
 | `array_set(name, {i, ...}, value)` | Write through a checked typed helper |
 | `array[] type name = {...};` | Array with inferred extent |
@@ -85,6 +86,7 @@ needed.
 | `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
+| `function name(const? clone array name, ...): array {...}` | Function with inferred array parameters and return |
 | `function name(const? clone type name, ...): type {...}` | Function with value parameters |
 | `function name(const? reference type name, ...): type {...}` | Function with caller-owned references |
 | `return expression;` / `return;` | Return from a function |

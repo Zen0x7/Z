@@ -90,6 +90,51 @@
 #define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "(first == 4)"
 #define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(label);"
 
+#define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "integer values[] = {1, 2, 3};"
+#define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED                                                   \
+    "struct zlang_sequence_i32_3_t values = { { 1, 2, 3 }, 3U };"
+
+#define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "integer values[5] = {1, 2, 3};"
+#define ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED                                                    \
+    "struct zlang_sequence_i32_5_t values = { { 1, 2, 3, 0, 0 }, 3U };"
+
+#define ZLANG_SPEC_INDEX_ASSIGNMENT_SOURCE                                                         \
+    "integer values[4];\n"                                                                         \
+    "append(values, 7);\n"                                                                         \
+    "values[0] = 10;"
+#define ZLANG_SPEC_INDEX_ASSIGNMENT_EXPECTED "values.data_[_zlang_index_0] = 10;"
+#define ZLANG_SPEC_INDEX_ASSIGNMENT_TRAP "zlang_trap(2U);"
+
+#define ZLANG_SPEC_LITERAL_CONCAT_SOURCE "string message = \"temp_\" + \"_01\";"
+#define ZLANG_SPEC_LITERAL_CONCAT_EXPECTED "(zlang_string_t){ \"temp__01\", 8U };"
+
+#define ZLANG_SPEC_VARIABLE_CONCAT_SOURCE                                                          \
+    "string prefix = \"temp_\";\n"                                                                 \
+    "string[32] label = prefix + \"sensor\";"
+#define ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED "char label_storage"
+
+#define ZLANG_SPEC_CALL_SOURCE                                                                     \
+    "function add(integer left, integer right): integer {\n"                                       \
+    "    return left + right;\n"                                                                   \
+    "}\n"                                                                                          \
+    "integer total = add(2, 3);"
+#define ZLANG_SPEC_CALL_EXPECTED "int32_t total = add(2, 3);"
+
+#define ZLANG_SPEC_OPERATORS_SOURCE                                                                \
+    "integer total = 4;\n"                                                                         \
+    "boolean smaller = total < 10;\n"                                                              \
+    "boolean bigger = total > 2;\n"                                                                \
+    "boolean lower_equal = total <= 4;\n"                                                          \
+    "boolean greater_equal = total >= 4;\n"                                                        \
+    "boolean different = total != 2;"
+#define ZLANG_SPEC_LESS_EXPECTED "bool smaller = (total < 10);"
+#define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool different = (total != 2);"
+
+#define ZLANG_SPEC_SIBLING_SCOPES_SOURCE                                                           \
+    "{ integer item = 1; }\n"                                                                      \
+    "{ integer item = 2; print(item); }"
+#define ZLANG_SPEC_SIBLING_SCOPES_EXPECTED "int32_t item_0 = 2;"
+
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 
 #endif /* ZLANG_SPEC_FIXTURES_H */

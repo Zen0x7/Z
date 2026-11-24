@@ -1,5 +1,5 @@
 /** @file
- * @brief Scope, binding, type and resource checks for Zlang 0.1.
+ * @brief Scope, binding, type and resource checks for Zlang 0.2.
  */
 
 #include "zlang/compiler/semantics.h"
@@ -15,6 +15,20 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->scope_depth_ = 0U;
     context->diagnostics_ = diagnostics;
     context->program_ = program;
+}
+
+static zlang_symbol_t *zlang_find_mutable_symbol(zlang_semantic_context_t *context,
+                                                 const char *name) {
+    if (name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < context->symbol_count_; ++_index) {
+        zlang_symbol_t *const _symbol_k = &context->symbols_[_index];
+        if (strcmp(_symbol_k->name_, name) == 0) {
+            return _symbol_k;
+        }
+    }
+    return NULL;
 }
 
 static const zlang_symbol_t *zlang_find_symbol(const zlang_semantic_context_t *context,
@@ -38,6 +52,12 @@ static bool zlang_report(zlang_semantic_context_t *context, uint16_t code,
     return false;
 }
 
+static void zlang_report_warning(zlang_semantic_context_t *context, uint16_t code,
+                                 const zlang_ast_statement_t *statement, const char *message) {
+    (void)zlang_diagnostics_add_warning(context->diagnostics_, code, statement->line_,
+                                        statement->column_, message);
+}
+
 static bool zlang_report_expression(zlang_semantic_context_t *context, uint16_t code,
                                     size_t expression_index, const zlang_ast_statement_t *statement,
                                     const char *message) {
@@ -54,7 +74,7 @@ static bool zlang_report_expression(zlang_semantic_context_t *context, uint16_t 
 
 static bool zlang_add_symbol(zlang_semantic_context_t *context,
                              const zlang_ast_statement_t *statement, uint32_t capacity,
-                             bool is_sequence) {
+                             bool is_sequence, bool is_function) {
     const zlang_symbol_t *const _existing_k = zlang_find_symbol(context, statement->name_);
     if (_existing_k != NULL) {
         return zlang_report(context,
@@ -73,11 +93,54 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
     zlang_symbol_t *const _symbol_k = &context->symbols_[context->symbol_count_++];
     _symbol_k->name_ = statement->name_;
     _symbol_k->type_name_ = statement->type_name_;
+    _symbol_k->declaration_ = statement;
     _symbol_k->capacity_ = capacity;
     _symbol_k->scope_depth_ = context->scope_depth_;
-    _symbol_k->is_function_ = false;
+    _symbol_k->parameter_start_ = statement->parameter_start_;
+    _symbol_k->parameter_count_ = statement->parameter_count_;
     _symbol_k->is_sequence_ = is_sequence;
+    _symbol_k->is_function_ = is_function;
+    _symbol_k->has_explicit_capacity_ = statement->has_explicit_capacity_;
+    _symbol_k->is_mutated_ = false;
     return true;
+}
+
+static bool zlang_add_function_symbol(zlang_semantic_context_t *context,
+                                      const zlang_ast_statement_t *statement) {
+    const zlang_symbol_t *const _existing_k = zlang_find_symbol(context, statement->name_);
+    if (_existing_k != NULL && _existing_k->is_function_ &&
+        _existing_k->scope_depth_ == context->scope_depth_) {
+        return true;
+    }
+    return zlang_add_symbol(context, statement, 0U, false, true);
+}
+
+static void zlang_mark_mutated(zlang_semantic_context_t *context, const char *name) {
+    zlang_symbol_t *const _symbol_k = zlang_find_mutable_symbol(context, name);
+    if (_symbol_k != NULL) {
+        _symbol_k->is_mutated_ = true;
+    }
+}
+
+static bool zlang_type_matches(const char *expected, const char *actual) {
+    return expected != NULL && actual != NULL && strcmp(expected, actual) == 0;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_is_literal_string(const zlang_program_t *program,
+                                    size_t index) { // NOLINT(misc-no-recursion)
+    if (index == ZLANG_NO_EXPRESSION || index >= program->expression_count_) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    if (_expression_k->kind_ == zlang_expression_string_literal_) {
+        return true;
+    }
+    if (_expression_k->kind_ != zlang_expression_string_concat_) {
+        return false;
+    }
+    return zlang_is_literal_string(program, _expression_k->left_) &&
+           zlang_is_literal_string(program, _expression_k->right_);
 }
 
 static const char *zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
@@ -116,22 +179,92 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         return _left_k;
     }
     case zlang_expression_equal_:
+    case zlang_expression_less_:
+    case zlang_expression_greater_:
+    case zlang_expression_less_equal_:
+    case zlang_expression_greater_equal_:
+    case zlang_expression_not_equal_:
         (void)zlang_analyze_expression(context, _expression_k->left_, statement);
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
         return "boolean";
+    case zlang_expression_string_concat_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches("string", _left_k) || !zlang_type_matches("string", _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "string concatenation requires string operands");
+            return NULL;
+        }
+        return "string";
+    }
     case zlang_expression_assignment_: {
-        const zlang_ast_expression_t *const _left_k =
-            index < context->program_->expression_count_
+        const zlang_ast_expression_t *const _target_k =
+            _expression_k->left_ < context->program_->expression_count_
                 ? &context->program_->expressions_[_expression_k->left_]
                 : NULL;
-        if (_left_k == NULL || _left_k->kind_ != zlang_expression_identifier_ ||
-            zlang_find_symbol(context, _left_k->name_) == NULL) {
+        const zlang_symbol_t *const _symbol_k =
+            _target_k != NULL ? zlang_find_symbol(context, _target_k->name_) : NULL;
+        if (_target_k == NULL || _target_k->kind_ != zlang_expression_identifier_ ||
+            _symbol_k == NULL) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement,
                                           "assignment target is not a declared identifier");
             return NULL;
         }
-        return zlang_analyze_expression(context, _expression_k->right_, statement);
+        const zlang_ast_expression_t *const _value_k =
+            _expression_k->right_ < context->program_->expression_count_
+                ? &context->program_->expressions_[_expression_k->right_]
+                : NULL;
+        if (strcmp(_symbol_k->type_name_, "string") == 0 && _value_k != NULL &&
+            _value_k->kind_ == zlang_expression_string_concat_ &&
+            !_symbol_k->has_explicit_capacity_ &&
+            !zlang_is_literal_string(context->program_, _expression_k->right_)) {
+            (void)zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_STRING_CAPACITY_REQUIRED, index, statement,
+                "concatenation with a variable requires an explicit string capacity");
+            return NULL;
+        }
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "assignment value does not match the declared type");
+            return NULL;
+        }
+        if (strcmp(_symbol_k->type_name_, "string") == 0) {
+            zlang_mark_mutated(context, _symbol_k->name_);
+        }
+        return _actual_k;
+    }
+    case zlang_expression_index_assignment_: {
+        const zlang_ast_expression_t *const _target_k =
+            _expression_k->left_ < context->program_->expression_count_
+                ? &context->program_->expressions_[_expression_k->left_]
+                : NULL;
+        const zlang_symbol_t *const _symbol_k =
+            _target_k != NULL && _target_k->kind_ == zlang_expression_index_ &&
+                    _target_k->left_ < context->program_->expression_count_
+                ? zlang_find_symbol(context,
+                                    context->program_->expressions_[_target_k->left_].name_)
+                : NULL;
+        if (_symbol_k == NULL || !_symbol_k->is_sequence_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement,
+                                          "index assignment target is not a declared sequence");
+            return NULL;
+        }
+        (void)zlang_analyze_expression(context, _target_k->right_, statement);
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "indexed value does not match the sequence element type");
+            return NULL;
+        }
+        zlang_mark_mutated(context, _symbol_k->name_);
+        return _actual_k;
     }
     case zlang_expression_print_call_:
         (void)zlang_analyze_expression(context, _expression_k->left_, statement);
@@ -143,15 +276,24 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           statement, "append target is not a declared sequence");
             return NULL;
         }
-        (void)zlang_analyze_expression(context, _expression_k->right_, statement);
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_target_k->type_name_, _actual_k)) {
+            (void)zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                "appended value does not match the sequence element type");
+            return NULL;
+        }
+        zlang_mark_mutated(context, _target_k->name_);
         return "void";
     }
     case zlang_expression_index_: {
-        const zlang_symbol_t *const _target_k =
+        const zlang_ast_expression_t *const _left_k =
             _expression_k->left_ < context->program_->expression_count_
-                ? zlang_find_symbol(context,
-                                    context->program_->expressions_[_expression_k->left_].name_)
+                ? &context->program_->expressions_[_expression_k->left_]
                 : NULL;
+        const zlang_symbol_t *const _target_k =
+            _left_k != NULL ? zlang_find_symbol(context, _left_k->name_) : NULL;
         if (_target_k == NULL || !_target_k->is_sequence_) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "index target is not a declared sequence");
@@ -160,13 +302,61 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
         return _target_k->type_name_;
     }
+    case zlang_expression_call_: {
+        const zlang_symbol_t *const _function_k = zlang_find_symbol(context, _expression_k->name_);
+        if (_function_k == NULL || !_function_k->is_function_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "call target is not a declared function");
+            return NULL;
+        }
+        if (_expression_k->argument_count_ != _function_k->parameter_count_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "call argument count does not match the declaration");
+        }
+        const size_t _count_k = _expression_k->argument_count_ < _function_k->parameter_count_
+                                    ? _expression_k->argument_count_
+                                    : _function_k->parameter_count_;
+        for (size_t _argument = 0U; _argument < _count_k; ++_argument) {
+            const size_t _expression_index_k = _expression_k->argument_start_ + _argument;
+            const size_t _parameter_index_k = _function_k->parameter_start_ + _argument;
+            if (_parameter_index_k >= context->program_->parameter_count_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                              _expression_index_k, statement,
+                                              "call parameter table is incomplete");
+                continue;
+            }
+            const char *const _expected_k =
+                context->program_->parameters_[_parameter_index_k].type_name_;
+            const char *const _actual_k =
+                zlang_analyze_expression(context, _expression_index_k, statement);
+            if (!zlang_type_matches(_expected_k, _actual_k)) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                              _expression_index_k, statement,
+                                              "call argument does not match the parameter type");
+            }
+        }
+        return _function_k->type_name_;
+    }
     default:
         return NULL;
     }
 }
 
-static bool zlang_type_matches(const char *expected, const char *actual) {
-    return expected != NULL && actual != NULL && strcmp(expected, actual) == 0;
+static bool zlang_analyze_initializers(zlang_semantic_context_t *context,
+                                       const zlang_ast_statement_t *statement) {
+    bool _result_k = true;
+    for (size_t _index = 0U; _index < statement->initializer_count_; ++_index) {
+        const size_t _expression_index_k = statement->initializer_start_ + _index;
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_index_k, statement);
+        if (!zlang_type_matches(statement->type_name_, _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                          _expression_index_k, statement,
+                                          "initializer element does not match the sequence type");
+            _result_k = false;
+        }
+    }
+    return _result_k;
 }
 
 static bool zlang_analyze_body(zlang_semantic_context_t *context, size_t start, size_t count);
@@ -186,18 +376,40 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement->expression_, statement,
                 "initializer type does not match the declared type");
         }
+        const zlang_ast_expression_t *const _initializer_k =
+            statement->expression_ < context->program_->expression_count_
+                ? &context->program_->expressions_[statement->expression_]
+                : NULL;
+        if (_result_k && strcmp(statement->type_name_, "string") == 0 && _initializer_k != NULL &&
+            _initializer_k->kind_ == zlang_expression_string_concat_ &&
+            !statement->has_explicit_capacity_ &&
+            !zlang_is_literal_string(context->program_, statement->expression_)) {
+            _result_k = zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_STRING_CAPACITY_REQUIRED, statement->expression_,
+                statement, "concatenation with a variable requires an explicit string capacity");
+        }
         if (_result_k) {
-            _result_k = zlang_add_symbol(context, statement, 0U, false);
+            _result_k = zlang_add_symbol(context, statement, statement->capacity_, false, false);
         }
         break;
     }
     case zlang_statement_sequence_declaration_:
-        if (statement->capacity_ == 0U) {
+        if (statement->capacity_ == 0U ||
+            (!statement->has_explicit_capacity_ && statement->initializer_count_ == 0U)) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, statement,
-                                     "sequence declaration requires a fixed capacity");
-        } else {
-            _result_k = zlang_add_symbol(context, statement, statement->capacity_, true);
+                                     "sequence declaration requires a capacity or an initializer");
+            break;
         }
+        if (statement->initializer_count_ > statement->capacity_) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_INITIALIZER_TOO_LONG, statement,
+                                     "initializer has more elements than the declared capacity");
+            break;
+        }
+        if (!zlang_analyze_initializers(context, statement)) {
+            _result_k = false;
+            break;
+        }
+        _result_k = zlang_add_symbol(context, statement, statement->capacity_, true, false);
         break;
     case zlang_statement_expression_:
     case zlang_statement_return_:
@@ -213,20 +425,24 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         break;
     case zlang_statement_foreach_: {
-        if (zlang_find_symbol(context, statement->iterable_name_) == NULL) {
+        const zlang_symbol_t *const _iterable_k =
+            zlang_find_symbol(context, statement->iterable_name_);
+        if (_iterable_k == NULL || !_iterable_k->is_sequence_) {
             return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                                "foreach iterable refers to an undeclared name");
+                                "foreach iterable refers to an undeclared sequence");
         }
         const size_t _scope_start_k = context->symbol_count_;
         ++context->scope_depth_;
         const zlang_ast_statement_t _item_k = {
             .kind_ = zlang_statement_declaration_,
-            .type_name_ = "integer",
+            .type_name_ = statement->type_name_,
             .name_ = statement->name_,
             .line_ = statement->line_,
             .column_ = statement->column_,
         };
-        if (!zlang_add_symbol(context, &_item_k, 0U, false)) {
+        if (!zlang_add_symbol(context, &_item_k, 0U, false, false)) {
+            context->symbol_count_ = _scope_start_k;
+            --context->scope_depth_;
             return false;
         }
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
@@ -235,9 +451,17 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_function_: {
+        if (!zlang_add_function_symbol(context, statement)) {
+            return false;
+        }
         const size_t _scope_start_k = context->symbol_count_;
         ++context->scope_depth_;
         for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
+            if (statement->parameter_start_ + _index >= context->program_->parameter_count_) {
+                --context->scope_depth_;
+                return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                    "function parameter table is incomplete");
+            }
             const zlang_parameter_t *const _parameter_k =
                 &context->program_->parameters_[statement->parameter_start_ + _index];
             const zlang_ast_statement_t _parameter_statement_k = {
@@ -247,8 +471,9 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 .line_ = _parameter_k->line_,
                 .column_ = _parameter_k->column_,
             };
-            if (!zlang_add_symbol(context, &_parameter_statement_k, 0U, false)) {
+            if (!zlang_add_symbol(context, &_parameter_statement_k, 0U, false, false)) {
                 context->symbol_count_ = _scope_start_k;
+                --context->scope_depth_;
                 return false;
             }
         }
@@ -288,7 +513,48 @@ static bool zlang_analyze_body(zlang_semantic_context_t *context, size_t start,
     return _result_k;
 }
 
+static bool zlang_is_nested(const zlang_program_t *program, size_t index) {
+    for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_owner];
+        if (index >= _statement_k->body_start_ &&
+            index < _statement_k->body_start_ + _statement_k->body_count_) {
+            return true;
+        }
+        if (index >= _statement_k->else_start_ &&
+            index < _statement_k->else_start_ + _statement_k->else_count_) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void zlang_report_unused_capacities(zlang_semantic_context_t *context) {
+    for (size_t _index = 0U; _index < context->symbol_count_; ++_index) {
+        const zlang_symbol_t *const _symbol_k = &context->symbols_[_index];
+        if (_symbol_k->is_sequence_ && _symbol_k->has_explicit_capacity_ &&
+            !_symbol_k->is_mutated_ && _symbol_k->declaration_ != NULL) {
+            zlang_report_warning(context, ZLANG_DIAGNOSTIC_UNUSED_CAPACITY, _symbol_k->declaration_,
+                                 "explicit sequence capacity is never mutated");
+        }
+    }
+}
+
 bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_context_t *context) {
     context->program_ = program;
-    return zlang_analyze_body(context, 0U, program->statement_count_);
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_function_ && !zlang_is_nested(program, _index) &&
+            !zlang_add_function_symbol(context, _statement_k)) {
+            return false;
+        }
+    }
+    bool _result_k = true;
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (!zlang_is_nested(program, _index) && !zlang_analyze_statement(context, _statement_k)) {
+            _result_k = false;
+        }
+    }
+    zlang_report_unused_capacities(context);
+    return _result_k;
 }

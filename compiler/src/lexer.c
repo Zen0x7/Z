@@ -1,5 +1,5 @@
 /** @file
- * @brief Tokenization for Zlang 0.1 source text.
+ * @brief Tokenization for Zlang 0.2 source text.
  */
 
 #include "zlang/compiler/lexer.h"
@@ -177,8 +177,19 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     token->line_ = line;
     token->column_ = column;
 
-    if (_character_k == '=' && lexer->source_[lexer->position_ + 1U] == '=') {
-        token->kind_ = zlang_token_equal_equal_;
+    const char _next_k = lexer->source_[lexer->position_ + 1U];
+    if ((_character_k == '=' || _character_k == '!' || _character_k == '<' ||
+         _character_k == '>') &&
+        _next_k == '=') {
+        if (_character_k == '=') {
+            token->kind_ = zlang_token_equal_equal_;
+        } else if (_character_k == '!') {
+            token->kind_ = zlang_token_not_equal_;
+        } else if (_character_k == '<') {
+            token->kind_ = zlang_token_less_equal_;
+        } else {
+            token->kind_ = zlang_token_greater_equal_;
+        }
         token->length_ = 2U;
         zlang_lexer_advance(lexer);
         zlang_lexer_advance(lexer);
@@ -215,6 +226,15 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         break;
     case '=':
         token->kind_ = zlang_token_equal_;
+        break;
+    case '!':
+        token->kind_ = zlang_token_not_equal_;
+        break;
+    case '<':
+        token->kind_ = zlang_token_less_;
+        break;
+    case '>':
+        token->kind_ = zlang_token_greater_;
         break;
     case '+':
         token->kind_ = zlang_token_plus_;

@@ -93,6 +93,54 @@ ZLANG_STATIC_INLINE uint32_t zlang_add_u32(uint32_t left, uint32_t right) {
 }
 
 /**
+ * @brief Concatenate string views into caller-owned storage.
+ * @param storage Destination buffer with room for `capacity + 1` bytes.
+ * @param capacity Maximum number of content bytes, excluding the terminator.
+ * @param parts String views to concatenate in order.
+ * @param count Number of views.
+ * @return A view of `storage` containing the concatenated bytes.
+ *
+ * Parts are copied from last to first so a caller-owned buffer may also be one
+ * of the inputs. Overflow and insufficient capacity trap instead of growing.
+ */
+ZLANG_STATIC_INLINE zlang_string_t zlang_string_concat(char *storage, uint32_t capacity,
+                                                       const zlang_string_t *parts, size_t count) {
+    size_t _total_k = 0U;
+    for (size_t _index = 0U; _index < count; ++_index) {
+        if (parts == NULL || (parts[_index].data_ == NULL && parts[_index].length_ != 0U)) {
+            zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+            return (zlang_string_t){NULL, 0U};
+        }
+        if ((size_t)parts[_index].length_ > (size_t)(UINT32_MAX - (uint32_t)_total_k)) {
+            zlang_trap(ZLANG_TRAP_OVERFLOW);
+            return (zlang_string_t){NULL, 0U};
+        }
+        _total_k += (size_t)parts[_index].length_;
+    }
+    if (_total_k > (size_t)capacity) {
+        zlang_trap(ZLANG_TRAP_CAPACITY);
+        return (zlang_string_t){NULL, 0U};
+    }
+    if (_total_k != 0U && storage == NULL) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+        return (zlang_string_t){NULL, 0U};
+    }
+
+    size_t _offset_k = _total_k;
+    for (size_t _index = count; _index > 0U; --_index) {
+        const zlang_string_t _part_k = parts[_index - 1U];
+        _offset_k -= (size_t)_part_k.length_;
+        if (_part_k.length_ != 0U) {
+            memmove(storage + _offset_k, _part_k.data_, (size_t)_part_k.length_);
+        }
+    }
+    if (storage != NULL) {
+        storage[_total_k] = '\0';
+    }
+    return (zlang_string_t){storage, (uint32_t)_total_k};
+}
+
+/**
  * @brief Append one element to a fixed-capacity sequence, trapping on overflow.
  * @param data Sequence storage.
  * @param length Current element count; updated on success.

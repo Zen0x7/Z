@@ -160,3 +160,13 @@ Status: Locked.
 - `3A`: string concatenation infers capacity when every operand is a literal. When any operand is a variable, the declaration must use explicit capacity syntax such as `string[32]`. This leaves room for later interpolation.
 - `4A`: `integer values[] = {};` is rejected with `ZLANG3001`.
 - `5A`: implementation order is comments, scopes, initializers, index assignment, strings, calls, operators.
+
+## 0.2 — Completion
+
+Status: Implemented.
+
+The 0.2 scope is implemented on top of the locked decisions above. Comments, scopes with unique
+generated C identifiers, sequence initializers with inferred capacity, checked index assignment,
+bounded string concatenation, direct function calls and ordering and inequality operators are
+covered by conformance tests. `ZLANG2005`, `ZLANG2006`, `ZLANG3002` and `ZLANG3003` are wired
+through semantic analysis and the command line driver.

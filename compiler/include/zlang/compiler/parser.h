@@ -1,5 +1,5 @@
 /** @file
- * @brief Parser API for the Zlang 0.1 grammar.
+ * @brief Parser API for the Zlang 0.2 grammar.
  */
 
 #ifndef ZLANG_COMPILER_PARSER_H
@@ -33,6 +33,8 @@ typedef struct zlang_parser_t {
     size_t parameter_capacity_;
     size_t parameter_count_;
     zlang_diagnostics_t *diagnostics_;
+    const char *string_names_[32];
+    size_t string_count_;
     size_t position_;
     bool failed_;
 } zlang_parser_t;

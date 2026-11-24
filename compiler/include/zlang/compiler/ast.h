@@ -25,7 +25,15 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_assignment_,
     zlang_expression_print_call_,
     zlang_expression_append_call_,
-    zlang_expression_index_
+    zlang_expression_index_,
+    zlang_expression_index_assignment_,
+    zlang_expression_string_concat_,
+    zlang_expression_call_,
+    zlang_expression_less_,
+    zlang_expression_greater_,
+    zlang_expression_less_equal_,
+    zlang_expression_greater_equal_,
+    zlang_expression_not_equal_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -38,8 +46,11 @@ typedef struct zlang_ast_expression_t {
     int32_t integer_value_;
     bool bool_value_;
     bool is_unsigned_;
+    bool is_string_;
     size_t left_;
     size_t right_;
+    size_t argument_start_;
+    size_t argument_count_;
     zlang_ast_string_value_t string_;
     const char *name_;
     uint32_t line_;
@@ -77,8 +88,11 @@ typedef struct zlang_ast_statement_t {
     size_t else_count_;
     size_t parameter_start_;
     size_t parameter_count_;
+    size_t initializer_start_;
+    size_t initializer_count_;
     zlang_statement_kind_t kind_;
     uint32_t capacity_;
+    bool has_explicit_capacity_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

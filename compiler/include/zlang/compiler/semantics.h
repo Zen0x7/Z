@@ -1,5 +1,5 @@
 /** @file
- * @brief Semantic analysis API for Zlang 0.1.
+ * @brief Semantic analysis API for Zlang 0.2.
  */
 
 #ifndef ZLANG_COMPILER_SEMANTICS_H
@@ -15,10 +15,15 @@
 typedef struct zlang_symbol_t {
     const char *name_;
     const char *type_name_;
-    uint32_t capacity_;
+    const zlang_ast_statement_t *declaration_;
     size_t scope_depth_;
+    size_t parameter_start_;
+    size_t parameter_count_;
+    uint32_t capacity_;
     bool is_sequence_;
     bool is_function_;
+    bool has_explicit_capacity_;
+    bool is_mutated_;
 } zlang_symbol_t;
 
 typedef struct zlang_semantic_context_t {

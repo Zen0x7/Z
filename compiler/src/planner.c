@@ -42,6 +42,13 @@ static bool zlang_declaration_size(const zlang_ast_statement_t *statement, uint3
     }
 
     if (statement->kind_ == zlang_statement_declaration_) {
+        if (strcmp(statement->type_name_, "string") == 0 && statement->has_explicit_capacity_) {
+            if (statement->capacity_ > UINT32_MAX - _element_size_k - 1U) {
+                return false;
+            }
+            *size = _element_size_k + statement->capacity_ + 1U;
+            return true;
+        }
         *size = _element_size_k;
         return true;
     }

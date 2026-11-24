@@ -14,9 +14,20 @@
 #include <stdint.h>
 
 #define ZLANG_EMITTED_TYPE_CAPACITY 32U
+#define ZLANG_EMITTED_SYMBOL_CAPACITY 128U
+#define ZLANG_EMITTED_NAME_CAPACITY 64U
 
 /* The emitter owns no memory. The caller supplies the output buffer and the
    diagnostic sink, which keeps the compiler core free of hidden state. */
+
+typedef struct zlang_emitted_symbol_t {
+    const char *source_name_;
+    const char *type_name_;
+    char generated_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char storage_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    uint32_t capacity_;
+    bool has_explicit_capacity_;
+} zlang_emitted_symbol_t;
 
 typedef struct zlang_emitter_t {
     char *buffer_;
@@ -27,6 +38,9 @@ typedef struct zlang_emitter_t {
     uint32_t next_index_;
     char emitted_types_[ZLANG_EMITTED_TYPE_CAPACITY][64];
     size_t emitted_type_count_;
+    zlang_emitted_symbol_t emitted_symbols_[ZLANG_EMITTED_SYMBOL_CAPACITY];
+    size_t emitted_symbol_count_;
+    size_t active_symbol_count_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

@@ -53,6 +53,17 @@ static void zlang_spec_expect_diagnostic(zlang_test_context_t *context,
     ZLANG_CHECK(context, _item_k->column_ == column);
 }
 
+static void zlang_spec_expect_warning(zlang_test_context_t *context,
+                                      const zlang_spec_session_t *session, uint16_t code,
+                                      uint32_t line, uint32_t column) {
+    const zlang_diagnostic_t *const _item_k = zlang_spec_find_diagnostic(session, code);
+
+    ZLANG_CHECK(context, _item_k != NULL);
+    ZLANG_CHECK(context, _item_k->is_warning_);
+    ZLANG_CHECK(context, _item_k->line_ == line);
+    ZLANG_CHECK(context, _item_k->column_ == column);
+}
+
 static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *source) {
     session->output_[0] = '\0';
     zlang_diagnostics_init(&session->diagnostics_, session->diagnostic_items_,
@@ -300,6 +311,114 @@ static void emits_append_and_checked_index(zlang_test_context_t *const context) 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_APPEND_INDEX_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_APPEND_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEX_EXPECTED) != NULL);
+}
+
+static void emits_an_inferred_sequence_initializer(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED) != NULL);
+}
+
+static void emits_a_partial_explicit_sequence_initializer(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED) != NULL);
+    zlang_spec_expect_warning(context, &_session, ZLANG_DIAGNOSTIC_UNUSED_CAPACITY, 1U, 1U);
+}
+
+static void emits_index_assignment_with_a_checked_store(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INDEX_ASSIGNMENT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEX_ASSIGNMENT_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEX_ASSIGNMENT_TRAP) != NULL);
+}
+
+static void folds_literal_string_concatenation(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LITERAL_CONCAT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LITERAL_CONCAT_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_string_concat") == NULL);
+}
+
+static void emits_bounded_variable_string_concatenation(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_VARIABLE_CONCAT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "32U") != NULL);
+}
+
+static void emits_direct_function_calls(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_CALL_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CALL_EXPECTED) != NULL);
+}
+
+static void emits_ordering_and_inequality_operators(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_OPERATORS_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LESS_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "> 2") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "<= 4") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ">= 4") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_NOT_EQUAL_EXPECTED) != NULL);
+}
+
+static void renames_sibling_scope_declarations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SCOPES_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_SCOPES_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print(item_0)") != NULL);
+}
+
+static void rejects_a_shadowed_declaration(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context,
+                !zlang_spec_transpile(&_session, "integer outer = 1; { integer outer = 2; }"));
+    ZLANG_CHECK(context, _session.diagnostics_.count_ == 1U);
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_SHADOWED_DECLARATION, 1U,
+                                 22U);
+}
+
+static void rejects_variable_concatenation_without_capacity(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "string prefix = \"a\";\nstring label = prefix + \"b\";";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_STRING_CAPACITY_REQUIRED));
+}
+
+static void warns_about_unused_explicit_capacity(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE));
+    zlang_spec_expect_warning(context, &_session, ZLANG_DIAGNOSTIC_UNUSED_CAPACITY, 1U, 1U);
+}
+
+static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer values[2] = {1, 2, 3};"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_INITIALIZER_TOO_LONG));
+}
+
+static void rejects_an_empty_inferred_sequence(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer values[] = {};"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

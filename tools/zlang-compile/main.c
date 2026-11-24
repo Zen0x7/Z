@@ -265,6 +265,7 @@ int main(int argc, char **argv) {
     if (!zlang_emit_program(&_result.program_, &_emitter)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 5 : 2;
     }
+    (void)zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k);
 
     if (!zlang_cli_make_output_path(_source_path_k, ".c", _c_path, sizeof(_c_path))) {
         (void)fprintf(stderr, "error: output path is too long\n");

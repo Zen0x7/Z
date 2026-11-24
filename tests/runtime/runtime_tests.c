@@ -98,6 +98,20 @@ static void arithmetic_helpers_compute(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_mod_u32(13U, 4U) == 1U);
 }
 
+static void checked_index_reads_return_values(zlang_test_context_t *const context) {
+    const int32_t _signed_k[] = {7, 9};
+    const uint32_t _unsigned_k[] = {3U, 4U};
+    const bool _boolean_k[] = {true, false};
+    const zlang_string_t _strings_k[] = {{"a", 1U}, {"bc", 2U}};
+    const zlang_string_t _text_k = {"abc", 3U};
+
+    ZLANG_CHECK(context, zlang_array_get_i32(_signed_k, 1U, 2U) == 9);
+    ZLANG_CHECK(context, zlang_array_get_u32(_unsigned_k, 0U, 2U) == 3U);
+    ZLANG_CHECK(context, zlang_array_get_bool(_boolean_k, 0U, 2U));
+    ZLANG_CHECK(context, zlang_array_get_string(_strings_k, 1U, 2U).length_ == 2U);
+    ZLANG_CHECK(context, zlang_string_byte(_text_k, 1U) == (uint32_t)'b');
+}
+
 static void array_append_writes_and_increments_length(zlang_test_context_t *const context) {
     int32_t _data[2] = {0, 0};
     uint32_t _length = 0U;
@@ -176,6 +190,31 @@ static void trap_remainder_i32(void) { (void)zlang_mod_i32(1, 0); }
 
 static void trap_remainder_u32(void) { (void)zlang_mod_u32(1U, 0U); }
 
+static void trap_array_get_i32(void) {
+    const int32_t _data_k[] = {1};
+    (void)zlang_array_get_i32(_data_k, 1U, 1U);
+}
+
+static void trap_array_get_u32(void) {
+    const uint32_t _data_k[] = {1U};
+    (void)zlang_array_get_u32(_data_k, 1U, 1U);
+}
+
+static void trap_array_get_bool(void) {
+    const bool _data_k[] = {true};
+    (void)zlang_array_get_bool(_data_k, 1U, 1U);
+}
+
+static void trap_array_get_string(void) {
+    const zlang_string_t _data_k[] = {{"a", 1U}};
+    (void)zlang_array_get_string(_data_k, 1U, 1U);
+}
+
+static void trap_string_byte(void) {
+    const zlang_string_t _text_k = {"a", 1U};
+    (void)zlang_string_byte(_text_k, 1U);
+}
+
 static bool trap_exits_with_code(void (*function)(void), uint8_t code) {
     const pid_t _child_k = fork();
     int _status_k = 0;
@@ -207,6 +246,11 @@ static void traps_terminate_with_the_declared_code(zlang_test_context_t *const c
     ZLANG_CHECK(context, trap_exits_with_code(trap_division_u32, ZLANG_TRAP_DIVISION_BY_ZERO));
     ZLANG_CHECK(context, trap_exits_with_code(trap_remainder_i32, ZLANG_TRAP_DIVISION_BY_ZERO));
     ZLANG_CHECK(context, trap_exits_with_code(trap_remainder_u32, ZLANG_TRAP_DIVISION_BY_ZERO));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_array_get_i32, ZLANG_TRAP_BOUNDS));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_array_get_u32, ZLANG_TRAP_BOUNDS));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_array_get_bool, ZLANG_TRAP_BOUNDS));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_array_get_string, ZLANG_TRAP_BOUNDS));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_string_byte, ZLANG_TRAP_BOUNDS));
 #else
     ZLANG_CHECK(context, true);
 #endif

@@ -343,7 +343,8 @@ Every generated C file begins with:
 | `prefix + suffix` with explicit capacity | `zlang_string_concat(storage, capacity, parts, count)` |
 | `print(s)` | `zlang_print(s)` |
 | `print(i)`, `print(u)`, `print(b)` | bounded scalar print helpers |
-| `values[2]` | checked index, then `values.data_[2]` |
+| `values[2]` | bounded typed getter such as `zlang_array_get_i32(values.data_, 2U, values.length_)` |
+| `text[0]` | `zlang_string_byte(text, 0U)` |
 | `values[0] = x` | checked index statement, then direct store to `values.data_[0]` |
 | `append(values, x)` | `CheckCapacity` then `values.data_[values.length_++] = x;` |
 | `foreach (x in values)` | `for (uint32_t index = 0U; index < values.length_; ++index) { T x = values.data_[index]; ... }` |
@@ -374,6 +375,12 @@ int32_t zlang_div_i32(int32_t left, int32_t right);
 uint32_t zlang_div_u32(uint32_t left, uint32_t right);
 int32_t zlang_mod_i32(int32_t left, int32_t right);
 uint32_t zlang_mod_u32(uint32_t left, uint32_t right);
+int32_t zlang_array_get_i32(const int32_t *data, uint32_t index, uint32_t length);
+uint32_t zlang_array_get_u32(const uint32_t *data, uint32_t index, uint32_t length);
+bool zlang_array_get_bool(const bool *data, uint32_t index, uint32_t length);
+zlang_string_t zlang_array_get_string(const zlang_string_t *data, uint32_t index,
+                                      uint32_t length);
+uint32_t zlang_string_byte(zlang_string_t value, uint32_t index);
 bool zlang_print_i32(int32_t value);
 bool zlang_print_u32(uint32_t value);
 bool zlang_print_bool(bool value);
@@ -670,4 +677,5 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | readable emitted C layout | `uses_readable_emitted_layout` |
 | unique sequence types across sibling scopes | `emits_unique_sequence_types_for_sibling_scopes` |
 | string literal deduplication | `deduplicates_string_literals` |
+| bounded index getters | `checked_index_reads_return_values`, `uses_readable_emitted_layout` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

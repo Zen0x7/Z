@@ -309,6 +309,65 @@ ZLANG_STATIC_INLINE zlang_string_t zlang_string_array_append(char *storage, zlan
 }
 
 /**
+ * @brief Read a signed integer element with a bounds trap.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_array_get_i32(const int32_t *data, uint32_t index,
+                                                uint32_t length) {
+    if (data == NULL || index >= length) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return 0;
+    }
+    return data[index];
+}
+
+/**
+ * @brief Read an unsigned integer element with a bounds trap.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_array_get_u32(const uint32_t *data, uint32_t index,
+                                                 uint32_t length) {
+    if (data == NULL || index >= length) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return 0U;
+    }
+    return data[index];
+}
+
+/**
+ * @brief Read a boolean element with a bounds trap.
+ */
+ZLANG_STATIC_INLINE bool zlang_array_get_bool(const bool *data, uint32_t index, uint32_t length) {
+    if (data == NULL || index >= length) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return false;
+    }
+    return data[index];
+}
+
+/**
+ * @brief Read a bounded string element with a bounds trap.
+ */
+ZLANG_STATIC_INLINE zlang_string_t zlang_array_get_string(const zlang_string_t *data,
+                                                          uint32_t index, uint32_t length) {
+    const zlang_string_t _empty_k = {NULL, 0U};
+    if (data == NULL || index >= length) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return _empty_k;
+    }
+    return data[index];
+}
+
+/**
+ * @brief Read one byte of a bounded string with a bounds trap.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_string_byte(zlang_string_t value, uint32_t index) {
+    if (value.data_ == NULL || index >= value.length_) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return 0U;
+    }
+    return (uint32_t)(unsigned char)value.data_[index];
+}
+
+/**
  * @brief Append one element to a fixed-capacity sequence, trapping on overflow.
  * @param data Sequence storage.
  * @param length Current element count; updated on success.

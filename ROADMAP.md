@@ -245,3 +245,11 @@ Status: Implemented.
 Generated sequence types and capacity macros are unique across sibling scopes. Sequence and string
 capacities are referenced through their generated macros, loop temporaries use `_zlang_repeat_N`,
 and repeated string literals are deduplicated.
+
+## Emitted C readability — Follow-up
+
+Status: Implemented.
+
+Index reads now lower to bounded typed getters instead of nested ternaries. Comparisons are emitted
+without redundant outer parentheses, and `(void)` guards are emitted only for declarations that
+are actually unused in the generated C.

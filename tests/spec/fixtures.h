@@ -90,7 +90,7 @@
 #define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop() {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
 #define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_u_first = 4;"
-#define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "(_u_first == 4)"
+#define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "_u_first == 4"
 #define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(_u_label);"
 
 #define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "sequence[] integer values = {1, 2, 3};"
@@ -129,8 +129,8 @@
     "boolean lower_equal = total <= 4;\n"                                                          \
     "boolean greater_equal = total >= 4;\n"                                                        \
     "boolean different = total != 2;"
-#define ZLANG_SPEC_LESS_EXPECTED "bool _u_smaller = (_u_total < 10);"
-#define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool _u_different = (_u_total != 2);"
+#define ZLANG_SPEC_LESS_EXPECTED "bool _u_smaller = _u_total < 10;"
+#define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool _u_different = _u_total != 2;"
 
 #define ZLANG_SPEC_SIBLING_SCOPES_SOURCE                                                           \
     "{ integer item = 1; }\n"                                                                      \
@@ -264,7 +264,7 @@
 #define ZLANG_SPEC_STRING_INDEX_SOURCE                                                             \
     "string[8] text = \"abc\";\n"                                                                  \
     "unsigned first = text[0];"
-#define ZLANG_SPEC_STRING_INDEX_EXPECTED "(uint32_t)(unsigned char)_u_text.data_[0]"
+#define ZLANG_SPEC_STRING_INDEX_EXPECTED "zlang_string_byte(_u_text, 0)"
 
 #define ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE                                                   \
     "{ sequence[2] integer values; }\n"                                                            \

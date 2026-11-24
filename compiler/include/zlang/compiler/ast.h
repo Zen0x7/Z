@@ -128,6 +128,7 @@ typedef struct zlang_comment_t {
     const char *text_;
     uint32_t length_;
     uint32_t line_;
+    uint32_t end_line_;
     uint32_t column_;
     bool is_block_;
 } zlang_comment_t;

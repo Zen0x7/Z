@@ -189,8 +189,49 @@ static void preserves_comments_and_unescapes_strings(zlang_test_context_t *const
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "say \\\"hi\\\"") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "_zlang_literal_0") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "// first line") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "/* block */") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "    // first line\n    int32_t _u_var") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "    /* block */\n    zlang_print") != NULL);
+}
+
+static void attaches_comments_to_source_constructs(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "// function note\n"
+                                  "\n"
+                                  "function abc(): integer {\n"
+                                  "    // body note\n"
+                                  "    // second body note\n"
+                                  "    return 1;\n"
+                                  "}\n"
+                                  "// record note\n"
+                                  "record A {\n"
+                                  "    // field note\n"
+                                  "    integer x;\n"
+                                  "    /* field block\n"
+                                  "       second line */\n"
+                                  "    integer y;\n"
+                                  "}\n"
+                                  "// enum note\n"
+                                  "enum E {\n"
+                                  "    // item note\n"
+                                  "    VALUE\n"
+                                  "}\n";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "// function note\nint32_t _u_abc(void) {") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "    // body note\n    // second body note\n    return 1;") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "// record note\ntypedef struct zlang_a_t {") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "    // field note\n    int32_t x;") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "    /* field block\n       second line */\n    int32_t y;") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "// enum note\ntypedef enum zlang_e_t {") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "    // item note\n    ZLANG_E_VALUE = 0U,") != NULL);
 }
 
 static void rejects_a_duplicate_declaration(zlang_test_context_t *const context) {
@@ -250,6 +291,18 @@ static void emits_function_and_return(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FUNCTION_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FUNCTION_RETURN_EXPECTED) != NULL);
+}
+
+static void emits_functions_with_user_defined_types(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FUNCTION_USER_TYPES_SOURCE));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_FUNCTION_USER_TYPE_RETURN_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                ZLANG_SPEC_FUNCTION_USER_TYPE_PARAMETERS_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_FUNCTION_USER_TYPE_CALL_EXPECTED) != NULL);
 }
 
 static void covers_every_annex_a_production(zlang_test_context_t *const context) {

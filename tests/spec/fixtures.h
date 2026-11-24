@@ -53,6 +53,27 @@
 #define ZLANG_SPEC_FUNCTION_EXPECTED "int32_t _u_add(int32_t _u_left, int32_t _u_right) {"
 #define ZLANG_SPEC_FUNCTION_RETURN_EXPECTED "return zlang_add_i32(_u_left, _u_right);"
 
+#define ZLANG_SPEC_FUNCTION_USER_TYPES_SOURCE                                                      \
+    "record Point { integer x; integer y; }\n"                                                     \
+    "enum Color { RED, BLUE }\n"                                                                   \
+    "function make(): Point {\n"                                                                   \
+    "    Point result;\n"                                                                          \
+    "    result.x = 1;\n"                                                                          \
+    "    return result;\n"                                                                         \
+    "}\n"                                                                                          \
+    "function paint(Point value, Color color): Point {\n"                                          \
+    "    value.x = 2;\n"                                                                           \
+    "    return value;\n"                                                                          \
+    "}\n"                                                                                          \
+    "Point made = make();\n"                                                                       \
+    "Color chosen = BLUE;\n"                                                                       \
+    "Point painted = paint(made, chosen);"
+#define ZLANG_SPEC_FUNCTION_USER_TYPE_RETURN_EXPECTED "zlang_point_t _u_make(void) {"
+#define ZLANG_SPEC_FUNCTION_USER_TYPE_PARAMETERS_EXPECTED                                          \
+    "zlang_point_t _u_paint(zlang_point_t _u_value, zlang_color_t _u_color) {"
+#define ZLANG_SPEC_FUNCTION_USER_TYPE_CALL_EXPECTED                                                \
+    "zlang_point_t _u_painted = _u_paint(_u_made, _u_chosen);"
+
 #define ZLANG_SPEC_APPEND_INDEX_SOURCE                                                             \
     "sequence[4] integer values;\n"                                                                \
     "append(values, 7);\n"                                                                         \
@@ -88,7 +109,7 @@
     "++_zlang_foreach_2)"
 #define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED                                                     \
     "for (uint32_t _zlang_repeat_3 = ZLANG_ZERO; _zlang_repeat_3 < 2U;"
-#define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop() {"
+#define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop(void) {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
 #define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_u_first = 4;"
 #define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "_u_first == 4"

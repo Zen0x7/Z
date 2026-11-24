@@ -16,7 +16,7 @@ Keywords are `boolean`, `break`, `const`, `continue`, `else`, `enum`, `false`, `
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
-`/* ... */` do not affect parsing, but the emitter preserves them in the generated C as source-traceability comments.
+`/* ... */` do not affect parsing, but the emitter preserves them in the generated C next to the construct they document. Use `--disable-comments` to omit them.
 
 ## Declarations
 
@@ -41,7 +41,8 @@ declaration, it sets the capacity of each string element.
 A `const` declaration requires an initializer and cannot be assigned to.
 
 A `record` declares a fixed aggregate with named fields. An `enum` declares named integer values
-and a user type. Both can be used as declaration types and as sequence element types:
+and a user type. Both can be used as declaration types, sequence element types, function parameter
+types and function return types:
 
 ```zlang
 record Point {
@@ -77,7 +78,7 @@ needed.
 | `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
-| `function name(type name, ...): type {...}` | Function with optional return type |
+| `function name(type name, ...): type {...}` | Function with optional return type; types may be scalar, record or enum |
 | `return expression;` / `return;` | Return from a function |
 | `print(expression);` | Write a string or scalar |
 | `append(sequence, expression);` | Append with capacity trap |

@@ -1,0 +1,21 @@
+record Point {
+    integer x;
+    integer y;
+}
+enum Color {
+    RED,
+    BLUE
+}
+function make(): Point {
+    Point result;
+    result.x = 1;
+    result.y = 2;
+    return result;
+}
+function paint(Point value, Color color): Point {
+    value.x = 2;
+    return value;
+}
+Point made = make();
+Color chosen = BLUE;
+Point painted = paint(made, chosen);

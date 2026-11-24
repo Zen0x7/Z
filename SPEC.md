@@ -103,7 +103,7 @@ An integer literal without `u` has type `integer`. With `u`, it has type `unsign
 
 ## 7. Values and types
 
-Zlang has exactly four value types.
+Zlang has four scalar value types, plus user-defined record and enum types.
 
 ### 7.1 `integer`
 
@@ -142,7 +142,7 @@ A sequence has a current length that starts at zero and never exceeds its capaci
 
 ### 7.6 Type compatibility
 
-There is no implicit conversion between `integer` and `unsigned`, or between numeric types and `boolean`. A string can only be used where a `string` is expected. Sequence types with different capacities are different types.
+There is no implicit conversion between `integer` and `unsigned`, or between numeric types and `boolean`. A string can only be used where a `string` is expected. Sequence types with different capacities are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
 
 ---
 
@@ -206,6 +206,7 @@ Terminate the process by calling `zlang_trap(code)`. The runtime must not constr
 | `2` | `ZLANG_TRAP_BOUNDS` |
 | `3` | `ZLANG_TRAP_CAPACITY` |
 | `4` | `ZLANG_TRAP_INVALID_ARGUMENT` |
+| `5` | `ZLANG_TRAP_DIVISION_BY_ZERO` |
 
 ### 9.5 `EmitForEach(node)`
 
@@ -287,7 +288,7 @@ function <name>(<parameter-list>): <return-type> {
 }
 ```
 
-A parameter is `<type> <name>`. Parameters are passed by value. Functions have no access to mutable globals, because Zlang has no global variables.
+A parameter is `<type> <name>`, where `<type>` is a scalar or a previously declared record or enum name. The return type uses the same set of types. Parameters are passed by value. Record parameters and return values lower to generated C typedefs. Functions have no access to mutable globals, because Zlang has no global variables.
 
 ```zlang
 function add(integer left, integer right): integer {
@@ -295,7 +296,7 @@ function add(integer left, integer right): integer {
 }
 ```
 
-A function with no return type returns nothing and emits `void`.
+A function with no return type returns nothing and emits `void`. A function with no parameters emits `(void)` in C. Unused parameters receive `(void)` guards in the generated body.
 
 ---
 
@@ -503,7 +504,7 @@ typeModifier     = "[" integerLiteral "]" ;
 
 sequenceInitializer = "{" ( expression ( "," expression )* )? "}" ;
 
-type           = "integer" | "unsigned" | "boolean" | "string" ;
+type           = typeName ;
 
 ifStatement    = "if" "(" expression ")" block
                  ( "else" ( block | ifStatement ) )? ;
@@ -645,6 +646,9 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | integer, string, and boolean literals | `covers_every_annex_a_production` |
 | sequence declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
 | preserved comments and escaped string literals | `preserves_comments_and_unescapes_strings` |
+| comments attached to source constructs | `attaches_comments_to_source_constructs` |
+| user-defined function parameters and returns | `emits_functions_with_user_defined_types`, `zlang.cli.compiles_user_types` |
+| disabled comments | `zlang.cli.disable_comments.output` |
 | `ZLANG1001` unexpected token | `reports_syntax_diagnostics_with_source_locations` |
 | `ZLANG1002` unterminated string | `reports_syntax_diagnostics_with_source_locations` |
 | `ZLANG1003` invalid character | `reports_syntax_diagnostics_with_source_locations` |
@@ -704,8 +708,20 @@ assignments, and sequences of records. Record fields are scalar or enum types. E
 constants, and records emit named C typedefs.
 
 
+## 0.7 implementation status
+
+Zlang 0.7 allows record and enum names in function parameters and return values, allows record
+variables to be initialized from same-type values, and emits `(void)` for zero-argument functions.
+Source comments attach to the construct they document in the generated C, with `--disable-comments`
+available when the comments are not wanted.
+
+
 ## Emitted comments
 
 Zlang comments are lexed but never become parser tokens. The emitter writes them back into the
-generated C near the statement whose source line follows the comment. They are documentation only
-and have no semantic effect.
+generated C next to the source construct they document: a comment before a declaration is emitted
+before that declaration, a comment inside a record is emitted before the matching field, and a
+comment inside an enum is emitted before the matching enumerator. Consecutive `//` lines stay
+together as one block, and block comments keep their internal line breaks. Comments that do not
+document a specific construct are emitted at the start of `main`. They are documentation only and
+have no semantic effect. `--disable-comments` omits them from the generated C.

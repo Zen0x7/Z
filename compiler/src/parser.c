@@ -1034,7 +1034,7 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
     }
 
     const size_t _parameter_start_k = parser->parameter_count_;
-    while (zlang_token_is_type(zlang_parser_current(parser))) {
+    while (zlang_parser_is_declaration_type(parser, zlang_parser_current(parser))) {
         if (parser->parameter_count_ >= parser->parameter_capacity_) {
             zlang_parser_unsupported(parser, "parameter capacity exceeded");
             return false;
@@ -1073,7 +1073,7 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
     _statement_ptr_k->column_ = _name_k->column_;
     if (zlang_parser_current(parser)->kind_ == zlang_token_colon_) {
         zlang_parser_advance(parser);
-        if (!zlang_token_is_type(zlang_parser_current(parser))) {
+        if (!zlang_parser_is_declaration_type(parser, zlang_parser_current(parser))) {
             zlang_parser_unsupported(parser, "expected a return type");
             return false;
         }

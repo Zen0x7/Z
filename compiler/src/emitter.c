@@ -24,7 +24,8 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->emitted_enum_item_count_ = 0U;
     emitter->cse_count_ = 0U;
     emitter->cse_pointer_count_ = 0U;
-    emitter->next_comment_index_ = 0U;
+    emitter->emit_comments_ = true;
+    memset(emitter->emitted_comments_, 0, sizeof(emitter->emitted_comments_));
     memset(emitter->emitted_symbols_, 0, sizeof(emitter->emitted_symbols_));
     memset(emitter->emitted_sequences_, 0, sizeof(emitter->emitted_sequences_));
     memset(emitter->emitted_literals_, 0, sizeof(emitter->emitted_literals_));
@@ -105,20 +106,78 @@ static bool zlang_append_exact(zlang_emitter_t *emitter, const char *text, size_
     return true;
 }
 
-static bool zlang_append_pending_comments(const zlang_program_t *program, zlang_emitter_t *emitter,
-                                          uint32_t depth, uint32_t max_line) {
-    if (program->comments_ == NULL) {
+static uint32_t zlang_comment_target_line(const zlang_program_t *program,
+                                          const zlang_comment_t *comment) {
+    uint32_t _target_k = 0U;
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const uint32_t _line_k = program->statements_[_index].line_;
+        if (_line_k > comment->end_line_ && (_target_k == 0U || _line_k < _target_k)) {
+            _target_k = _line_k;
+        }
+    }
+    for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
+        const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
+        if (_expression_k->kind_ != zlang_expression_enum_item_) {
+            continue;
+        }
+        const uint32_t _line_k = _expression_k->line_;
+        if (_line_k > comment->end_line_ && (_target_k == 0U || _line_k < _target_k)) {
+            _target_k = _line_k;
+        }
+    }
+    return _target_k;
+}
+
+static bool zlang_comment_is_attached(const zlang_program_t *program,
+                                      const zlang_comment_t *comment) {
+    return zlang_comment_target_line(program, comment) != 0U;
+}
+
+static bool zlang_emit_comment(zlang_emitter_t *emitter, const zlang_comment_t *comment,
+                               uint32_t depth) {
+    return zlang_append_indent(emitter, depth) &&
+           zlang_append_exact(emitter, comment->text_, comment->length_) &&
+           zlang_append_text(emitter, "\n");
+}
+
+static bool zlang_emit_attached_comments(const zlang_program_t *program, zlang_emitter_t *emitter,
+                                         uint32_t depth, uint32_t target_line) {
+    if (!emitter->emit_comments_ || program == NULL || program->comments_ == NULL) {
         return true;
     }
-    while (emitter->next_comment_index_ < program->comment_count_ &&
-           program->comments_[emitter->next_comment_index_].line_ <= max_line) {
-        const zlang_comment_t *const _comment_k = &program->comments_[emitter->next_comment_index_];
-        if (!zlang_append_indent(emitter, depth) ||
-            !zlang_append_exact(emitter, _comment_k->text_, _comment_k->length_) ||
-            !zlang_append_text(emitter, "\n")) {
+    for (size_t _index = 0U; _index < program->comment_count_; ++_index) {
+        if (_index >= ZLANG_EMITTED_COMMENT_CAPACITY || emitter->emitted_comments_[_index]) {
+            continue;
+        }
+        const zlang_comment_t *const _comment_k = &program->comments_[_index];
+        if (zlang_comment_target_line(program, _comment_k) != target_line) {
+            continue;
+        }
+        if (!zlang_emit_comment(emitter, _comment_k, depth)) {
             return false;
         }
-        ++emitter->next_comment_index_;
+        emitter->emitted_comments_[_index] = true;
+    }
+    return true;
+}
+
+static bool zlang_emit_remaining_comments(const zlang_program_t *program, zlang_emitter_t *emitter,
+                                          uint32_t depth) {
+    if (!emitter->emit_comments_ || program == NULL || program->comments_ == NULL) {
+        return true;
+    }
+    for (size_t _index = 0U; _index < program->comment_count_; ++_index) {
+        if (_index >= ZLANG_EMITTED_COMMENT_CAPACITY || emitter->emitted_comments_[_index]) {
+            continue;
+        }
+        const zlang_comment_t *const _comment_k = &program->comments_[_index];
+        if (zlang_comment_is_attached(program, _comment_k)) {
+            continue;
+        }
+        if (!zlang_emit_comment(emitter, _comment_k, depth)) {
+            return false;
+        }
+        emitter->emitted_comments_[_index] = true;
     }
     return true;
 }
@@ -2016,12 +2075,16 @@ static bool zlang_name_is_read(const zlang_program_t *program, const char *name)
     }
     for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
         const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
+        const bool _is_field_k = _expression_k->kind_ == zlang_expression_field_ ||
+                                 _expression_k->kind_ == zlang_expression_field_assignment_;
+        const char *const _candidate_k =
+            _is_field_k ? _expression_k->base_name_ : _expression_k->name_;
         if ((_expression_k->kind_ != zlang_expression_identifier_ &&
-             _expression_k->kind_ != zlang_expression_index_) ||
-            _expression_k->name_ == NULL || strcmp(_expression_k->name_, name) != 0) {
+             _expression_k->kind_ != zlang_expression_index_ && !_is_field_k) ||
+            _candidate_k == NULL || strcmp(_candidate_k, name) != 0) {
             continue;
         }
-        if (!zlang_expression_is_write_target(program, _index, name)) {
+        if (_is_field_k || !zlang_expression_is_write_target(program, _index, name)) {
             return true;
         }
     }
@@ -2036,6 +2099,25 @@ static bool zlang_append_unused_guard(const zlang_program_t *program, zlang_emit
     }
     return zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "(void)") &&
            zlang_append_text(emitter, generated_name) && zlang_append_text(emitter, ";\n");
+}
+
+static bool zlang_emit_unused_parameter_guards(const zlang_program_t *program,
+                                               const zlang_ast_statement_t *statement,
+                                               zlang_emitter_t *emitter, uint32_t depth) {
+    for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
+        if (statement->parameter_start_ + _index >= program->parameter_count_) {
+            return false;
+        }
+        const zlang_parameter_t *const _parameter_k =
+            &program->parameters_[statement->parameter_start_ + _index];
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _parameter_k->name_);
+        if (_symbol_k == NULL || !zlang_append_unused_guard(program, emitter, _parameter_k->name_,
+                                                            _symbol_k->generated_name_, depth)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static bool zlang_emit_for_initializer(const zlang_program_t *program,
@@ -2075,7 +2157,7 @@ static bool zlang_emit_for_initializer(const zlang_program_t *program,
 static bool zlang_emit_statement(const zlang_program_t *program,
                                  const zlang_ast_statement_t *statement, zlang_emitter_t *emitter,
                                  uint32_t depth) { // NOLINT(misc-no-recursion)
-    if (!zlang_append_pending_comments(program, emitter, depth, statement->line_) ||
+    if (!zlang_emit_attached_comments(program, emitter, depth, statement->line_) ||
         !zlang_append_indent(emitter, depth)) {
         return false;
     }
@@ -2383,9 +2465,11 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         const size_t _function_scope_k = zlang_save_scope(emitter);
         const char *const _return_type_k =
             zlang_generated_type(program, emitter, statement->type_name_);
+        const bool _has_parameters_k = statement->parameter_count_ > 0U;
         if (_return_type_k == NULL || !zlang_append_text(emitter, _return_type_k) ||
             !zlang_append_text(emitter, " ") || !zlang_append_text(emitter, _name) ||
-            !zlang_append_text(emitter, "(")) {
+            !zlang_append_text(emitter, "(") ||
+            (!_has_parameters_k && !zlang_append_text(emitter, "void"))) {
             return false;
         }
         for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
@@ -2405,11 +2489,12 @@ static bool zlang_emit_statement(const zlang_program_t *program,
                 return false;
             }
         }
-        const bool _result_k = zlang_append_text(emitter, ") {\n") &&
-                               zlang_emit_body(program, statement->body_start_,
-                                               statement->body_count_, emitter, depth + 1U) &&
-                               zlang_append_indent(emitter, depth) &&
-                               zlang_append_text(emitter, "}\n\n");
+        const bool _result_k =
+            zlang_append_text(emitter, ") {\n") &&
+            zlang_emit_unused_parameter_guards(program, statement, emitter, depth + 1U) &&
+            zlang_emit_body(program, statement->body_start_, statement->body_count_, emitter,
+                            depth + 1U) &&
+            zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "}\n\n");
         zlang_restore_scope(emitter, _function_scope_k);
         return _result_k;
     }
@@ -2501,7 +2586,8 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
         for (size_t _index = 0U; _index < emitter->emitted_user_type_count_; ++_index) {
             const zlang_emitted_user_type_t *const _entry_k = &emitter->emitted_user_types_[_index];
             const zlang_ast_statement_t *const _statement_k = _entry_k->statement_;
-            if (!zlang_append_text(emitter, _statement_k->kind_ == zlang_statement_enum_
+            if (!zlang_emit_attached_comments(program, emitter, 0U, _statement_k->line_) ||
+                !zlang_append_text(emitter, _statement_k->kind_ == zlang_statement_enum_
                                                 ? "typedef enum "
                                                 : "typedef struct ") ||
                 !zlang_append_text(emitter, _entry_k->type_name_) ||
@@ -2516,7 +2602,8 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
                     const zlang_ast_expression_t *const _item_k = &program->expressions_[_item];
                     const char *const _generated_k =
                         zlang_generated_enum_item(emitter, _item_k->name_);
-                    if (_generated_k == NULL || !zlang_append_text(emitter, "    ") ||
+                    if (!zlang_emit_attached_comments(program, emitter, 1U, _item_k->line_) ||
+                        _generated_k == NULL || !zlang_append_text(emitter, "    ") ||
                         !zlang_append_text(emitter, _generated_k) ||
                         !zlang_append_text(emitter, " = ") ||
                         !zlang_append_unsigned(emitter, (uint32_t)_item_k->integer_value_) ||
@@ -2531,7 +2618,8 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
                     const zlang_ast_statement_t *const _field_k = &program->statements_[_field];
                     const char *const _type_k =
                         zlang_generated_type(program, emitter, _field_k->type_name_);
-                    if (_type_k == NULL || !zlang_append_text(emitter, "    ") ||
+                    if (!zlang_emit_attached_comments(program, emitter, 1U, _field_k->line_) ||
+                        _type_k == NULL || !zlang_append_text(emitter, "    ") ||
                         !zlang_append_text(emitter, _type_k) || !zlang_append_text(emitter, " ") ||
                         !zlang_append_text(emitter, _field_k->name_) ||
                         !zlang_append_text(emitter, ";\n")) {
@@ -2687,7 +2775,7 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
         _previous_grouped_k = _grouped_k;
         _has_previous_k = true;
     }
-    if (!zlang_append_pending_comments(program, emitter, 1U, UINT32_MAX)) {
+    if (!zlang_emit_remaining_comments(program, emitter, 1U)) {
         return false;
     }
     if (_has_previous_k && !zlang_append_text(emitter, "\n")) {

@@ -692,12 +692,6 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                                      "declaration uses an unknown type");
             break;
         }
-        if (zlang_find_record(context->program_, statement->type_name_) != NULL &&
-            statement->expression_ != ZLANG_NO_EXPRESSION) {
-            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
-                                     "user types do not support initializer expressions");
-            break;
-        }
         const char *const _actual_k =
             zlang_analyze_expression(context, statement->expression_, statement);
         if (statement->expression_ != ZLANG_NO_EXPRESSION &&

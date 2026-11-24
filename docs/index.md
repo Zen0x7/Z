@@ -51,8 +51,9 @@ part of the product contract.
 ## CLI
 
 ```sh
-zlang-compile input.zlang --emit-c   # write input.c
-zlang-compile input.zlang            # write input.c and build a native executable
+zlang-compile input.zlang --emit-c                       # write input.c
+zlang-compile input.zlang                                # write input.c and build a native executable
+zlang-compile input.zlang --emit-c --disable-comments    # omit source comments from input.c
 ```
 
 Diagnostics use the canonical form:

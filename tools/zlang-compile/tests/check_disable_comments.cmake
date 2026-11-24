@@ -1,0 +1,8 @@
+if(NOT EXISTS "${EMITTED_FILE}")
+    message(FATAL_ERROR "Expected emitted C file at ${EMITTED_FILE}")
+endif()
+file(READ "${EMITTED_FILE}" emitted_c)
+string(FIND "${emitted_c}" "trace me" comment_position)
+if(NOT comment_position EQUAL -1)
+    message(FATAL_ERROR "Emitted C still contains the source comment with --disable-comments")
+endif()

@@ -39,7 +39,7 @@
 #endif
 
 static void zlang_cli_usage(void) {
-    (void)fprintf(stderr, "usage: zlang-compile <source.zlang> [--emit-c]\n");
+    (void)fprintf(stderr, "usage: zlang-compile <source.zlang> [--emit-c] [--disable-comments]\n");
 }
 
 static bool zlang_cli_read_source(const char *path, char *buffer, size_t capacity, size_t *length) {
@@ -218,15 +218,16 @@ int main(int argc, char **argv) {
         return argc < 2 ? 1 : 0;
     }
     bool _emit_only_k = false;
-    if (argc == 3) {
-        if (strcmp(argv[2], "--emit-c") != 0) {
+    bool _disable_comments_k = false;
+    for (int _argument = 2; _argument < argc; ++_argument) {
+        if (strcmp(argv[_argument], "--emit-c") == 0) {
+            _emit_only_k = true;
+        } else if (strcmp(argv[_argument], "--disable-comments") == 0) {
+            _disable_comments_k = true;
+        } else {
             zlang_cli_usage();
             return 1;
         }
-        _emit_only_k = true;
-    } else if (argc != 2) {
-        zlang_cli_usage();
-        return 1;
     }
 
     const char *const _source_path_k = argv[1];
@@ -265,6 +266,7 @@ int main(int argc, char **argv) {
         return 2;
     }
     zlang_emitter_init(&_emitter, _output, sizeof(_output), &_diagnostic_state, &_plan);
+    _emitter.emit_comments_ = !_disable_comments_k;
     if (!zlang_emit_program(&_result.program_, &_emitter)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 5 : 2;
     }

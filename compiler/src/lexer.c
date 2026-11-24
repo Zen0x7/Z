@@ -301,8 +301,8 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
 }
 
 static bool zlang_lexer_add_comment(zlang_lexer_t *lexer, const char *text, size_t length,
-                                    uint32_t line, uint32_t column, bool is_block,
-                                    zlang_diagnostics_t *diagnostics) {
+                                    uint32_t line, uint32_t end_line, uint32_t column,
+                                    bool is_block, zlang_diagnostics_t *diagnostics) {
     if (lexer->comments_ == NULL || lexer->comment_count_ >= lexer->comment_capacity_ ||
         length > UINT32_MAX) {
         (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, line,
@@ -313,6 +313,7 @@ static bool zlang_lexer_add_comment(zlang_lexer_t *lexer, const char *text, size
     _comment_k->text_ = text;
     _comment_k->length_ = (uint32_t)length;
     _comment_k->line_ = line;
+    _comment_k->end_line_ = end_line;
     _comment_k->column_ = column;
     _comment_k->is_block_ = is_block;
     return true;
@@ -370,8 +371,8 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
                 zlang_lexer_advance(lexer);
             }
             const size_t _length_k = (size_t)((lexer->source_ + lexer->position_) - _text_k);
-            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, _column_k, false,
-                                         diagnostics)) {
+            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, lexer->line_,
+                                         _column_k, false, diagnostics)) {
                 return false;
             }
             continue;
@@ -399,8 +400,8 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
                 zlang_lexer_advance(lexer);
             }
             const size_t _length_k = (size_t)((lexer->source_ + lexer->position_) - _text_k);
-            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, _column_k, true,
-                                         diagnostics)) {
+            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, lexer->line_,
+                                         _column_k, true, diagnostics)) {
                 return false;
             }
             continue;

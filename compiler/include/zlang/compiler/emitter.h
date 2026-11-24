@@ -18,6 +18,7 @@
 #define ZLANG_EMITTED_LITERAL_CAPACITY 64U
 #define ZLANG_EMITTED_USER_TYPE_CAPACITY 32U
 #define ZLANG_EMITTED_ENUM_ITEM_CAPACITY 128U
+#define ZLANG_EMITTED_COMMENT_CAPACITY 128U
 #define ZLANG_EMITTED_CSE_CAPACITY 16U
 #define ZLANG_EMITTED_NAME_CAPACITY 64U
 
@@ -93,7 +94,8 @@ typedef struct zlang_emitter_t {
     size_t cse_pointer_indices_[ZLANG_EMITTED_CSE_CAPACITY];
     char cse_pointer_names_[ZLANG_EMITTED_CSE_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];
     size_t cse_pointer_count_;
-    size_t next_comment_index_;
+    bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
+    bool emit_comments_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

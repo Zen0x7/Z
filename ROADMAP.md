@@ -295,4 +295,28 @@ index reads inside `if / else if` chains are emitted once into a local temporary
 Status: Implemented.
 
 Line and block comments are preserved in generated C for source traceability. They remain outside
-parsing and do not affect semantics, symbol binding or code generation decisions.
+parsing and do not affect semantics, symbol binding or code generation decisions. A comment is
+emitted next to the source construct it documents: declarations, functions, record fields and enum
+items. Consecutive `//` lines stay together as a block, block comments keep their internal line
+breaks, and `--disable-comments` omits all source comments from generated C.
+
+## 0.7 — Function types and comment control
+
+Status: Locked.
+
+- Allow record and enum names as function parameter and return types.
+- Emit generated C typedefs for those parameter and return types.
+- Allow record declarations initialized from a function call or another record value of the same
+  type.
+- Attach generated comments to the source construct they document instead of hoisting them into
+  `main`.
+- Add `--disable-comments` to the compiler driver.
+
+## 0.7 — Completion
+
+Status: Implemented.
+
+Functions may now take and return user-defined types, and record variables may be initialized from
+values of the same record type. Zero-argument functions emit `(void)`, and unused parameters emit
+`(void)` guards. Source comments attach to declarations, functions, record fields and enum items,
+with consecutive `//` lines emitted as one block.

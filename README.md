@@ -32,7 +32,8 @@ Z aims to make the "compile-time decisions, ordinary C output" idea pleasant to 
 
 The current language adds comments preserved in generated C, lexical scopes with unique generated
 identifiers, sequence initializers, checked index assignment, bounded strings, records, enums, field
-access, logical operators, expression grouping, loop control and checked arithmetic.
+access, user-defined function parameter and return types, logical operators, expression grouping,
+loop control and checked arithmetic.
 
 ## Pipeline
 
@@ -47,10 +48,12 @@ example.c  ->  C compiler  ->  executable
 ```sh
 ./build/tools/zlang-compile/zlang-compile example.zlang --emit-c
 ./build/tools/zlang-compile/zlang-compile example.zlang
+./build/tools/zlang-compile/zlang-compile example.zlang --emit-c --disable-comments
 ```
 
 The first command only writes `example.c`. The second also invokes `$ZLANG_CC`, or `cc` by
-default, to build the native binary.
+default, to build the native binary. `--disable-comments` omits source comments from the generated C
+when traceability is not needed.
 
 ## Language tour
 
@@ -63,11 +66,13 @@ indexed `foreach`, nested loops, `break` and `continue`.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source comments are preserved in the
-generated C as traceability comments. Source symbols use `_u_`, compiler temporaries use `_zlang_`,
-generated types use `zlang_` and runtime calls use `zlang_*`. Index reads lower to bounded `zlang_*`
-getters, field assignment to a sequence element uses a checked pointer temporary that is reused by
-the expression, repeated reads in condition chains become local temporaries, and `(void)` guards
-appear only for variables that are genuinely unused.
+generated C next to the construct they document, or omitted with `--disable-comments`.
+Source symbols use `_u_`, compiler temporaries use `_zlang_`, generated types use `zlang_` and
+runtime calls use `zlang_*`. Zero-argument functions use `(void)` and unused parameters receive
+`(void)` guards. Index reads lower to bounded `zlang_*` getters, field assignment to a sequence
+element uses a checked pointer temporary that is reused by the expression, repeated reads in
+condition chains become local temporaries, and `(void)` guards appear only for variables that are
+genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -237,12 +242,12 @@ static const zlang_string_t _zlang_literal_5 = { _zlang_literal_5_data, ZLANG_LI
 static const char _zlang_literal_6_data[] = "small";
 static const zlang_string_t _zlang_literal_6 = { _zlang_literal_6_data, ZLANG_LITERAL_6_LENGTH };
 
-// A guided tour of the language.
 int32_t _u_add(int32_t _u_left, int32_t _u_right) {
     return zlang_add_i32(_u_left, _u_right);
 }
 
 int main(void) {
+    // A guided tour of the language.
     const int32_t _u_base = 2;
     zlang_values_t _u_values = { { 1, 2, 3, 0 }, ZLANG_VALUES_LENGTH };
     zlang_array_append(_u_values.data_, &_u_values.length_, ZLANG_VALUES_CAPACITY, sizeof(_u_values.data_[0]), (int32_t[]){ (4) });
@@ -257,7 +262,6 @@ int main(void) {
     _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
     _u_names.length_ = ZLANG_NAMES_LENGTH;
     zlang_points_t _u_points = { { { ZLANG_ZERO }, { ZLANG_ZERO } }, ZLANG_POINTS_LENGTH };
-    (void)_u_points;
 
     {
         uint32_t _zlang_index_9 = 0;

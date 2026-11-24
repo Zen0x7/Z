@@ -425,3 +425,25 @@ Status: Implemented.
 
 Semantic analysis now reports unnecessary references for scalar, string and enum parameters. A
 reference that actually mutates caller-owned state remains valid and warning-free.
+
+## 0.14 — Array model — Design note
+
+Status: Design locked except for append semantics.
+
+- Use one container name: `array`. Do not introduce `vector`.
+- Declare rank in the type, for example `array[N] T`, `array[A][B] T`, `array[A][B][C] T`.
+- Use an index tuple for generic access: `{i}`, `{i, j}`, `{i, j, k}`.
+- Generate offset helpers per rank, not per variable or declaration.
+- Generate typed `get` and `set` helpers per `(rank, generated C type)`, deduplicated by generated
+  C type. A program using only 1D `integer` arrays gets only the 1D `int32_t` helpers.
+- Reuse one offset helper per rank across different extents by passing extents explicitly.
+- Keep all storage caller-owned and fixed at compile time. No heap and no hidden allocator.
+- Check every dimension before access and trap with `ZLANG_TRAP_BOUNDS`.
+- Keep `array_get` and `array_set` as the generic operations; source indexing and tuple access lower
+  to the same helpers.
+
+Open decision before implementation:
+
+- Should `array` keep a logical length and support `array_append`, or should it be purely fixed-shape
+  with no append operation? The recommended default is purely fixed-shape in 0.14, with `append`
+  deferred until length semantics are defined.

@@ -10,9 +10,9 @@ made by the compiler.
 ## Lexical rules
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
-Keywords are `boolean`, `break`, `continue`, `else`, `false`, `foreach`, `function`, `if`, `in`,
-`integer`, `length`, `print`, `repeat`, `return`, `sequence`, `string`, `true`, `unsigned` and
-`while`.
+Keywords are `boolean`, `break`, `const`, `continue`, `else`, `false`, `for`, `foreach`,
+`function`, `if`, `in`, `integer`, `length`, `print`, `repeat`, `return`, `sequence`, `string`,
+`true`, `unsigned` and `while`.
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
@@ -21,6 +21,7 @@ support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` a
 ## Declarations
 
 ```zlang
+const integer base = 10;
 integer total = 1;
 unsigned limit = 3U;
 boolean ready = true;
@@ -37,8 +38,9 @@ sequence[2] string[8] names = {"a", "b"};
 initializer. `string[M]` declares a bounded string with M content bytes. Applied inside a sequence
 declaration, it sets the capacity of each string element.
 
-Shadowing a visible name is rejected; sibling blocks may reuse a source name because the emitter
-generates unique C identifiers when needed.
+A `const` declaration requires an initializer and cannot be assigned to. Shadowing a visible name
+is rejected; sibling blocks may reuse a source name because the emitter generates unique C
+identifiers when needed.
 
 ## Statements
 
@@ -49,7 +51,9 @@ generates unique C identifiers when needed.
 | `sequence[] type name = {...};` | Sequence with inferred capacity |
 | `if (expression) {...} else if (expression) {...} else {...}` | Conditional chain |
 | `while (expression) {...}` | Pre-tested loop |
+| `for (init; condition; update) {...}` | Native C-style loop |
 | `foreach (item in sequence) {...}` | Native indexed loop |
+| `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
 | `function name(type name, ...): type {...}` | Function with optional return type |
@@ -65,11 +69,13 @@ functions, `print`, `append`, `length`, unary `!` and `-`, and binary `+`, `-`, 
 `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`. Compound assignment is available for arithmetic
 operators.
 
-`if` and `while` conditions must be `boolean`. `repeat` counts must be `unsigned`. A non-void
-function must return a value of its declared type; a void function must return without a value.
+`if`, `while` and `for` conditions must be `boolean`. `repeat` counts must be `unsigned`. A
+non-void function must return a value of its declared type; a void function must return without a
+value. Loops may nest freely, including `for` inside `for` and `foreach` inside `foreach`.
 
 String concatenation folds literals at compile time. Concatenation involving a variable requires
-an explicit string capacity and copies into caller-owned storage.
+an explicit string capacity and copies into caller-owned storage. Indexing a string reads one byte
+as `unsigned` with a bounds trap; string elements are read-only.
 
 ## Builtins
 

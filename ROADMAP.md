@@ -210,3 +210,22 @@ Arithmetic, compound assignment, `length`, scalar printing and the leading `sequ
 implemented and covered by conformance tests. String sequences use bounded per-element storage.
 Trap code `5` reports division by zero. The Doxygen site takes its version from the CMake version
 single source of truth.
+
+## 0.5 — Real control and data
+
+Status: Locked.
+
+- Add a native `for (init; condition; update)` statement with scalar initializer, boolean
+  condition and expression update.
+- Extend `foreach` to `foreach (index, item in sequence)`, exposing the index as `unsigned`.
+- Add local `const` declarations with mandatory initializer and assignment rejection.
+- Allow read-only string indexing that yields one byte as `unsigned` with a bounds trap.
+- Loops may nest freely, including `for` inside `for` and `foreach` inside `foreach`.
+
+## 0.5 — Completion
+
+Status: Implemented.
+
+Native `for`, indexed `foreach`, local `const` and read-only string indexing are implemented.
+Loops nest freely and the full language tour in `README.md` is compiled as a conformance test.
+Semantic errors found inside expressions now fail analysis consistently.

@@ -27,6 +27,7 @@ typedef struct zlang_emitted_symbol_t {
     char storage_name_[ZLANG_EMITTED_NAME_CAPACITY];
     uint32_t capacity_;
     bool has_explicit_capacity_;
+    bool is_sequence_;
 } zlang_emitted_symbol_t;
 
 typedef struct zlang_emitter_t {

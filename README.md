@@ -54,14 +54,16 @@ default, to build the native binary.
 
 ## Language tour
 
-This program uses every construct in the current grammar: comments, all four value types,
+This program uses every construct in the current grammar: comments, `const`, all four value types,
 leading `sequence[N]` declarations, bounded string elements, functions and `return`, scopes,
 assignments, indexed access and assignment, `append`, arithmetic, compound assignment,
-comparisons, logical operators, `length`, scalar and string printing, `if`/`else if`/`else`,
-`while`, `repeat`, `foreach`, `break` and `continue`.
+comparisons, logical operators, `length`, string indexing, scalar and string printing,
+`if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops, `break`
+and `continue`.
 
 ```zlang
 // A guided tour of the language.
+const integer base = 2;
 sequence[3] integer values = {1, 2, 3};
 append(values, 4);
 sequence[5] integer fixed = {4, 5};
@@ -75,12 +77,13 @@ function add(integer left, integer right): integer {
     return left + right;
 }
 
-fixed[0] = add(values[1], 2);
+fixed[0] = add(values[1], base);
 append(fixed, 9);
 append(names, name);
 names[0] = "z";
+
 integer total = 1;
-total += 1;
+total += base;
 
 {
     integer scoped = add(1, 2) * 3;
@@ -103,14 +106,27 @@ repeat (limit) {
     continue;
 }
 
-foreach (item in values) {
-    if (item == 2) { continue; }
-    print(item);
+for (unsigned outer = 0U; outer < 2U; outer += 1U) {
+    for (unsigned inner = 0U; inner < 2U; inner += 1U) {
+        print(outer);
+        print(inner);
+    }
+}
+
+foreach (row, item in values) {
+    foreach (column, other in values) {
+        print(row);
+        print(column);
+        print(item);
+        print(other);
+    }
 }
 
 unsigned count = length(values);
+unsigned first = label[0];
 boolean ok = !(ready && !ready) || fixed[0] != 99;
 print(count);
+print(first);
 print(ok);
 print(label);
 print(names[0]);
@@ -129,17 +145,19 @@ int32_t add(int32_t left, int32_t right) {
 }
 
 int main(void) {
+    const int32_t base = 2;
+    (void)base;
     struct zlang_sequence_i32_3_t {
-    int32_t data_[3];
-    uint32_t length_;
-};
+        int32_t data_[3];
+        uint32_t length_;
+    };
     struct zlang_sequence_i32_3_t values = { { 1, 2, 3 }, 3U };
     (void)values;
     zlang_array_append(values.data_, &values.length_, 3U, sizeof(values.data_[0]), (int32_t[]){ (4) });
     struct zlang_sequence_i32_5_t {
-    int32_t data_[5];
-    uint32_t length_;
-};
+        int32_t data_[5];
+        uint32_t length_;
+    };
     struct zlang_sequence_i32_5_t fixed = { { 4, 5, 0, 0, 0 }, 2U };
     (void)fixed;
     uint32_t limit = 3U;
@@ -151,10 +169,10 @@ int main(void) {
     char label_storage[33] = { 0 };
     zlang_string_t label = zlang_string_concat(label_storage, 32U, (zlang_string_t[]){ name, (zlang_string_t){ " tour", 5U } }, 2U);
     struct zlang_sequence_string_8_2_t {
-    char storage_[2][9];
-    zlang_string_t data_[2];
-    uint32_t length_;
-};
+        char storage_[2][9];
+        zlang_string_t data_[2];
+        uint32_t length_;
+    };
     struct zlang_sequence_string_8_2_t names = { 0 };
     (void)names;
     names.data_[0] = zlang_string_concat(names.storage_[0], 8U, (zlang_string_t[]){ (zlang_string_t){ "a", 1U } }, 1U);
@@ -180,7 +198,7 @@ int main(void) {
     }
     int32_t total = 1;
     (void)total;
-    total = zlang_add_i32(total, 1);
+    total = zlang_add_i32(total, base);
     {
         int32_t scoped = zlang_mul_i32(add(1, 2), 3);
         (void)scoped;
@@ -199,19 +217,36 @@ int main(void) {
     for (uint32_t _repeat = 0U; _repeat < limit; ++_repeat) {
         continue;
     }
-    for (uint32_t index = 0U; index < values.length_; ++index) {
-        int32_t item = values.data_[index];
-        (void)item;
-        if (item == 2) {
-            continue;
+    for (uint32_t outer = 0U; (outer < 2U); outer = zlang_add_u32(outer, 1U)) {
+        for (uint32_t inner = 0U; (inner < 2U); inner = zlang_add_u32(inner, 1U)) {
+            zlang_print_u32(outer);
+            zlang_print_u32(inner);
         }
-        zlang_print_i32(item);
+    }
+    for (uint32_t _zlang_foreach_2 = 0U; _zlang_foreach_2 < values.length_; ++_zlang_foreach_2) {
+        uint32_t row = _zlang_foreach_2;
+        (void)row;
+        int32_t item = values.data_[_zlang_foreach_2];
+        (void)item;
+        for (uint32_t _zlang_foreach_3 = 0U; _zlang_foreach_3 < values.length_; ++_zlang_foreach_3) {
+            uint32_t column = _zlang_foreach_3;
+            (void)column;
+            int32_t other = values.data_[_zlang_foreach_3];
+            (void)other;
+            zlang_print_u32(row);
+            zlang_print_u32(column);
+            zlang_print_i32(item);
+            zlang_print_i32(other);
+        }
     }
     uint32_t count = values.length_;
     (void)count;
+    uint32_t first = (((0) < label.length_) ? (uint32_t)(unsigned char)label.data_[0] : (zlang_trap(2U), 0U));
+    (void)first;
     bool ok = ((!(ready && (!ready))) || ((((0) < fixed.length_) ? fixed.data_[0] : (zlang_trap(2U), fixed.data_[0])) != 99));
     (void)ok;
     zlang_print_u32(count);
+    zlang_print_u32(first);
     zlang_print_bool(ok);
     zlang_print(label);
     zlang_print((((0) < names.length_) ? names.data_[0] : (zlang_trap(2U), names.data_[0])));

@@ -1,3 +1,4 @@
+const integer base = 2;
 sequence[] integer values = {1, 2, 3};
 sequence[5] integer fixed = {4, 5};
 fixed[0] = values[1];
@@ -15,13 +16,34 @@ if (ok) {
     print("maybe");
 }
 foreach (item in values) {
-    if (item == 2) { continue; }
-    if (item == 3) { break; }
+    if (item == 2) {
+        continue;
+    }
+    if (item == 3) {
+        break;
+    }
     print("kept");
 }
-while (a) { break; }
-repeat (2U) { continue; }
-function add(integer left, integer right): integer {
-    return left + right;
+while (a) {
+    break;
 }
-integer total = add(1, 2);
+repeat(2U) { continue; }
+function add(integer left, integer right) : integer { return left + right; }
+integer total = add(1, base);
+for (unsigned outer = 0U; outer < 2U; outer += 1U) {
+    for (unsigned inner = 0U; inner < 2U; inner += 1U) {
+        print(outer);
+        print(inner);
+    }
+}
+foreach (row, item in values) {
+    foreach (column, other in values) {
+        print(row);
+        print(column);
+        print(item);
+        print(other);
+    }
+}
+string[8] text = "abc";
+unsigned first = text[0];
+print(first);

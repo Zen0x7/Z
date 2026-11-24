@@ -24,6 +24,7 @@ typedef struct zlang_symbol_t {
     bool is_function_;
     bool has_explicit_capacity_;
     bool is_mutated_;
+    bool is_const_;
 } zlang_symbol_t;
 
 typedef struct zlang_semantic_context_t {
@@ -33,6 +34,7 @@ typedef struct zlang_semantic_context_t {
     size_t scope_depth_;
     size_t loop_depth_;
     const char *current_return_type_;
+    bool has_error_;
     zlang_diagnostics_t *diagnostics_;
     const zlang_program_t *program_;
 } zlang_semantic_context_t;

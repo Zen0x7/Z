@@ -19,8 +19,8 @@
 #define ZLANG_SPEC_FOREACH_SEQUENCE_EXPECTED                                                       \
     "struct zlang_sequence_i32_4_t values = { { 0, 0, 0, 0 }, 0U };"
 #define ZLANG_SPEC_FOREACH_LOOP_EXPECTED                                                           \
-    "for (uint32_t index = 0U; index < values.length_; ++index)"
-#define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t item = values.data_[index];"
+    "for (uint32_t _zlang_foreach_0 = 0U; _zlang_foreach_0 < values.length_; ++_zlang_foreach_0)"
+#define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t item = values.data_[_zlang_foreach_0];"
 #define ZLANG_SPEC_FOREACH_CALLBACK "zlang_for_each"
 
 #define ZLANG_SPEC_UNBOUNDED_SOURCE "sequence[] integer values;"
@@ -82,7 +82,7 @@
 #define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (ready) {"
 #define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (ready) {"
 #define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
-    "for (uint32_t index = 0U; index < values.length_; ++index)"
+    "for (uint32_t _zlang_foreach_0 = 0U; _zlang_foreach_0 < values.length_; ++_zlang_foreach_0)"
 #define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED "for (uint32_t _repeat = 0U; _repeat < 2U;"
 #define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void noop() {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
@@ -224,6 +224,44 @@
 #define ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED "names.storage_[_zlang_index_0]"
 
 #define ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE "integer values[4];"
+
+#define ZLANG_SPEC_FOR_SOURCE                                                                      \
+    "sequence[3] integer values = {1, 2, 3};\n"                                                    \
+    "for (unsigned index = 0U; index < length(values); index += 1U) {\n"                           \
+    "    print(values[index]);\n"                                                                  \
+    "}"
+#define ZLANG_SPEC_FOR_EXPECTED                                                                    \
+    "for (uint32_t index = 0U; (index < values.length_); index = zlang_add_u32(index, 1U))"
+
+#define ZLANG_SPEC_NESTED_LOOPS_SOURCE                                                             \
+    "sequence[2] integer values = {1, 2};\n"                                                       \
+    "for (unsigned outer = 0U; outer < 2U; outer += 1U) {\n"                                       \
+    "    for (unsigned inner = 0U; inner < 2U; inner += 1U) {\n"                                   \
+    "        print(outer);\n"                                                                      \
+    "    }\n"                                                                                      \
+    "}\n"                                                                                          \
+    "foreach (row, item in values) {\n"                                                            \
+    "    foreach (column, other in values) {\n"                                                    \
+    "        print(row);\n"                                                                        \
+    "    }\n"                                                                                      \
+    "}"
+
+#define ZLANG_SPEC_INDEXED_FOREACH_SOURCE                                                          \
+    "sequence[2] integer values = {1, 2};\n"                                                       \
+    "foreach (index, item in values) {\n"                                                          \
+    "    print(index);\n"                                                                          \
+    "    print(item);\n"                                                                           \
+    "}"
+#define ZLANG_SPEC_INDEXED_FOREACH_EXPECTED "uint32_t index = _zlang_foreach_0;"
+
+#define ZLANG_SPEC_CONST_SOURCE "const integer limit = 10;"
+#define ZLANG_SPEC_CONST_EXPECTED "const int32_t limit = 10;"
+#define ZLANG_SPEC_CONST_ASSIGN_SOURCE "const integer limit = 10;\nlimit = 11;"
+
+#define ZLANG_SPEC_STRING_INDEX_SOURCE                                                             \
+    "string[8] text = \"abc\";\n"                                                                  \
+    "unsigned first = text[0];"
+#define ZLANG_SPEC_STRING_INDEX_EXPECTED "(uint32_t)(unsigned char)text.data_[0]"
 
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 

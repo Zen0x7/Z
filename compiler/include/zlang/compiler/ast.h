@@ -14,6 +14,7 @@
    and statements refer to each other by index into caller-owned arrays. */
 
 #define ZLANG_NO_EXPRESSION ((size_t) - 1)
+#define ZLANG_NO_STATEMENT ((size_t) - 1)
 
 typedef enum zlang_expression_kind_t {
     zlang_expression_integer_literal_,
@@ -79,6 +80,7 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_function_,
     zlang_statement_return_,
     zlang_statement_block_,
+    zlang_statement_for_,
     zlang_statement_break_,
     zlang_statement_continue_
 } zlang_statement_kind_t;
@@ -93,6 +95,7 @@ typedef struct zlang_parameter_t {
 typedef struct zlang_ast_statement_t {
     const char *type_name_;
     const char *name_;
+    const char *index_name_;
     const char *iterable_name_;
     size_t expression_;
     size_t body_start_;
@@ -103,11 +106,14 @@ typedef struct zlang_ast_statement_t {
     size_t parameter_count_;
     size_t initializer_start_;
     size_t initializer_count_;
+    size_t initializer_statement_;
+    size_t update_expression_;
     zlang_statement_kind_t kind_;
     uint32_t capacity_;
     uint32_t element_capacity_;
     bool has_explicit_capacity_;
     bool has_element_capacity_;
+    bool is_const_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

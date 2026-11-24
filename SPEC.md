@@ -90,8 +90,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 Keywords are reserved and cannot be used as identifiers:
 
 ```text
-boolean break else false foreach function if integer
-print repeat return string true unsigned while
+boolean break const continue else false for foreach function if integer
+length print repeat return sequence string true unsigned while
 ```
 
 ### 6.3 Numeric literals
@@ -461,6 +461,7 @@ statement      = declaration
                | "continue" ";"
                | ifStatement
                | whileStatement
+               | forStatement
                | foreachStatement
                | repeatStatement
                | functionDeclaration
@@ -469,7 +470,7 @@ statement      = declaration
 
 block          = "{" statement* "}" ;
 
-declaration    = sequenceModifier? type typeModifier? identifier
+declaration    = "const"? sequenceModifier? type typeModifier? identifier
                  ( "=" expression )? ";" ;
 
 sequenceModifier = "sequence" "[" integerLiteral? "]" ;
@@ -484,7 +485,11 @@ ifStatement    = "if" "(" expression ")" block
 
 whileStatement = "while" "(" expression ")" block ;
 
-foreachStatement = "foreach" "(" identifier "in" identifier ")" block ;
+forStatement   = "for" "(" ( declaration | expression? ) ";"
+                 expression ";" expression ")" block ;
+
+foreachStatement = "foreach" "(" identifier ( "," identifier )? "in"
+                   identifier ")" block ;
 
 repeatStatement  = "repeat" "(" expression ")" block ;
 
@@ -650,4 +655,10 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | string sequence elements | `emits_string_sequence_operations` |
 | legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
+| native `for` loop | `emits_native_for_loops` |
+| nested loops | `emits_nested_loops` |
+| indexed `foreach` | `emits_indexed_foreach` |
+| `const` declarations | `emits_const_declarations` |
+| `const` assignment rejection | `rejects_assignment_to_const` |
+| string indexing | `emits_string_index_read` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

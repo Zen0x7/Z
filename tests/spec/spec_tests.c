@@ -588,6 +588,50 @@ static void rejects_legacy_sequence_syntax(zlang_test_context_t *const context) 
                                                     ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
 }
 
+static void emits_native_for_loops(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FOR_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FOR_EXPECTED) != NULL);
+}
+
+static void emits_nested_loops(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_NESTED_LOOPS_SOURCE));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "for (") == 4U);
+}
+
+static void emits_indexed_foreach(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INDEXED_FOREACH_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEXED_FOREACH_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_u32(index)") != NULL);
+}
+
+static void emits_const_declarations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_CONST_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONST_EXPECTED) != NULL);
+}
+
+static void rejects_assignment_to_const(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, ZLANG_SPEC_CONST_ASSIGN_SOURCE));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void emits_string_index_read(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STRING_INDEX_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_STRING_INDEX_EXPECTED) != NULL);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

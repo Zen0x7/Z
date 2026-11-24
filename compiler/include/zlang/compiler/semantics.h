@@ -1,5 +1,5 @@
 /** @file
- * @brief Semantic analysis API for Zlang 0.2.
+ * @brief Semantic analysis API for Zlang 0.3.
  */
 
 #ifndef ZLANG_COMPILER_SEMANTICS_H
@@ -31,6 +31,8 @@ typedef struct zlang_semantic_context_t {
     size_t symbol_capacity_;
     size_t symbol_count_;
     size_t scope_depth_;
+    size_t loop_depth_;
+    const char *current_return_type_;
     zlang_diagnostics_t *diagnostics_;
     const zlang_program_t *program_;
 } zlang_semantic_context_t;

@@ -1,8 +1,8 @@
 # Zlang Language Specification
 
-**Status:** Complete 0.2
+**Status:** Complete 0.3
 
-**Scope:** the core language implemented by `zlang-compile` 0.2.
+**Scope:** the core language implemented by `zlang-compile` 0.3.
 
 This document defines Zlang. It does not define the compiler internals, the command-line interface, or the CI pipeline. Those are implementation concerns and are described in `ROADMAP.md`.
 
@@ -262,7 +262,19 @@ Equivalent to a counted loop from `0` to `count - 1`. The expression must be `un
 
 ### 10.6 `return`
 
-Valid only inside a function. The expression type must match the declared return type.
+Valid only inside a function. A non-void function must return a value whose type matches the
+declared return type. A void function must return without a value. A `return` outside a function is
+`ZLANG1004`.
+
+### 10.7 `break` and `continue`
+
+```zlang
+break;
+continue;
+```
+
+Both statements are valid only inside `while`, `repeat` or `foreach`. They emit native C `break;`
+and `continue;` and are `ZLANG1004` elsewhere.
 
 ---
 
@@ -425,6 +437,8 @@ program        = statement* ;
 
 statement      = declaration
                | expression ";"
+               | "break" ";"
+               | "continue" ";"
                | ifStatement
                | whileStatement
                | foreachStatement
@@ -550,6 +564,13 @@ logical operators, expression grouping, and `else if` chains. It rejects shadowi
 rejects overlong sequence initializers with `ZLANG3003`, and warns about undisciplined
 explicit capacity with `ZLANG3002`.
 
+## 0.3 implementation status
+
+The 0.3 implementation adds `break` and `continue` with loop-context validation, enforces boolean
+`if` and `while` conditions and unsigned `repeat` counts, validates every `return` against its
+function type, and analyzes and emits nested statements exactly once. The emitted C for the full
+language tour is compiled as a conformance test.
+
 ## Annex C - Testability contract
 
 A conformance test may assert on emitted C text without running the program:
@@ -616,5 +637,12 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `else ifStatement` | `emits_else_if_chains` |
 | `!`, `&&`, `||` and grouped expressions | `emits_logical_operators` |
 | boolean operand checking | `rejects_non_boolean_logical_operands` |
+| `break` and `continue` | `emits_break_and_continue` |
+| invalid loop jumps | `rejects_break_outside_loop`, `rejects_continue_outside_loop` |
+| boolean and unsigned conditions | `rejects_non_boolean_if_condition`, `rejects_non_unsigned_repeat_count` |
+| return validation | `validates_return_types`, `rejects_return_outside_function` |
+| self concatenation | `accepts_self_concatenation_with_explicit_capacity` |
+| nested statements emitted once | `does_not_duplicate_nested_statements` |
+| generated C compiles | `zlang.cli.compiles_generated_c` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

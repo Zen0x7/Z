@@ -56,6 +56,17 @@ static void write_handles_empty_and_invalid_arguments(zlang_test_context_t *cons
     ZLANG_CHECK(context, _print_ok_k);
 }
 
+static void string_concat_handles_self_concatenation(zlang_test_context_t *const context) {
+    char _storage[16] = {'a', '\0'};
+    const zlang_string_t _self_k = {_storage, 1U};
+    const zlang_string_t _parts_k[] = {_self_k, {"b", 1U}};
+    const zlang_string_t _result_k = zlang_string_concat(_storage, 15U, _parts_k, 2U);
+
+    ZLANG_CHECK(context, _result_k.length_ == 2U);
+    ZLANG_CHECK(context, strcmp(_result_k.data_, "ab") == 0);
+    ZLANG_CHECK(context, _storage[2] == '\0');
+}
+
 static void trap_codes_are_fixed(zlang_test_context_t *const context) {
     const uint8_t _overflow_k = ZLANG_TRAP_OVERFLOW;
     const uint8_t _bounds_k = ZLANG_TRAP_BOUNDS;

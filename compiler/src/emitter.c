@@ -1,5 +1,5 @@
 /** @file
- * @brief C99 emitter for the Zlang 0.2 abstract syntax tree.
+ * @brief C99 emitter for the Zlang 0.3 abstract syntax tree.
  */
 
 #include "zlang/compiler/emitter.h"
@@ -18,6 +18,7 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->emitted_type_count_ = 0U;
     emitter->emitted_symbol_count_ = 0U;
     emitter->active_symbol_count_ = 0U;
+    memset(emitter->emitted_symbols_, 0, sizeof(emitter->emitted_symbols_));
     if (capacity > 0U) {
         buffer[0] = '\0';
     }
@@ -244,7 +245,9 @@ static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_n
         }
     }
     ++emitter->active_symbol_count_;
-    ++emitter->emitted_symbol_count_;
+    if (emitter->active_symbol_count_ > emitter->emitted_symbol_count_) {
+        emitter->emitted_symbol_count_ = emitter->active_symbol_count_;
+    }
     return true;
 }
 
@@ -414,19 +417,18 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         return true;
     }
     case zlang_expression_index_: {
-        const zlang_ast_expression_t *const _left_k = &program->expressions_[_expression_k->left_];
-        const char *const _name_k = zlang_resolve_name(emitter, _left_k->name_);
+        const char *const _name_k = zlang_resolve_name(emitter, _expression_k->name_);
         if (_name_k == NULL) {
             return false;
         }
-        if (!zlang_append_text(emitter, "((") ||
+        if (!zlang_append_text(emitter, "(((") ||
             !zlang_emit_expression(program, _expression_k->right_, emitter) ||
             !zlang_append_text(emitter, ") < ") || !zlang_append_text(emitter, _name_k) ||
             !zlang_append_text(emitter, ".length_) ? ") || !zlang_append_text(emitter, _name_k) ||
             !zlang_append_text(emitter, ".data_[") ||
             !zlang_emit_expression(program, _expression_k->right_, emitter) ||
             !zlang_append_text(emitter, "] : (zlang_trap(2U), ") ||
-            !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".data_[0])")) {
+            !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".data_[0]))")) {
             return false;
         }
         return true;
@@ -485,7 +487,8 @@ static bool zlang_emit_sequence_values(const zlang_program_t *program,
 // NOLINTNEXTLINE(misc-no-recursion)
 static size_t zlang_concat_part_count(const zlang_program_t *program,
                                       size_t index) { // NOLINT(misc-no-recursion)
-    if (index == ZLANG_NO_EXPRESSION || index >= program->expression_count_) {
+    if (program == NULL || program->expressions_ == NULL || index == ZLANG_NO_EXPRESSION ||
+        index >= program->expression_count_) {
         return 0U;
     }
     const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
@@ -608,8 +611,7 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
                                         const zlang_ast_expression_t *expression,
                                         zlang_emitter_t *emitter, uint32_t depth) {
     const zlang_ast_expression_t *const _target_k = &program->expressions_[expression->left_];
-    const zlang_ast_expression_t *const _name_k = &program->expressions_[_target_k->left_];
-    const char *const _generated_k = zlang_resolve_name(emitter, _name_k->name_);
+    const char *const _generated_k = zlang_resolve_name(emitter, _target_k->name_);
     char _index_name[32];
     const int _written_k = snprintf(_index_name, sizeof(_index_name), "_zlang_index_%lu",
                                     (unsigned long)emitter->next_index_++);
@@ -649,13 +651,57 @@ static bool zlang_emit_if_statement(const zlang_program_t *program,
                                     const zlang_ast_statement_t *statement,
                                     zlang_emitter_t *emitter, uint32_t depth);
 
+static bool zlang_emit_condition(const zlang_program_t *program, size_t index,
+                                 zlang_emitter_t *emitter) {
+    if (index == ZLANG_NO_EXPRESSION || index >= program->expression_count_) {
+        return false;
+    }
+    const zlang_expression_kind_t _kind_k = program->expressions_[index].kind_;
+    const bool _already_parenthesized_k =
+        _kind_k == zlang_expression_equal_ || _kind_k == zlang_expression_less_ ||
+        _kind_k == zlang_expression_greater_ || _kind_k == zlang_expression_less_equal_ ||
+        _kind_k == zlang_expression_greater_equal_ || _kind_k == zlang_expression_not_equal_ ||
+        _kind_k == zlang_expression_not_ || _kind_k == zlang_expression_and_ ||
+        _kind_k == zlang_expression_or_ || _kind_k == zlang_expression_index_;
+    if (_already_parenthesized_k) {
+        return zlang_emit_expression(program, index, emitter);
+    }
+    return zlang_append_text(emitter, "(") && zlang_emit_expression(program, index, emitter) &&
+           zlang_append_text(emitter, ")");
+}
+
+static bool zlang_is_nested_in_body(const zlang_program_t *program, size_t index, size_t start,
+                                    size_t count) {
+    const size_t _end_k = start + count;
+    for (size_t _owner = start; _owner < _end_k && _owner < program->statement_count_; ++_owner) {
+        if (_owner == index) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_owner];
+        if (index >= _statement_k->body_start_ &&
+            index < _statement_k->body_start_ + _statement_k->body_count_) {
+            return true;
+        }
+        if (index >= _statement_k->else_start_ &&
+            index < _statement_k->else_start_ + _statement_k->else_count_) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_body(const zlang_program_t *program, size_t start, size_t count,
                             zlang_emitter_t *emitter, uint32_t depth) { // NOLINT(misc-no-recursion)
     for (size_t _index = 0U; _index < count; ++_index) {
         const size_t _statement_index_k = start + _index;
-        if (_statement_index_k >= program->statement_count_ ||
-            !zlang_emit_statement(program, &program->statements_[_statement_index_k], emitter,
+        if (_statement_index_k >= program->statement_count_) {
+            return false;
+        }
+        if (zlang_is_nested_in_body(program, _statement_index_k, start, count)) {
+            continue;
+        }
+        if (!zlang_emit_statement(program, &program->statements_[_statement_index_k], emitter,
                                   depth)) {
             return false;
         }
@@ -668,9 +714,9 @@ static bool zlang_emit_if_statement(const zlang_program_t *program,
                                     const zlang_ast_statement_t *statement,
                                     zlang_emitter_t *emitter,
                                     uint32_t depth) { // NOLINT(misc-no-recursion)
-    if (!zlang_append_text(emitter, "if (") ||
-        !zlang_emit_expression(program, statement->expression_, emitter) ||
-        !zlang_append_text(emitter, ") {\n")) {
+    if (!zlang_append_text(emitter, "if ") ||
+        !zlang_emit_condition(program, statement->expression_, emitter) ||
+        !zlang_append_text(emitter, " {\n")) {
         return false;
     }
     const size_t _if_scope_k = zlang_save_scope(emitter);
@@ -865,6 +911,10 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         }
         return zlang_append_text(emitter, ";\n");
     }
+    case zlang_statement_break_:
+        return zlang_append_text(emitter, "break;\n");
+    case zlang_statement_continue_:
+        return zlang_append_text(emitter, "continue;\n");
     case zlang_statement_return_:
         if (statement->expression_ == ZLANG_NO_EXPRESSION) {
             return zlang_append_text(emitter, "return;\n");
@@ -877,9 +927,9 @@ static bool zlang_emit_statement(const zlang_program_t *program,
     case zlang_statement_if_:
         return zlang_emit_if_statement(program, statement, emitter, depth);
     case zlang_statement_while_: {
-        if (!zlang_append_text(emitter, "while (") ||
-            !zlang_emit_expression(program, statement->expression_, emitter) ||
-            !zlang_append_text(emitter, ") {\n")) {
+        if (!zlang_append_text(emitter, "while ") ||
+            !zlang_emit_condition(program, statement->expression_, emitter) ||
+            !zlang_append_text(emitter, " {\n")) {
             return false;
         }
         const size_t _while_scope_k = zlang_save_scope(emitter);

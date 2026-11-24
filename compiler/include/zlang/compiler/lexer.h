@@ -1,5 +1,5 @@
 /** @file
- * @brief Token definitions and the Zlang 0.2 lexer API.
+ * @brief Token definitions and the Zlang 0.3 lexer API.
  */
 
 #ifndef ZLANG_COMPILER_LEXER_H
@@ -32,6 +32,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_unsigned_,
     zlang_token_while_,
     zlang_token_break_,
+    zlang_token_continue_,
     zlang_token_left_paren_,
     zlang_token_right_paren_,
     zlang_token_left_brace_,

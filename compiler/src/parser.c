@@ -1,5 +1,5 @@
 /** @file
- * @brief Recursive-descent parser for the Zlang 0.2 grammar.
+ * @brief Recursive-descent parser for the Zlang 0.3 grammar.
  */
 
 #include "zlang/compiler/parser.h"
@@ -120,6 +120,7 @@ static bool zlang_parse_simple_block_statement(zlang_parser_t *parser, zlang_sta
 static bool zlang_parse_foreach(zlang_parser_t *parser);
 static bool zlang_parse_function(zlang_parser_t *parser);
 static bool zlang_parse_return(zlang_parser_t *parser);
+static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_kind_t kind);
 static bool zlang_parse_block(zlang_parser_t *parser, size_t statement);
 static bool zlang_parse_statements(zlang_parser_t *parser);
 
@@ -292,13 +293,7 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                                      "expected ']' after index expression")) {
                 return false;
             }
-            const size_t _identifier_k = _expression_k;
-            _expression_k = zlang_parser_add_expression(parser);
-            if (_expression_k == ZLANG_NO_EXPRESSION) {
-                return false;
-            }
             parser->expressions_[_expression_k].kind_ = zlang_expression_index_;
-            parser->expressions_[_expression_k].left_ = _identifier_k;
             parser->expressions_[_expression_k].right_ = _index_k;
         }
         break;
@@ -802,6 +797,21 @@ static bool zlang_parse_return(zlang_parser_t *parser) {
     return zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after return");
 }
 
+static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_kind_t kind) {
+    const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    parser->statements_[_statement_k].kind_ = kind;
+    parser->statements_[_statement_k].line_ = _keyword_k->line_;
+    parser->statements_[_statement_k].column_ = _keyword_k->column_;
+    return zlang_parser_expect(parser, zlang_token_semicolon_,
+                               kind == zlang_statement_break_ ? "expected ';' after break"
+                                                              : "expected ';' after continue");
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_parse_statements(zlang_parser_t *parser) {
     while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
@@ -833,6 +843,14 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
             }
         } else if (_kind_k == zlang_token_return_) {
             if (!zlang_parse_return(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_break_) {
+            if (!zlang_parse_jump_statement(parser, zlang_statement_break_)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_continue_) {
+            if (!zlang_parse_jump_statement(parser, zlang_statement_continue_)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_left_brace_) {
@@ -942,6 +960,14 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
             }
         } else if (_kind_k == zlang_token_return_) {
             if (!zlang_parse_return(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_break_) {
+            if (!zlang_parse_jump_statement(parser, zlang_statement_break_)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_continue_) {
+            if (!zlang_parse_jump_statement(parser, zlang_statement_continue_)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_left_brace_) {

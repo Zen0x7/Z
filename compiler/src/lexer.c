@@ -1,5 +1,5 @@
 /** @file
- * @brief Tokenization for Zlang 0.2 source text.
+ * @brief Tokenization for Zlang 0.3 source text.
  */
 
 #include "zlang/compiler/lexer.h"
@@ -26,7 +26,8 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"true", zlang_token_true_},
                                              {"unsigned", zlang_token_unsigned_},
                                              {"while", zlang_token_while_},
-                                             {"break", zlang_token_break_}};
+                                             {"break", zlang_token_break_},
+                                             {"continue", zlang_token_continue_}};
 
 static void zlang_lexer_advance(zlang_lexer_t *lexer) {
     const char _character_k = lexer->source_[lexer->position_];

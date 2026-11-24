@@ -1,0 +1,27 @@
+integer values[] = {1, 2, 3};
+integer fixed[5] = {4, 5};
+fixed[0] = values[1];
+string message = "temp_" + "_01";
+string[32] label = message + "sensor";
+label = label + "!";
+boolean a = true;
+boolean b = false;
+boolean ok = !(a && b) || a;
+if (ok) {
+    print("yes");
+} else if (b) {
+    print("no");
+} else {
+    print("maybe");
+}
+foreach (item in values) {
+    if (item == 2) { continue; }
+    if (item == 3) { break; }
+    print("kept");
+}
+while (a) { break; }
+repeat (2U) { continue; }
+function add(integer left, integer right): integer {
+    return left + right;
+}
+integer total = add(1, 2);

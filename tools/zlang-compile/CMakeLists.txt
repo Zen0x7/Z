@@ -10,6 +10,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/emit_c.zlang ${CMAKE_CURRENT_BINARY_DIR}/emit_c.zlang COPYONLY)
     configure_file(tests/invalid_diagnostic.zlang
                    ${CMAKE_CURRENT_BINARY_DIR}/invalid_diagnostic.zlang COPYONLY)
+    configure_file(tests/compiles.zlang ${CMAKE_CURRENT_BINARY_DIR}/compiles.zlang COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zlang_compile> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.zlang --emit-c)
@@ -28,9 +29,20 @@ if(ZLANG_BUILD_TESTS)
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_diagnostic_format.cmake)
     set_tests_properties(zlang.cli.diagnostic_format PROPERTIES LABELS module:cli)
 
+    add_test(NAME zlang.cli.compiles_generated_c
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/compiles.zlang
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
+    set_tests_properties(zlang.cli.compiles_generated_c PROPERTIES LABELS module:cli)
+
     if(ZLANG_SANITIZER_ENV)
         set_tests_properties(zlang.cli.emit_c zlang.cli.emit_c.output
-                             zlang.cli.diagnostic_format
+                             zlang.cli.diagnostic_format zlang.cli.compiles_generated_c
                              PROPERTIES ENVIRONMENT "${ZLANG_SANITIZER_ENV}")
     endif()
 endif()

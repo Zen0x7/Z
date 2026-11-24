@@ -13,6 +13,7 @@ library and `zlang-compile` for the command line driver.
 - [Compiler architecture](architecture.md) describes the pipeline and ownership rules.
 - [Zlang 0.1 grammar](grammar_01.md) lists the baseline syntax and diagnostics.
 - [Zlang 0.2 grammar](grammar_02.md) lists the added syntax and diagnostics.
+- [Zlang 0.3 grammar](grammar_03.md) lists loop control and tightened semantic rules.
 - The sections below list the runtime headers, compiler headers and `zlang-compile` behavior.
 
 ## Public API

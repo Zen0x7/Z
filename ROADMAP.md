@@ -178,3 +178,12 @@ Status: Implemented.
 Add `else if` chains, boolean `!`, `&&` and `||`, and parenthesized expression grouping. These
 features reuse the existing AST and diagnostic set, emit native C control flow and logical
 operators, and are covered by new conformance cases in `tests/spec`.
+
+## 0.3 — Hardening and loop control
+
+Status: Implemented.
+
+Add `break` and `continue` with loop-context diagnostics, enforce boolean `if`/`while` conditions
+and unsigned `repeat` counts, validate `return` against the enclosing function type, and ensure
+nested statements are analyzed and emitted exactly once. The full language tour in `README.md` is
+compiled as a conformance case.

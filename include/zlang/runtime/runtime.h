@@ -4,11 +4,11 @@
 #include "zlang/detail/inline.h"
 
 #include <limits.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /** @file
@@ -52,7 +52,9 @@ ZLANG_STATIC_INLINE bool zlang_write(FILE *stream, zlang_string_t value) {
 ZLANG_STATIC_INLINE bool zlang_print(zlang_string_t value) { return zlang_write(stdout, value); }
 
 #ifndef ZLANG_TRAP_SINK
-#define ZLANG_TRAP_SINK(code) abort()
+/* raise() terminates through SIGABRT without giving optimizers a noreturn
+   edge here, so callers can still guard custom sinks that do return. */
+#define ZLANG_TRAP_SINK(code) ((void)(code), (void)raise(SIGABRT))
 #endif
 
 /**

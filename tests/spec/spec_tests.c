@@ -43,6 +43,20 @@ static const zlang_diagnostic_t *zlang_spec_find_diagnostic(const zlang_spec_ses
     return NULL;
 }
 
+static size_t zlang_spec_count_occurrences(const char *text, const char *needle) {
+    size_t _count_k = 0U;
+    const char *const _needle_k = needle;
+    while (text != NULL && *text != '\0' && _needle_k[0] != '\0') {
+        const char *const _found_k = strstr(text, _needle_k);
+        if (_found_k == NULL) {
+            break;
+        }
+        ++_count_k;
+        text = _found_k + strlen(_needle_k);
+    }
+    return _count_k;
+}
+
 static void zlang_spec_expect_diagnostic(zlang_test_context_t *context,
                                          const zlang_spec_session_t *session, uint16_t code,
                                          uint32_t line, uint32_t column) {
@@ -446,6 +460,76 @@ static void rejects_non_boolean_logical_operands(zlang_test_context_t *const con
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "boolean bad = !1;"));
     ZLANG_CHECK(context,
                 zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void emits_break_and_continue(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LOOP_JUMPS_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_BREAK_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_CONTINUE_EXPECTED) != NULL);
+}
+
+static void rejects_break_outside_loop(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "break;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+}
+
+static void rejects_continue_outside_loop(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "continue;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+}
+
+static void rejects_non_boolean_if_condition(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "if (1) { }"));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 5U);
+}
+
+static void rejects_non_unsigned_repeat_count(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "repeat (2) { }"));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 9U);
+}
+
+static void validates_return_types(zlang_test_context_t *const context) {
+    zlang_spec_session_t _valid;
+    zlang_spec_session_t _invalid;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_valid, "function pick(): integer { return 1; }"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid, "function pick(): integer { return; }"));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_invalid.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void rejects_return_outside_function(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "return 1;"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+}
+
+static void accepts_self_concatenation_with_explicit_capacity(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SELF_CONCAT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SELF_CONCAT_EXPECTED) != NULL);
+}
+
+static void does_not_duplicate_nested_statements(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_NESTED_NO_DUPLICATES_SOURCE));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "\"once\"") == 1U);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

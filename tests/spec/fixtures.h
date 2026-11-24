@@ -141,8 +141,8 @@
     "else if (value == 2) { print(\"two\"); }\n"                                                   \
     "else if (value == 3) { print(\"three\"); }\n"                                                 \
     "else { print(\"other\"); }"
-#define ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED "} else if ((value == 2)) {"
-#define ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED "} else if ((value == 3)) {"
+#define ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED "} else if (value == 2) {"
+#define ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED "} else if (value == 3) {"
 #define ZLANG_SPEC_ELSE_IF_FINAL_EXPECTED "} else {"
 
 #define ZLANG_SPEC_LOGICAL_SOURCE                                                                  \
@@ -156,6 +156,29 @@
 #define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool both = (a && b);"
 #define ZLANG_SPEC_LOGICAL_OR_EXPECTED "bool either = (a || b);"
 #define ZLANG_SPEC_LOGICAL_GROUP_EXPECTED "bool mixed = ((!(a && b)) || a);"
+
+#define ZLANG_SPEC_LOOP_JUMPS_SOURCE                                                               \
+    "integer values[] = {1, 2, 3};\n"                                                              \
+    "foreach (item in values) {\n"                                                                 \
+    "    if (item == 2) { continue; }\n"                                                           \
+    "    if (item == 3) { break; }\n"                                                              \
+    "    print(\"kept\");\n"                                                                       \
+    "}\n"                                                                                          \
+    "while (true) { break; }\n"                                                                    \
+    "repeat (2U) { continue; }"
+#define ZLANG_SPEC_BREAK_EXPECTED "break;"
+#define ZLANG_SPEC_CONTINUE_EXPECTED "continue;"
+
+#define ZLANG_SPEC_SELF_CONCAT_SOURCE                                                              \
+    "string[16] label = \"a\";\n"                                                                  \
+    "label = label + \"b\";"
+#define ZLANG_SPEC_SELF_CONCAT_EXPECTED "(zlang_string_t[]){ label, "
+
+#define ZLANG_SPEC_NESTED_NO_DUPLICATES_SOURCE                                                     \
+    "integer values[] = {1};\n"                                                                    \
+    "foreach (item in values) {\n"                                                                 \
+    "    if (item == 1) { print(\"once\"); }\n"                                                    \
+    "}"
 
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 

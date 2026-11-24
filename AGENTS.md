@@ -160,8 +160,9 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. It tries the
   official doxygen.nl mirror first, then the GitHub release, then SourceForge; every source must
   match the same SHA256. This keeps Vercel builds working when GitHub release assets return 404 from
-  the build region. `Doxyfile.in` is configured from `cmake/ZlangVersion.cmake`, so the published
-  project version and language level always match the current release. There is no
+  the build region. `scripts/configure_generated_files.sh` reads `cmake/ZlangVersion.cmake` and
+  generates `build/Doxyfile` and the version header with shell tools only, because the Vercel image
+  does not provide CMake. There is no
   extra GitHub Actions step: Vercel's Git integration builds every push and PR directly. Vercel must
   still be connected to the GitHub repo in the Vercel dashboard; choose the repository root and keep
   preview deployments enabled so each PR gets its own URL. No Vercel secrets or deploy hooks are

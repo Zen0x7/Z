@@ -5,8 +5,7 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 generated_include="$tmp_dir/generated/include"
-cmake -DZLANG_ROOT="$root" -DZLANG_OUTPUT="$generated_include" \
-    -P "$root/scripts/configure_version_header.cmake"
+"$root/scripts/configure_generated_files.sh" "$generated_include"
 
 compilers=("$@")
 if ((${#compilers[@]} == 0)); then

@@ -45,7 +45,7 @@ if [[ -z "${doxygen_bin}" ]]; then
 fi
 
 mkdir -p "${root}/build/docs"
-cmake -DZLANG_ROOT="${root}" -P "${root}/scripts/configure_doxyfile.cmake"
+"${root}/scripts/configure_generated_files.sh" "${root}/build/generated/include"
 cd "${root}"
 "${doxygen_bin}" "${root}/build/Doxyfile"
 printf 'Documentation written to build/docs/html/index.html\n'

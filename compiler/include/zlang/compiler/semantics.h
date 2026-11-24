@@ -25,6 +25,7 @@ typedef struct zlang_symbol_t {
     bool has_explicit_capacity_;
     bool is_mutated_;
     bool is_const_;
+    bool is_reference_;
 } zlang_symbol_t;
 
 typedef struct zlang_semantic_context_t {

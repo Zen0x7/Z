@@ -97,6 +97,8 @@ typedef struct zlang_parameter_t {
     const char *name_;
     uint32_t line_;
     uint32_t column_;
+    bool is_const_;
+    bool is_reference_;
 } zlang_parameter_t;
 
 typedef struct zlang_ast_statement_t {

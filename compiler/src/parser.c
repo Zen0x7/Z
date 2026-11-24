@@ -1043,12 +1043,35 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
     }
 
     const size_t _parameter_start_k = parser->parameter_count_;
-    while (zlang_parser_is_declaration_type(parser, zlang_parser_current(parser))) {
+    for (;;) {
+        const zlang_token_kind_t _qualifier_kind_k = zlang_parser_current(parser)->kind_;
+        if (_qualifier_kind_k != zlang_token_const_ && _qualifier_kind_k != zlang_token_clone_ &&
+            _qualifier_kind_k != zlang_token_reference_ &&
+            !zlang_parser_is_declaration_type(parser, zlang_parser_current(parser))) {
+            break;
+        }
         if (parser->parameter_count_ >= parser->parameter_capacity_) {
             zlang_parser_unsupported(parser, "parameter capacity exceeded");
             return false;
         }
+        const zlang_token_t *const _start_k = zlang_parser_current(parser);
+        bool _is_const_k = false;
+        if (_qualifier_kind_k == zlang_token_const_) {
+            _is_const_k = true;
+            zlang_parser_advance(parser);
+        }
+        const zlang_token_kind_t _mode_kind_k = zlang_parser_current(parser)->kind_;
+        if (_mode_kind_k != zlang_token_clone_ && _mode_kind_k != zlang_token_reference_) {
+            zlang_parser_unsupported(parser, "expected 'clone' or 'reference' parameter qualifier");
+            return false;
+        }
+        const bool _is_reference_k = _mode_kind_k == zlang_token_reference_;
+        zlang_parser_advance(parser);
         const zlang_token_t *const _type_k = zlang_parser_current(parser);
+        if (!zlang_parser_is_declaration_type(parser, _type_k)) {
+            zlang_parser_unsupported(parser, "expected a declaration type");
+            return false;
+        }
         zlang_parser_advance(parser);
         const zlang_token_t *const _parameter_name_k = zlang_parser_current(parser);
         if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a parameter name")) {
@@ -1057,8 +1080,10 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
         zlang_parameter_t *const _parameter_k = &parser->parameters_[parser->parameter_count_++];
         _parameter_k->type_name_ = _type_k->text_;
         _parameter_k->name_ = _parameter_name_k->text_;
-        _parameter_k->line_ = _type_k->line_;
-        _parameter_k->column_ = _type_k->column_;
+        _parameter_k->line_ = _start_k->line_;
+        _parameter_k->column_ = _start_k->column_;
+        _parameter_k->is_const_ = _is_const_k;
+        _parameter_k->is_reference_ = _is_reference_k;
         if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
             break;
         }

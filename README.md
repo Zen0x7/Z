@@ -59,11 +59,18 @@ when traceability is not needed.
 
 This program exercises the language end to end: comments attached to their source constructs,
 `const`, records, enums, all four scalar types, leading `sequence[N]` declarations, bounded string
-elements, functions and `return`, user-defined function parameter and return types, scopes,
+elements, functions with `clone` and `reference` parameters, `return`, user-defined function
+parameter and return types, scopes,
 assignments, indexed access and assignment, field access and assignment, `append`, arithmetic,
 compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
 printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
 `break` and `continue`.
+
+Every parameter states its qualifier: `clone` is a mutable local copy, `const clone` is a read-only
+copy, `reference` is a mutable alias to caller-owned storage and `const reference` is a read-only
+alias. There are no `*` or `&` operators in Zlang; the emitter uses them internally when lowering a
+reference. References are parameter-only: they cannot be stored or returned, and a reference
+argument must be an lvalue.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source comments are preserved in the
@@ -112,7 +119,7 @@ sequence[3] string[8] names = {"a", "b"};
 sequence[2] Point points;
 
 // Adds two integers.
-function add(integer left, integer right): integer {
+function add(clone integer left, clone integer right): integer {
     // Checked addition lowers to a runtime call.
     return left + right;
 }
@@ -126,15 +133,21 @@ function make(): Point {
 }
 
 // Paints a copy; the color parameter is deliberately unused.
-function paint(Point value, Color color): Point {
+function paint(clone Point value, clone Color color): Point {
     value.x = 2;
     return value;
+}
+
+// Mutates the caller's record through a reference parameter.
+function shift(reference Point point, clone integer amount) {
+    point.x = point.x + amount;
 }
 
 Point made = make();
 Color chosen = GREEN;
 Point painted = paint(made, chosen);
 append(points, made);
+shift(made, 3);
 
 fixed[0] = add(values[1], base);
 append(fixed, 9);
@@ -311,6 +324,11 @@ zlang_point_t _u_paint(zlang_point_t value, zlang_color_t color) {
     return value;
 }
 
+// Mutates the caller's record through a reference parameter.
+void _u_shift(zlang_point_t *point, int32_t amount) {
+    point->x_ = zlang_add_i32(point->x_, amount);
+}
+
 int main(void) {
     // A guided tour of the language.
     const int32_t _base = 2;
@@ -331,6 +349,7 @@ int main(void) {
     zlang_color_t _chosen = ZLANG_COLOR_GREEN;
     zlang_point_t _painted = _u_paint(_made, _chosen);
     zlang_array_append(_points.data_, &_points.length_, ZLANG_POINTS_CAPACITY, sizeof(_points.data_[0]), (zlang_point_t[]){ (_made) });
+    _u_shift(&_made, 3);
 
     uint32_t _zlang_index_9 = 0;
     if (_zlang_index_9 < _fixed.length_) {

@@ -12,10 +12,14 @@ function make(): Point {
     result.y = 2;
     return result;
 }
-function paint(Point value, Color color): Point {
+function paint(clone Point value, clone Color color): Point {
     value.x = 2;
     return value;
+}
+function shift(reference Point point, clone integer amount) {
+    point.x = point.x + amount;
 }
 Point made = make();
 Color chosen = BLUE;
 Point painted = paint(made, chosen);
+shift(made, 3);

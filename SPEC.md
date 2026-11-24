@@ -91,8 +91,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 Keywords are reserved and cannot be used as identifiers:
 
 ```text
-boolean break const continue else enum false for foreach function if integer
-length print record repeat return sequence string true unsigned while
+boolean break clone const continue else enum false for foreach function if integer
+length print record reference repeat return sequence string true unsigned while
 ```
 
 The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
@@ -291,15 +291,25 @@ function <name>(<parameter-list>): <return-type> {
 }
 ```
 
-A parameter is `<type> <name>`, where `<type>` is a scalar or a previously declared record or enum name. The return type uses the same set of types. Parameters are passed by value. Record parameters and return values lower to generated C typedefs. Functions have no access to mutable globals, because Zlang has no global variables.
+A parameter is `<const?> <mode> <type> <name>`, where `<mode>` is `clone` or `reference`, and
+`<type>` is a scalar or a previously declared record or enum name. The return type uses the same set
+of types, without a mode. Record parameters and return values lower to generated C typedefs.
+Functions have no access to mutable globals, because Zlang has no global variables.
 
 ```zlang
-function add(integer left, integer right): integer {
+function add(clone integer left, clone integer right): integer {
     return left + right;
 }
 ```
 
-A function with no return type returns nothing and emits `void`. A function with no parameters emits `(void)` in C. Unused parameters receive `(void)` guards in the generated body.
+`clone` passes a value copy; mutation affects only the local parameter. `reference` passes an alias
+to the caller's lvalue; mutation is visible to the caller. `const clone` is a read-only copy and
+`const reference` is a read-only alias. A mutable `reference` cannot bind a const argument, and
+reference arguments must be lvalues. References are parameter-only: they cannot be stored or
+returned.
+
+A function with no return type returns nothing and emits `void`. A function with no parameters emits
+`(void)` in C. Unused parameters receive `(void)` guards in the generated body.
 
 ---
 
@@ -530,7 +540,9 @@ repeatStatement  = "repeat" "(" expression ")" block ;
 functionDeclaration = "function" identifier "(" parameters ")"
                       ( ":" type )? block ;
 
-parameters     = ( type identifier ( "," type identifier )* )? ;
+parameterMode  = "clone" | "reference" ;
+parameter      = "const"? parameterMode type identifier ;
+parameters     = ( parameter ( "," parameter )* )? ;
 
 returnStatement = "return" expression? ";" ;
 
@@ -712,6 +724,11 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | contextual field-pointer CSE | `reuses_field_pointers_contextually` |
 | contextual index-value CSE across branches | `reuses_index_values_across_if_branches` |
 | reserved generated namespace | `rejects_reserved_identifiers` |
+| short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
+| parameter qualifiers | `emits_parameter_qualifiers` |
+| missing parameter qualifier rejection | `rejects_missing_parameter_qualifier` |
+| const parameter mutation rejection | `rejects_mutation_of_const_parameter` |
+| reference lvalue rejection | `rejects_non_lvalue_reference_argument` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
 
 
@@ -758,7 +775,16 @@ existing local temporaries.
 
 Zlang 0.11 extends contextual CSE to index reads. A read repeated across an `if` chain and its branch
 bodies is materialized once before the chain and reused inside the branches. Cached reads are
-invalidated by writes and by scope exit.
+invalidated by writes and by scope exit. Reads that live only under short-circuit `&&` or `||` remain
+inline so trap timing is unchanged.
+
+
+## 0.12 implementation status
+
+Zlang 0.12 adds mandatory parameter qualifiers. Every parameter uses `clone` or `reference`, with
+optional `const` before the mode. `clone` is a local value copy; `reference` is a caller-owned alias
+lowered to a C pointer that is never exposed in Zlang source. References cannot be stored or
+returned, and reference arguments must be lvalues.
 
 
 ## Emitted comments

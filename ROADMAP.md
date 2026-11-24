@@ -390,3 +390,22 @@ Status: Implemented.
 
 An index read used in an `if` condition and again inside a branch no longer calls the getter twice.
 The value temporary lives for the whole `if` statement, and writes clear the cached reads.
+
+## 0.12 — Parameter qualifiers
+
+Status: Locked.
+
+- Require `clone` or `reference` on every function parameter.
+- Allow optional `const` before the mode.
+- Lower `clone` to a C value parameter and `reference` to a C pointer parameter.
+- Keep pointer syntax out of Zlang source; field access stays `.` at source level.
+- Reject missing qualifiers, const mutation and non-lvalue reference arguments.
+- Keep references parameter-only: no storage in records or sequences and no returns.
+
+## 0.12 — Completion
+
+Status: Implemented.
+
+Parameters now declare their binding explicitly. `clone` mutates only a local copy, while
+`reference` mutates caller-owned storage through a compiler-managed pointer. The tour demonstrates
+both, and reference arguments are checked as lvalues by semantic analysis.

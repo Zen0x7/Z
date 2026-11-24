@@ -28,7 +28,7 @@ while (a) {
     break;
 }
 repeat(2U) { continue; }
-function add(integer left, integer right) : integer { return left + right; }
+function add(clone integer left, clone integer right) : integer { return left + right; }
 integer total = add(1, base);
 for (unsigned outer = 0U; outer < 2U; outer += 1U) {
     for (unsigned inner = 0U; inner < 2U; inner += 1U) {

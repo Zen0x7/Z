@@ -47,7 +47,7 @@
     "for (uint32_t _zlang_repeat_1 = ZLANG_ZERO; _zlang_repeat_1 < 2U; ++_zlang_repeat_1) {"
 
 #define ZLANG_SPEC_FUNCTION_SOURCE                                                                 \
-    "function add(integer left, integer right): integer {\n"                                       \
+    "function add(clone integer left, clone integer right): integer {\n"                           \
     "    return left + right;\n"                                                                   \
     "}"
 #define ZLANG_SPEC_FUNCTION_EXPECTED "int32_t _u_add(int32_t left, int32_t right) {"
@@ -61,7 +61,7 @@
     "    result.x = 1;\n"                                                                          \
     "    return result;\n"                                                                         \
     "}\n"                                                                                          \
-    "function paint(Point value, Color color): Point {\n"                                          \
+    "function paint(clone Point value, clone Color color): Point {\n"                              \
     "    value.x = 2;\n"                                                                           \
     "    return value;\n"                                                                          \
     "}\n"                                                                                          \
@@ -139,7 +139,7 @@
 #define ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED "ZLANG_LABEL_CAPACITY"
 
 #define ZLANG_SPEC_CALL_SOURCE                                                                     \
-    "function add(integer left, integer right): integer {\n"                                       \
+    "function add(clone integer left, clone integer right): integer {\n"                           \
     "    return left + right;\n"                                                                   \
     "}\n"                                                                                          \
     "integer total = add(2, 3);"

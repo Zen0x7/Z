@@ -10,9 +10,9 @@ made by the compiler.
 ## Lexical rules
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
-Keywords are `boolean`, `break`, `const`, `continue`, `else`, `enum`, `false`, `for`, `foreach`,
-`function`, `if`, `in`, `integer`, `length`, `print`, `record`, `repeat`, `return`, `sequence`,
-`string`, `true`, `unsigned` and `while`.
+Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
+`foreach`, `function`, `if`, `in`, `integer`, `length`, `print`, `record`, `reference`, `repeat`,
+`return`, `sequence`, `string`, `true`, `unsigned` and `while`.
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
@@ -63,7 +63,9 @@ sequence[4] Point points;
 Color current = GREEN;
 ```
 
-Record fields are scalar or enum types in this version. Shadowing a visible name is rejected;
+Every parameter needs `clone` or `reference`, with optional `const` before the mode. `clone` is a
+local value copy; `reference` aliases caller storage and cannot be stored or returned. Shadowing a
+visible name is rejected;
 sibling blocks may reuse a source name because the emitter generates unique C identifiers when
 needed.
 
@@ -81,7 +83,8 @@ needed.
 | `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
-| `function name(type name, ...): type {...}` | Function with optional return type; types may be scalar, record or enum |
+| `function name(const? clone type name, ...): type {...}` | Function with value parameters |
+| `function name(const? reference type name, ...): type {...}` | Function with caller-owned references |
 | `return expression;` / `return;` | Return from a function |
 | `print(expression);` | Write a string or scalar |
 | `append(sequence, expression);` | Append with capacity trap |

@@ -12,6 +12,7 @@ typedef struct zlang_keyword_t {
 } zlang_keyword_t;
 
 static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
+                                             {"clone", zlang_token_clone_},
                                              {"const", zlang_token_const_},
                                              {"else", zlang_token_else_},
                                              {"enum", zlang_token_enum_},
@@ -25,6 +26,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"length", zlang_token_length_},
                                              {"print", zlang_token_print_},
                                              {"record", zlang_token_record_},
+                                             {"reference", zlang_token_reference_},
                                              {"sequence", zlang_token_sequence_},
                                              {"repeat", zlang_token_repeat_},
                                              {"return", zlang_token_return_},

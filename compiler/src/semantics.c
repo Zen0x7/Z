@@ -197,6 +197,7 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
     _symbol_k->has_explicit_capacity_ = statement->has_explicit_capacity_;
     _symbol_k->is_mutated_ = false;
     _symbol_k->is_const_ = statement->is_const_;
+    _symbol_k->is_reference_ = false;
     return true;
 }
 
@@ -242,6 +243,33 @@ static const char *zlang_analyze_expression(zlang_semantic_context_t *context, s
                                             const zlang_ast_statement_t *statement);
 
 /* Expression trees are bounded by the caller-owned expression array. */
+static bool zlang_expression_is_lvalue(const zlang_semantic_context_t *context, size_t index,
+                                       bool *is_const) {
+    if (index == ZLANG_NO_EXPRESSION || index >= context->program_->expression_count_) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _expression_k = &context->program_->expressions_[index];
+    const char *_name_k = NULL;
+    if (_expression_k->kind_ == zlang_expression_identifier_ ||
+        _expression_k->kind_ == zlang_expression_index_) {
+        _name_k = _expression_k->name_;
+    } else if (_expression_k->kind_ == zlang_expression_field_ &&
+               _expression_k->base_name_ != NULL) {
+        _name_k = _expression_k->base_name_;
+    }
+    if (_name_k == NULL) {
+        return false;
+    }
+    const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _name_k);
+    if (_symbol_k == NULL || _symbol_k->is_function_) {
+        return false;
+    }
+    if (is_const != NULL) {
+        *is_const = _symbol_k->is_const_;
+    }
+    return true;
+}
+
 static const char *
 // NOLINTNEXTLINE(misc-no-recursion)
 zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
@@ -547,6 +575,12 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         if (_target_k->base_name_ != NULL) {
             const zlang_symbol_t *const _base_symbol_k =
                 zlang_find_symbol(context, _target_k->base_name_);
+            if (_base_symbol_k != NULL && _base_symbol_k->is_const_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement,
+                                              "cannot assign to a field of a const value");
+                return NULL;
+            }
             if (_base_symbol_k != NULL && _base_symbol_k->is_sequence_) {
                 zlang_mark_mutated(context, _base_symbol_k->name_);
             }
@@ -603,8 +637,21 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                               "call parameter table is incomplete");
                 continue;
             }
-            const char *const _expected_k =
-                context->program_->parameters_[_parameter_index_k].type_name_;
+            const zlang_parameter_t *const _parameter_k =
+                &context->program_->parameters_[_parameter_index_k];
+            const char *const _expected_k = _parameter_k->type_name_;
+            bool _argument_is_const_k = false;
+            if (_parameter_k->is_reference_ &&
+                !zlang_expression_is_lvalue(context, _expression_index_k, &_argument_is_const_k)) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                              _expression_index_k, statement,
+                                              "reference argument must be an lvalue");
+            } else if (_parameter_k->is_reference_ && !_parameter_k->is_const_ &&
+                       _argument_is_const_k) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                              _expression_index_k, statement,
+                                              "mutable reference cannot bind a const argument");
+            }
             const char *const _actual_k =
                 zlang_analyze_expression(context, _expression_index_k, statement);
             if (!zlang_type_matches(_expected_k, _actual_k)) {
@@ -931,11 +978,17 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 .name_ = _parameter_k->name_,
                 .line_ = _parameter_k->line_,
                 .column_ = _parameter_k->column_,
+                .is_const_ = _parameter_k->is_const_,
             };
             if (!zlang_add_symbol(context, &_parameter_statement_k, 0U, false, false)) {
                 context->symbol_count_ = _scope_start_k;
                 --context->scope_depth_;
                 return false;
+            }
+            zlang_symbol_t *const _parameter_symbol_k =
+                zlang_find_mutable_symbol(context, _parameter_k->name_);
+            if (_parameter_symbol_k != NULL) {
+                _parameter_symbol_k->is_reference_ = _parameter_k->is_reference_;
             }
         }
         const char *const _previous_return_k = context->current_return_type_;

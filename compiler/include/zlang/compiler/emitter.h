@@ -33,6 +33,7 @@ typedef struct zlang_emitted_symbol_t {
     uint32_t capacity_;
     bool has_explicit_capacity_;
     bool is_sequence_;
+    bool is_reference_;
 } zlang_emitted_symbol_t;
 
 typedef struct zlang_emitted_sequence_t {

@@ -311,7 +311,7 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
         "record Point { integer x; integer y; }\n"
         "const integer base = 2;\n"
         "sequence[2] Point points;\n"
-        "function add(integer left, integer right): integer { return left + right; }\n"
+        "function add(clone integer left, clone integer right): integer { return left + right; }\n"
         "Point origin;\n"
         "append(points, origin);\n"
         "points[0].x = 9;\n"
@@ -389,6 +389,68 @@ static void reuses_index_values_across_if_branches(zlang_test_context_t *const c
                 zlang_spec_count_occurrences(_session.output_, "zlang_array_get_i32") == 1U);
     ZLANG_CHECK(context, strstr(_session.output_, "} else if (_zlang_value_") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(_zlang_value_") != NULL);
+}
+
+static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "boolean ready = true;\n"
+                                  "sequence[4] integer values = {1};\n"
+                                  "boolean ok = ready || values[0] == 1;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_get_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t _zlang_value_") == NULL);
+}
+
+static void emits_parameter_qualifiers(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "record Point { integer x; }\n"
+        "function bump(reference Point point, clone integer amount) {\n"
+        "    point.x = point.x + amount;\n"
+        "}\n"
+        "function add_to(reference integer value, const clone integer amount) {\n"
+        "    value = value + amount;\n"
+        "}\n"
+        "Point origin;\n"
+        "origin.x = 1;\n"
+        "integer total = 1;\n"
+        "bump(origin, 2);\n"
+        "add_to(total, 2);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "void _u_bump(zlang_point_t *point, ") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "point->x_ = zlang_add_i32(point->x_, amount);") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_u_bump(&_origin, 2);") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t *value, const int32_t amount") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_u_add_to(&_total, 2);") != NULL);
+}
+
+static void rejects_missing_parameter_qualifier(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    ZLANG_CHECK(context,
+                !zlang_spec_transpile(&_session, "function bad(integer value): void { return; }"));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+}
+
+static void rejects_mutation_of_const_parameter(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "record Point { integer x; }\n"
+                                  "function bad(const reference Point point) { point.x = 1; }";
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void rejects_non_lvalue_reference_argument(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function bad(reference integer value) { return; }\n"
+                                  "bad(1);";
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {

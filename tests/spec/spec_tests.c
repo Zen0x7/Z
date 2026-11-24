@@ -650,6 +650,7 @@ static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_VALUES_LENGTH") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_values") == NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_label") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_total") == NULL);
     ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "\n\n    ") > 0U);
     ZLANG_CHECK(context, _type_position_k != NULL && _main_position_k != NULL &&
                              _type_position_k < _main_position_k);
@@ -670,6 +671,27 @@ static void deduplicates_string_literals(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LITERAL_DEDUPE_SOURCE));
     ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_,
                                                       "static const char _zlang_literal_") == 1U);
+}
+
+static void emits_records_and_enums(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_RECORD_ENUM_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_RECORD_TYPE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ENUM_TYPE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ENUM_VALUE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FIELD_ASSIGN_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED) != NULL);
+}
+
+static void reuses_repeated_index_reads(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_CSE_SOURCE));
+    ZLANG_CHECK(context,
+                zlang_spec_count_occurrences(_session.output_, "zlang_array_get_i32") == 1U);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_value_") != NULL);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

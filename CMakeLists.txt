@@ -7,6 +7,8 @@ set(ZLANG_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}/generated/include")
 configure_file(Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
 configure_file(include/zlang/version/version.h.in
                ${CMAKE_BINARY_DIR}/generated/include/zlang/version/version.h @ONLY)
+configure_file(include/zlang/version/version_config.h.in
+               ${CMAKE_BINARY_DIR}/generated/include/zlang/version/version_config.h @ONLY)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -16,10 +18,6 @@ include(ZlangWarnings)
 include(ZlangCoverage)
 
 add_compile_options(${ZLANG_SANITIZER_FLAGS})
-add_compile_definitions(
-    ZLANG_EXPECTED_VERSION_MAJOR=${ZLANG_VERSION_MAJOR}
-    ZLANG_EXPECTED_VERSION_MINOR=${ZLANG_VERSION_MINOR}
-    ZLANG_EXPECTED_VERSION_PATCH=${ZLANG_VERSION_PATCH})
 add_link_options(${ZLANG_SANITIZER_FLAGS} ${ZLANG_SANITIZER_LINK_FLAGS})
 
 include(GNUInstallDirs)

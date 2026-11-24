@@ -48,6 +48,95 @@ static const zlang_symbol_t *zlang_find_symbol(const zlang_semantic_context_t *c
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_record(const zlang_program_t *program,
+                                                      const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_record_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *program,
+                                                    const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_enum_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+static bool zlang_is_user_type(const zlang_program_t *program, const char *name) {
+    return zlang_find_record(program, name) != NULL || zlang_find_enum(program, name) != NULL;
+}
+
+static bool zlang_is_builtin_type(const char *name) {
+    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+                            strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0);
+}
+
+static bool zlang_is_known_type(const zlang_program_t *program, const char *name) {
+    return zlang_is_builtin_type(name) || zlang_is_user_type(program, name);
+}
+
+static bool zlang_is_enum_type(const zlang_program_t *program, const char *name) {
+    return zlang_find_enum(program, name) != NULL;
+}
+
+static const zlang_ast_statement_t *zlang_find_enum_owner(const zlang_program_t *program,
+                                                          const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_enum_) {
+            continue;
+        }
+        const size_t _end_k = _statement_k->initializer_start_ + _statement_k->initializer_count_;
+        for (size_t _item = _statement_k->initializer_start_;
+             _item < _end_k && _item < program->expression_count_; ++_item) {
+            const zlang_ast_expression_t *const _item_k = &program->expressions_[_item];
+            if (_item_k->kind_ == zlang_expression_enum_item_ && _item_k->name_ != NULL &&
+                strcmp(_item_k->name_, name) == 0) {
+                return _statement_k;
+            }
+        }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *program,
+                                                     const zlang_ast_statement_t *record,
+                                                     const char *name) {
+    if (record == NULL || name == NULL) {
+        return NULL;
+    }
+    const size_t _end_k = record->body_start_ + record->body_count_;
+    for (size_t _index = record->body_start_; _index < _end_k && _index < program->statement_count_;
+         ++_index) {
+        const zlang_ast_statement_t *const _field_k = &program->statements_[_index];
+        if ((_field_k->kind_ == zlang_statement_declaration_ ||
+             _field_k->kind_ == zlang_statement_sequence_declaration_) &&
+            _field_k->name_ != NULL && strcmp(_field_k->name_, name) == 0) {
+            return _field_k;
+        }
+    }
+    return NULL;
+}
+
 static bool zlang_report(zlang_semantic_context_t *context, uint16_t code,
                          const zlang_ast_statement_t *statement, const char *message) {
     context->has_error_ = true;
@@ -170,13 +259,17 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         return "string";
     case zlang_expression_identifier_: {
         const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _expression_k->name_);
-        if (_symbol_k == NULL) {
-            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
-                                          statement,
-                                          "expression refers to an undeclared identifier");
-            return NULL;
+        if (_symbol_k != NULL) {
+            return _symbol_k->type_name_;
         }
-        return _symbol_k->type_name_;
+        const zlang_ast_statement_t *const _enum_k =
+            zlang_find_enum_owner(context->program_, _expression_k->name_);
+        if (_enum_k != NULL) {
+            return _enum_k->name_;
+        }
+        (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                      statement, "expression refers to an undeclared identifier");
+        return NULL;
     }
     case zlang_expression_add_: {
         const char *const _left_k =
@@ -370,7 +463,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             zlang_analyze_expression(context, _expression_k->left_, statement);
         const bool _printable_k =
             zlang_type_matches("string", _actual_k) || zlang_type_matches("integer", _actual_k) ||
-            zlang_type_matches("unsigned", _actual_k) || zlang_type_matches("boolean", _actual_k);
+            zlang_type_matches("unsigned", _actual_k) || zlang_type_matches("boolean", _actual_k) ||
+            zlang_is_enum_type(context->program_, _actual_k);
         if (!_printable_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "print argument must be string or scalar");
@@ -395,6 +489,79 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         zlang_mark_mutated(context, _target_k->name_);
         return "void";
+    }
+    case zlang_expression_field_: {
+        const char *_record_name_k = NULL;
+        if (_expression_k->base_name_ != NULL) {
+            const zlang_symbol_t *const _base_k =
+                zlang_find_symbol(context, _expression_k->base_name_);
+            _record_name_k = _base_k != NULL ? _base_k->type_name_ : NULL;
+        } else {
+            _record_name_k = zlang_analyze_expression(context, _expression_k->left_, statement);
+        }
+        const zlang_ast_statement_t *const _record_k =
+            zlang_find_record(context->program_, _record_name_k);
+        const zlang_ast_statement_t *const _field_k =
+            zlang_find_field(context->program_, _record_k, _expression_k->name_);
+        if (_field_k == NULL) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "field is not declared on the record");
+            return NULL;
+        }
+        return _field_k->type_name_;
+    }
+    case zlang_expression_field_assignment_: {
+        const zlang_ast_expression_t *const _target_k =
+            _expression_k->left_ < context->program_->expression_count_
+                ? &context->program_->expressions_[_expression_k->left_]
+                : NULL;
+        if (_target_k == NULL || _target_k->kind_ != zlang_expression_field_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement,
+                                          "field assignment target is not a field access");
+            return NULL;
+        }
+        const char *_record_name_k = NULL;
+        if (_target_k->base_name_ != NULL) {
+            const zlang_symbol_t *const _base_k = zlang_find_symbol(context, _target_k->base_name_);
+            _record_name_k = _base_k != NULL ? _base_k->type_name_ : NULL;
+        } else {
+            _record_name_k = zlang_analyze_expression(context, _target_k->left_, statement);
+        }
+        const zlang_ast_statement_t *const _record_k =
+            zlang_find_record(context->program_, _record_name_k);
+        const zlang_ast_statement_t *const _field_k =
+            zlang_find_field(context->program_, _record_k, _target_k->name_);
+        if (_field_k == NULL) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "field is not declared on the record");
+            return NULL;
+        }
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_field_k->type_name_, _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "field value does not match the declared field type");
+            return NULL;
+        }
+        if (_target_k->base_name_ != NULL) {
+            const zlang_symbol_t *const _base_symbol_k =
+                zlang_find_symbol(context, _target_k->base_name_);
+            if (_base_symbol_k != NULL && _base_symbol_k->is_sequence_) {
+                zlang_mark_mutated(context, _base_symbol_k->name_);
+            }
+        } else if (_target_k->left_ < context->program_->expression_count_) {
+            const zlang_ast_expression_t *const _base_k =
+                &context->program_->expressions_[_target_k->left_];
+            if (_base_k->kind_ == zlang_expression_index_) {
+                const zlang_symbol_t *const _base_symbol_k =
+                    zlang_find_symbol(context, _base_k->name_);
+                if (_base_symbol_k != NULL && _base_symbol_k->is_sequence_) {
+                    zlang_mark_mutated(context, _base_symbol_k->name_);
+                }
+            }
+        }
+        return _actual_k;
     }
     case zlang_expression_index_: {
         const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
@@ -474,7 +641,63 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                         const zlang_ast_statement_t *statement) { // NOLINT(misc-no-recursion)
     bool _result_k = true;
     switch (statement->kind_) {
+    case zlang_statement_record_: {
+        const size_t _end_k = statement->body_start_ + statement->body_count_;
+        for (size_t _index = statement->body_start_;
+             _index < _end_k && _index < context->program_->statement_count_; ++_index) {
+            const zlang_ast_statement_t *const _field_k = &context->program_->statements_[_index];
+            if (_field_k->kind_ != zlang_statement_declaration_ ||
+                !zlang_is_known_type(context->program_, _field_k->type_name_)) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _field_k,
+                                         "record field has an unknown type");
+                continue;
+            }
+            if (strcmp(_field_k->type_name_, "string") == 0 ||
+                _field_k->expression_ != ZLANG_NO_EXPRESSION || _field_k->is_const_) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, _field_k,
+                                         "record fields must be plain scalar or enum declarations");
+                continue;
+            }
+            const zlang_ast_statement_t *const _previous_k =
+                zlang_find_field(context->program_, statement, _field_k->name_);
+            if (_previous_k != NULL && _previous_k != _field_k) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, _field_k,
+                                         "record field is declared twice");
+            }
+        }
+        break;
+    }
+    case zlang_statement_enum_: {
+        const size_t _end_k = statement->initializer_start_ + statement->initializer_count_;
+        for (size_t _index = statement->initializer_start_;
+             _index < _end_k && _index < context->program_->expression_count_; ++_index) {
+            const zlang_ast_expression_t *const _item_k = &context->program_->expressions_[_index];
+            if (_item_k->kind_ != zlang_expression_enum_item_ || _item_k->name_ == NULL) {
+                _result_k =
+                    zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, _index,
+                                            statement, "enum value must be an identifier");
+                continue;
+            }
+            if (zlang_find_enum_owner(context->program_, _item_k->name_) != statement) {
+                _result_k =
+                    zlang_report_expression(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, _index,
+                                            statement, "enum value is declared twice");
+            }
+        }
+        break;
+    }
     case zlang_statement_declaration_: {
+        if (!zlang_is_known_type(context->program_, statement->type_name_)) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                     "declaration uses an unknown type");
+            break;
+        }
+        if (zlang_find_record(context->program_, statement->type_name_) != NULL &&
+            statement->expression_ != ZLANG_NO_EXPRESSION) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "user types do not support initializer expressions");
+            break;
+        }
         const char *const _actual_k =
             zlang_analyze_expression(context, statement->expression_, statement);
         if (statement->expression_ != ZLANG_NO_EXPRESSION &&
@@ -501,6 +724,17 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_sequence_declaration_:
+        if (!zlang_is_known_type(context->program_, statement->type_name_)) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                     "sequence uses an unknown element type");
+            break;
+        }
+        if (zlang_find_record(context->program_, statement->type_name_) != NULL &&
+            statement->initializer_count_ > 0U) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "record sequences do not support initializer lists");
+            break;
+        }
         if (statement->is_const_) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
                                      "const sequences are not supported");

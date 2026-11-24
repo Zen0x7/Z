@@ -1,5 +1,6 @@
 #include "zlang/testing/testing.h"
 #include "zlang/version/version.h"
+#include "zlang/version/version_config.h"
 
 #define ZLANG_TEST_CASE(name) static void name(zlang_test_context_t *const context);
 #include "test_cases.h"

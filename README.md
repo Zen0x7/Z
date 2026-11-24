@@ -54,21 +54,31 @@ default, to build the native binary.
 
 ## Language tour
 
-This program uses every construct in the current grammar: comments, `const`, all four value types,
-leading `sequence[N]` declarations, bounded string elements, functions and `return`, scopes,
-assignments, indexed access and assignment, `append`, arithmetic, compound assignment,
-comparisons, logical operators, `length`, string indexing, scalar and string printing,
-`if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops, `break`
-and `continue`.
+This program uses every construct in the current grammar: comments, `const`, records, enums, all
+four scalar types, leading `sequence[N]` declarations, bounded string elements, functions and
+`return`, scopes, assignments, indexed access and assignment, field access and assignment,
+`append`, arithmetic, compound assignment, comparisons, logical operators, `length`, string
+indexing, scalar and string printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`,
+indexed `foreach`, nested loops, `break` and `continue`.
 
-The emitted C is organized before `main`: generated value constants, capacity macros, sequence
-typedefs, named string literals and user functions. Source symbols use `_u_`, compiler temporaries
-use `_zlang_`, generated types use `zlang_` and runtime calls use `zlang_*`. Index reads lower to
-bounded `zlang_*` getters, and `(void)` guards appear only for variables that are genuinely unused.
+The emitted C is organized before `main`: generated value constants, user types, capacity macros,
+sequence typedefs, named string literals and user functions. Source symbols use `_u_`, compiler
+temporaries use `_zlang_`, generated types use `zlang_` and runtime calls use `zlang_*`. Index reads
+lower to bounded `zlang_*` getters, repeated reads in condition chains become local temporaries,
+and `(void)` guards appear only for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
 const integer base = 2;
+record Point {
+    integer x;
+    integer y;
+}
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
 sequence[4] integer values = {1, 2, 3};
 append(values, 4);
 sequence[5] integer fixed = {4, 5};
@@ -77,6 +87,7 @@ boolean ready = true;
 string name = "z" + "lang";
 string[32] label = name + " tour";
 sequence[3] string[8] names = {"a", "b"};
+sequence[2] Point points;
 
 function add(integer left, integer right): integer {
     return left + right;
@@ -86,6 +97,8 @@ fixed[0] = add(values[1], base);
 append(fixed, 9);
 append(names, name);
 names[0] = "z";
+points[0].x = 9;
+points[0].y = add(points[0].x, base);
 
 integer total = 1;
 total += base;
@@ -130,11 +143,14 @@ foreach (row, item in values) {
 unsigned count = length(values);
 unsigned first = label[0];
 boolean ok = !(ready && !ready) || fixed[0] != 99;
+Color current = GREEN;
 print(count);
 print(first);
 print(ok);
 print(label);
 print(names[0]);
+print(points[0].x);
+print(current);
 ```
 
 `zlang-compile example.zlang --emit-c` produces C along these lines:
@@ -150,6 +166,18 @@ print(names[0]);
 #define ZLANG_ONE 1U
 #define ZLANG_TWO 2U
 
+/* generated user types */
+typedef struct zlang_point_t {
+    int32_t x;
+    int32_t y;
+} zlang_point_t;
+
+typedef enum zlang_color_t {
+    ZLANG_COLOR_RED = 0U,
+    ZLANG_COLOR_GREEN = 1U,
+    ZLANG_COLOR_BLUE = 2U,
+} zlang_color_t;
+
 /* generated capacities */
 #define ZLANG_VALUES_CAPACITY 4U
 #define ZLANG_VALUES_LENGTH 3U
@@ -158,6 +186,8 @@ print(names[0]);
 #define ZLANG_NAMES_CAPACITY 3U
 #define ZLANG_NAMES_LENGTH 2U
 #define ZLANG_NAMES_ELEMENT_CAPACITY 8U
+#define ZLANG_POINTS_CAPACITY 2U
+#define ZLANG_POINTS_LENGTH 0U
 #define ZLANG_LABEL_CAPACITY 32U
 
 /* generated sequence types */
@@ -176,6 +206,11 @@ typedef struct zlang_names_t {
     zlang_string_t data_[ZLANG_NAMES_CAPACITY];
     uint32_t length_;
 } zlang_names_t;
+
+typedef struct zlang_points_t {
+    zlang_point_t data_[ZLANG_POINTS_CAPACITY];
+    uint32_t length_;
+} zlang_points_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 5U
@@ -218,6 +253,8 @@ int main(void) {
     _u_names.data_[0] = zlang_string_concat(_u_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, ZLANG_ONE);
     _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
     _u_names.length_ = ZLANG_NAMES_LENGTH;
+    zlang_points_t _u_points = { { { ZLANG_ZERO }, { ZLANG_ZERO } }, ZLANG_POINTS_LENGTH };
+    (void)_u_points;
 
     {
         uint32_t _zlang_index_9 = 0;
@@ -240,8 +277,9 @@ int main(void) {
         }
     }
 
+    (*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x = 9;
+    (*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).y = _u_add((*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x, 0);
     int32_t _u_total = 1;
-    (void)_u_total;
     _u_total = zlang_add_i32(_u_total, _u_base);
 
     {
@@ -249,9 +287,10 @@ int main(void) {
         zlang_print_i32(_u_scoped);
     }
 
-    if (zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) > 3) {
+        int32_t _zlang_value_11 = zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_);
+    if (_zlang_value_11 > 3) {
         zlang_print(_zlang_literal_5);
-    } else if (zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) == 3) {
+    } else if (_zlang_value_11 == 3) {
         zlang_print_i32(zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_));
     } else {
         zlang_print(_zlang_literal_6);
@@ -261,7 +300,7 @@ int main(void) {
         break;
     }
 
-    for (uint32_t _zlang_repeat_11 = ZLANG_ZERO; _zlang_repeat_11 < _u_limit; ++_zlang_repeat_11) {
+    for (uint32_t _zlang_repeat_12 = ZLANG_ZERO; _zlang_repeat_12 < _u_limit; ++_zlang_repeat_12) {
         continue;
     }
 
@@ -272,12 +311,12 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_12 = ZLANG_ZERO; _zlang_foreach_12 < _u_values.length_; ++_zlang_foreach_12) {
-        uint32_t _u_row = _zlang_foreach_12;
-        int32_t _u_item = _u_values.data_[_zlang_foreach_12];
-        for (uint32_t _zlang_foreach_13 = ZLANG_ZERO; _zlang_foreach_13 < _u_values.length_; ++_zlang_foreach_13) {
-            uint32_t _u_column = _zlang_foreach_13;
-            int32_t _u_other = _u_values.data_[_zlang_foreach_13];
+    for (uint32_t _zlang_foreach_13 = ZLANG_ZERO; _zlang_foreach_13 < _u_values.length_; ++_zlang_foreach_13) {
+        uint32_t _u_row = _zlang_foreach_13;
+        int32_t _u_item = _u_values.data_[_zlang_foreach_13];
+        for (uint32_t _zlang_foreach_14 = ZLANG_ZERO; _zlang_foreach_14 < _u_values.length_; ++_zlang_foreach_14) {
+            uint32_t _u_column = _zlang_foreach_14;
+            int32_t _u_other = _u_values.data_[_zlang_foreach_14];
             zlang_print_u32(_u_row);
             zlang_print_u32(_u_column);
             zlang_print_i32(_u_item);
@@ -288,11 +327,14 @@ int main(void) {
     uint32_t _u_count = _u_values.length_;
     uint32_t _u_first = zlang_string_byte(_u_label, 0);
     bool _u_ok = ((!(_u_ready && (!_u_ready))) || zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_) != 99);
+    zlang_color_t _u_current = ZLANG_COLOR_GREEN;
     zlang_print_u32(_u_count);
     zlang_print_u32(_u_first);
     zlang_print_bool(_u_ok);
     zlang_print(_u_label);
     zlang_print(zlang_array_get_string(_u_names.data_, 0, _u_names.length_));
+    zlang_print_i32((*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x);
+    zlang_print_u32(_u_current);
 
     return ZLANG_ZERO;
 }

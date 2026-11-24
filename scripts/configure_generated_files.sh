@@ -31,6 +31,12 @@ sed -e "s|@ZLANG_VERSION_MAJOR@|${version_major}|g" \
     "${root}/include/zlang/version/version.h.in" \
     > "${generated_include}/zlang/version/version.h"
 
+sed -e "s|@ZLANG_VERSION_MAJOR@|${version_major}|g" \
+    -e "s|@ZLANG_VERSION_MINOR@|${version_minor}|g" \
+    -e "s|@ZLANG_VERSION_PATCH@|${version_patch}|g" \
+    "${root}/include/zlang/version/version_config.h.in" \
+    > "${generated_include}/zlang/version/version_config.h"
+
 sed -e "s|@ZLANG_PROJECT_VERSION@|${project_version}|g" \
     -e "s|@ZLANG_LANGUAGE_VERSION@|${language_version}|g" \
     -e "s|@ZLANG_GENERATED_INCLUDE_DIR@|${generated_include}|g" \

@@ -268,3 +268,24 @@ Status: Implemented.
 Generated numeric constants now use `ZLANG_ZERO`, `ZLANG_ONE` and `ZLANG_TWO`. Sequence initial
 lengths and string literal lengths emit named macros instead of bare numeric literals. Source
 literals keep the values written by the programmer.
+
+## 0.6 — Records and enums
+
+Status: Locked.
+
+- Add `record Name { field* }` with scalar or enum fields.
+- Add `enum Name { VALUE, ... }` with automatically assigned values.
+- Allow record and enum names as declaration types and sequence element types.
+- Add field reads and field assignments, including checked assignment to fields of sequence
+  elements.
+- Emit named C typedefs for records and enums and named C constants for enumerators.
+- Keep modules, imports, classes, inheritance and dynamic dispatch out of scope.
+
+## 0.6 — Completion
+
+Status: Implemented.
+
+Records, enums, field reads and field assignments are implemented and covered by conformance
+tests. Record and enum declarations emit named C typedefs, enumerators emit named C constants, and
+field assignment to sequence elements uses a checked runtime getter with a direct store. Repeated
+index reads inside `if / else if` chains are emitted once into a local temporary.

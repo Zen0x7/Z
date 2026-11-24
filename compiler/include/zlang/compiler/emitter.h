@@ -16,6 +16,9 @@
 #define ZLANG_EMITTED_SYMBOL_CAPACITY 128U
 #define ZLANG_EMITTED_SEQUENCE_CAPACITY 32U
 #define ZLANG_EMITTED_LITERAL_CAPACITY 64U
+#define ZLANG_EMITTED_USER_TYPE_CAPACITY 32U
+#define ZLANG_EMITTED_ENUM_ITEM_CAPACITY 128U
+#define ZLANG_EMITTED_CSE_CAPACITY 16U
 #define ZLANG_EMITTED_NAME_CAPACITY 64U
 
 /* The emitter owns no memory. The caller supplies the output buffer and the
@@ -53,6 +56,17 @@ typedef struct zlang_emitted_capacity_t {
     char macro_[ZLANG_EMITTED_NAME_CAPACITY];
 } zlang_emitted_capacity_t;
 
+typedef struct zlang_emitted_user_type_t {
+    const zlang_ast_statement_t *statement_;
+    char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_user_type_t;
+
+typedef struct zlang_emitted_enum_item_t {
+    const char *source_name_;
+    const char *type_name_;
+    char generated_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_enum_item_t;
+
 typedef struct zlang_emitter_t {
     char *buffer_;
     size_t capacity_;
@@ -69,6 +83,13 @@ typedef struct zlang_emitter_t {
     size_t emitted_literal_count_;
     zlang_emitted_capacity_t emitted_capacities_[ZLANG_EMITTED_SEQUENCE_CAPACITY];
     size_t emitted_capacity_count_;
+    zlang_emitted_user_type_t emitted_user_types_[ZLANG_EMITTED_USER_TYPE_CAPACITY];
+    size_t emitted_user_type_count_;
+    zlang_emitted_enum_item_t emitted_enum_items_[ZLANG_EMITTED_ENUM_ITEM_CAPACITY];
+    size_t emitted_enum_item_count_;
+    size_t cse_expression_indices_[ZLANG_EMITTED_CSE_CAPACITY];
+    char cse_names_[ZLANG_EMITTED_CSE_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];
+    size_t cse_count_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

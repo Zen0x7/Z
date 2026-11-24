@@ -14,20 +14,77 @@ void zlang_memory_plan_init(zlang_memory_plan_t *plan, zlang_memory_plan_entry_t
     plan->stack_limit_ = stack_limit;
 }
 
-static uint32_t zlang_element_size(const char *type_name) {
-    if (strcmp(type_name, "integer") == 0) {
-        return 4U;
+static const zlang_ast_statement_t *zlang_find_record(const zlang_program_t *program,
+                                                      const char *name) {
+    if (name == NULL) {
+        return NULL;
     }
-    if (strcmp(type_name, "unsigned") == 0) {
-        return 4U;
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_record_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *program,
+                                                    const char *name) {
+    if (name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_enum_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_element_size(const zlang_program_t *program, const char *type_name,
+                               uint32_t depth,
+                               uint32_t *size) { // NOLINT(misc-no-recursion)
+    if (type_name == NULL || size == NULL || depth > 8U) {
+        return false;
+    }
+    if (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0) {
+        *size = 4U;
+        return true;
     }
     if (strcmp(type_name, "boolean") == 0) {
-        return 1U;
+        *size = 1U;
+        return true;
     }
     if (strcmp(type_name, "string") == 0) {
-        return (uint32_t)(sizeof(void *) + sizeof(uint32_t));
+        *size = (uint32_t)(sizeof(void *) + sizeof(uint32_t));
+        return true;
     }
-    return 0U;
+    if (zlang_find_enum(program, type_name) != NULL) {
+        *size = 4U;
+        return true;
+    }
+    const zlang_ast_statement_t *const _record_k = zlang_find_record(program, type_name);
+    if (_record_k == NULL) {
+        return false;
+    }
+    uint32_t _total_k = 0U;
+    const size_t _end_k = _record_k->body_start_ + _record_k->body_count_;
+    for (size_t _index = _record_k->body_start_;
+         _index < _end_k && _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _field_k = &program->statements_[_index];
+        uint32_t _field_size_k = 0U;
+        if (!zlang_element_size(program, _field_k->type_name_, depth + 1U, &_field_size_k) ||
+            _total_k > UINT32_MAX - _field_size_k) {
+            return false;
+        }
+        _total_k += _field_size_k;
+    }
+    *size = _total_k;
+    return true;
 }
 
 static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {
@@ -35,9 +92,11 @@ static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {
            statement->kind_ == zlang_statement_sequence_declaration_;
 }
 
-static bool zlang_declaration_size(const zlang_ast_statement_t *statement, uint32_t *size) {
-    const uint32_t _element_size_k = zlang_element_size(statement->type_name_);
-    if (_element_size_k == 0U) {
+static bool zlang_declaration_size(const zlang_program_t *program,
+                                   const zlang_ast_statement_t *statement, uint32_t *size) {
+    uint32_t _element_size_k = 0U;
+    if (!zlang_element_size(program, statement->type_name_, 0U, &_element_size_k) ||
+        _element_size_k == 0U) {
         return false;
     }
 
@@ -89,7 +148,7 @@ bool zlang_plan_memory(const zlang_program_t *program, zlang_memory_plan_t *plan
         }
 
         zlang_memory_plan_entry_t *const _entry_k = &plan->entries_[plan->count_];
-        if (!zlang_declaration_size(_statement_k, &_entry_k->size_)) {
+        if (!zlang_declaration_size(program, _statement_k, &_entry_k->size_)) {
             return false;
         }
         _entry_k->statement_ = _statement_k;

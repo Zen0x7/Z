@@ -383,6 +383,7 @@ jobs:
         run: >-
           cppcheck --enable=warning,style,performance,portability
           --error-exitcode=1 --inline-suppr --suppress=missingIncludeSystem
+          --suppress=normalCheckLevelMaxBranches
           --std=c99 -Iinclude -Icompiler/include include compiler tests fuzz tools
       - name: clang-tidy
         run: |
@@ -455,7 +456,7 @@ jobs:
           --no-install-recommends clang
       - name: Analyze all translation units
         run: >-
-          clang --analyze -std=c99 -Iinclude -Wall -Wextra -Werror
+          clang --analyze -std=c99 -Iinclude -Ibuild/generated/include -Wall -Wextra -Werror
           -Xanalyzer -analyzer-output=text
           tests/version/version_tests.c
           tests/testing/testing_tests.c

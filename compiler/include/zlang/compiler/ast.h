@@ -44,7 +44,10 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_div_,
     zlang_expression_mod_,
     zlang_expression_compound_assignment_,
-    zlang_expression_length_
+    zlang_expression_length_,
+    zlang_expression_enum_item_,
+    zlang_expression_field_,
+    zlang_expression_field_assignment_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -58,6 +61,7 @@ typedef struct zlang_ast_expression_t {
     size_t argument_start_;
     size_t argument_count_;
     const char *name_;
+    const char *base_name_;
     zlang_ast_string_value_t string_;
     zlang_expression_kind_t kind_;
     int32_t integer_value_;
@@ -81,6 +85,8 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_return_,
     zlang_statement_block_,
     zlang_statement_for_,
+    zlang_statement_record_,
+    zlang_statement_enum_,
     zlang_statement_break_,
     zlang_statement_continue_
 } zlang_statement_kind_t;

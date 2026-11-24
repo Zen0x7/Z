@@ -277,6 +277,34 @@
 
 #define ZLANG_SPEC_LITERAL_DEDUPE_SOURCE "print(\"a\");\nprint(\"a\");"
 
+#define ZLANG_SPEC_RECORD_ENUM_SOURCE                                                              \
+    "record Point {\n"                                                                             \
+    "    integer x;\n"                                                                             \
+    "    integer y;\n"                                                                             \
+    "}\n"                                                                                          \
+    "enum Color {\n"                                                                               \
+    "    RED,\n"                                                                                   \
+    "    GREEN,\n"                                                                                 \
+    "    BLUE\n"                                                                                   \
+    "}\n"                                                                                          \
+    "Point point;\n"                                                                               \
+    "point.x = 1;\n"                                                                               \
+    "sequence[2] Point points;\n"                                                                  \
+    "points[0].x = 2;\n"                                                                           \
+    "print(points[0].y);\n"                                                                        \
+    "Color current = GREEN;\n"                                                                     \
+    "print(current);"
+#define ZLANG_SPEC_RECORD_TYPE_EXPECTED "typedef struct zlang_point_t"
+#define ZLANG_SPEC_ENUM_TYPE_EXPECTED "typedef enum zlang_color_t"
+#define ZLANG_SPEC_ENUM_VALUE_EXPECTED "ZLANG_COLOR_GREEN"
+#define ZLANG_SPEC_FIELD_ASSIGN_EXPECTED "_u_point.x = 1;"
+#define ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED ").x = 2;"
+
+#define ZLANG_SPEC_CSE_SOURCE                                                                      \
+    "sequence[2] integer values = {1, 2};\n"                                                       \
+    "if (values[0] > 1) { print(\"a\"); }\n"                                                       \
+    "else if (values[0] == 2) { print(\"b\"); }"
+
 #define ZLANG_SPEC_READABLE_LAYOUT_SOURCE                                                          \
     "const integer base = 2;\n"                                                                    \
     "sequence[3] integer values = {1, 2, 3};\n"                                                    \

@@ -14,6 +14,7 @@ typedef struct zlang_keyword_t {
 static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"const", zlang_token_const_},
                                              {"else", zlang_token_else_},
+                                             {"enum", zlang_token_enum_},
                                              {"false", zlang_token_false_},
                                              {"for", zlang_token_for_},
                                              {"foreach", zlang_token_foreach_},
@@ -23,6 +24,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"integer", zlang_token_integer_},
                                              {"length", zlang_token_length_},
                                              {"print", zlang_token_print_},
+                                             {"record", zlang_token_record_},
                                              {"sequence", zlang_token_sequence_},
                                              {"repeat", zlang_token_repeat_},
                                              {"return", zlang_token_return_},
@@ -258,6 +260,9 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         break;
     case ':':
         token->kind_ = zlang_token_colon_;
+        break;
+    case '.':
+        token->kind_ = zlang_token_dot_;
         break;
     case '=':
         token->kind_ = zlang_token_equal_;

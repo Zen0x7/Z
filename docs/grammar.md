@@ -10,9 +10,9 @@ made by the compiler.
 ## Lexical rules
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
-Keywords are `boolean`, `break`, `const`, `continue`, `else`, `false`, `for`, `foreach`,
-`function`, `if`, `in`, `integer`, `length`, `print`, `repeat`, `return`, `sequence`, `string`,
-`true`, `unsigned` and `while`.
+Keywords are `boolean`, `break`, `const`, `continue`, `else`, `enum`, `false`, `for`, `foreach`,
+`function`, `if`, `in`, `integer`, `length`, `print`, `record`, `repeat`, `return`, `sequence`,
+`string`, `true`, `unsigned` and `while`.
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
@@ -38,9 +38,30 @@ sequence[2] string[8] names = {"a", "b"};
 initializer. `string[M]` declares a bounded string with M content bytes. Applied inside a sequence
 declaration, it sets the capacity of each string element.
 
-A `const` declaration requires an initializer and cannot be assigned to. Shadowing a visible name
-is rejected; sibling blocks may reuse a source name because the emitter generates unique C
-identifiers when needed.
+A `const` declaration requires an initializer and cannot be assigned to.
+
+A `record` declares a fixed aggregate with named fields. An `enum` declares named integer values
+and a user type. Both can be used as declaration types and as sequence element types:
+
+```zlang
+record Point {
+    integer x;
+    integer y;
+}
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
+
+sequence[4] Point points;
+Color current = GREEN;
+```
+
+Record fields are scalar or enum types in this version. Shadowing a visible name is rejected;
+sibling blocks may reuse a source name because the emitter generates unique C identifiers when
+needed.
 
 ## Statements
 
@@ -61,11 +82,15 @@ identifiers when needed.
 | `print(expression);` | Write a string or scalar |
 | `append(sequence, expression);` | Append with capacity trap |
 | `name = expression;` | Assignment |
+| `record Name { field* }` | Fixed aggregate type |
+| `enum Name { VALUE, ... }` | Named integer values and their type |
+| `value.field` | Field read |
+| `value.field = expression;` | Field assignment; checked for sequence elements |
 
 ## Expressions
 
-Supported forms are literals, identifiers, grouping, indexing and assignment, calls to user
-functions, `print`, `append`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
+Supported forms are literals, identifiers, grouping, indexing, field access and assignment, calls
+to user functions, `print`, `append`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
 `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`. Compound assignment is available for arithmetic
 operators.
 

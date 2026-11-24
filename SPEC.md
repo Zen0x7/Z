@@ -90,8 +90,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 Keywords are reserved and cannot be used as identifiers:
 
 ```text
-boolean break const continue else false for foreach function if integer
-length print repeat return sequence string true unsigned while
+boolean break const continue else enum false for foreach function if integer
+length print record repeat return sequence string true unsigned while
 ```
 
 ### 6.3 Numeric literals
@@ -365,6 +365,7 @@ generated types with `zlang_` and runtime calls with `zlang_`. Trap sites use th
 The runtime functions that generated code may call are:
 
 ```c
+void *zlang_array_get(void *data, uint32_t index, uint32_t length, size_t element_size);
 bool zlang_print(zlang_string_t value);
 int32_t zlang_add_i32(int32_t left, int32_t right);
 uint32_t zlang_add_u32(uint32_t left, uint32_t right);
@@ -473,6 +474,8 @@ statement      = declaration
                | expression ";"
                | "break" ";"
                | "continue" ";"
+               | recordDeclaration
+               | enumDeclaration
                | ifStatement
                | whileStatement
                | forStatement
@@ -484,8 +487,15 @@ statement      = declaration
 
 block          = "{" statement* "}" ;
 
-declaration    = "const"? sequenceModifier? type typeModifier? identifier
+declaration    = "const"? sequenceModifier? typeName typeModifier? identifier
                  ( "=" expression )? ";" ;
+
+typeName       = builtinType | identifier ;
+builtinType    = "integer" | "unsigned" | "boolean" | "string" ;
+
+recordDeclaration = "record" identifier "{" declaration* "}" ;
+
+enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
 
 sequenceModifier = "sequence" "[" integerLiteral? "]" ;
 typeModifier     = "[" integerLiteral "]" ;
@@ -530,6 +540,7 @@ expression     = literal
                | "print" "(" expression ")"
                | "length" "(" identifier ")"
                | identifier "[" expression "]"
+               | expression "." identifier
                | "append" "(" identifier "," expression ")" ;
 
 literal        = integerLiteral | stringLiteral | "true" | "false" ;
@@ -680,4 +691,13 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | string literal deduplication | `deduplicates_string_literals` |
 | bounded index getters | `checked_index_reads_return_values`, `uses_readable_emitted_layout` |
 | named generated value constants | `uses_readable_emitted_layout` |
+| records and enums | `emits_records_and_enums` |
+| repeated index read reuse | `reuses_repeated_index_reads` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
+
+
+## 0.6 implementation status
+
+Zlang 0.6 adds record and enum declarations, user-defined declaration types, field reads and field
+assignments, and sequences of records. Record fields are scalar or enum types. Enums emit named C
+constants, and records emit named C typedefs.

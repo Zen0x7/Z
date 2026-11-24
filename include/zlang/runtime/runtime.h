@@ -196,6 +196,8 @@ ZLANG_STATIC_INLINE int32_t zlang_div_i32(int32_t left, int32_t right) {
     if (left == INT32_MIN && right == -1) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
     }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
     return left / right;
 }
 
@@ -206,6 +208,8 @@ ZLANG_STATIC_INLINE uint32_t zlang_div_u32(uint32_t left, uint32_t right) {
     if (right == 0U) {
         zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
     }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
     return left / right;
 }
 
@@ -219,6 +223,8 @@ ZLANG_STATIC_INLINE int32_t zlang_mod_i32(int32_t left, int32_t right) {
     if (left == INT32_MIN && right == -1) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
     }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
     return left % right;
 }
 
@@ -229,6 +235,8 @@ ZLANG_STATIC_INLINE uint32_t zlang_mod_u32(uint32_t left, uint32_t right) {
     if (right == 0U) {
         zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
     }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
     return left % right;
 }
 
@@ -306,6 +314,18 @@ ZLANG_STATIC_INLINE zlang_string_t zlang_string_array_append(char *storage, zlan
     data[*length] = _stored_k;
     ++(*length);
     return _stored_k;
+}
+
+/**
+ * @brief Read an element pointer with a bounds trap.
+ */
+ZLANG_STATIC_INLINE void *zlang_array_get(void *data, uint32_t index, uint32_t length,
+                                          size_t element_size) {
+    if (data == NULL || index >= length || element_size == 0U) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+        return NULL;
+    }
+    return (char *)data + ((size_t)index * element_size);
 }
 
 /**

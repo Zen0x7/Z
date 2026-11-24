@@ -163,7 +163,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   extra GitHub Actions step: Vercel's Git integration builds every push and PR directly. Vercel must
   still be connected to the GitHub repo in the Vercel dashboard; choose the repository root and keep
   preview deployments enabled so each PR gets its own URL. No Vercel secrets or deploy hooks are
-  required.
+  required. The published production reference is <https://z.iantorres.cl>.
 
 ## Language and naming
 

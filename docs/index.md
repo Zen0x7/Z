@@ -23,6 +23,8 @@ Include the umbrella header to reach every public module:
 #include <zlang/zlang.h>
 ```
 
+The generated API reference is published at <https://z.iantorres.cl>.
+
 | Header | Purpose |
 | --- | --- |
 | `zlang/version/version.h` | Compile-time version macros and `zlang_get_version()` |

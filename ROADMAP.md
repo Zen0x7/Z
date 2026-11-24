@@ -260,3 +260,11 @@ Status: Implemented.
 
 The emitter inserts blank lines around structured statements and before the final `return`, so the
 body of `main` reads as separated logical blocks instead of a dense statement list.
+
+## Emitted C readability — Named values
+
+Status: Implemented.
+
+Generated numeric constants now use `ZLANG_ZERO`, `ZLANG_ONE` and `ZLANG_TWO`. Sequence initial
+lengths and string literal lengths emit named macros instead of bare numeric literals. Source
+literals keep the values written by the programmer.

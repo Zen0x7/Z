@@ -61,10 +61,10 @@ comparisons, logical operators, `length`, string indexing, scalar and string pri
 `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops, `break`
 and `continue`.
 
-The emitted C is organized before `main`: capacity macros, sequence typedefs, named string literals
-and user functions. Source symbols use `_u_`, compiler temporaries use `_zlang_`, generated types
-use `zlang_` and runtime calls use `zlang_*`. Index reads lower to bounded `zlang_*` getters, and
-`(void)` guards appear only for variables that are genuinely unused.
+The emitted C is organized before `main`: generated value constants, capacity macros, sequence
+typedefs, named string literals and user functions. Source symbols use `_u_`, compiler temporaries
+use `_zlang_`, generated types use `zlang_` and runtime calls use `zlang_*`. Index reads lower to
+bounded `zlang_*` getters, and `(void)` guards appear only for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -145,10 +145,18 @@ print(names[0]);
 
 #include <zlang/runtime/runtime.h>
 
+/* generated value constants */
+#define ZLANG_ZERO 0U
+#define ZLANG_ONE 1U
+#define ZLANG_TWO 2U
+
 /* generated capacities */
 #define ZLANG_VALUES_CAPACITY 4U
+#define ZLANG_VALUES_LENGTH 3U
 #define ZLANG_FIXED_CAPACITY 5U
+#define ZLANG_FIXED_LENGTH 2U
 #define ZLANG_NAMES_CAPACITY 3U
+#define ZLANG_NAMES_LENGTH 2U
 #define ZLANG_NAMES_ELEMENT_CAPACITY 8U
 #define ZLANG_LABEL_CAPACITY 32U
 
@@ -164,26 +172,33 @@ typedef struct zlang_fixed_t {
 } zlang_fixed_t;
 
 typedef struct zlang_names_t {
-    char storage_[ZLANG_NAMES_CAPACITY][ZLANG_NAMES_ELEMENT_CAPACITY + 1U];
+    char storage_[ZLANG_NAMES_CAPACITY][ZLANG_NAMES_ELEMENT_CAPACITY + ZLANG_ONE];
     zlang_string_t data_[ZLANG_NAMES_CAPACITY];
     uint32_t length_;
 } zlang_names_t;
 
 /* generated string literals */
+#define ZLANG_LITERAL_0_LENGTH 5U
 static const char _zlang_literal_0_data[] = "zlang";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, 5U };
+static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+#define ZLANG_LITERAL_1_LENGTH 5U
 static const char _zlang_literal_1_data[] = " tour";
-static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, 5U };
+static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+#define ZLANG_LITERAL_2_LENGTH 1U
 static const char _zlang_literal_2_data[] = "a";
-static const zlang_string_t _zlang_literal_2 = { _zlang_literal_2_data, 1U };
+static const zlang_string_t _zlang_literal_2 = { _zlang_literal_2_data, ZLANG_LITERAL_2_LENGTH };
+#define ZLANG_LITERAL_3_LENGTH 1U
 static const char _zlang_literal_3_data[] = "b";
-static const zlang_string_t _zlang_literal_3 = { _zlang_literal_3_data, 1U };
+static const zlang_string_t _zlang_literal_3 = { _zlang_literal_3_data, ZLANG_LITERAL_3_LENGTH };
+#define ZLANG_LITERAL_4_LENGTH 1U
 static const char _zlang_literal_4_data[] = "z";
-static const zlang_string_t _zlang_literal_4 = { _zlang_literal_4_data, 1U };
+static const zlang_string_t _zlang_literal_4 = { _zlang_literal_4_data, ZLANG_LITERAL_4_LENGTH };
+#define ZLANG_LITERAL_5_LENGTH 3U
 static const char _zlang_literal_5_data[] = "big";
-static const zlang_string_t _zlang_literal_5 = { _zlang_literal_5_data, 3U };
+static const zlang_string_t _zlang_literal_5 = { _zlang_literal_5_data, ZLANG_LITERAL_5_LENGTH };
+#define ZLANG_LITERAL_6_LENGTH 5U
 static const char _zlang_literal_6_data[] = "small";
-static const zlang_string_t _zlang_literal_6 = { _zlang_literal_6_data, 5U };
+static const zlang_string_t _zlang_literal_6 = { _zlang_literal_6_data, ZLANG_LITERAL_6_LENGTH };
 
 int32_t _u_add(int32_t _u_left, int32_t _u_right) {
     return zlang_add_i32(_u_left, _u_right);
@@ -191,18 +206,18 @@ int32_t _u_add(int32_t _u_left, int32_t _u_right) {
 
 int main(void) {
     const int32_t _u_base = 2;
-    zlang_values_t _u_values = { { 1, 2, 3, 0 }, 3U };
+    zlang_values_t _u_values = { { 1, 2, 3, 0 }, ZLANG_VALUES_LENGTH };
     zlang_array_append(_u_values.data_, &_u_values.length_, ZLANG_VALUES_CAPACITY, sizeof(_u_values.data_[0]), (int32_t[]){ (4) });
-    zlang_fixed_t _u_fixed = { { 4, 5, 0, 0, 0 }, 2U };
+    zlang_fixed_t _u_fixed = { { 4, 5, 0, 0, 0 }, ZLANG_FIXED_LENGTH };
     uint32_t _u_limit = 3U;
     bool _u_ready = true;
     zlang_string_t _u_name = _zlang_literal_0;
-    char _zlang_label_storage_7[ZLANG_LABEL_CAPACITY + 1U] = { 0 };
-    zlang_string_t _u_label = zlang_string_concat(_zlang_label_storage_7, ZLANG_LABEL_CAPACITY, (zlang_string_t[]){ _u_name, _zlang_literal_1 }, 2U);
-    zlang_names_t _u_names = { 0 };
-    _u_names.data_[0] = zlang_string_concat(_u_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, 1U);
-    _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, 1U);
-    _u_names.length_ = 2U;
+    char _zlang_label_storage_7[ZLANG_LABEL_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
+    zlang_string_t _u_label = zlang_string_concat(_zlang_label_storage_7, ZLANG_LABEL_CAPACITY, (zlang_string_t[]){ _u_name, _zlang_literal_1 }, ZLANG_TWO);
+    zlang_names_t _u_names = { ZLANG_ZERO };
+    _u_names.data_[0] = zlang_string_concat(_u_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, ZLANG_ONE);
+    _u_names.data_[1] = zlang_string_concat(_u_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
+    _u_names.length_ = ZLANG_NAMES_LENGTH;
 
     {
         uint32_t _zlang_index_9 = 0;
@@ -214,12 +229,12 @@ int main(void) {
     }
 
     zlang_array_append(_u_fixed.data_, &_u_fixed.length_, ZLANG_FIXED_CAPACITY, sizeof(_u_fixed.data_[0]), (int32_t[]){ (9) });
-    zlang_string_array_append((char *)_u_names.storage_, _u_names.data_, &_u_names.length_, ZLANG_NAMES_CAPACITY, ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _u_name }, 1U);
+    zlang_string_array_append((char *)_u_names.storage_, _u_names.data_, &_u_names.length_, ZLANG_NAMES_CAPACITY, ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _u_name }, ZLANG_ONE);
 
     {
         uint32_t _zlang_index_10 = 0;
         if (_zlang_index_10 < _u_names.length_) {
-            _u_names.data_[_zlang_index_10] = zlang_string_concat(_u_names.storage_[_zlang_index_10], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, 1U);
+            _u_names.data_[_zlang_index_10] = zlang_string_concat(_u_names.storage_[_zlang_index_10], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
         } else {
             zlang_trap(ZLANG_TRAP_BOUNDS);
         }
@@ -246,7 +261,7 @@ int main(void) {
         break;
     }
 
-    for (uint32_t _zlang_repeat_11 = 0U; _zlang_repeat_11 < _u_limit; ++_zlang_repeat_11) {
+    for (uint32_t _zlang_repeat_11 = ZLANG_ZERO; _zlang_repeat_11 < _u_limit; ++_zlang_repeat_11) {
         continue;
     }
 
@@ -257,10 +272,10 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_12 = 0U; _zlang_foreach_12 < _u_values.length_; ++_zlang_foreach_12) {
+    for (uint32_t _zlang_foreach_12 = ZLANG_ZERO; _zlang_foreach_12 < _u_values.length_; ++_zlang_foreach_12) {
         uint32_t _u_row = _zlang_foreach_12;
         int32_t _u_item = _u_values.data_[_zlang_foreach_12];
-        for (uint32_t _zlang_foreach_13 = 0U; _zlang_foreach_13 < _u_values.length_; ++_zlang_foreach_13) {
+        for (uint32_t _zlang_foreach_13 = ZLANG_ZERO; _zlang_foreach_13 < _u_values.length_; ++_zlang_foreach_13) {
             uint32_t _u_column = _zlang_foreach_13;
             int32_t _u_other = _u_values.data_[_zlang_foreach_13];
             zlang_print_u32(_u_row);
@@ -279,7 +294,7 @@ int main(void) {
     zlang_print(_u_label);
     zlang_print(zlang_array_get_string(_u_names.data_, 0, _u_names.length_));
 
-    return 0;
+    return ZLANG_ZERO;
 }
 ```
 

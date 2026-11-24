@@ -16,9 +16,10 @@
     "foreach (item in values) {\n"                                                                 \
     "    print(\"Hello\");\n"                                                                      \
     "}"
-#define ZLANG_SPEC_FOREACH_SEQUENCE_EXPECTED "zlang_values_t _u_values = { { 0, 0, 0, 0 }, 0U };"
+#define ZLANG_SPEC_FOREACH_SEQUENCE_EXPECTED                                                       \
+    "zlang_values_t _u_values = { { 0, 0, 0, 0 }, ZLANG_VALUES_LENGTH };"
 #define ZLANG_SPEC_FOREACH_LOOP_EXPECTED                                                           \
-    "for (uint32_t _zlang_foreach_1 = 0U; _zlang_foreach_1 < _u_values.length_; "                  \
+    "for (uint32_t _zlang_foreach_1 = ZLANG_ZERO; _zlang_foreach_1 < _u_values.length_; "          \
     "++_zlang_foreach_1)"
 #define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t _u_item = _u_values.data_[_zlang_foreach_1];"
 #define ZLANG_SPEC_FOREACH_CALLBACK "zlang_for_each"
@@ -43,7 +44,7 @@
 
 #define ZLANG_SPEC_REPEAT_SOURCE "repeat (2U) { print(\"tick\"); }"
 #define ZLANG_SPEC_REPEAT_EXPECTED                                                                 \
-    "for (uint32_t _zlang_repeat_1 = 0U; _zlang_repeat_1 < 2U; ++_zlang_repeat_1) {"
+    "for (uint32_t _zlang_repeat_1 = ZLANG_ZERO; _zlang_repeat_1 < 2U; ++_zlang_repeat_1) {"
 
 #define ZLANG_SPEC_FUNCTION_SOURCE                                                                 \
     "function add(integer left, integer right): integer {\n"                                       \
@@ -83,10 +84,10 @@
 #define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (_u_ready) {"
 #define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (_u_ready) {"
 #define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
-    "for (uint32_t _zlang_foreach_2 = 0U; _zlang_foreach_2 < _u_values.length_; "                  \
+    "for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < _u_values.length_; "          \
     "++_zlang_foreach_2)"
 #define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED                                                     \
-    "for (uint32_t _zlang_repeat_3 = 0U; _zlang_repeat_3 < 2U;"
+    "for (uint32_t _zlang_repeat_3 = ZLANG_ZERO; _zlang_repeat_3 < 2U;"
 #define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop() {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
 #define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_u_first = 4;"
@@ -94,11 +95,12 @@
 #define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(_u_label);"
 
 #define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "sequence[] integer values = {1, 2, 3};"
-#define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED "zlang_values_t _u_values = { { 1, 2, 3 }, 3U };"
+#define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED                                                   \
+    "zlang_values_t _u_values = { { 1, 2, 3 }, ZLANG_VALUES_LENGTH };"
 
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "sequence[5] integer values = {1, 2, 3};"
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED                                                    \
-    "zlang_values_t _u_values = { { 1, 2, 3, 0, 0 }, 3U };"
+    "zlang_values_t _u_values = { { 1, 2, 3, 0, 0 }, ZLANG_VALUES_LENGTH };"
 
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_SOURCE                                                         \
     "sequence[4] integer values;\n"                                                                \
@@ -223,7 +225,7 @@
     "names[0] = \"d\";"
 #define ZLANG_SPEC_STRING_SEQUENCE_TYPE_EXPECTED "typedef struct zlang_names_t"
 #define ZLANG_SPEC_STRING_SEQUENCE_APPEND_EXPECTED "zlang_string_array_append("
-#define ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED "_u_names.storage_[_zlang_index_5]"
+#define ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED "ZLANG_NAMES_ELEMENT_CAPACITY + ZLANG_ONE"
 
 #define ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE "integer values[4];"
 

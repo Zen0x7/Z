@@ -29,7 +29,7 @@ typedef struct zlang_spec_session_t {
     zlang_parser_t parser_;
     zlang_parse_result_t result_;
     char scratch_[1024];
-    char output_[2048];
+    char output_[8192];
     zlang_emitter_t emitter_;
 } zlang_spec_session_t;
 
@@ -643,6 +643,11 @@ static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_values_t _u_values") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "_zlang_literal_0") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_get_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_ZERO 0U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_ONE 1U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_TWO 2U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_LITERAL_0_LENGTH") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_VALUES_LENGTH") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_values") == NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(void)_u_label") == NULL);
     ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "\n\n    ") > 0U);

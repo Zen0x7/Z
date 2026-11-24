@@ -353,10 +353,11 @@ Every generated C file begins with:
 | `return x;` | `return x;` |
 | overflow, bounds, capacity, division-by-zero failure | `zlang_trap(<fixed code>)` |
 
-Generated C is laid out in this order: includes, named capacity macros, generated sequence
-typedefs, named string literal constants, user functions and `main`. Source symbols are emitted
-with an `_u_` prefix, compiler-generated temporaries with `_zlang_`, generated macros with
-`ZLANG_`, generated types with `zlang_` and runtime calls with `zlang_`. Trap sites use the public
+Generated C is laid out in this order: includes, generated value constants (`ZLANG_ZERO`,
+`ZLANG_ONE`, `ZLANG_TWO`), named capacity and initial-length macros, generated sequence typedefs,
+named string literal constants, user functions and `main`. Source symbols are emitted with an
+`_u_` prefix, compiler-generated temporaries with `_zlang_`, generated macros with `ZLANG_`,
+generated types with `zlang_` and runtime calls with `zlang_`. Trap sites use the public
 `ZLANG_TRAP_*` constants rather than numeric literals.
 
 ### 12.4 Runtime API
@@ -678,4 +679,5 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | unique sequence types across sibling scopes | `emits_unique_sequence_types_for_sibling_scopes` |
 | string literal deduplication | `deduplicates_string_literals` |
 | bounded index getters | `checked_index_reads_return_values`, `uses_readable_emitted_layout` |
+| named generated value constants | `uses_readable_emitted_layout` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

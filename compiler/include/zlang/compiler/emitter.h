@@ -36,6 +36,7 @@ typedef struct zlang_emitted_sequence_t {
     char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
     char capacity_macro_[ZLANG_EMITTED_NAME_CAPACITY];
     char element_macro_[ZLANG_EMITTED_NAME_CAPACITY];
+    char length_macro_[ZLANG_EMITTED_NAME_CAPACITY];
 } zlang_emitted_sequence_t;
 
 typedef struct zlang_emitted_literal_t {
@@ -43,6 +44,7 @@ typedef struct zlang_emitted_literal_t {
     size_t primary_expression_index_;
     char data_name_[ZLANG_EMITTED_NAME_CAPACITY];
     char view_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char length_macro_[ZLANG_EMITTED_NAME_CAPACITY];
     bool is_primary_;
 } zlang_emitted_literal_t;
 

@@ -364,7 +364,7 @@ static void emits_bounded_variable_string_concatenation(zlang_test_context_t *co
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_VARIABLE_CONCAT_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "32U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_LABEL_CAPACITY") != NULL);
 }
 
 static void emits_direct_function_calls(zlang_test_context_t *const context) {
@@ -645,6 +645,23 @@ static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_trap(ZLANG_TRAP_BOUNDS)") != NULL);
     ZLANG_CHECK(context, _type_position_k != NULL && _main_position_k != NULL &&
                              _type_position_k < _main_position_k);
+}
+
+static void emits_unique_sequence_types_for_sibling_scopes(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_CAPACITY_FIRST) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_CAPACITY_SECOND) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_TYPE_SECOND) != NULL);
+}
+
+static void deduplicates_string_literals(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LITERAL_DEDUPE_SOURCE));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_,
+                                                      "static const char _zlang_literal_") == 1U);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

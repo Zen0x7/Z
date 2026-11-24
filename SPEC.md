@@ -668,4 +668,6 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `const` assignment rejection | `rejects_assignment_to_const` |
 | string indexing | `emits_string_index_read` |
 | readable emitted C layout | `uses_readable_emitted_layout` |
+| unique sequence types across sibling scopes | `emits_unique_sequence_types_for_sibling_scopes` |
+| string literal deduplication | `deduplicates_string_literals` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

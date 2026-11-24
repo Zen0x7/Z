@@ -40,9 +40,16 @@ typedef struct zlang_emitted_sequence_t {
 
 typedef struct zlang_emitted_literal_t {
     size_t expression_index_;
+    size_t primary_expression_index_;
     char data_name_[ZLANG_EMITTED_NAME_CAPACITY];
     char view_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    bool is_primary_;
 } zlang_emitted_literal_t;
+
+typedef struct zlang_emitted_capacity_t {
+    const zlang_ast_statement_t *statement_;
+    char macro_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_capacity_t;
 
 typedef struct zlang_emitter_t {
     char *buffer_;
@@ -58,6 +65,8 @@ typedef struct zlang_emitter_t {
     size_t emitted_sequence_count_;
     zlang_emitted_literal_t emitted_literals_[ZLANG_EMITTED_LITERAL_CAPACITY];
     size_t emitted_literal_count_;
+    zlang_emitted_capacity_t emitted_capacities_[ZLANG_EMITTED_SEQUENCE_CAPACITY];
+    size_t emitted_capacity_count_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

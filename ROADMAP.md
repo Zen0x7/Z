@@ -237,3 +237,11 @@ Status: Implemented.
 Generated C now separates capacity macros, sequence typedefs, named string literals, user functions
 and `main`. Source symbols use `_u_`, compiler temporaries use `_zlang_`, generated types use
 `zlang_` and traps use the public `ZLANG_TRAP_*` constants.
+
+## Emitted C layout — Follow-up
+
+Status: Implemented.
+
+Generated sequence types and capacity macros are unique across sibling scopes. Sequence and string
+capacities are referenced through their generated macros, loop temporaries use `_zlang_repeat_N`,
+and repeated string literals are deduplicated.

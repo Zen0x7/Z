@@ -42,7 +42,8 @@
 #define ZLANG_SPEC_IF_ELSE_EXPECTED "} else {"
 
 #define ZLANG_SPEC_REPEAT_SOURCE "repeat (2U) { print(\"tick\"); }"
-#define ZLANG_SPEC_REPEAT_EXPECTED "for (uint32_t _repeat = 0U; _repeat < 2U; ++_repeat) {"
+#define ZLANG_SPEC_REPEAT_EXPECTED                                                                 \
+    "for (uint32_t _zlang_repeat_1 = 0U; _zlang_repeat_1 < 2U; ++_zlang_repeat_1) {"
 
 #define ZLANG_SPEC_FUNCTION_SOURCE                                                                 \
     "function add(integer left, integer right): integer {\n"                                       \
@@ -55,7 +56,8 @@
     "sequence[4] integer values;\n"                                                                \
     "append(values, 7);\n"                                                                         \
     "integer first = values[0];"
-#define ZLANG_SPEC_APPEND_EXPECTED "zlang_array_append(_u_values.data_, &_u_values.length_, 4U"
+#define ZLANG_SPEC_APPEND_EXPECTED                                                                 \
+    "zlang_array_append(_u_values.data_, &_u_values.length_, ZLANG_VALUES_CAPACITY"
 #define ZLANG_SPEC_INDEX_EXPECTED "_u_values.data_[0]"
 
 #define ZLANG_SPEC_CONFORMANCE_SOURCE                                                              \
@@ -83,7 +85,8 @@
 #define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
     "for (uint32_t _zlang_foreach_2 = 0U; _zlang_foreach_2 < _u_values.length_; "                  \
     "++_zlang_foreach_2)"
-#define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED "for (uint32_t _repeat = 0U; _repeat < 2U;"
+#define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED                                                     \
+    "for (uint32_t _zlang_repeat_3 = 0U; _zlang_repeat_3 < 2U;"
 #define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop() {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
 #define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_u_first = 4;"
@@ -110,7 +113,7 @@
 #define ZLANG_SPEC_VARIABLE_CONCAT_SOURCE                                                          \
     "string prefix = \"temp_\";\n"                                                                 \
     "string[32] label = prefix + \"sensor\";"
-#define ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED "char _zlang_label_storage_"
+#define ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED "ZLANG_LABEL_CAPACITY"
 
 #define ZLANG_SPEC_CALL_SOURCE                                                                     \
     "function add(integer left, integer right): integer {\n"                                       \
@@ -262,6 +265,15 @@
     "string[8] text = \"abc\";\n"                                                                  \
     "unsigned first = text[0];"
 #define ZLANG_SPEC_STRING_INDEX_EXPECTED "(uint32_t)(unsigned char)_u_text.data_[0]"
+
+#define ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE                                                   \
+    "{ sequence[2] integer values; }\n"                                                            \
+    "{ sequence[3] integer values; }"
+#define ZLANG_SPEC_SIBLING_CAPACITY_FIRST "ZLANG_VALUES_CAPACITY 2U"
+#define ZLANG_SPEC_SIBLING_CAPACITY_SECOND "ZLANG_VALUES_0_CAPACITY 3U"
+#define ZLANG_SPEC_SIBLING_TYPE_SECOND "zlang_values_0_t"
+
+#define ZLANG_SPEC_LITERAL_DEDUPE_SOURCE "print(\"a\");\nprint(\"a\");"
 
 #define ZLANG_SPEC_READABLE_LAYOUT_SOURCE                                                          \
     "const integer base = 2;\n"                                                                    \

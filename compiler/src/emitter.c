@@ -1,5 +1,5 @@
 /** @file
- * @brief C99 emitter for the Zlang 0.3 abstract syntax tree.
+ * @brief C99 emitter for the Zlang abstract syntax tree.
  */
 
 #include "zlang/compiler/emitter.h"
@@ -117,9 +117,17 @@ static bool zlang_is_static(const zlang_emitter_t *emitter,
 }
 
 static bool zlang_type_name(const zlang_ast_statement_t *statement, char *buffer, size_t capacity) {
-    const int _written_k =
-        snprintf(buffer, capacity, "zlang_sequence_%s_%lu_t",
-                 zlang_type_suffix(statement->type_name_), (unsigned long)statement->capacity_);
+    int _written_k = 0;
+    if (statement->has_element_capacity_) {
+        _written_k = snprintf(buffer, capacity, "zlang_sequence_%s_%lu_%lu_t",
+                              zlang_type_suffix(statement->type_name_),
+                              (unsigned long)statement->element_capacity_,
+                              (unsigned long)statement->capacity_);
+    } else {
+        _written_k =
+            snprintf(buffer, capacity, "zlang_sequence_%s_%lu_t",
+                     zlang_type_suffix(statement->type_name_), (unsigned long)statement->capacity_);
+    }
     return _written_k >= 0 && (size_t)_written_k < capacity;
 }
 
@@ -270,6 +278,64 @@ static const char *zlang_resolve_name(const zlang_emitter_t *emitter, const char
     return _symbol_k != NULL ? _symbol_k->generated_name_ : source_name;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
+static const char *zlang_expression_type(const zlang_program_t *program,
+                                         const zlang_emitter_t *emitter,
+                                         size_t index) { // NOLINT(misc-no-recursion)
+    if (program == NULL || index == ZLANG_NO_EXPRESSION || index >= program->expression_count_) {
+        return NULL;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    switch (_expression_k->kind_) {
+    case zlang_expression_integer_literal_:
+        return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+    case zlang_expression_boolean_literal_:
+        return "boolean";
+    case zlang_expression_string_literal_:
+    case zlang_expression_string_concat_:
+        return "string";
+    case zlang_expression_identifier_: {
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _expression_k->name_);
+        return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
+    }
+    case zlang_expression_add_:
+    case zlang_expression_sub_:
+    case zlang_expression_mul_:
+    case zlang_expression_div_:
+    case zlang_expression_mod_:
+    case zlang_expression_assignment_:
+    case zlang_expression_compound_assignment_:
+        return zlang_expression_type(program, emitter, _expression_k->left_);
+    case zlang_expression_negative_:
+        return "integer";
+    case zlang_expression_length_:
+        return "unsigned";
+    case zlang_expression_index_: {
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _expression_k->name_);
+        return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
+    }
+    case zlang_expression_equal_:
+    case zlang_expression_less_:
+    case zlang_expression_greater_:
+    case zlang_expression_less_equal_:
+    case zlang_expression_greater_equal_:
+    case zlang_expression_not_equal_:
+    case zlang_expression_not_:
+    case zlang_expression_and_:
+    case zlang_expression_or_:
+        return "boolean";
+    case zlang_expression_call_: {
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, _expression_k->name_);
+        return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
+    }
+    default:
+        return NULL;
+    }
+}
+
 static size_t zlang_save_scope(const zlang_emitter_t *emitter) {
     return emitter->active_symbol_count_;
 }
@@ -301,9 +367,50 @@ static const char *zlang_comparison_operator(zlang_expression_kind_t kind) {
     }
 }
 
+static const char *zlang_print_function(const char *type_name) {
+    if (type_name == NULL) {
+        return NULL;
+    }
+    if (strcmp(type_name, "string") == 0) {
+        return "zlang_print(";
+    }
+    if (strcmp(type_name, "unsigned") == 0) {
+        return "zlang_print_u32(";
+    }
+    if (strcmp(type_name, "boolean") == 0) {
+        return "zlang_print_bool(";
+    }
+    if (strcmp(type_name, "integer") == 0) {
+        return "zlang_print_i32(";
+    }
+    return NULL;
+}
+
+static const char *zlang_arithmetic_function(zlang_expression_kind_t kind, bool is_unsigned) {
+    switch (kind) {
+    case zlang_expression_add_:
+        return is_unsigned ? "zlang_add_u32(" : "zlang_add_i32(";
+    case zlang_expression_sub_:
+        return is_unsigned ? "zlang_sub_u32(" : "zlang_sub_i32(";
+    case zlang_expression_mul_:
+        return is_unsigned ? "zlang_mul_u32(" : "zlang_mul_i32(";
+    case zlang_expression_div_:
+        return is_unsigned ? "zlang_div_u32(" : "zlang_div_i32(";
+    case zlang_expression_mod_:
+        return is_unsigned ? "zlang_mod_u32(" : "zlang_mod_i32(";
+    default:
+        return NULL;
+    }
+}
+
 static bool zlang_emit_string_concat_call(const zlang_program_t *program, size_t index,
                                           const char *storage, uint32_t capacity,
                                           zlang_emitter_t *emitter);
+
+static size_t zlang_concat_part_count(const zlang_program_t *program, size_t index);
+
+static bool zlang_emit_concat_parts(const zlang_program_t *program, size_t index,
+                                    zlang_emitter_t *emitter);
 
 /* Expression trees are bounded by the caller-owned expression array. */
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -330,13 +437,42 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                zlang_append_text(emitter, "U }");
     case zlang_expression_identifier_:
         return zlang_append_text(emitter, zlang_resolve_name(emitter, _expression_k->name_));
-    case zlang_expression_add_: {
-        const zlang_ast_expression_t *const _left_k = &program->expressions_[_expression_k->left_];
-        const bool _is_unsigned_k =
-            _left_k->kind_ == zlang_expression_integer_literal_ && _left_k->is_unsigned_;
-        if (!zlang_append_text(emitter, _is_unsigned_k ? "zlang_add_u32(" : "zlang_add_i32(") ||
+    case zlang_expression_add_:
+    case zlang_expression_sub_:
+    case zlang_expression_mul_:
+    case zlang_expression_div_:
+    case zlang_expression_mod_: {
+        const char *const _left_type_k =
+            zlang_expression_type(program, emitter, _expression_k->left_);
+        const char *const _function_k = zlang_arithmetic_function(
+            _expression_k->kind_, _left_type_k != NULL && strcmp(_left_type_k, "unsigned") == 0);
+        if (_function_k == NULL || !zlang_append_text(emitter, _function_k) ||
             !zlang_emit_expression(program, _expression_k->left_, emitter) ||
             !zlang_append_text(emitter, ", ") ||
+            !zlang_emit_expression(program, _expression_k->right_, emitter) ||
+            !zlang_append_text(emitter, ")")) {
+            return false;
+        }
+        return true;
+    }
+    case zlang_expression_negative_:
+        return zlang_append_text(emitter, "(-") &&
+               zlang_emit_expression(program, _expression_k->left_, emitter) &&
+               zlang_append_text(emitter, ")");
+    case zlang_expression_length_:
+        return zlang_append_text(emitter, zlang_resolve_name(emitter, _expression_k->name_)) &&
+               zlang_append_text(emitter, ".length_");
+    case zlang_expression_compound_assignment_: {
+        const zlang_ast_expression_t *const _target_k =
+            &program->expressions_[_expression_k->left_];
+        const char *const _name_k = zlang_resolve_name(emitter, _target_k->name_);
+        const char *const _left_type_k = zlang_expression_type(program, emitter, index);
+        const char *const _function_k = zlang_arithmetic_function(
+            _expression_k->operator_,
+            _left_type_k != NULL && strcmp(_left_type_k, "unsigned") == 0);
+        if (_name_k == NULL || _function_k == NULL || !zlang_append_text(emitter, _name_k) ||
+            !zlang_append_text(emitter, " = ") || !zlang_append_text(emitter, _function_k) ||
+            !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ", ") ||
             !zlang_emit_expression(program, _expression_k->right_, emitter) ||
             !zlang_append_text(emitter, ")")) {
             return false;
@@ -391,16 +527,39 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                zlang_append_text(emitter, " = ") &&
                zlang_emit_expression(program, _expression_k->right_, emitter);
     }
-    case zlang_expression_print_call_:
-        return zlang_append_text(emitter, "zlang_print(") &&
+    case zlang_expression_print_call_: {
+        const char *const _function_k =
+            zlang_print_function(zlang_expression_type(program, emitter, _expression_k->left_));
+        return _function_k != NULL && zlang_append_text(emitter, _function_k) &&
                zlang_emit_expression(program, _expression_k->left_, emitter) &&
                zlang_append_text(emitter, ")");
+    }
     case zlang_expression_append_call_: {
         const zlang_ast_statement_t *const _sequence_k =
             zlang_find_sequence(emitter, _expression_k->name_);
         const char *const _name_k = zlang_resolve_name(emitter, _expression_k->name_);
         if (_sequence_k == NULL) {
             return false;
+        }
+        if (_sequence_k->has_element_capacity_ && strcmp(_sequence_k->type_name_, "string") == 0) {
+            const size_t _count_k = zlang_concat_part_count(program, _expression_k->right_);
+            if (_count_k == 0U || _count_k > UINT32_MAX ||
+                !zlang_append_text(emitter, "zlang_string_array_append((char *)") ||
+                !zlang_append_text(emitter, _name_k) ||
+                !zlang_append_text(emitter, ".storage_, ") ||
+                !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".data_, &") ||
+                !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".length_, ") ||
+                !zlang_append_unsigned(emitter, _sequence_k->capacity_) ||
+                !zlang_append_text(emitter, "U, ") ||
+                !zlang_append_unsigned(emitter, _sequence_k->element_capacity_) ||
+                !zlang_append_text(emitter, "U, (zlang_string_t[]){ ") ||
+                !zlang_emit_concat_parts(program, _expression_k->right_, emitter) ||
+                !zlang_append_text(emitter, " }, ") ||
+                !zlang_append_unsigned(emitter, (uint32_t)_count_k) ||
+                !zlang_append_text(emitter, "U)")) {
+                return false;
+            }
+            return true;
         }
         if (!zlang_append_text(emitter, "zlang_array_append(") ||
             !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".data_, &") ||
@@ -619,19 +778,35 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
         (size_t)_written_k >= sizeof(_index_name)) {
         return false;
     }
-    return zlang_append_text(emitter, "{\n") && zlang_append_indent(emitter, depth + 1U) &&
-           zlang_append_text(emitter, "uint32_t ") && zlang_append_text(emitter, _index_name) &&
-           zlang_append_text(emitter, " = ") &&
-           zlang_emit_expression(program, _target_k->right_, emitter) &&
-           zlang_append_text(emitter, ";\n") && zlang_append_indent(emitter, depth + 1U) &&
-           zlang_append_text(emitter, "if (") && zlang_append_text(emitter, _index_name) &&
-           zlang_append_text(emitter, " < ") && zlang_append_text(emitter, _generated_k) &&
-           zlang_append_text(emitter, ".length_) {\n") &&
-           zlang_append_indent(emitter, depth + 2U) && zlang_append_text(emitter, _generated_k) &&
-           zlang_append_text(emitter, ".data_[") && zlang_append_text(emitter, _index_name) &&
-           zlang_append_text(emitter, "] = ") &&
-           zlang_emit_expression(program, expression->right_, emitter) &&
-           zlang_append_text(emitter, ";\n") && zlang_append_indent(emitter, depth + 1U) &&
+    const zlang_ast_statement_t *const _sequence_k = zlang_find_sequence(emitter, _target_k->name_);
+    const bool _string_element_k = _sequence_k != NULL && _sequence_k->has_element_capacity_ &&
+                                   strcmp(_sequence_k->type_name_, "string") == 0;
+
+    if (!zlang_append_text(emitter, "{\n") || !zlang_append_indent(emitter, depth + 1U) ||
+        !zlang_append_text(emitter, "uint32_t ") || !zlang_append_text(emitter, _index_name) ||
+        !zlang_append_text(emitter, " = ") ||
+        !zlang_emit_expression(program, _target_k->right_, emitter) ||
+        !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth + 1U) ||
+        !zlang_append_text(emitter, "if (") || !zlang_append_text(emitter, _index_name) ||
+        !zlang_append_text(emitter, " < ") || !zlang_append_text(emitter, _generated_k) ||
+        !zlang_append_text(emitter, ".length_) {\n") || !zlang_append_indent(emitter, depth + 2U) ||
+        !zlang_append_text(emitter, _generated_k) || !zlang_append_text(emitter, ".data_[") ||
+        !zlang_append_text(emitter, _index_name) || !zlang_append_text(emitter, "] = ")) {
+        return false;
+    }
+    if (_string_element_k) {
+        char _slot[ZLANG_EMITTED_NAME_CAPACITY + 32];
+        const int _slot_written_k =
+            snprintf(_slot, sizeof(_slot), "%s.storage_[%s]", _generated_k, _index_name);
+        if (_slot_written_k < 0 || (size_t)_slot_written_k >= sizeof(_slot) ||
+            !zlang_emit_string_concat_call(program, expression->right_, _slot,
+                                           _sequence_k->element_capacity_, emitter)) {
+            return false;
+        }
+    } else if (!zlang_emit_expression(program, expression->right_, emitter)) {
+        return false;
+    }
+    return zlang_append_text(emitter, ";\n") && zlang_append_indent(emitter, depth + 1U) &&
            zlang_append_text(emitter, "} else {\n") && zlang_append_indent(emitter, depth + 2U) &&
            zlang_append_text(emitter, "zlang_trap(2U);\n") &&
            zlang_append_indent(emitter, depth + 1U) && zlang_append_text(emitter, "}\n") &&
@@ -857,10 +1032,12 @@ static bool zlang_emit_statement(const zlang_program_t *program,
     }
     case zlang_statement_sequence_declaration_: {
         char _name[ZLANG_EMITTED_NAME_CAPACITY];
+        const bool _string_elements_k =
+            statement->has_element_capacity_ && strcmp(statement->type_name_, "string") == 0;
         if (statement->capacity_ == 0U ||
             !zlang_register_symbol(emitter, statement->name_, statement->type_name_,
-                                   statement->capacity_, statement->has_explicit_capacity_, false,
-                                   _name, sizeof(_name))) {
+                                   statement->capacity_, statement->has_explicit_capacity_,
+                                   _string_elements_k, _name, sizeof(_name))) {
             return false;
         }
         char _type[64];
@@ -868,14 +1045,29 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             return false;
         }
         const bool _needs_type_k = !zlang_type_was_emitted(emitter, _type);
-        if (_needs_type_k &&
-            (!zlang_mark_type_emitted(emitter, _type) || !zlang_append_text(emitter, "struct ") ||
-             !zlang_append_text(emitter, _type) || !zlang_append_text(emitter, " {\n    ") ||
-             !zlang_append_text(emitter, zlang_c_type(statement->type_name_)) ||
-             !zlang_append_text(emitter, " data_[") ||
-             !zlang_append_unsigned(emitter, statement->capacity_) ||
-             !zlang_append_text(emitter, "];\n    uint32_t length_;\n};\n"))) {
-            return false;
+        if (_needs_type_k) {
+            if (!zlang_mark_type_emitted(emitter, _type) ||
+                !zlang_append_text(emitter, "struct ") || !zlang_append_text(emitter, _type) ||
+                !zlang_append_text(emitter, " {\n")) {
+                return false;
+            }
+            if (_string_elements_k) {
+                if (!zlang_append_text(emitter, "    char storage_[") ||
+                    !zlang_append_unsigned(emitter, statement->capacity_) ||
+                    !zlang_append_text(emitter, "][") ||
+                    !zlang_append_unsigned(emitter, statement->element_capacity_ + 1U) ||
+                    !zlang_append_text(emitter, "];\n    zlang_string_t data_[") ||
+                    !zlang_append_unsigned(emitter, statement->capacity_) ||
+                    !zlang_append_text(emitter, "];\n    uint32_t length_;\n};\n")) {
+                    return false;
+                }
+            } else if (!zlang_append_text(emitter, "    ") ||
+                       !zlang_append_text(emitter, zlang_c_type(statement->type_name_)) ||
+                       !zlang_append_text(emitter, " data_[") ||
+                       !zlang_append_unsigned(emitter, statement->capacity_) ||
+                       !zlang_append_text(emitter, "];\n    uint32_t length_;\n};\n")) {
+                return false;
+            }
         }
         if (!zlang_append_indent(emitter, depth)) {
             return false;
@@ -885,18 +1077,59 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         }
         if (!zlang_append_text(emitter, "struct ") || !zlang_append_text(emitter, _type) ||
             !zlang_append_text(emitter, " ") || !zlang_append_text(emitter, _name) ||
-            !zlang_append_text(emitter, " = { { ")) {
+            !zlang_append_text(emitter, " = ")) {
             return false;
         }
-        if (!zlang_emit_sequence_values(program, statement, emitter) ||
-            !zlang_append_text(emitter, " }, ") ||
-            !zlang_append_unsigned(emitter, (uint32_t)statement->initializer_count_) ||
-            !zlang_append_text(emitter, "U };\n") || !zlang_append_indent(emitter, depth) ||
-            !zlang_append_text(emitter, "(void)") || !zlang_append_text(emitter, _name) ||
-            !zlang_append_text(emitter, ";\n")) {
+        if (_string_elements_k) {
+            if (!zlang_append_text(emitter, "{ 0 };\n") || !zlang_append_indent(emitter, depth) ||
+                !zlang_append_text(emitter, "(void)") || !zlang_append_text(emitter, _name) ||
+                !zlang_append_text(emitter, ";\n")) {
+                return false;
+            }
+            if (statement->initializer_count_ == 0U) {
+                return true;
+            }
+        } else {
+            if (!zlang_append_text(emitter, "{ { ") ||
+                !zlang_emit_sequence_values(program, statement, emitter) ||
+                !zlang_append_text(emitter, " }, ") ||
+                !zlang_append_unsigned(emitter, (uint32_t)statement->initializer_count_) ||
+                !zlang_append_text(emitter, "U };\n") || !zlang_append_indent(emitter, depth) ||
+                !zlang_append_text(emitter, "(void)") || !zlang_append_text(emitter, _name) ||
+                !zlang_append_text(emitter, ";\n")) {
+                return false;
+            }
+            return true;
+        }
+        if (zlang_is_static(emitter, statement)) {
             return false;
         }
-        return true;
+        const zlang_emitted_symbol_t *const _symbol_k =
+            zlang_find_active_symbol(emitter, statement->name_);
+        if (_symbol_k == NULL || _symbol_k->storage_name_[0] == '\0') {
+            return false;
+        }
+        for (size_t _index = 0U; _index < statement->initializer_count_; ++_index) {
+            char _slot[ZLANG_EMITTED_NAME_CAPACITY + 32];
+            const int _written_k = snprintf(_slot, sizeof(_slot), "%s.storage_[%lu]",
+                                            _symbol_k->generated_name_, (unsigned long)_index);
+            if (_written_k < 0 || (size_t)_written_k >= sizeof(_slot) ||
+                !zlang_append_indent(emitter, depth) ||
+                !zlang_append_text(emitter, _symbol_k->generated_name_) ||
+                !zlang_append_text(emitter, ".data_[") ||
+                !zlang_append_unsigned(emitter, (uint32_t)_index) ||
+                !zlang_append_text(emitter, "] = ") ||
+                !zlang_emit_string_concat_call(program, statement->initializer_start_ + _index,
+                                               _slot, statement->element_capacity_, emitter) ||
+                !zlang_append_text(emitter, ";\n")) {
+                return false;
+            }
+        }
+        return zlang_append_indent(emitter, depth) &&
+               zlang_append_text(emitter, _symbol_k->generated_name_) &&
+               zlang_append_text(emitter, ".length_ = ") &&
+               zlang_append_unsigned(emitter, (uint32_t)statement->initializer_count_) &&
+               zlang_append_text(emitter, "U;\n");
     }
     case zlang_statement_expression_: {
         const zlang_ast_expression_t *const _expression_k =

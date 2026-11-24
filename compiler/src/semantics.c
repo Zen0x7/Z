@@ -1,5 +1,5 @@
 /** @file
- * @brief Scope, binding, type and resource checks for Zlang 0.3.
+ * @brief Scope, binding, type and resource checks for Zlang.
  */
 
 #include "zlang/compiler/semantics.h"
@@ -180,6 +180,68 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
         return _left_k;
     }
+    case zlang_expression_negative_: {
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        if (!zlang_type_matches("integer", _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "unary negation requires an integer operand");
+            return NULL;
+        }
+        return "integer";
+    }
+    case zlang_expression_sub_:
+    case zlang_expression_mul_:
+    case zlang_expression_div_:
+    case zlang_expression_mod_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        const bool _numeric_k =
+            zlang_type_matches("integer", _left_k) || zlang_type_matches("unsigned", _left_k);
+        if (!_numeric_k || !zlang_type_matches(_left_k, _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "arithmetic requires two matching numeric operands");
+            return NULL;
+        }
+        return _left_k;
+    }
+    case zlang_expression_compound_assignment_: {
+        const zlang_ast_expression_t *const _target_k =
+            _expression_k->left_ < context->program_->expression_count_
+                ? &context->program_->expressions_[_expression_k->left_]
+                : NULL;
+        const zlang_symbol_t *const _symbol_k =
+            _target_k != NULL && _target_k->kind_ == zlang_expression_identifier_
+                ? zlang_find_symbol(context, _target_k->name_)
+                : NULL;
+        if (_symbol_k == NULL) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement,
+                                          "compound assignment target is not a declared scalar");
+            return NULL;
+        }
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        const bool _numeric_k = zlang_type_matches("integer", _symbol_k->type_name_) ||
+                                zlang_type_matches("unsigned", _symbol_k->type_name_);
+        if (!_numeric_k || !zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "compound assignment requires a matching numeric type");
+            return NULL;
+        }
+        return _actual_k;
+    }
+    case zlang_expression_length_: {
+        const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
+        if (_target_k == NULL || !_target_k->is_sequence_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "length target is not a declared sequence");
+            return NULL;
+        }
+        return "unsigned";
+    }
     case zlang_expression_equal_:
     case zlang_expression_less_:
     case zlang_expression_greater_:
@@ -289,9 +351,19 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         zlang_mark_mutated(context, _symbol_k->name_);
         return _actual_k;
     }
-    case zlang_expression_print_call_:
-        (void)zlang_analyze_expression(context, _expression_k->left_, statement);
+    case zlang_expression_print_call_: {
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const bool _printable_k =
+            zlang_type_matches("string", _actual_k) || zlang_type_matches("integer", _actual_k) ||
+            zlang_type_matches("unsigned", _actual_k) || zlang_type_matches("boolean", _actual_k);
+        if (!_printable_k) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "print argument must be string or scalar");
+            return NULL;
+        }
         return "void";
+    }
     case zlang_expression_append_call_: {
         const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
         if (_target_k == NULL || !_target_k->is_sequence_) {
@@ -416,6 +488,12 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             (!statement->has_explicit_capacity_ && statement->initializer_count_ == 0U)) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, statement,
                                      "sequence declaration requires a capacity or an initializer");
+            break;
+        }
+        if (strcmp(statement->type_name_, "string") == 0 &&
+            (!statement->has_element_capacity_ || statement->element_capacity_ == 0U)) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_STRING_CAPACITY_REQUIRED, statement,
+                                     "string sequence elements require an explicit capacity");
             break;
         }
         if (statement->initializer_count_ > statement->capacity_) {

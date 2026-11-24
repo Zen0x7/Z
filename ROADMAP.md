@@ -187,3 +187,26 @@ Add `break` and `continue` with loop-context diagnostics, enforce boolean `if`/`
 and unsigned `repeat` counts, validate `return` against the enclosing function type, and ensure
 nested statements are analyzed and emitted exactly once. The full language tour in `README.md` is
 compiled as a conformance case.
+
+## 0.4 — Arithmetic, explicit sequences and readable output
+
+Status: Locked.
+
+- Trap `ZLANG_TRAP_DIVISION_BY_ZERO = 5` for division and remainder by zero.
+- Add binary `-`, unary `-`, `*`, `/` and `%` with checked runtime helpers.
+- Add compound assignment for arithmetic operators.
+- Add `length(sequence)`, emitted as the native `length_` field.
+- Add scalar `print` for integer, unsigned and boolean values using fixed-stack helpers.
+- Use the leading `sequence[N]` modifier as the only sequence syntax. The postfix form
+  `type name[N]` is removed.
+- A bounded scalar string is `string[M] name`; a bounded string element is written as
+  `sequence[N] string[M] name`.
+
+## 0.4 — Completion
+
+Status: Implemented.
+
+Arithmetic, compound assignment, `length`, scalar printing and the leading `sequence[N]` syntax are
+implemented and covered by conformance tests. String sequences use bounded per-element storage.
+Trap code `5` reports division by zero. The Doxygen site takes its version from the CMake version
+single source of truth.

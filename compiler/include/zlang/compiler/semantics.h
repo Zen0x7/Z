@@ -1,5 +1,5 @@
 /** @file
- * @brief Semantic analysis API for Zlang 0.3.
+ * @brief Semantic analysis API for Zlang.
  */
 
 #ifndef ZLANG_COMPILER_SEMANTICS_H

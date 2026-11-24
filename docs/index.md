@@ -3,7 +3,7 @@
 Z contains two related pieces:
 
 - `libzlang`, a header-only C99 runtime library used by generated programs.
-- `zlang-compile`, a source-to-source compiler that translates Zlang 0.2 into portable C.
+- `zlang-compile`, a source-to-source compiler that translates Zlang into portable C.
 
 The CMake targets are `zlang::zlang` for the runtime, `zlang::compiler_core` for the compiler
 library and `zlang-compile` for the command line driver.
@@ -11,9 +11,7 @@ library and `zlang-compile` for the command line driver.
 ## Start here
 
 - [Compiler architecture](architecture.md) describes the pipeline and ownership rules.
-- [Zlang 0.1 grammar](grammar_01.md) lists the baseline syntax and diagnostics.
-- [Zlang 0.2 grammar](grammar_02.md) lists the added syntax and diagnostics.
-- [Zlang 0.3 grammar](grammar_03.md) lists loop control and tightened semantic rules.
+- [Zlang grammar](grammar.md) lists the current syntax and diagnostics.
 - The sections below list the runtime headers, compiler headers and `zlang-compile` behavior.
 
 ## Public API
@@ -43,7 +41,7 @@ part of the product contract.
 | Header | Purpose |
 | --- | --- |
 | `zlang/compiler/lexer.h` | Tokenizer with caller-owned scratch storage |
-| `zlang/compiler/parser.h` | Recursive-descent parser for Zlang 0.2 |
+| `zlang/compiler/parser.h` | Recursive-descent parser for Zlang |
 | `zlang/compiler/ast.h` | Flat AST representation using indices |
 | `zlang/compiler/diagnostics.h` | Stable diagnostic codes and source locations |
 | `zlang/compiler/semantics.h` | Type and binding checks |

@@ -1,5 +1,5 @@
 /** @file
- * @brief Tokenization for Zlang 0.3 source text.
+ * @brief Tokenization for Zlang source text.
  */
 
 #include "zlang/compiler/lexer.h"
@@ -19,7 +19,9 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"if", zlang_token_if_},
                                              {"in", zlang_token_in_},
                                              {"integer", zlang_token_integer_},
+                                             {"length", zlang_token_length_},
                                              {"print", zlang_token_print_},
+                                             {"sequence", zlang_token_sequence_},
                                              {"repeat", zlang_token_repeat_},
                                              {"return", zlang_token_return_},
                                              {"string", zlang_token_string_},
@@ -169,6 +171,21 @@ static bool zlang_lex_number(zlang_lexer_t *lexer, zlang_token_t *token,
     return true;
 }
 
+static zlang_token_kind_t zlang_compound_token_kind(const char character) {
+    switch (character) {
+    case '+':
+        return zlang_token_plus_equal_;
+    case '-':
+        return zlang_token_minus_equal_;
+    case '*':
+        return zlang_token_star_equal_;
+    case '/':
+        return zlang_token_slash_equal_;
+    default:
+        return zlang_token_percent_equal_;
+    }
+}
+
 static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
                                zlang_diagnostics_t *diagnostics, const uint32_t line,
                                const uint32_t column) {
@@ -181,6 +198,14 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     const char _next_k = lexer->source_[lexer->position_ + 1U];
     if ((_character_k == '&' && _next_k == '&') || (_character_k == '|' && _next_k == '|')) {
         token->kind_ = _character_k == '&' ? zlang_token_and_ : zlang_token_or_;
+        token->length_ = 2U;
+        zlang_lexer_advance(lexer);
+        zlang_lexer_advance(lexer);
+        return true;
+    }
+    if (_next_k == '=' && (_character_k == '+' || _character_k == '-' || _character_k == '*' ||
+                           _character_k == '/' || _character_k == '%')) {
+        token->kind_ = zlang_compound_token_kind(_character_k);
         token->length_ = 2U;
         zlang_lexer_advance(lexer);
         zlang_lexer_advance(lexer);
@@ -246,6 +271,18 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         break;
     case '+':
         token->kind_ = zlang_token_plus_;
+        break;
+    case '-':
+        token->kind_ = zlang_token_minus_;
+        break;
+    case '*':
+        token->kind_ = zlang_token_star_;
+        break;
+    case '/':
+        token->kind_ = zlang_token_slash_;
+        break;
+    case '%':
+        token->kind_ = zlang_token_percent_;
         break;
     default:
         (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_INVALID_CHARACTER, line, column,

@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(zlang VERSION 0.0.0 LANGUAGES C)
+include(cmake/ZlangVersion.cmake)
+project(zlang VERSION ${ZLANG_PROJECT_VERSION} LANGUAGES C)
+
+set(ZLANG_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}/generated/include")
+configure_file(Doxyfile.in ${CMAKE_BINARY_DIR}/Doxyfile @ONLY)
+configure_file(include/zlang/version/version.h.in
+               ${CMAKE_BINARY_DIR}/generated/include/zlang/version/version.h @ONLY)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -10,6 +16,10 @@ include(ZlangWarnings)
 include(ZlangCoverage)
 
 add_compile_options(${ZLANG_SANITIZER_FLAGS})
+add_compile_definitions(
+    ZLANG_EXPECTED_VERSION_MAJOR=${ZLANG_VERSION_MAJOR}
+    ZLANG_EXPECTED_VERSION_MINOR=${ZLANG_VERSION_MINOR}
+    ZLANG_EXPECTED_VERSION_PATCH=${ZLANG_VERSION_PATCH})
 add_link_options(${ZLANG_SANITIZER_FLAGS} ${ZLANG_SANITIZER_LINK_FLAGS})
 
 include(GNUInstallDirs)
@@ -19,6 +29,7 @@ add_library(zlang INTERFACE)
 add_library(zlang::zlang ALIAS zlang)
 
 target_include_directories(zlang INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated/include>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 
@@ -28,7 +39,10 @@ target_compile_features(zlang INTERFACE c_std_99)
 
 install(TARGETS zlang EXPORT zlangTargets)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        PATTERN "*.in" EXCLUDE)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/generated/include/zlang/version/version.h"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/zlang/version")
 install(EXPORT zlangTargets
         FILE zlangTargets.cmake
         NAMESPACE zlang::

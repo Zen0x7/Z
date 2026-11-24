@@ -36,7 +36,14 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_not_equal_,
     zlang_expression_not_,
     zlang_expression_and_,
-    zlang_expression_or_
+    zlang_expression_or_,
+    zlang_expression_negative_,
+    zlang_expression_sub_,
+    zlang_expression_mul_,
+    zlang_expression_div_,
+    zlang_expression_mod_,
+    zlang_expression_compound_assignment_,
+    zlang_expression_length_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -45,19 +52,20 @@ typedef struct zlang_ast_string_value_t {
 } zlang_ast_string_value_t;
 
 typedef struct zlang_ast_expression_t {
-    zlang_expression_kind_t kind_;
-    int32_t integer_value_;
-    bool bool_value_;
-    bool is_unsigned_;
-    bool is_string_;
     size_t left_;
     size_t right_;
     size_t argument_start_;
     size_t argument_count_;
-    zlang_ast_string_value_t string_;
     const char *name_;
+    zlang_ast_string_value_t string_;
+    zlang_expression_kind_t kind_;
+    int32_t integer_value_;
+    zlang_expression_kind_t operator_;
     uint32_t line_;
     uint32_t column_;
+    bool bool_value_;
+    bool is_unsigned_;
+    bool is_string_;
 } zlang_ast_expression_t;
 
 typedef enum zlang_statement_kind_t {
@@ -97,7 +105,9 @@ typedef struct zlang_ast_statement_t {
     size_t initializer_count_;
     zlang_statement_kind_t kind_;
     uint32_t capacity_;
+    uint32_t element_capacity_;
     bool has_explicit_capacity_;
+    bool has_element_capacity_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

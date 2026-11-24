@@ -106,7 +106,8 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 
 ## Project facts
 
-- The project is **Z**; the library target is **libzlang** (`zlang::zlang`), version **0.0.0**.
+- The project is **Z**; the library target is **libzlang** (`zlang::zlang`). The authoritative
+  package and language versions live in `cmake/ZlangVersion.cmake`.
 - Public headers are grouped by module: `include/zlang/version/version.h`,
   `include/zlang/testing/testing.h`, and `include/zlang/runtime/runtime.h`.
   `include/zlang/zlang.h` is the umbrella header. The version API is
@@ -159,7 +160,8 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
   with a SHA256 check, so Vercel does not need `apt-get` or a preinstalled Doxygen. It tries the
   official doxygen.nl mirror first, then the GitHub release, then SourceForge; every source must
   match the same SHA256. This keeps Vercel builds working when GitHub release assets return 404 from
-  the build region. There is no
+  the build region. `Doxyfile.in` is configured from `cmake/ZlangVersion.cmake`, so the published
+  project version and language level always match the current release. There is no
   extra GitHub Actions step: Vercel's Git integration builds every push and PR directly. Vercel must
   still be connected to the GitHub repo in the Vercel dashboard; choose the repository root and keep
   preview deployments enabled so each PR gets its own URL. No Vercel secrets or deploy hooks are

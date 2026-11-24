@@ -1,8 +1,8 @@
 # Zlang Language Specification
 
-**Status:** Complete 0.3
+**Status:** Current
 
-**Scope:** the core language implemented by `zlang-compile` 0.3.
+**Scope:** the core language implemented by `zlang-compile`.
 
 This document defines Zlang. It does not define the compiler internals, the command-line interface, or the CI pipeline. Those are implementation concerns and are described in `ROADMAP.md`.
 
@@ -102,7 +102,7 @@ An integer literal without `u` has type `integer`. With `u`, it has type `unsign
 
 ## 7. Values and types
 
-Zlang has exactly four value types through version 0.2.
+Zlang has exactly four value types.
 
 ### 7.1 `integer`
 
@@ -120,18 +120,18 @@ The values `true` and `false`. Emitted as `bool` from `<stdbool.h>`.
 
 An immutable, non-owning view over UTF-8 bytes. It has two fields: a pointer to the first byte and a byte length. It never allocates and never owns memory.
 
-A string literal is interned by the compiler and emitted in read-only storage. String concatenation is supported at language level 0.2, but it never allocates. When every operand is a literal, the compiler folds the result into one emitted literal. When any operand is a variable, the declaration must use explicit capacity syntax, the compiler reserves a fixed backing buffer, and `zlang_string_concat` copies the views into it. Overflow traps instead of growing the buffer.
+A string literal is interned by the compiler and emitted in read-only storage. String concatenation is supported, but it never allocates. When every operand is a literal, the compiler folds the result into one emitted literal. When any operand is a variable, the declaration must use explicit capacity syntax, the compiler reserves a fixed backing buffer, and `zlang_string_concat` copies the views into it. Overflow traps instead of growing the buffer.
 
 ### 7.5 Sequence values
 
 A sequence is a fixed-capacity container written as `<type>[<capacity>]`. Capacity is part of the type, not a dynamic property.
 
 ```zlang
-integer values[4];
-string names[8];
+sequence[4] integer values;
+sequence[8] string[32] names;
 ```
 
-The capacity must be a positive integer literal. `integer values[];` is illegal and produces a resource diagnostic. At language level 0.2 a sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `integer values[] = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
+The capacity must be a positive integer literal. `sequence[] integer values;` is illegal and produces a resource diagnostic. A sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `sequence[] integer values = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
 
 A sequence has a current length that starts at zero and never exceeds its capacity. Its storage is decided at compile time:
 
@@ -159,7 +159,7 @@ Examples:
 integer count = 10;
 boolean ready = true;
 string greeting = "Hello";
-integer values[4];
+sequence[4] integer values;
 ```
 
 A declaration introduces a compile-time symbol. The name is never emitted as a string. Generated C uses the same source identifier when it is available; otherwise the compiler appends a numeric suffix and records the mapping internally. Sibling scopes may reuse the same source name without colliding in generated C.
@@ -286,7 +286,7 @@ function <name>(<parameter-list>): <return-type> {
 }
 ```
 
-A parameter is `<type> <name>`. Parameters are passed by value. Functions have no access to mutable globals, because Zlang has no global variables through version 0.2.
+A parameter is `<type> <name>`. Parameters are passed by value. Functions have no access to mutable globals, because Zlang has no global variables.
 
 ```zlang
 function add(integer left, integer right): integer {
@@ -332,6 +332,9 @@ Every generated C file begins with:
 | `boolean ready = true;` | `bool ready = true;` |
 | `string s = "Hi";` | `zlang_string_t s = { "Hi", 2U };` |
 | `a + b` | checked addition, then plain `a + b` |
+| `-a`, `a - b`, `a * b`, `a / b`, `a % b` | checked arithmetic helpers |
+| `a += b` and other compound assignments | checked operation followed by assignment |
+| `length(values)` | native `values.length_` as `uint32_t` |
 | `a == b` | `a == b` |
 | `a < b`, `a > b`, `a <= b`, `a >= b`, `a != b` | native C comparison |
 | `!a`, `a && b`, `a || b` | native C logical operators with short-circuit behavior |
@@ -339,6 +342,7 @@ Every generated C file begins with:
 | `"a" + "b"` | folded string literal |
 | `prefix + suffix` with explicit capacity | `zlang_string_concat(storage, capacity, parts, count)` |
 | `print(s)` | `zlang_print(s)` |
+| `print(i)`, `print(u)`, `print(b)` | bounded scalar print helpers |
 | `values[2]` | checked index, then `values.data_[2]` |
 | `values[0] = x` | checked index statement, then direct store to `values.data_[0]` |
 | `append(values, x)` | `CheckCapacity` then `values.data_[values.length_++] = x;` |
@@ -346,20 +350,35 @@ Every generated C file begins with:
 | `if`, `while`, `repeat` | native C `if`, `while`, `for` |
 | `function f(...)` | `static` C function with the same name |
 | `return x;` | `return x;` |
-| overflow, bounds, capacity failure | `zlang_trap(<fixed code>)` |
+| overflow, bounds, capacity, division-by-zero failure | `zlang_trap(<fixed code>)` |
 
 ### 12.4 Runtime API
 
-The runtime functions that generated code may call through language level 0.2 are:
+The runtime functions that generated code may call are:
 
 ```c
 bool zlang_print(zlang_string_t value);
 int32_t zlang_add_i32(int32_t left, int32_t right);
 uint32_t zlang_add_u32(uint32_t left, uint32_t right);
+int32_t zlang_sub_i32(int32_t left, int32_t right);
+uint32_t zlang_sub_u32(uint32_t left, uint32_t right);
+int32_t zlang_mul_i32(int32_t left, int32_t right);
+uint32_t zlang_mul_u32(uint32_t left, uint32_t right);
+int32_t zlang_div_i32(int32_t left, int32_t right);
+uint32_t zlang_div_u32(uint32_t left, uint32_t right);
+int32_t zlang_mod_i32(int32_t left, int32_t right);
+uint32_t zlang_mod_u32(uint32_t left, uint32_t right);
+bool zlang_print_i32(int32_t value);
+bool zlang_print_u32(uint32_t value);
+bool zlang_print_bool(bool value);
 void zlang_array_append(void *data, uint32_t *length, uint32_t capacity,
                         size_t element_size, const void *value);
 zlang_string_t zlang_string_concat(char *storage, uint32_t capacity,
                                    const zlang_string_t *parts, size_t count);
+zlang_string_t zlang_string_array_append(char *storage, zlang_string_t *data,
+                                         uint32_t *length, uint32_t capacity,
+                                         uint32_t element_capacity,
+                                         const zlang_string_t *parts, size_t count);
 void zlang_trap(uint8_t code);
 ```
 
@@ -404,7 +423,8 @@ string, `ZLANG1003` invalid character, `ZLANG1004` unsupported construct,
 `ZLANG2003` undefined identifier, `ZLANG2004` type mismatch,
 `ZLANG2005` shadowed declaration, `ZLANG2006` string capacity required,
 `ZLANG3001` unbounded sequence, `ZLANG3002` unused capacity, and
-`ZLANG3003` initializer too long. `ZLANG3002` is a warning: it is printed with
+`ZLANG3003` initializer too long. Legacy postfix sequence declarations use `ZLANG1004`.
+`ZLANG3002` is a warning: it is printed with
 the `warning[...]` prefix and does not stop compilation.
 
 Resource errors point at the declaration that needs a limit, not at the later use.
@@ -419,7 +439,7 @@ The compiler may emit more than one diagnostic, but it must not generate C for a
 
 ## 14. Non-goals
 
-The following are explicitly outside Zlang 0.2:
+The following are explicitly outside Zlang:
 
 - runtime reflection, dynamic dispatch, or runtime names;
 - classes, inheritance, and objects;
@@ -449,11 +469,11 @@ statement      = declaration
 
 block          = "{" statement* "}" ;
 
-declaration    = type identifier ( "=" expression )? ";"
-               | type identifier "[" integerLiteral? "]"
-                 ( "=" sequenceInitializer )? ";"
-               | type "[" integerLiteral "]" identifier
+declaration    = sequenceModifier? type typeModifier? identifier
                  ( "=" expression )? ";" ;
+
+sequenceModifier = "sequence" "[" integerLiteral? "]" ;
+typeModifier     = "[" integerLiteral "]" ;
 
 sequenceInitializer = "{" ( expression ( "," expression )* )? "}" ;
 
@@ -479,14 +499,17 @@ expression     = literal
                | identifier
                | "(" expression ")"
                | "!" expression
+               | "-" expression
                | expression "&&" expression
                | expression "||" expression
-               | expression "+" expression
+               | expression ( "+" | "-" | "*" | "/" | "%" ) expression
                | expression ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expression
                | identifier "=" expression
+               | identifier ( "+=" | "-=" | "*=" | "/=" | "%=" ) expression
                | identifier "[" expression "]" "=" expression
                | identifier "(" ( expression ( "," expression )* )? ")"
                | "print" "(" expression ")"
+               | "length" "(" identifier ")"
                | identifier "[" expression "]"
                | "append" "(" identifier "," expression ")" ;
 
@@ -504,7 +527,7 @@ Source:
 
 ```zlang
 integer var = 10;
-integer values[4];
+sequence[4] integer values;
 
 foreach (item in values) {
     print("Hello");
@@ -540,36 +563,12 @@ int main(void) {
 
 The iteration exists as a `for_each` node in the compiler's intermediate representation. The emitted binary contains only the native loop; no callback survives.
 
-## 0.1 implementation status
+## Implementation status
 
-The 0.1 implementation is complete:
-
-- lexer, parser, AST, and source locations;
-- semantic analysis with scopes, type checks, and resource diagnostics;
-- memory planner with a default 4096-byte stack limit;
-- checked C emitter with native control flow;
-- bounded runtime API with fixed trap codes;
-- `zlang-compile` with `--emit-c`.
-
-Diagnostics use the exact format in clause 13. Every diagnostic carries the
-line and column of the source construct that caused it.
-
-## 0.2 implementation status
-
-The 0.2 implementation adds lexical comments, lexical scopes with unique generated
-C identifiers, sequence brace initializers, checked index assignment, bounded
-string concatenation, direct function calls, ordering and inequality operators,
-logical operators, expression grouping, and `else if` chains. It rejects shadowing with
-`ZLANG2005`, rejects variable concatenation without explicit capacity with `ZLANG2006`,
-rejects overlong sequence initializers with `ZLANG3003`, and warns about undisciplined
-explicit capacity with `ZLANG3002`.
-
-## 0.3 implementation status
-
-The 0.3 implementation adds `break` and `continue` with loop-context validation, enforces boolean
-`if` and `while` conditions and unsigned `repeat` counts, validates every `return` against its
-function type, and analyzes and emits nested statements exactly once. The emitted C for the full
-language tour is compiled as a conformance test.
+The language described here is implemented across the lexer, parser, semantic analyzer, memory
+planner, C emitter, runtime and `zlang-compile` driver. Diagnostics use the exact format in
+clause 13, and every diagnostic carries the line and column of the source construct that caused
+it. Version-by-version history is kept in `ROADMAP.md`.
 
 ## Annex C - Testability contract
 
@@ -580,7 +579,7 @@ parse("integer var = 10;").transpile().contains("int32_t var = 10;")
 ```
 
 ```text
-parse("integer values[];").diagnostics().contains("ZLANG3001")
+parse("sequence[] integer values;").diagnostics().contains("ZLANG3001")
 ```
 
 These assertions are the primary way the language definition is kept honest: if the translation changes, the specification changes with it.
@@ -644,5 +643,11 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | self concatenation | `accepts_self_concatenation_with_explicit_capacity` |
 | nested statements emitted once | `does_not_duplicate_nested_statements` |
 | generated C compiles | `zlang.cli.compiles_generated_c` |
+| `-`, unary `-`, `*`, `/`, `%` | `emits_arithmetic_operators` |
+| compound assignment | `emits_compound_assignments` |
+| `length(sequence)` | `emits_length_builtin` |
+| scalar printing | `emits_scalar_print` |
+| string sequence elements | `emits_string_sequence_operations` |
+| legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

@@ -315,7 +315,7 @@ reports_type_and_resource_diagnostics_with_source_locations(zlang_test_context_t
     ZLANG_CHECK(context, !zlang_spec_transpile(&_mismatch, "integer var = \"text\";"));
     zlang_spec_expect_diagnostic(context, &_mismatch, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 15U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_unbounded, "integer values[];"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unbounded, "sequence[] integer values;"));
     zlang_spec_expect_diagnostic(context, &_unbounded, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, 1U, 1U);
 }
 
@@ -390,7 +390,7 @@ static void renames_sibling_scope_declarations(zlang_test_context_t *const conte
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SCOPES_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_SCOPES_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print(item_0)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(item_0)") != NULL);
 }
 
 static void rejects_a_shadowed_declaration(zlang_test_context_t *const context) {
@@ -422,7 +422,8 @@ static void warns_about_unused_explicit_capacity(zlang_test_context_t *const con
 static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer values[2] = {1, 2, 3};"));
+    ZLANG_CHECK(context,
+                !zlang_spec_transpile(&_session, "sequence[2] integer values = {1, 2, 3};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_INITIALIZER_TOO_LONG));
 }
@@ -430,7 +431,7 @@ static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *co
 static void rejects_an_empty_inferred_sequence(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer values[] = {};"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "sequence[] integer values = {};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
 }
@@ -530,6 +531,61 @@ static void does_not_duplicate_nested_statements(zlang_test_context_t *const con
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_NESTED_NO_DUPLICATES_SOURCE));
     ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "\"once\"") == 1U);
+}
+
+static void emits_arithmetic_operators(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_ARITHMETIC_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SUB_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_MUL_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_DIV_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_MOD_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_NEGATIVE_EXPECTED) != NULL);
+}
+
+static void emits_compound_assignments(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_COMPOUND_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_COMPOUND_ADD_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_COMPOUND_MOD_EXPECTED) != NULL);
+}
+
+static void emits_length_builtin(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LENGTH_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LENGTH_EXPECTED) != NULL);
+}
+
+static void emits_scalar_print(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SCALAR_PRINT_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_PRINT_I32_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_PRINT_U32_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_PRINT_BOOL_EXPECTED) != NULL);
+}
+
+static void emits_string_sequence_operations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STRING_SEQUENCE_SOURCE));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_STRING_SEQUENCE_TYPE_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_STRING_SEQUENCE_APPEND_EXPECTED) != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED) != NULL);
+}
+
+static void rejects_legacy_sequence_syntax(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

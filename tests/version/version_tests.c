@@ -6,9 +6,9 @@
 #undef ZLANG_TEST_CASE
 
 static void macros_have_the_expected_values(zlang_test_context_t *const context) {
-    ZLANG_CHECK_UINT(context, 0U, LIBZLANG_VERSION_MAJOR);
-    ZLANG_CHECK_UINT(context, 0U, LIBZLANG_VERSION_MINOR);
-    ZLANG_CHECK_UINT(context, 0U, LIBZLANG_VERSION_PATCH);
+    ZLANG_CHECK_UINT(context, ZLANG_EXPECTED_VERSION_MAJOR, LIBZLANG_VERSION_MAJOR);
+    ZLANG_CHECK_UINT(context, ZLANG_EXPECTED_VERSION_MINOR, LIBZLANG_VERSION_MINOR);
+    ZLANG_CHECK_UINT(context, ZLANG_EXPECTED_VERSION_PATCH, LIBZLANG_VERSION_PATCH);
 }
 
 static void get_version_returns_the_macro_values(zlang_test_context_t *const context) {

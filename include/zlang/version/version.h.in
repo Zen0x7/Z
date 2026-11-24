@@ -10,11 +10,11 @@
 #include <stdint.h>
 
 /** Major version of the library, defined at compile time. */
-#define LIBZLANG_VERSION_MAJOR 0
+#define LIBZLANG_VERSION_MAJOR @ZLANG_VERSION_MAJOR@
 /** Minor version of the library, defined at compile time. */
-#define LIBZLANG_VERSION_MINOR 0
+#define LIBZLANG_VERSION_MINOR @ZLANG_VERSION_MINOR@
 /** Patch version of the library, defined at compile time. */
-#define LIBZLANG_VERSION_PATCH 0
+#define LIBZLANG_VERSION_PATCH @ZLANG_VERSION_PATCH@
 
 /** Version numbers reported by the library. */
 typedef struct zlang_version_t {

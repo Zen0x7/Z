@@ -1,5 +1,5 @@
 /** @file
- * @brief Token definitions and the Zlang 0.3 lexer API.
+ * @brief Token definitions and the Zlang lexer API.
  */
 
 #ifndef ZLANG_COMPILER_LEXER_H
@@ -27,6 +27,8 @@ typedef enum zlang_token_kind_t {
     zlang_token_print_,
     zlang_token_repeat_,
     zlang_token_return_,
+    zlang_token_length_,
+    zlang_token_sequence_,
     zlang_token_string_,
     zlang_token_true_,
     zlang_token_unsigned_,
@@ -52,7 +54,16 @@ typedef enum zlang_token_kind_t {
     zlang_token_not_,
     zlang_token_and_,
     zlang_token_or_,
-    zlang_token_plus_
+    zlang_token_plus_,
+    zlang_token_minus_,
+    zlang_token_star_,
+    zlang_token_slash_,
+    zlang_token_percent_,
+    zlang_token_plus_equal_,
+    zlang_token_minus_equal_,
+    zlang_token_star_equal_,
+    zlang_token_slash_equal_,
+    zlang_token_percent_equal_
 } zlang_token_kind_t;
 
 typedef struct zlang_token_t {

@@ -72,17 +72,30 @@ static void trap_codes_are_fixed(zlang_test_context_t *const context) {
     const uint8_t _bounds_k = ZLANG_TRAP_BOUNDS;
     const uint8_t _capacity_k = ZLANG_TRAP_CAPACITY;
     const uint8_t _invalid_k = ZLANG_TRAP_INVALID_ARGUMENT;
+    const uint8_t _division_k = ZLANG_TRAP_DIVISION_BY_ZERO;
 
     ZLANG_CHECK(context, _overflow_k == 1U);
     ZLANG_CHECK(context, _bounds_k == 2U);
     ZLANG_CHECK(context, _capacity_k == 3U);
     ZLANG_CHECK(context, _invalid_k == 4U);
+    ZLANG_CHECK(context, _division_k == 5U);
 }
 
 static void checked_addition_returns_the_sum(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_add_i32(1, 2) == 3);
     ZLANG_CHECK(context, zlang_add_i32(-5, 2) == -3);
     ZLANG_CHECK(context, zlang_add_u32(10U, 20U) == 30U);
+}
+
+static void arithmetic_helpers_compute(zlang_test_context_t *const context) {
+    ZLANG_CHECK(context, zlang_sub_i32(10, 3) == 7);
+    ZLANG_CHECK(context, zlang_sub_u32(10U, 3U) == 7U);
+    ZLANG_CHECK(context, zlang_mul_i32(-3, 4) == -12);
+    ZLANG_CHECK(context, zlang_mul_u32(3U, 4U) == 12U);
+    ZLANG_CHECK(context, zlang_div_i32(-12, 4) == -3);
+    ZLANG_CHECK(context, zlang_div_u32(12U, 4U) == 3U);
+    ZLANG_CHECK(context, zlang_mod_i32(-13, 4) == -1);
+    ZLANG_CHECK(context, zlang_mod_u32(13U, 4U) == 1U);
 }
 
 static void array_append_writes_and_increments_length(zlang_test_context_t *const context) {
@@ -155,6 +168,14 @@ static void trap_string_concat_null_storage(void) {
     (void)zlang_string_concat(NULL, 4U, _parts_k, 1U);
 }
 
+static void trap_division_i32(void) { (void)zlang_div_i32(1, 0); }
+
+static void trap_division_u32(void) { (void)zlang_div_u32(1U, 0U); }
+
+static void trap_remainder_i32(void) { (void)zlang_mod_i32(1, 0); }
+
+static void trap_remainder_u32(void) { (void)zlang_mod_u32(1U, 0U); }
+
 static bool trap_exits_with_code(void (*function)(void), uint8_t code) {
     const pid_t _child_k = fork();
     int _status_k = 0;
@@ -182,6 +203,10 @@ static void traps_terminate_with_the_declared_code(zlang_test_context_t *const c
     ZLANG_CHECK(context, trap_exits_with_code(trap_string_concat_overflow, ZLANG_TRAP_OVERFLOW));
     ZLANG_CHECK(context,
                 trap_exits_with_code(trap_string_concat_null_storage, ZLANG_TRAP_INVALID_ARGUMENT));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_division_i32, ZLANG_TRAP_DIVISION_BY_ZERO));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_division_u32, ZLANG_TRAP_DIVISION_BY_ZERO));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_remainder_i32, ZLANG_TRAP_DIVISION_BY_ZERO));
+    ZLANG_CHECK(context, trap_exits_with_code(trap_remainder_u32, ZLANG_TRAP_DIVISION_BY_ZERO));
 #else
     ZLANG_CHECK(context, true);
 #endif

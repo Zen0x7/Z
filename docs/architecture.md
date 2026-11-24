@@ -35,8 +35,8 @@ are emitted as C automatic variables. Larger values are emitted at file scope wi
 storage duration and internal linkage. Both live in fixed memory; neither uses the heap.
 
 Unbounded sequences are rejected during semantic analysis with `ZLANG3001`. Runtime growth is not a
-feature of Zlang through version 0.2; explicit capacities and compile-time initializers remain part
-of the program's fixed memory plan.
+feature of Zlang; explicit capacities and compile-time initializers remain part of the
+program's fixed memory plan.
 
 ## Generated C contract
 

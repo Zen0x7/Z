@@ -1,5 +1,5 @@
 /** @file
- * @brief Recursive-descent parser for the Zlang 0.3 grammar.
+ * @brief Recursive-descent parser for the Zlang grammar.
  */
 
 #include "zlang/compiler/parser.h"
@@ -164,6 +164,24 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].column_ = _column_k;
         break;
     }
+    case zlang_token_minus_: {
+        const uint32_t _line_k = _token_k->line_;
+        const uint32_t _column_k = _token_k->column_;
+        zlang_parser_advance(parser);
+        size_t _operand_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_primary(parser, &_operand_k)) { // NOLINT(misc-no-recursion)
+            return false;
+        }
+        _expression_k = zlang_parser_add_expression(parser);
+        if (_expression_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_expression_k].kind_ = zlang_expression_negative_;
+        parser->expressions_[_expression_k].left_ = _operand_k;
+        parser->expressions_[_expression_k].line_ = _line_k;
+        parser->expressions_[_expression_k].column_ = _column_k;
+        break;
+    }
     case zlang_token_integer_literal_:
         _expression_k = zlang_parser_add_expression(parser);
         if (_expression_k == ZLANG_NO_EXPRESSION) {
@@ -195,6 +213,30 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].is_string_ = true;
         zlang_parser_advance(parser);
         break;
+    case zlang_token_length_: {
+        zlang_parser_advance(parser);
+        if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after length")) {
+            return false;
+        }
+        const zlang_token_t *const _name_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                 "expected a sequence name in length")) {
+            return false;
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                                 "expected ')' after length argument")) {
+            return false;
+        }
+        _expression_k = zlang_parser_add_expression(parser);
+        if (_expression_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_expression_k].kind_ = zlang_expression_length_;
+        parser->expressions_[_expression_k].name_ = _name_k->text_;
+        parser->expressions_[_expression_k].line_ = _token_k->line_;
+        parser->expressions_[_expression_k].column_ = _token_k->column_;
+        break;
+    }
     case zlang_token_print_: {
         zlang_parser_advance(parser);
         if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after print")) {
@@ -308,12 +350,23 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_additive(zlang_parser_t *parser, size_t *expression) {
+static bool zlang_parse_multiplicative(zlang_parser_t *parser, size_t *expression) {
     size_t _left_k = ZLANG_NO_EXPRESSION;
     if (!zlang_parse_primary(parser, &_left_k)) {
         return false;
     }
-    while (zlang_parser_current(parser)->kind_ == zlang_token_plus_) {
+    for (;;) {
+        const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
+        zlang_expression_kind_t _operator_k = zlang_expression_mul_;
+        if (_kind_k == zlang_token_star_) {
+            _operator_k = zlang_expression_mul_;
+        } else if (_kind_k == zlang_token_slash_) {
+            _operator_k = zlang_expression_div_;
+        } else if (_kind_k == zlang_token_percent_) {
+            _operator_k = zlang_expression_mod_;
+        } else {
+            break;
+        }
         zlang_parser_advance(parser);
         size_t _right_k = ZLANG_NO_EXPRESSION;
         if (!zlang_parse_primary(parser, &_right_k)) {
@@ -323,10 +376,42 @@ static bool zlang_parse_additive(zlang_parser_t *parser, size_t *expression) {
         if (_binary_k == ZLANG_NO_EXPRESSION) {
             return false;
         }
-        const bool _is_string_k =
-            parser->expressions_[_left_k].is_string_ || parser->expressions_[_right_k].is_string_;
-        parser->expressions_[_binary_k].kind_ =
-            _is_string_k ? zlang_expression_string_concat_ : zlang_expression_add_;
+        parser->expressions_[_binary_k].kind_ = _operator_k;
+        parser->expressions_[_binary_k].left_ = _left_k;
+        parser->expressions_[_binary_k].right_ = _right_k;
+        _left_k = _binary_k;
+    }
+    *expression = _left_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_additive(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_multiplicative(parser, &_left_k)) {
+        return false;
+    }
+    while (zlang_parser_current(parser)->kind_ == zlang_token_plus_ ||
+           zlang_parser_current(parser)->kind_ == zlang_token_minus_) {
+        const bool _is_plus_k = zlang_parser_current(parser)->kind_ == zlang_token_plus_;
+        zlang_parser_advance(parser);
+        size_t _right_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_multiplicative(parser, &_right_k)) {
+            return false;
+        }
+        const size_t _binary_k = zlang_parser_add_expression(parser);
+        if (_binary_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        const bool _is_string_k = _is_plus_k && (parser->expressions_[_left_k].is_string_ ||
+                                                 parser->expressions_[_right_k].is_string_);
+        zlang_expression_kind_t _operator_k = zlang_expression_sub_;
+        if (_is_string_k) {
+            _operator_k = zlang_expression_string_concat_;
+        } else if (_is_plus_k) {
+            _operator_k = zlang_expression_add_;
+        }
+        parser->expressions_[_binary_k].kind_ = _operator_k;
         parser->expressions_[_binary_k].is_string_ = _is_string_k;
         parser->expressions_[_binary_k].left_ = _left_k;
         parser->expressions_[_binary_k].right_ = _right_k;
@@ -453,12 +538,39 @@ static bool zlang_parse_logical_or(zlang_parser_t *parser, size_t *expression) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_expression(zlang_parser_t *parser, size_t *expression) {
+static zlang_expression_kind_t zlang_compound_operator(zlang_token_kind_t kind) {
+    switch (kind) {
+    case zlang_token_plus_equal_:
+        return zlang_expression_add_;
+    case zlang_token_minus_equal_:
+        return zlang_expression_sub_;
+    case zlang_token_star_equal_:
+        return zlang_expression_mul_;
+    case zlang_token_slash_equal_:
+        return zlang_expression_div_;
+    case zlang_token_percent_equal_:
+        return zlang_expression_mod_;
+    default:
+        return zlang_expression_add_;
+    }
+}
+
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
+zlang_parse_expression(zlang_parser_t *parser,
+                       size_t *expression) { // NOLINT(misc-no-recursion)
     size_t _left_k = ZLANG_NO_EXPRESSION;
     if (!zlang_parse_logical_or(parser, &_left_k)) {
         return false;
     }
-    if (zlang_parser_current(parser)->kind_ == zlang_token_equal_) {
+    const zlang_token_kind_t _assignment_kind_k = zlang_parser_current(parser)->kind_;
+    const bool _is_assignment_k = _assignment_kind_k == zlang_token_equal_ ||
+                                  _assignment_kind_k == zlang_token_plus_equal_ ||
+                                  _assignment_kind_k == zlang_token_minus_equal_ ||
+                                  _assignment_kind_k == zlang_token_star_equal_ ||
+                                  _assignment_kind_k == zlang_token_slash_equal_ ||
+                                  _assignment_kind_k == zlang_token_percent_equal_;
+    if (_is_assignment_k) {
         zlang_parser_advance(parser);
         size_t _right_k = ZLANG_NO_EXPRESSION;
         if (!zlang_parse_expression(parser, &_right_k)) { // NOLINT(misc-no-recursion)
@@ -468,10 +580,20 @@ static bool zlang_parse_expression(zlang_parser_t *parser, size_t *expression) {
         if (_assignment_k == ZLANG_NO_EXPRESSION) {
             return false;
         }
-        parser->expressions_[_assignment_k].kind_ =
-            parser->expressions_[_left_k].kind_ == zlang_expression_index_
-                ? zlang_expression_index_assignment_
-                : zlang_expression_assignment_;
+        if (_assignment_kind_k != zlang_token_equal_ &&
+            parser->expressions_[_left_k].kind_ == zlang_expression_index_) {
+            zlang_parser_unsupported(parser, "compound assignment requires a scalar target");
+            return false;
+        }
+        zlang_expression_kind_t _assignment_expression_k = zlang_expression_compound_assignment_;
+        if (_assignment_kind_k == zlang_token_equal_) {
+            _assignment_expression_k =
+                parser->expressions_[_left_k].kind_ == zlang_expression_index_
+                    ? zlang_expression_index_assignment_
+                    : zlang_expression_assignment_;
+        }
+        parser->expressions_[_assignment_k].kind_ = _assignment_expression_k;
+        parser->expressions_[_assignment_k].operator_ = zlang_compound_operator(_assignment_kind_k);
         parser->expressions_[_assignment_k].left_ = _left_k;
         parser->expressions_[_assignment_k].right_ = _right_k;
         _left_k = _assignment_k;
@@ -481,29 +603,63 @@ static bool zlang_parse_expression(zlang_parser_t *parser, size_t *expression) {
 }
 
 static bool zlang_parse_declaration(zlang_parser_t *parser) {
-    const zlang_token_t *const _type_k = zlang_parser_current(parser);
-    zlang_parser_advance(parser);
-
-    bool _has_type_capacity_k = false;
-    uint32_t _type_capacity_k = 0U;
-    if (zlang_token_is(_type_k, "string") &&
-        zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+    const zlang_token_t *const _start_k = zlang_parser_current(parser);
+    bool _is_sequence_k = false;
+    bool _has_sequence_capacity_k = false;
+    uint32_t _sequence_capacity_k = 0U;
+    if (zlang_parser_current(parser)->kind_ == zlang_token_sequence_) {
         zlang_parser_advance(parser);
-        if (zlang_parser_current(parser)->kind_ != zlang_token_integer_literal_) {
-            zlang_parser_unsupported(parser, "string capacity must be an integer literal");
+        _is_sequence_k = true;
+        if (!zlang_parser_expect(parser, zlang_token_left_bracket_,
+                                 "expected '[' after sequence")) {
             return false;
         }
-        _type_capacity_k = (uint32_t)zlang_parser_current(parser)->integer_value_;
-        _has_type_capacity_k = true;
+        if (zlang_parser_current(parser)->kind_ == zlang_token_integer_literal_) {
+            _sequence_capacity_k = (uint32_t)zlang_parser_current(parser)->integer_value_;
+            _has_sequence_capacity_k = true;
+            zlang_parser_advance(parser);
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
+                                 "expected ']' after sequence capacity")) {
+            return false;
+        }
+    }
+
+    const zlang_token_t *const _type_k = zlang_parser_current(parser);
+    if (!zlang_token_is_type(_type_k)) {
+        zlang_parser_unsupported(parser, "expected a declaration type");
+        return false;
+    }
+    zlang_parser_advance(parser);
+
+    const bool _is_string_k = zlang_token_is(_type_k, "string");
+    bool _has_element_capacity_k = false;
+    uint32_t _element_capacity_k = 0U;
+    if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+        zlang_parser_advance(parser);
+        if (zlang_parser_current(parser)->kind_ != zlang_token_integer_literal_) {
+            zlang_parser_unsupported(parser, "type capacity must be an integer literal");
+            return false;
+        }
+        _element_capacity_k = (uint32_t)zlang_parser_current(parser)->integer_value_;
+        _has_element_capacity_k = true;
         zlang_parser_advance(parser);
         if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
-                                 "expected ']' after string capacity")) {
+                                 "expected ']' after type capacity")) {
+            return false;
+        }
+        if (!_is_string_k) {
+            zlang_parser_unsupported(parser, "type capacity is only valid for string");
             return false;
         }
     }
 
     const zlang_token_t *const _name_k = zlang_parser_current(parser);
     if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a declaration name")) {
+        return false;
+    }
+    if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+        zlang_parser_unsupported(parser, "sequence syntax uses a leading sequence[N] modifier");
         return false;
     }
 
@@ -514,39 +670,23 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     zlang_ast_statement_t *const _statement_ptr_k = &parser->statements_[_statement_k];
     _statement_ptr_k->type_name_ = _type_k->text_;
     _statement_ptr_k->name_ = _name_k->text_;
-    _statement_ptr_k->line_ = _type_k->line_;
-    _statement_ptr_k->column_ = _type_k->column_;
-    if (_has_type_capacity_k) {
-        _statement_ptr_k->capacity_ = _type_capacity_k;
-        _statement_ptr_k->has_explicit_capacity_ = true;
-    }
+    _statement_ptr_k->line_ = _start_k->line_;
+    _statement_ptr_k->column_ = _start_k->column_;
+    _statement_ptr_k->kind_ =
+        _is_sequence_k ? zlang_statement_sequence_declaration_ : zlang_statement_declaration_;
+    _statement_ptr_k->capacity_ = _is_sequence_k ? _sequence_capacity_k : _element_capacity_k;
+    _statement_ptr_k->has_explicit_capacity_ =
+        _is_sequence_k ? _has_sequence_capacity_k : _has_element_capacity_k;
+    _statement_ptr_k->element_capacity_ = _element_capacity_k;
+    _statement_ptr_k->has_element_capacity_ = _has_element_capacity_k;
 
-    const bool _is_string_k = zlang_token_is(_type_k, "string");
-    if (_is_string_k) {
+    if (_is_string_k && !_is_sequence_k) {
         zlang_parser_remember_string(parser, _name_k->text_);
-    }
-
-    if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
-        zlang_parser_advance(parser);
-        if (zlang_parser_current(parser)->kind_ == zlang_token_integer_literal_) {
-            _statement_ptr_k->capacity_ = (uint32_t)zlang_parser_current(parser)->integer_value_;
-            _statement_ptr_k->has_explicit_capacity_ = true;
-            zlang_parser_advance(parser);
-        }
-        if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
-                                 "expected ']' after capacity")) {
-            return false;
-        }
-        _statement_ptr_k->kind_ =
-            _is_string_k ? zlang_statement_declaration_ : zlang_statement_sequence_declaration_;
-    } else {
-        _statement_ptr_k->kind_ = zlang_statement_declaration_;
     }
 
     if (zlang_parser_current(parser)->kind_ == zlang_token_equal_) {
         zlang_parser_advance(parser);
-        if (_statement_ptr_k->kind_ == zlang_statement_sequence_declaration_ &&
-            zlang_parser_current(parser)->kind_ == zlang_token_left_brace_) {
+        if (_is_sequence_k && zlang_parser_current(parser)->kind_ == zlang_token_left_brace_) {
             zlang_parser_advance(parser);
             _statement_ptr_k->initializer_start_ = parser->expression_count_;
             if (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_) {
@@ -817,7 +957,8 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
     while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
            zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
-        if (zlang_token_is_type(zlang_parser_current(parser))) {
+        if (zlang_token_is_type(zlang_parser_current(parser)) ||
+            zlang_parser_current(parser)->kind_ == zlang_token_sequence_) {
             if (!zlang_parse_declaration(parser)) {
                 return false;
             }
@@ -934,7 +1075,8 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
 
     while (zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
-        if (zlang_token_is_type(zlang_parser_current(parser))) {
+        if (zlang_token_is_type(zlang_parser_current(parser)) ||
+            zlang_parser_current(parser)->kind_ == zlang_token_sequence_) {
             if (!zlang_parse_declaration(parser)) {
                 return false;
             }

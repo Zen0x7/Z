@@ -1,5 +1,5 @@
 /** @file
- * @brief Parser API for the Zlang 0.3 grammar.
+ * @brief Parser API for the Zlang grammar.
  */
 
 #ifndef ZLANG_COMPILER_PARSER_H

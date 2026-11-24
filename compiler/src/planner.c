@@ -53,7 +53,23 @@ static bool zlang_declaration_size(const zlang_ast_statement_t *statement, uint3
         return true;
     }
 
-    if (statement->capacity_ == 0U || statement->capacity_ > UINT32_MAX / _element_size_k) {
+    if (statement->capacity_ == 0U) {
+        return false;
+    }
+    if (statement->has_element_capacity_) {
+        const uint32_t _view_size_k = (uint32_t)(sizeof(void *) + sizeof(uint32_t));
+        if (statement->element_capacity_ == UINT32_MAX ||
+            statement->element_capacity_ > UINT32_MAX - _view_size_k - 1U) {
+            return false;
+        }
+        const uint32_t _element_k = statement->element_capacity_ + 1U + _view_size_k;
+        if (statement->capacity_ > UINT32_MAX / _element_k) {
+            return false;
+        }
+        *size = _element_k * statement->capacity_;
+        return true;
+    }
+    if (statement->capacity_ > UINT32_MAX / _element_size_k) {
         return false;
     }
     *size = _element_size_k * statement->capacity_;

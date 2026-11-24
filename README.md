@@ -30,9 +30,9 @@ Z aims to make the "compile-time decisions, ordinary C output" idea pleasant to 
 - direct C calls to user-defined functions;
 - fixed numeric traps when a declared limit is violated.
 
-Version 0.2 adds comments, lexical scopes with unique generated identifiers, sequence
-initializers, checked index assignment, bounded strings, logical operators and expression
-grouping.
+The current language adds comments, lexical scopes with unique generated identifiers, sequence
+initializers, checked index assignment, bounded strings, logical operators, expression grouping,
+loop control and checked arithmetic.
 
 ## Pipeline
 
@@ -54,19 +54,22 @@ default, to build the native binary.
 
 ## Language tour
 
-This single program uses every construct in the current grammar: comments, all four value types,
-inferred and explicit sequences, functions and `return`, scopes, assignments, indexed access and
-assignment, `append`, arithmetic, comparisons, logical operators, `if`/`else if`/`else`, `while`,
-`repeat`, `foreach`, `break`, `continue`, literal string folding and bounded string concatenation.
+This program uses every construct in the current grammar: comments, all four value types,
+leading `sequence[N]` declarations, bounded string elements, functions and `return`, scopes,
+assignments, indexed access and assignment, `append`, arithmetic, compound assignment,
+comparisons, logical operators, `length`, scalar and string printing, `if`/`else if`/`else`,
+`while`, `repeat`, `foreach`, `break` and `continue`.
 
 ```zlang
 // A guided tour of the language.
-integer values[] = {1, 2, 3};
-integer fixed[5] = {4, 5};
+sequence[3] integer values = {1, 2, 3};
+append(values, 4);
+sequence[5] integer fixed = {4, 5};
 unsigned limit = 3U;
 boolean ready = true;
 string name = "z" + "lang";
-string[32] label = name + " 0.3";
+string[32] label = name + " tour";
+sequence[2] string[8] names = {"a", "b"};
 
 function add(integer left, integer right): integer {
     return left + right;
@@ -74,16 +77,20 @@ function add(integer left, integer right): integer {
 
 fixed[0] = add(values[1], 2);
 append(fixed, 9);
+append(names, name);
+names[0] = "z";
+integer total = 1;
+total += 1;
 
 {
-    integer scoped = add(1, 2);
-    print("scoped");
+    integer scoped = add(1, 2) * 3;
+    print(scoped);
 }
 
 if (fixed[0] > 3) {
     print("big");
 } else if (fixed[0] == 3) {
-    print("three");
+    print(fixed[0]);
 } else {
     print("small");
 }
@@ -98,11 +105,15 @@ repeat (limit) {
 
 foreach (item in values) {
     if (item == 2) { continue; }
-    print("item");
+    print(item);
 }
 
+unsigned count = length(values);
 boolean ok = !(ready && !ready) || fixed[0] != 99;
+print(count);
+print(ok);
 print(label);
+print(names[0]);
 ```
 
 `zlang-compile example.zlang --emit-c` produces C along these lines:
@@ -119,15 +130,16 @@ int32_t add(int32_t left, int32_t right) {
 
 int main(void) {
     struct zlang_sequence_i32_3_t {
-        int32_t data_[3];
-        uint32_t length_;
-    };
+    int32_t data_[3];
+    uint32_t length_;
+};
     struct zlang_sequence_i32_3_t values = { { 1, 2, 3 }, 3U };
     (void)values;
+    zlang_array_append(values.data_, &values.length_, 3U, sizeof(values.data_[0]), (int32_t[]){ (4) });
     struct zlang_sequence_i32_5_t {
-        int32_t data_[5];
-        uint32_t length_;
-    };
+    int32_t data_[5];
+    uint32_t length_;
+};
     struct zlang_sequence_i32_5_t fixed = { { 4, 5, 0, 0, 0 }, 2U };
     (void)fixed;
     uint32_t limit = 3U;
@@ -137,34 +149,47 @@ int main(void) {
     zlang_string_t name = (zlang_string_t){ "zlang", 5U };
     (void)name;
     char label_storage[33] = { 0 };
-    zlang_string_t label =
-        zlang_string_concat(label_storage, 32U,
-                            (zlang_string_t[]){ name, (zlang_string_t){ " 0.3", 4U } }, 2U);
+    zlang_string_t label = zlang_string_concat(label_storage, 32U, (zlang_string_t[]){ name, (zlang_string_t){ " tour", 5U } }, 2U);
+    struct zlang_sequence_string_8_2_t {
+    char storage_[2][9];
+    zlang_string_t data_[2];
+    uint32_t length_;
+};
+    struct zlang_sequence_string_8_2_t names = { 0 };
+    (void)names;
+    names.data_[0] = zlang_string_concat(names.storage_[0], 8U, (zlang_string_t[]){ (zlang_string_t){ "a", 1U } }, 1U);
+    names.data_[1] = zlang_string_concat(names.storage_[1], 8U, (zlang_string_t[]){ (zlang_string_t){ "b", 1U } }, 1U);
+    names.length_ = 2U;
     {
         uint32_t _zlang_index_0 = 0;
         if (_zlang_index_0 < fixed.length_) {
-            fixed.data_[_zlang_index_0] =
-                add((((1) < values.length_)
-                         ? values.data_[1]
-                         : (zlang_trap(2U), values.data_[0])),
-                    1);
+            fixed.data_[_zlang_index_0] = add((((1) < values.length_) ? values.data_[1] : (zlang_trap(2U), values.data_[0])), 1);
         } else {
             zlang_trap(2U);
         }
     }
-    zlang_array_append(fixed.data_, &fixed.length_, 5U, sizeof(fixed.data_[0]),
-                       (int32_t[]){ (9) });
+    zlang_array_append(fixed.data_, &fixed.length_, 5U, sizeof(fixed.data_[0]), (int32_t[]){ (9) });
+    zlang_string_array_append((char *)names.storage_, names.data_, &names.length_, 2U, 8U, (zlang_string_t[]){ name }, 1U);
     {
-        int32_t scoped = add(1, 2);
-        (void)scoped;
-        zlang_print((zlang_string_t){ "scoped", 6U });
+        uint32_t _zlang_index_1 = 0;
+        if (_zlang_index_1 < names.length_) {
+            names.data_[_zlang_index_1] = zlang_string_concat(names.storage_[_zlang_index_1], 8U, (zlang_string_t[]){ (zlang_string_t){ "z", 1U } }, 1U);
+        } else {
+            zlang_trap(2U);
+        }
     }
-    if ((((0) < fixed.length_) ? fixed.data_[0]
-                              : (zlang_trap(2U), fixed.data_[0])) > 3) {
+    int32_t total = 1;
+    (void)total;
+    total = zlang_add_i32(total, 1);
+    {
+        int32_t scoped = zlang_mul_i32(add(1, 2), 3);
+        (void)scoped;
+        zlang_print_i32(scoped);
+    }
+    if ((((0) < fixed.length_) ? fixed.data_[0] : (zlang_trap(2U), fixed.data_[0])) > 3) {
         zlang_print((zlang_string_t){ "big", 3U });
-    } else if ((((0) < fixed.length_) ? fixed.data_[0]
-                                      : (zlang_trap(2U), fixed.data_[0])) == 3) {
-        zlang_print((zlang_string_t){ "three", 5U });
+    } else if ((((0) < fixed.length_) ? fixed.data_[0] : (zlang_trap(2U), fixed.data_[0])) == 3) {
+        zlang_print_i32((((0) < fixed.length_) ? fixed.data_[0] : (zlang_trap(2U), fixed.data_[0])));
     } else {
         zlang_print((zlang_string_t){ "small", 5U });
     }
@@ -180,13 +205,16 @@ int main(void) {
         if (item == 2) {
             continue;
         }
-        zlang_print((zlang_string_t){ "item", 4U });
+        zlang_print_i32(item);
     }
-    bool ok = ((!(ready && (!ready))) ||
-               ((((0) < fixed.length_) ? fixed.data_[0]
-                                       : (zlang_trap(2U), fixed.data_[0])) != 99));
+    uint32_t count = values.length_;
+    (void)count;
+    bool ok = ((!(ready && (!ready))) || ((((0) < fixed.length_) ? fixed.data_[0] : (zlang_trap(2U), fixed.data_[0])) != 99));
     (void)ok;
+    zlang_print_u32(count);
+    zlang_print_bool(ok);
     zlang_print(label);
+    zlang_print((((0) < names.length_) ? names.data_[0] : (zlang_trap(2U), names.data_[0])));
     return 0;
 }
 ```
@@ -208,6 +236,6 @@ ctest --test-dir build --output-on-failure -j
 - [Language specification](SPEC.md)
 - [Roadmap and locked decisions](ROADMAP.md)
 - [API reference source](docs/index.md)
-- [0.2 grammar additions](docs/grammar_02.md)
+- [Language grammar](docs/grammar.md)
 
 The generated Doxygen site is written to `build/docs/html/index.html`.

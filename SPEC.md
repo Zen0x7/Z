@@ -216,7 +216,8 @@ Validate that the iterable is a sequence and that the iteration variable has the
 
 ### 10.1 Expression statements
 
-An expression followed by `;`. The only expression statements in 0.1 are assignment and `print`.
+An expression followed by `;`. Expression statements include assignment, indexed assignment,
+`print`, `append`, and calls to user-defined functions.
 
 ### 10.2 `if`
 
@@ -228,7 +229,8 @@ if (<boolean-expression>) {
 }
 ```
 
-The `else` clause is optional. The condition must be `boolean`.
+The `else` clause is optional. An `else` branch may contain another `if`, forming an `else if`
+chain. The condition must be `boolean`.
 
 ### 10.3 `while`
 
@@ -272,7 +274,7 @@ function <name>(<parameter-list>): <return-type> {
 }
 ```
 
-A parameter is `<type> <name>`. Parameters are passed by value. Functions have no access to mutable globals, because Zlang 0.1 has no global variables.
+A parameter is `<type> <name>`. Parameters are passed by value. Functions have no access to mutable globals, because Zlang has no global variables through version 0.2.
 
 ```zlang
 function add(integer left, integer right): integer {
@@ -405,11 +407,11 @@ The compiler may emit more than one diagnostic, but it must not generate C for a
 
 ## 14. Non-goals
 
-The following are explicitly outside Zlang 0.1:
+The following are explicitly outside Zlang 0.2:
 
 - runtime reflection, dynamic dispatch, or runtime names;
 - classes, inheritance, and objects;
-- string concatenation or any operation that grows storage;
+- heap-backed strings or vectors, or any operation that grows storage dynamically;
 - garbage collection or reference counting;
 - hard realtime timing guarantees beyond predictable memory behavior;
 - module imports; each compilation unit is one source file.

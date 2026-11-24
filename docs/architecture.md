@@ -35,13 +35,15 @@ are emitted as C automatic variables. Larger values are emitted at file scope wi
 storage duration and internal linkage. Both live in fixed memory; neither uses the heap.
 
 Unbounded sequences are rejected during semantic analysis with `ZLANG3001`. Runtime growth is not a
-feature of Zlang 0.1.
+feature of Zlang through version 0.2; explicit capacities and compile-time initializers remain part
+of the program's fixed memory plan.
 
 ## Generated C contract
 
 - Primitive types map directly: `integer` to `int32_t`, `unsigned` to `uint32_t`, `boolean` to
   `bool`, and `string` to `zlang_string_t`.
 - Arithmetic uses checked helpers; overflow traps with a fixed code.
+- Logical operators emit native C operators with short-circuit behavior.
 - Sequence access uses explicit bounds checks; append checks capacity.
 - `foreach` becomes a native C `for` loop, not a callback.
 - Errors use fixed numeric codes; generated code never formats an error string at runtime.

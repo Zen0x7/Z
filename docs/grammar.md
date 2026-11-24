@@ -16,7 +16,7 @@ Keywords are `boolean`, `break`, `const`, `continue`, `else`, `enum`, `false`, `
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
-`/* ... */` are discarded before parsing.
+`/* ... */` do not affect parsing, but the emitter preserves them in the generated C as source-traceability comments.
 
 ## Declarations
 

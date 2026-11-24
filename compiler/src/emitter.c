@@ -24,6 +24,7 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->emitted_enum_item_count_ = 0U;
     emitter->cse_count_ = 0U;
     emitter->cse_pointer_count_ = 0U;
+    emitter->next_comment_index_ = 0U;
     memset(emitter->emitted_symbols_, 0, sizeof(emitter->emitted_symbols_));
     memset(emitter->emitted_sequences_, 0, sizeof(emitter->emitted_sequences_));
     memset(emitter->emitted_literals_, 0, sizeof(emitter->emitted_literals_));
@@ -89,6 +90,37 @@ static bool zlang_append_line_break(zlang_emitter_t *emitter) {
         emitter->buffer_[emitter->length_] = '\0';
     }
     return zlang_append_text(emitter, "\n");
+}
+
+static bool zlang_append_indent(zlang_emitter_t *emitter, uint32_t depth);
+
+static bool zlang_append_exact(zlang_emitter_t *emitter, const char *text, size_t length) {
+    if (emitter->length_ >= emitter->capacity_ ||
+        length > emitter->capacity_ - emitter->length_ - 1U) {
+        return false;
+    }
+    memcpy(emitter->buffer_ + emitter->length_, text, length);
+    emitter->length_ += length;
+    emitter->buffer_[emitter->length_] = '\0';
+    return true;
+}
+
+static bool zlang_append_pending_comments(const zlang_program_t *program, zlang_emitter_t *emitter,
+                                          uint32_t depth, uint32_t max_line) {
+    if (program->comments_ == NULL) {
+        return true;
+    }
+    while (emitter->next_comment_index_ < program->comment_count_ &&
+           program->comments_[emitter->next_comment_index_].line_ <= max_line) {
+        const zlang_comment_t *const _comment_k = &program->comments_[emitter->next_comment_index_];
+        if (!zlang_append_indent(emitter, depth) ||
+            !zlang_append_exact(emitter, _comment_k->text_, _comment_k->length_) ||
+            !zlang_append_text(emitter, "\n")) {
+            return false;
+        }
+        ++emitter->next_comment_index_;
+    }
+    return true;
 }
 
 static bool zlang_append_indent(zlang_emitter_t *emitter, uint32_t depth) {
@@ -2043,7 +2075,8 @@ static bool zlang_emit_for_initializer(const zlang_program_t *program,
 static bool zlang_emit_statement(const zlang_program_t *program,
                                  const zlang_ast_statement_t *statement, zlang_emitter_t *emitter,
                                  uint32_t depth) { // NOLINT(misc-no-recursion)
-    if (!zlang_append_indent(emitter, depth)) {
+    if (!zlang_append_pending_comments(program, emitter, depth, statement->line_) ||
+        !zlang_append_indent(emitter, depth)) {
         return false;
     }
     switch (statement->kind_) {
@@ -2653,6 +2686,9 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
         }
         _previous_grouped_k = _grouped_k;
         _has_previous_k = true;
+    }
+    if (!zlang_append_pending_comments(program, emitter, 1U, UINT32_MAX)) {
+        return false;
     }
     if (_has_previous_k && !zlang_append_text(emitter, "\n")) {
         return false;

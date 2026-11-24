@@ -9,6 +9,7 @@
 #define ZLANG_FUZZ_PARAMETER_CAPACITY 64U
 #define ZLANG_FUZZ_SCRATCH_CAPACITY 1024U
 #define ZLANG_FUZZ_DIAGNOSTIC_CAPACITY 32U
+#define ZLANG_FUZZ_COMMENT_CAPACITY 64U
 
 int LLVMFuzzerTestOneInput(const uint8_t *const data, size_t size);
 
@@ -19,6 +20,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *const data, size_t size) {
     zlang_ast_expression_t _expressions_k[ZLANG_FUZZ_EXPRESSION_CAPACITY];
     zlang_ast_statement_t _statements_k[ZLANG_FUZZ_STATEMENT_CAPACITY];
     zlang_parameter_t _parameters_k[ZLANG_FUZZ_PARAMETER_CAPACITY];
+    zlang_comment_t _comments_k[ZLANG_FUZZ_COMMENT_CAPACITY];
     zlang_diagnostic_t _diagnostics_k[ZLANG_FUZZ_DIAGNOSTIC_CAPACITY];
     zlang_parser_t _parser_k;
     zlang_diagnostics_t _diagnostic_sink_k;
@@ -28,7 +30,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *const data, size_t size) {
     zlang_diagnostics_init(&_diagnostic_sink_k, _diagnostics_k, ZLANG_FUZZ_DIAGNOSTIC_CAPACITY);
     zlang_parser_init(&_parser_k, _tokens_k, ZLANG_FUZZ_TOKEN_CAPACITY, _expressions_k,
                       ZLANG_FUZZ_EXPRESSION_CAPACITY, _statements_k, ZLANG_FUZZ_STATEMENT_CAPACITY,
-                      _parameters_k, ZLANG_FUZZ_PARAMETER_CAPACITY, &_diagnostic_sink_k);
+                      _parameters_k, ZLANG_FUZZ_PARAMETER_CAPACITY, _comments_k,
+                      ZLANG_FUZZ_COMMENT_CAPACITY, &_diagnostic_sink_k);
     (void)zlang_parse(&_parser_k, _source_k, _scratch_k, sizeof(_scratch_k), &_result_k);
     return 0;
 }

@@ -5,6 +5,7 @@
 #ifndef ZLANG_COMPILER_LEXER_H
 #define ZLANG_COMPILER_LEXER_H
 
+#include "zlang/compiler/ast.h"
 #include "zlang/compiler/diagnostics.h"
 
 #include <stdbool.h>
@@ -90,10 +91,13 @@ typedef struct zlang_lexer_t {
     size_t position_;
     uint32_t line_;
     uint32_t column_;
+    zlang_comment_t *comments_;
+    size_t comment_capacity_;
+    size_t comment_count_;
 } zlang_lexer_t;
 
 void zlang_lexer_init(zlang_lexer_t *lexer, const char *source, char *scratch,
-                      size_t scratch_capacity);
+                      size_t scratch_capacity, zlang_comment_t *comments, size_t comment_capacity);
 
 /* Fills tokens with lexical elements and appends diagnostics for invalid
    input. Returns false when a fatal lexical error occurred. */

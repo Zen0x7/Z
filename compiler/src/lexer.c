@@ -300,8 +300,26 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     return true;
 }
 
+static bool zlang_lexer_add_comment(zlang_lexer_t *lexer, const char *text, size_t length,
+                                    uint32_t line, uint32_t column, bool is_block,
+                                    zlang_diagnostics_t *diagnostics) {
+    if (lexer->comments_ == NULL || lexer->comment_count_ >= lexer->comment_capacity_ ||
+        length > UINT32_MAX) {
+        (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, line,
+                                    column, "comment capacity exceeded");
+        return false;
+    }
+    zlang_comment_t *const _comment_k = &lexer->comments_[lexer->comment_count_++];
+    _comment_k->text_ = text;
+    _comment_k->length_ = (uint32_t)length;
+    _comment_k->line_ = line;
+    _comment_k->column_ = column;
+    _comment_k->is_block_ = is_block;
+    return true;
+}
+
 void zlang_lexer_init(zlang_lexer_t *lexer, const char *source, char *scratch,
-                      size_t scratch_capacity) {
+                      size_t scratch_capacity, zlang_comment_t *comments, size_t comment_capacity) {
     lexer->source_ = source;
     lexer->scratch_ = scratch;
     lexer->scratch_capacity_ = scratch_capacity;
@@ -309,6 +327,9 @@ void zlang_lexer_init(zlang_lexer_t *lexer, const char *source, char *scratch,
     lexer->position_ = 0U;
     lexer->line_ = 1U;
     lexer->column_ = 1U;
+    lexer->comments_ = comments;
+    lexer->comment_capacity_ = comment_capacity;
+    lexer->comment_count_ = 0U;
 }
 
 bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacity,
@@ -341,14 +362,25 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
         }
 
         if (_character_k == '/' && lexer->source_[lexer->position_ + 1U] == '/') {
+            const char *const _text_k = lexer->source_ + lexer->position_;
+            const uint32_t _line_k = lexer->line_;
+            const uint32_t _column_k = lexer->column_;
             while (lexer->source_[lexer->position_] != '\0' &&
                    lexer->source_[lexer->position_] != '\n') {
                 zlang_lexer_advance(lexer);
+            }
+            const size_t _length_k = (size_t)((lexer->source_ + lexer->position_) - _text_k);
+            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, _column_k, false,
+                                         diagnostics)) {
+                return false;
             }
             continue;
         }
 
         if (_character_k == '/' && lexer->source_[lexer->position_ + 1U] == '*') {
+            const char *const _text_k = lexer->source_ + lexer->position_;
+            const uint32_t _line_k = lexer->line_;
+            const uint32_t _column_k = lexer->column_;
             zlang_lexer_advance(lexer);
             zlang_lexer_advance(lexer);
             for (;;) {
@@ -365,6 +397,11 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
                     break;
                 }
                 zlang_lexer_advance(lexer);
+            }
+            const size_t _length_k = (size_t)((lexer->source_ + lexer->position_) - _text_k);
+            if (!zlang_lexer_add_comment(lexer, _text_k, _length_k, _line_k, _column_k, true,
+                                         diagnostics)) {
+                return false;
             }
             continue;
         }

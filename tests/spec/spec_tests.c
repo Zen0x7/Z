@@ -17,6 +17,7 @@
 
 typedef struct zlang_spec_session_t {
     zlang_token_t tokens_[128];
+    zlang_comment_t comments_[64];
     zlang_ast_expression_t expressions_[64];
     zlang_ast_statement_t statements_[64];
     zlang_parameter_t parameters_[32];
@@ -88,6 +89,7 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
         session->expressions_, sizeof(session->expressions_) / sizeof(session->expressions_[0]),
         session->statements_, sizeof(session->statements_) / sizeof(session->statements_[0]),
         session->parameters_, sizeof(session->parameters_) / sizeof(session->parameters_[0]),
+        session->comments_, sizeof(session->comments_) / sizeof(session->comments_[0]),
         &session->diagnostics_);
 
     if (!zlang_parse(&session->parser_, source, session->scratch_, sizeof(session->scratch_),
@@ -178,7 +180,7 @@ static void reports_lexer_diagnostics_and_emits_while(zlang_test_context_t *cons
     ZLANG_CHECK(context, strstr(_while_session.output_, "while (true) {") != NULL);
 }
 
-static void skips_comments_and_unescapes_strings(zlang_test_context_t *const context) {
+static void preserves_comments_and_unescapes_strings(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
         "// first line\ninteger var = 10; /* block */\nprint(\"say \\\"hi\\\"\");";
@@ -187,6 +189,8 @@ static void skips_comments_and_unescapes_strings(zlang_test_context_t *const con
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "say \\\"hi\\\"") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "_zlang_literal_0") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "// first line") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "/* block */") != NULL);
 }
 
 static void rejects_a_duplicate_declaration(zlang_test_context_t *const context) {

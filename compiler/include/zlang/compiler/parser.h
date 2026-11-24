@@ -43,6 +43,7 @@ void zlang_parser_init(zlang_parser_t *parser, zlang_token_t *tokens, size_t tok
                        zlang_ast_expression_t *expressions, size_t expression_capacity,
                        zlang_ast_statement_t *statements, size_t statement_capacity,
                        zlang_parameter_t *parameters, size_t parameter_capacity,
+                       zlang_comment_t *comments, size_t comment_capacity,
                        zlang_diagnostics_t *diagnostics);
 
 /* Parses source into caller-owned AST arrays. Returns false when parsing or

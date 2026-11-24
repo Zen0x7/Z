@@ -289,3 +289,10 @@ Records, enums, field reads and field assignments are implemented and covered by
 tests. Record and enum declarations emit named C typedefs, enumerators emit named C constants, and
 field assignment to sequence elements uses a checked runtime getter with a direct store. Repeated
 index reads inside `if / else if` chains are emitted once into a local temporary.
+
+## Emitted comments
+
+Status: Implemented.
+
+Line and block comments are preserved in generated C for source traceability. They remain outside
+parsing and do not affect semantics, symbol binding or code generation decisions.

@@ -124,6 +124,14 @@ typedef struct zlang_ast_statement_t {
     uint32_t column_;
 } zlang_ast_statement_t;
 
+typedef struct zlang_comment_t {
+    const char *text_;
+    uint32_t length_;
+    uint32_t line_;
+    uint32_t column_;
+    bool is_block_;
+} zlang_comment_t;
+
 typedef struct zlang_program_t {
     const zlang_ast_statement_t *statements_;
     size_t statement_count_;
@@ -131,6 +139,8 @@ typedef struct zlang_program_t {
     size_t expression_count_;
     const zlang_parameter_t *parameters_;
     size_t parameter_count_;
+    const zlang_comment_t *comments_;
+    size_t comment_count_;
 } zlang_program_t;
 
 #endif /* ZLANG_COMPILER_AST_H */

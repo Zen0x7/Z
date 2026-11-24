@@ -1292,6 +1292,7 @@ void zlang_parser_init(zlang_parser_t *parser, zlang_token_t *tokens, size_t tok
                        zlang_ast_expression_t *expressions, size_t expression_capacity,
                        zlang_ast_statement_t *statements, size_t statement_capacity,
                        zlang_parameter_t *parameters, size_t parameter_capacity,
+                       zlang_comment_t *comments, size_t comment_capacity,
                        zlang_diagnostics_t *diagnostics) {
     memset(parser, 0, sizeof(*parser));
     parser->tokens_ = tokens;
@@ -1302,6 +1303,8 @@ void zlang_parser_init(zlang_parser_t *parser, zlang_token_t *tokens, size_t tok
     parser->statement_capacity_ = statement_capacity;
     parser->parameters_ = parameters;
     parser->parameter_capacity_ = parameter_capacity;
+    parser->lexer_.comments_ = comments;
+    parser->lexer_.comment_capacity_ = comment_capacity;
     parser->diagnostics_ = diagnostics;
 }
 
@@ -1315,7 +1318,8 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     parser->position_ = 0U;
     parser->failed_ = false;
 
-    zlang_lexer_init(&parser->lexer_, source, scratch, scratch_capacity);
+    zlang_lexer_init(&parser->lexer_, source, scratch, scratch_capacity, parser->lexer_.comments_,
+                     parser->lexer_.comment_capacity_);
     if (!zlang_lex(&parser->lexer_, parser->tokens_, parser->token_capacity_, &parser->token_count_,
                    parser->diagnostics_)) {
         return false;
@@ -1412,5 +1416,7 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     result->program_.expression_count_ = parser->expression_count_;
     result->program_.parameters_ = parser->parameters_;
     result->program_.parameter_count_ = parser->parameter_count_;
+    result->program_.comments_ = parser->lexer_.comments_;
+    result->program_.comment_count_ = parser->lexer_.comment_count_;
     return true;
 }

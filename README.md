@@ -30,9 +30,9 @@ Z aims to make the "compile-time decisions, ordinary C output" idea pleasant to 
 - direct C calls to user-defined functions;
 - fixed numeric traps when a declared limit is violated.
 
-The current language adds comments, lexical scopes with unique generated identifiers, sequence
-initializers, checked index assignment, bounded strings, logical operators, expression grouping,
-loop control and checked arithmetic.
+The current language adds comments preserved in generated C, lexical scopes with unique generated
+identifiers, sequence initializers, checked index assignment, bounded strings, records, enums, field
+access, logical operators, expression grouping, loop control and checked arithmetic.
 
 ## Pipeline
 
@@ -62,11 +62,12 @@ indexing, scalar and string printing, `if`/`else if`/`else`, `while`, `repeat`, 
 indexed `foreach`, nested loops, `break` and `continue`.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
-sequence typedefs, named string literals and user functions. Source symbols use `_u_`, compiler
-temporaries use `_zlang_`, generated types use `zlang_` and runtime calls use `zlang_*`. Index reads
-lower to bounded `zlang_*` getters, field assignment to a sequence element uses a checked pointer
-temporary that is reused by the expression, repeated reads in condition chains become local
-temporaries, and `(void)` guards appear only for variables that are genuinely unused.
+sequence typedefs, named string literals and user functions. Source comments are preserved in the
+generated C as traceability comments. Source symbols use `_u_`, compiler temporaries use `_zlang_`,
+generated types use `zlang_` and runtime calls use `zlang_*`. Index reads lower to bounded `zlang_*`
+getters, field assignment to a sequence element uses a checked pointer temporary that is reused by
+the expression, repeated reads in condition chains become local temporaries, and `(void)` guards
+appear only for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -236,6 +237,7 @@ static const zlang_string_t _zlang_literal_5 = { _zlang_literal_5_data, ZLANG_LI
 static const char _zlang_literal_6_data[] = "small";
 static const zlang_string_t _zlang_literal_6 = { _zlang_literal_6_data, ZLANG_LITERAL_6_LENGTH };
 
+// A guided tour of the language.
 int32_t _u_add(int32_t _u_left, int32_t _u_right) {
     return zlang_add_i32(_u_left, _u_right);
 }

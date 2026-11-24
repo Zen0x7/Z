@@ -67,7 +67,8 @@ There is no `zlang_declare_var("var", ...)` call. Passing a source name as a str
 - "Must" denotes a requirement on a conforming implementation.
 - "May" denotes an implementation-defined choice that must be documented.
 - "Emits" denotes the exact C form in clause 12. Whitespace may differ; tokens may not.
-- Line and column numbers are one-based and refer to the source file after comments are removed.
+- Line and column numbers are one-based and refer to the original source file. Comments do not
+  affect parsing, but the emitter preserves them in the generated C for traceability.
 
 ---
 
@@ -643,7 +644,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `"append" "(" identifier "," expression ")"` | `emits_append_and_checked_index` |
 | integer, string, and boolean literals | `covers_every_annex_a_production` |
 | sequence declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
-| comments and escaped string literals | `skips_comments_and_unescapes_strings` |
+| preserved comments and escaped string literals | `preserves_comments_and_unescapes_strings` |
 | `ZLANG1001` unexpected token | `reports_syntax_diagnostics_with_source_locations` |
 | `ZLANG1002` unterminated string | `reports_syntax_diagnostics_with_source_locations` |
 | `ZLANG1003` invalid character | `reports_syntax_diagnostics_with_source_locations` |
@@ -701,3 +702,10 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 Zlang 0.6 adds record and enum declarations, user-defined declaration types, field reads and field
 assignments, and sequences of records. Record fields are scalar or enum types. Enums emit named C
 constants, and records emit named C typedefs.
+
+
+## Emitted comments
+
+Zlang comments are lexed but never become parser tokens. The emitter writes them back into the
+generated C near the statement whose source line follows the comment. They are documentation only
+and have no semantic effect.

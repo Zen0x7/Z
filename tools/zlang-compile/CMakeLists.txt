@@ -36,6 +36,7 @@ if(ZLANG_BUILD_TESTS)
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DC_COMPILER_FRONTEND=${CMAKE_C_COMPILER_FRONTEND_VARIANT}
                      -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_generated_c PROPERTIES LABELS module:cli)

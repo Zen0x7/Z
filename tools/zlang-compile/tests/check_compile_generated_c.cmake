@@ -19,7 +19,7 @@ if(NOT EXISTS "${_emitted}")
     message(FATAL_ERROR "zlang-compile did not write ${_emitted}")
 endif()
 
-if(C_COMPILER_ID MATCHES "MSVC")
+if(C_COMPILER_ID MATCHES "MSVC" OR C_COMPILER_FRONTEND STREQUAL "MSVC")
     execute_process(
         COMMAND "${C_COMPILER}" /nologo /W4 /WX /c "/I${INCLUDE_DIR}"
                 "/Fo${_object}" "${_emitted}"

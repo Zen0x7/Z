@@ -95,6 +95,9 @@ boolean break const continue else enum false for foreach function if integer
 length print record repeat return sequence string true unsigned while
 ```
 
+The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
+`ZLANG` is rejected with `ZLANG1004`.
+
 ### 6.3 Numeric literals
 
 An integer literal without `u` has type `integer`. With `u`, it has type `unsigned`. A literal outside the range of its type is a type diagnostic.
@@ -360,7 +363,8 @@ Generated C is laid out in this order: includes, generated value constants (`ZLA
 named string literal constants, user functions and `main`. Local source symbols are emitted with a
 leading `_`, function parameters keep their source names, record members use a trailing `_`, and
 user functions use `_u_`. Compiler-generated temporaries use `_zlang_`, generated macros use
-`ZLANG_`, generated types use `zlang_` and runtime calls use `zlang_`. Trap sites use the public
+`ZLANG_`, generated types use `zlang_` and runtime calls use `zlang_`. Only source blocks emit extra
+braces; compiler temporaries are declared in the enclosing C block. Trap sites use the public
 `ZLANG_TRAP_*` constants rather than numeric literals.
 
 ### 12.4 Runtime API
@@ -701,6 +705,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | records and enums | `emits_records_and_enums` |
 | repeated index read reuse | `reuses_repeated_index_reads` |
 | emitted C symbol naming | `emits_functions_with_user_defined_types`, `uses_readable_emitted_layout` |
+| generated temporaries without synthetic blocks | `emits_temporaries_without_synthetic_blocks` |
+| reserved generated namespace | `rejects_reserved_identifiers` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
 
 
@@ -725,6 +731,14 @@ Zlang 0.8 separates emitted C names by role: local source symbols start with `_`
 parameters keep their source names, record members end with `_`, and user functions keep `_u_`.
 Compiler temporaries, generated macros, generated types and runtime calls keep their established
 prefixes.
+
+
+## 0.9 implementation status
+
+Zlang 0.9 reserves the `zlang`, `_zlang` and `ZLANG` identifier namespaces so generated names cannot
+collide with source names. The emitter no longer introduces synthetic `{}` blocks for index and
+field temporaries; those temporaries are declared directly in the enclosing C block. Only blocks
+written in Zlang source produce C blocks.
 
 
 ## Emitted comments

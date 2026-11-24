@@ -322,6 +322,36 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
     ZLANG_CHECK(context, strstr(_session.output_, "x_, 0);") == NULL);
 }
 
+static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "record Point { integer x; }\n"
+                                  "sequence[4] integer values;\n"
+                                  "values[0] = 1;\n"
+                                  "sequence[2] Point points;\n"
+                                  "Point origin;\n"
+                                  "append(points, origin);\n"
+                                  "points[0].x = 2;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "\n    uint32_t _zlang_index_") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "\n    zlang_point_t *_zlang_field_ptr_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "\n    {\n") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "\n        {\n") == NULL);
+}
+
+static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
+    static const char *const sources_k[] = {"integer zlang_value = 1;", "integer _zlang_value = 1;",
+                                            "integer ZLANG_VALUE = 1;"};
+    for (size_t _index = 0U; _index < sizeof(sources_k) / sizeof(sources_k[0]); ++_index) {
+        zlang_spec_session_t _session;
+        ZLANG_CHECK(context, !zlang_spec_transpile(&_session, sources_k[_index]));
+        ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                        ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
+        ZLANG_CHECK(context, _session.output_[0] == '\0');
+    }
+}
+
 static void covers_every_annex_a_production(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 

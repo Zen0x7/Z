@@ -18,6 +18,9 @@ Integer literals are decimal and may carry a `u` suffix. String literals are dou
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
 `/* ... */` do not affect parsing, but the emitter preserves them in the generated C next to the construct they document. Use `--disable-comments` to omit them.
 
+Identifiers beginning with `zlang`, `_zlang` or `ZLANG` are reserved for generated C and are rejected
+with `ZLANG1004`.
+
 ## Declarations
 
 ```zlang

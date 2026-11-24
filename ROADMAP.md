@@ -340,3 +340,20 @@ parameter, `x_` is a record member, `_u_f` is a user function and `_zlang_*` is 
 temporary. The README language tour and its generated C output were regenerated with this naming.
 Call arguments are stored by explicit expression indices, so nested field and index expressions no
 longer shift later arguments.
+
+## 0.9 — Reserved namespace and flat temporaries
+
+Status: Locked.
+
+- Reserve identifiers beginning with `zlang`, `_zlang` or `ZLANG`.
+- Reject reserved identifiers with `ZLANG1004`.
+- Emit compiler temporaries directly in the enclosing C block.
+- Emit `{}` only when the source program contains an explicit block.
+
+## 0.9 — Completion
+
+Status: Implemented.
+
+The generated namespace is now reserved, so compiler temporaries cannot collide with source names.
+Index and field temporaries no longer introduce synthetic scopes; only source-authored blocks emit
+braces in the generated C.

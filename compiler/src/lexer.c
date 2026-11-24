@@ -55,6 +55,16 @@ static bool zlang_is_identifier_continue(const char character) {
     return zlang_is_identifier_start(character) || (character >= '0' && character <= '9');
 }
 
+static bool zlang_identifier_has_prefix(const char *text, const char *prefix) {
+    return strncmp(text, prefix, strlen(prefix)) == 0;
+}
+
+static bool zlang_identifier_is_reserved(const char *text) {
+    return zlang_identifier_has_prefix(text, "zlang") ||
+           zlang_identifier_has_prefix(text, "_zlang") ||
+           zlang_identifier_has_prefix(text, "ZLANG");
+}
+
 static zlang_token_kind_t zlang_keyword_kind(const char *text, size_t length) {
     for (size_t _index = 0U; _index < sizeof(keywords_k) / sizeof(keywords_k[0]); ++_index) {
         if (strlen(keywords_k[_index].text_) == length &&
@@ -438,6 +448,13 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
             ++lexer->scratch_length_;
             _token.length_ = (uint32_t)(lexer->scratch_length_ - _start_length_k - 1U);
             _token.kind_ = zlang_keyword_kind(_token.text_, _token.length_);
+            if (_token.kind_ == zlang_token_identifier_ &&
+                zlang_identifier_is_reserved(_token.text_)) {
+                (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT,
+                                            _token.line_, _token.column_,
+                                            "identifier uses the reserved zlang namespace");
+                return false;
+            }
         } else if (_character_k >= '0' && _character_k <= '9') {
             if (!zlang_lex_number(lexer, &_token, diagnostics, lexer->line_, lexer->column_)) {
                 return false;

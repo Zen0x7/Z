@@ -1641,14 +1641,13 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
         return false;
     }
 
-    if (!zlang_append_text(emitter, "{\n") || !zlang_append_indent(emitter, depth + 1U) ||
-        !zlang_append_text(emitter, "uint32_t ") || !zlang_append_text(emitter, _index_name) ||
+    if (!zlang_append_text(emitter, "uint32_t ") || !zlang_append_text(emitter, _index_name) ||
         !zlang_append_text(emitter, " = ") ||
         !zlang_emit_expression(program, _target_k->right_, emitter) ||
-        !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth + 1U) ||
+        !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth) ||
         !zlang_append_text(emitter, "if (") || !zlang_append_text(emitter, _index_name) ||
         !zlang_append_text(emitter, " < ") || !zlang_append_text(emitter, _generated_k) ||
-        !zlang_append_text(emitter, ".length_) {\n") || !zlang_append_indent(emitter, depth + 2U) ||
+        !zlang_append_text(emitter, ".length_) {\n") || !zlang_append_indent(emitter, depth + 1U) ||
         !zlang_append_text(emitter, _generated_k) || !zlang_append_text(emitter, ".data_[") ||
         !zlang_append_text(emitter, _index_name) || !zlang_append_text(emitter, "] = ")) {
         return false;
@@ -1665,10 +1664,9 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
     } else if (!zlang_emit_expression(program, expression->right_, emitter)) {
         return false;
     }
-    return zlang_append_text(emitter, ";\n") && zlang_append_indent(emitter, depth + 1U) &&
-           zlang_append_text(emitter, "} else {\n") && zlang_append_indent(emitter, depth + 2U) &&
+    return zlang_append_text(emitter, ";\n") && zlang_append_indent(emitter, depth) &&
+           zlang_append_text(emitter, "} else {\n") && zlang_append_indent(emitter, depth + 1U) &&
            zlang_append_text(emitter, "zlang_trap(ZLANG_TRAP_BOUNDS);\n") &&
-           zlang_append_indent(emitter, depth + 1U) && zlang_append_text(emitter, "}\n") &&
            zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "}\n");
 }
 
@@ -1703,8 +1701,7 @@ static bool zlang_emit_field_assignment(const zlang_program_t *program,
                  sizeof(emitter->cse_pointer_names_[0]), "%s", _pointer_name);
         ++emitter->cse_pointer_count_;
     }
-    if (!zlang_append_text(emitter, "{\n") || !zlang_append_indent(emitter, depth + 1U) ||
-        !zlang_append_text(emitter, _type_k) || !zlang_append_text(emitter, " *") ||
+    if (!zlang_append_text(emitter, _type_k) || !zlang_append_text(emitter, " *") ||
         !zlang_append_text(emitter, _pointer_name) || !zlang_append_text(emitter, " = (") ||
         !zlang_append_text(emitter, _type_k) ||
         !zlang_append_text(emitter, " *)zlang_array_get(") ||
@@ -1715,13 +1712,11 @@ static bool zlang_emit_field_assignment(const zlang_program_t *program,
         !zlang_append_text(emitter, _symbol_k->generated_name_) ||
         !zlang_append_text(emitter, ".length_, sizeof(") ||
         !zlang_append_text(emitter, _symbol_k->generated_name_) ||
-        !zlang_append_text(emitter, ".data_[0]));\n") ||
-        !zlang_append_indent(emitter, depth + 1U) || !zlang_append_text(emitter, _pointer_name) ||
-        !zlang_append_text(emitter, "->") || !zlang_append_field_name(emitter, _target_k->name_) ||
-        !zlang_append_text(emitter, " = ") ||
+        !zlang_append_text(emitter, ".data_[0]));\n") || !zlang_append_indent(emitter, depth) ||
+        !zlang_append_text(emitter, _pointer_name) || !zlang_append_text(emitter, "->") ||
+        !zlang_append_field_name(emitter, _target_k->name_) || !zlang_append_text(emitter, " = ") ||
         !zlang_emit_expression(program, expression->right_, emitter) ||
-        !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth) ||
-        !zlang_append_text(emitter, "}\n")) {
+        !zlang_append_text(emitter, ";\n")) {
         emitter->cse_pointer_count_ = _saved_pointer_cse_k;
         return false;
     }

@@ -70,8 +70,10 @@ sequence typedefs, named string literals and user functions. Source comments are
 generated C next to the construct they document, or omitted with `--disable-comments`.
 Local source symbols use a leading `_`, function parameters are emitted exactly as written, record
 members use a trailing `_`, user functions use `_u_`, compiler temporaries use `_zlang_`, generated
-types use `zlang_` and runtime calls use `zlang_*`. Zero-argument functions use `(void)` and unused
-parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters, field assignment to a sequence
+types use `zlang_` and runtime calls use `zlang_*`. The `zlang`, `_zlang` and `ZLANG` identifier
+namespaces are reserved, so generated names cannot collide with source names. Only source blocks
+emit `{}`; compiler temporaries are declared directly in the enclosing C block. Zero-argument
+functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters, field assignment to a sequence
 element uses a checked pointer temporary that is reused by the expression, repeated reads in
 condition chains become local temporaries, and `(void)` guards appear only for variables that are
 genuinely unused.
@@ -329,35 +331,27 @@ int main(void) {
     zlang_point_t _painted = _u_paint(_made, _chosen);
     zlang_array_append(_points.data_, &_points.length_, ZLANG_POINTS_CAPACITY, sizeof(_points.data_[0]), (zlang_point_t[]){ (_made) });
 
-    {
-        uint32_t _zlang_index_9 = 0;
-        if (_zlang_index_9 < _fixed.length_) {
-            _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, _values.length_), _base);
-        } else {
-            zlang_trap(ZLANG_TRAP_BOUNDS);
-        }
+    uint32_t _zlang_index_9 = 0;
+    if (_zlang_index_9 < _fixed.length_) {
+        _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, _values.length_), _base);
+    } else {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
     }
 
     zlang_array_append(_fixed.data_, &_fixed.length_, ZLANG_FIXED_CAPACITY, sizeof(_fixed.data_[0]), (int32_t[]){ (9) });
     zlang_string_array_append((char *)_names.storage_, _names.data_, &_names.length_, ZLANG_NAMES_CAPACITY, ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _name }, ZLANG_ONE);
 
-    {
-        uint32_t _zlang_index_10 = 0;
-        if (_zlang_index_10 < _names.length_) {
-            _names.data_[_zlang_index_10] = zlang_string_concat(_names.storage_[_zlang_index_10], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
-        } else {
-            zlang_trap(ZLANG_TRAP_BOUNDS);
-        }
+    uint32_t _zlang_index_10 = 0;
+    if (_zlang_index_10 < _names.length_) {
+        _names.data_[_zlang_index_10] = zlang_string_concat(_names.storage_[_zlang_index_10], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
+    } else {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
     }
 
-    {
-        zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
-        _zlang_field_ptr_11->x_ = 9;
-    }
-    {
-        zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
-        _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, _base);
-    }
+    zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
+    _zlang_field_ptr_11->x_ = 9;
+    zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
+    _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, _base);
     int32_t _total = 1;
     _total = zlang_add_i32(_total, _base);
 

@@ -1302,8 +1302,11 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             !zlang_append_text(emitter, "(")) {
             return false;
         }
+        if (_expression_k->argument_count_ > ZLANG_CALL_ARGUMENT_CAPACITY) {
+            return false;
+        }
         for (size_t _argument = 0U; _argument < _expression_k->argument_count_; ++_argument) {
-            const size_t _index_k = _expression_k->argument_start_ + _argument;
+            const size_t _index_k = _expression_k->argument_indices_[_argument];
             if ((_argument > 0U && !zlang_append_text(emitter, ", ")) ||
                 !zlang_emit_expression(program, _index_k, emitter)) {
                 return false;
@@ -1854,6 +1857,16 @@ static bool zlang_expression_equal(const zlang_program_t *program, size_t left,
         !zlang_same_text(_left_k->string_.data_, _right_k->string_.data_)) {
         return false;
     }
+    if (_left_k->argument_count_ != _right_k->argument_count_ ||
+        _left_k->argument_count_ > ZLANG_CALL_ARGUMENT_CAPACITY) {
+        return false;
+    }
+    for (size_t _argument = 0U; _argument < _left_k->argument_count_; ++_argument) {
+        if (!zlang_expression_equal(program, _left_k->argument_indices_[_argument],
+                                    _right_k->argument_indices_[_argument])) {
+            return false;
+        }
+    }
     return zlang_expression_equal(program, _left_k->left_, _right_k->left_) &&
            zlang_expression_equal(program, _left_k->right_, _right_k->right_);
 }
@@ -1873,8 +1886,11 @@ static bool zlang_collect_index_expressions(const zlang_program_t *program, size
         !zlang_collect_index_expressions(program, _expression_k->right_, items, count, capacity)) {
         return false;
     }
+    if (_expression_k->argument_count_ > ZLANG_CALL_ARGUMENT_CAPACITY) {
+        return false;
+    }
     for (size_t _argument = 0U; _argument < _expression_k->argument_count_; ++_argument) {
-        if (!zlang_collect_index_expressions(program, _expression_k->argument_start_ + _argument,
+        if (!zlang_collect_index_expressions(program, _expression_k->argument_indices_[_argument],
                                              items, count, capacity)) {
             return false;
         }

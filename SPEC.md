@@ -649,6 +649,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | preserved comments and escaped string literals | `preserves_comments_and_unescapes_strings` |
 | comments attached to source constructs | `attaches_comments_to_source_constructs` |
 | user-defined function parameters and returns | `emits_functions_with_user_defined_types`, `zlang.cli.compiles_user_types` |
+| call arguments with nested field and index expressions | `passes_complex_function_arguments` |
 | disabled comments | `zlang.cli.disable_comments.output` |
 | `ZLANG1001` unexpected token | `reports_syntax_diagnostics_with_source_locations` |
 | `ZLANG1002` unterminated string | `reports_syntax_diagnostics_with_source_locations` |

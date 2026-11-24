@@ -57,13 +57,13 @@ when traceability is not needed.
 
 ## Language tour
 
-This program uses every construct in the current grammar: comments attached to their source
-constructs, `const`, records, enums, all four scalar types, leading `sequence[N]` declarations,
-bounded string elements, functions and `return`, user-defined function parameter and return types,
-scopes, assignments, indexed access and assignment, field access and assignment, `append`,
-arithmetic, compound assignment, comparisons, logical operators, `length`, string indexing, scalar
-and string printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`,
-nested loops, `break` and `continue`.
+This program exercises the language end to end: comments attached to their source constructs,
+`const`, records, enums, all four scalar types, leading `sequence[N]` declarations, bounded string
+elements, functions and `return`, user-defined function parameter and return types, scopes,
+assignments, indexed access and assignment, field access and assignment, `append`, arithmetic,
+compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
+printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
+`break` and `continue`.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source comments are preserved in the
@@ -332,7 +332,7 @@ int main(void) {
     {
         uint32_t _zlang_index_9 = 0;
         if (_zlang_index_9 < _fixed.length_) {
-            _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, _values.length_), 1);
+            _fixed.data_[_zlang_index_9] = _u_add(zlang_array_get_i32(_values.data_, 1, _values.length_), _base);
         } else {
             zlang_trap(ZLANG_TRAP_BOUNDS);
         }
@@ -356,7 +356,7 @@ int main(void) {
     }
     {
         zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
-        _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, 0);
+        _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, _base);
     }
     int32_t _total = 1;
     _total = zlang_add_i32(_total, _base);
@@ -422,8 +422,8 @@ int main(void) {
 }
 ```
 
-The exact whitespace and temporary names are not part of the contract; the C constructs and
-`zlang_*` calls are.
+The exact whitespace and numbering of temporary names are not part of the contract; the C
+constructs, name prefixes and `zlang_*` calls are.
 
 ## Quick start
 

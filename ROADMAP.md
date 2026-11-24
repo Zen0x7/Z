@@ -338,3 +338,5 @@ Status: Implemented.
 Emitted C now makes the role of each source-derived name visible: `_x` is a local, `x` is a
 parameter, `x_` is a record member, `_u_f` is a user function and `_zlang_*` is a compiler
 temporary. The README language tour and its generated C output were regenerated with this naming.
+Call arguments are stored by explicit expression indices, so nested field and index expressions no
+longer shift later arguments.

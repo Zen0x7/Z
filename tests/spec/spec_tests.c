@@ -305,6 +305,23 @@ static void emits_functions_with_user_defined_types(zlang_test_context_t *const 
                 strstr(_session.output_, ZLANG_SPEC_FUNCTION_USER_TYPE_CALL_EXPECTED) != NULL);
 }
 
+static void passes_complex_function_arguments(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "record Point { integer x; integer y; }\n"
+        "const integer base = 2;\n"
+        "sequence[2] Point points;\n"
+        "function add(integer left, integer right): integer { return left + right; }\n"
+        "Point origin;\n"
+        "append(points, origin);\n"
+        "points[0].x = 9;\n"
+        "points[0].y = add(points[0].x, base);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "_base);") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "x_, 0);") == NULL);
+}
+
 static void covers_every_annex_a_production(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 

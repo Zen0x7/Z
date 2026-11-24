@@ -587,11 +587,15 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "call argument count does not match the declaration");
         }
-        const size_t _count_k = _expression_k->argument_count_ < _function_k->parameter_count_
-                                    ? _expression_k->argument_count_
+        const size_t _argument_limit_k =
+            _expression_k->argument_count_ < ZLANG_CALL_ARGUMENT_CAPACITY
+                ? _expression_k->argument_count_
+                : ZLANG_CALL_ARGUMENT_CAPACITY;
+        const size_t _count_k = _argument_limit_k < _function_k->parameter_count_
+                                    ? _argument_limit_k
                                     : _function_k->parameter_count_;
         for (size_t _argument = 0U; _argument < _count_k; ++_argument) {
-            const size_t _expression_index_k = _expression_k->argument_start_ + _argument;
+            const size_t _expression_index_k = _expression_k->argument_indices_[_argument];
             const size_t _parameter_index_k = _function_k->parameter_start_ + _argument;
             if (_parameter_index_k >= context->program_->parameter_count_) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,

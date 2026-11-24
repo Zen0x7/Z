@@ -15,6 +15,7 @@
 
 #define ZLANG_NO_EXPRESSION ((size_t) - 1)
 #define ZLANG_NO_STATEMENT ((size_t) - 1)
+#define ZLANG_CALL_ARGUMENT_CAPACITY 32U
 
 typedef enum zlang_expression_kind_t {
     zlang_expression_integer_literal_,
@@ -58,7 +59,7 @@ typedef struct zlang_ast_string_value_t {
 typedef struct zlang_ast_expression_t {
     size_t left_;
     size_t right_;
-    size_t argument_start_;
+    size_t argument_indices_[ZLANG_CALL_ARGUMENT_CAPACITY];
     size_t argument_count_;
     const char *name_;
     const char *base_name_;

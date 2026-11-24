@@ -16,7 +16,8 @@ static void zlang_parser_advance(zlang_parser_t *parser) {
     }
 }
 
-static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *start, size_t *count);
+static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *arguments, size_t *count,
+                                       size_t capacity);
 static bool zlang_parse_expression(zlang_parser_t *parser, size_t *expression);
 
 static bool zlang_parser_expect(zlang_parser_t *parser, const zlang_token_kind_t kind,
@@ -103,12 +104,11 @@ static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *start,
-                                       size_t *count) { // NOLINT(misc-no-recursion)
+static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *arguments, size_t *count,
+                                       size_t capacity) { // NOLINT(misc-no-recursion)
     if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after call")) {
         return false;
     }
-    *start = parser->expression_count_;
     *count = 0U;
     if (zlang_parser_current(parser)->kind_ == zlang_token_right_paren_) {
         zlang_parser_advance(parser);
@@ -119,6 +119,11 @@ static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *start,
         if (!zlang_parse_expression(parser, &_argument_k)) { // NOLINT(misc-no-recursion)
             return false;
         }
+        if (*count >= capacity) {
+            zlang_parser_unsupported(parser, "call argument capacity exceeded");
+            return false;
+        }
+        arguments[*count] = _argument_k;
         ++*count;
         if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
             break;
@@ -331,9 +336,10 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         if (!_is_append_k && parser->position_ + 1U < parser->token_count_ &&
             parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_) {
             zlang_parser_advance(parser);
-            size_t _argument_start_k = 0U;
+            size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
             size_t _argument_count_k = 0U;
-            if (!zlang_parse_call_arguments(parser, &_argument_start_k, &_argument_count_k)) {
+            if (!zlang_parse_call_arguments(parser, _arguments_k, &_argument_count_k,
+                                            ZLANG_CALL_ARGUMENT_CAPACITY)) {
                 return false;
             }
             _expression_k = zlang_parser_add_expression(parser);
@@ -342,7 +348,10 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
             }
             parser->expressions_[_expression_k].kind_ = zlang_expression_call_;
             parser->expressions_[_expression_k].name_ = _token_k->text_;
-            parser->expressions_[_expression_k].argument_start_ = _argument_start_k;
+            for (size_t _argument = 0U; _argument < _argument_count_k; ++_argument) {
+                parser->expressions_[_expression_k].argument_indices_[_argument] =
+                    _arguments_k[_argument];
+            }
             parser->expressions_[_expression_k].argument_count_ = _argument_count_k;
             parser->expressions_[_expression_k].is_string_ =
                 zlang_parser_is_string_name(parser, _token_k->text_);

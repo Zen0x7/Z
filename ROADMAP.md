@@ -170,3 +170,11 @@ generated C identifiers, sequence initializers with inferred capacity, checked i
 bounded string concatenation, direct function calls and ordering and inequality operators are
 covered by conformance tests. `ZLANG2005`, `ZLANG2006`, `ZLANG3002` and `ZLANG3003` are wired
 through semantic analysis and the command line driver.
+
+## 0.2 — Conditional and logical addendum
+
+Status: Implemented.
+
+Add `else if` chains, boolean `!`, `&&` and `||`, and parenthesized expression grouping. These
+features reuse the existing AST and diagnostic set, emit native C control flow and logical
+operators, and are covered by new conformance cases in `tests/spec`.

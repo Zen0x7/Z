@@ -33,7 +33,10 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_greater_,
     zlang_expression_less_equal_,
     zlang_expression_greater_equal_,
-    zlang_expression_not_equal_
+    zlang_expression_not_equal_,
+    zlang_expression_not_,
+    zlang_expression_and_,
+    zlang_expression_or_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {

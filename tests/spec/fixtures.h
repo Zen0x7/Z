@@ -135,6 +135,28 @@
     "{ integer item = 2; print(item); }"
 #define ZLANG_SPEC_SIBLING_SCOPES_EXPECTED "int32_t item_0 = 2;"
 
+#define ZLANG_SPEC_ELSE_IF_SOURCE                                                                  \
+    "integer value = 2;\n"                                                                         \
+    "if (value == 1) { print(\"one\"); }\n"                                                        \
+    "else if (value == 2) { print(\"two\"); }\n"                                                   \
+    "else if (value == 3) { print(\"three\"); }\n"                                                 \
+    "else { print(\"other\"); }"
+#define ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED "} else if ((value == 2)) {"
+#define ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED "} else if ((value == 3)) {"
+#define ZLANG_SPEC_ELSE_IF_FINAL_EXPECTED "} else {"
+
+#define ZLANG_SPEC_LOGICAL_SOURCE                                                                  \
+    "boolean a = true;\n"                                                                          \
+    "boolean b = false;\n"                                                                         \
+    "boolean negated = !a;\n"                                                                      \
+    "boolean both = a && b;\n"                                                                     \
+    "boolean either = a || b;\n"                                                                   \
+    "boolean mixed = !(a && b) || a;"
+#define ZLANG_SPEC_LOGICAL_NOT_EXPECTED "bool negated = (!a);"
+#define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool both = (a && b);"
+#define ZLANG_SPEC_LOGICAL_OR_EXPECTED "bool either = (a || b);"
+#define ZLANG_SPEC_LOGICAL_GROUP_EXPECTED "bool mixed = ((!(a && b)) || a);"
+
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 
 #endif /* ZLANG_SPEC_FIXTURES_H */

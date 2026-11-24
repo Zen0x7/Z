@@ -66,6 +66,36 @@ string[32] label = message + "sensor";     // bounded runtime concatenation
 
 Without `string[32]`, the compiler reports `ZLANG2006`.
 
+## Conditional chains
+
+An `else` branch may contain either a block or another `if`. This makes chains direct and avoids
+extra nesting in source and in generated C:
+
+```zlang
+if (value == 1) {
+    print("one");
+} else if (value == 2) {
+    print("two");
+} else {
+    print("other");
+}
+```
+
+The compiler emits a native `else if` chain. Chains of any length are represented as nested
+`ifStatement` nodes.
+
+## Logical operators and grouping
+
+The unary `!` and the binary `&&` and `||` operators require boolean operands and emit native C
+operators, preserving short-circuit behavior. Parentheses may group any expression:
+
+```zlang
+boolean allowed = !(ready && blocked) || override;
+```
+
+Precedence, from tightest to loosest, is grouping, `!`, comparisons and equality, `&&`, `||`, then
+assignment.
+
 ## Diagnostics
 
 | Code | Severity | Meaning |

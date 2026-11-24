@@ -320,6 +320,7 @@ Every generated C file begins with:
 | `a + b` | checked addition, then plain `a + b` |
 | `a == b` | `a == b` |
 | `a < b`, `a > b`, `a <= b`, `a >= b`, `a != b` | native C comparison |
+| `!a`, `a && b`, `a || b` | native C logical operators with short-circuit behavior |
 | `f(a, b)` | direct C call to the emitted function |
 | `"a" + "b"` | folded string literal |
 | `prefix + suffix` with explicit capacity | `zlang_string_concat(storage, capacity, parts, count)` |
@@ -443,7 +444,7 @@ sequenceInitializer = "{" ( expression ( "," expression )* )? "}" ;
 type           = "integer" | "unsigned" | "boolean" | "string" ;
 
 ifStatement    = "if" "(" expression ")" block
-                 ( "else" block )? ;
+                 ( "else" ( block | ifStatement ) )? ;
 
 whileStatement = "while" "(" expression ")" block ;
 
@@ -460,6 +461,10 @@ returnStatement = "return" expression? ";" ;
 
 expression     = literal
                | identifier
+               | "(" expression ")"
+               | "!" expression
+               | expression "&&" expression
+               | expression "||" expression
                | expression "+" expression
                | expression ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expression
                | identifier "=" expression
@@ -471,6 +476,11 @@ expression     = literal
 
 literal        = integerLiteral | stringLiteral | "true" | "false" ;
 ```
+
+Logical operators require boolean operands and follow C precedence: `!` binds tighter than
+comparisons, `&&` binds tighter than `||`, and assignment has the lowest precedence. Parentheses
+may group any expression. An `else if` chain is represented as nested `ifStatement` nodes and is
+emitted as native `else if` chains.
 
 ## Annex B - Worked translation example
 
@@ -532,10 +542,11 @@ line and column of the source construct that caused it.
 
 The 0.2 implementation adds lexical comments, lexical scopes with unique generated
 C identifiers, sequence brace initializers, checked index assignment, bounded
-string concatenation, direct function calls, and ordering and inequality
-operators. It rejects shadowing with `ZLANG2005`, rejects variable concatenation
-without explicit capacity with `ZLANG2006`, rejects overlong sequence initializers
-with `ZLANG3003`, and warns about undisciplined explicit capacity with `ZLANG3002`.
+string concatenation, direct function calls, ordering and inequality operators,
+logical operators, expression grouping, and `else if` chains. It rejects shadowing with
+`ZLANG2005`, rejects variable concatenation without explicit capacity with `ZLANG2006`,
+rejects overlong sequence initializers with `ZLANG3003`, and warns about undisciplined
+explicit capacity with `ZLANG3002`.
 
 ## Annex C - Testability contract
 
@@ -600,5 +611,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | bounded variable string concatenation | `emits_bounded_variable_string_concatenation` |
 | direct function call | `emits_direct_function_calls` |
 | ordering and inequality operators | `emits_ordering_and_inequality_operators` |
+| `else ifStatement` | `emits_else_if_chains` |
+| `!`, `&&`, `||` and grouped expressions | `emits_logical_operators` |
+| boolean operand checking | `rejects_non_boolean_logical_operands` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

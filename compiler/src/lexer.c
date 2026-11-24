@@ -178,6 +178,13 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     token->column_ = column;
 
     const char _next_k = lexer->source_[lexer->position_ + 1U];
+    if ((_character_k == '&' && _next_k == '&') || (_character_k == '|' && _next_k == '|')) {
+        token->kind_ = _character_k == '&' ? zlang_token_and_ : zlang_token_or_;
+        token->length_ = 2U;
+        zlang_lexer_advance(lexer);
+        zlang_lexer_advance(lexer);
+        return true;
+    }
     if ((_character_k == '=' || _character_k == '!' || _character_k == '<' ||
          _character_k == '>') &&
         _next_k == '=') {
@@ -228,7 +235,7 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         token->kind_ = zlang_token_equal_;
         break;
     case '!':
-        token->kind_ = zlang_token_not_equal_;
+        token->kind_ = zlang_token_not_;
         break;
     case '<':
         token->kind_ = zlang_token_less_;

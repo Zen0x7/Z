@@ -421,6 +421,33 @@ static void rejects_an_empty_inferred_sequence(zlang_test_context_t *const conte
                                                     ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
 }
 
+static void emits_else_if_chains(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_ELSE_IF_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_ELSE_IF_FINAL_EXPECTED) != NULL);
+}
+
+static void emits_logical_operators(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_LOGICAL_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_NOT_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_AND_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_OR_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_GROUP_EXPECTED) != NULL);
+}
+
+static void rejects_non_boolean_logical_operands(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "boolean bad = !1;"));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

@@ -187,6 +187,29 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         (void)zlang_analyze_expression(context, _expression_k->left_, statement);
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
         return "boolean";
+    case zlang_expression_not_: {
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        if (!zlang_type_matches("boolean", _actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "logical negation requires a boolean operand");
+            return NULL;
+        }
+        return "boolean";
+    }
+    case zlang_expression_and_:
+    case zlang_expression_or_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches("boolean", _left_k) || !zlang_type_matches("boolean", _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "logical operators require boolean operands");
+            return NULL;
+        }
+        return "boolean";
+    }
     case zlang_expression_string_concat_: {
         const char *const _left_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);

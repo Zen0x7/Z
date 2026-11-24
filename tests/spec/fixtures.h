@@ -298,7 +298,7 @@
 #define ZLANG_SPEC_ENUM_TYPE_EXPECTED "typedef enum zlang_color_t"
 #define ZLANG_SPEC_ENUM_VALUE_EXPECTED "ZLANG_COLOR_GREEN"
 #define ZLANG_SPEC_FIELD_ASSIGN_EXPECTED "_u_point.x = 1;"
-#define ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED ").x = 2;"
+#define ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED "_zlang_field_ptr_"
 
 #define ZLANG_SPEC_CSE_SOURCE                                                                      \
     "sequence[2] integer values = {1, 2};\n"                                                       \

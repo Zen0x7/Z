@@ -23,6 +23,7 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->emitted_user_type_count_ = 0U;
     emitter->emitted_enum_item_count_ = 0U;
     emitter->cse_count_ = 0U;
+    emitter->cse_pointer_count_ = 0U;
     memset(emitter->emitted_symbols_, 0, sizeof(emitter->emitted_symbols_));
     memset(emitter->emitted_sequences_, 0, sizeof(emitter->emitted_sequences_));
     memset(emitter->emitted_literals_, 0, sizeof(emitter->emitted_literals_));
@@ -31,6 +32,8 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     memset(emitter->emitted_enum_items_, 0, sizeof(emitter->emitted_enum_items_));
     memset(emitter->cse_expression_indices_, 0, sizeof(emitter->cse_expression_indices_));
     memset(emitter->cse_names_, 0, sizeof(emitter->cse_names_));
+    memset(emitter->cse_pointer_indices_, 0, sizeof(emitter->cse_pointer_indices_));
+    memset(emitter->cse_pointer_names_, 0, sizeof(emitter->cse_pointer_names_));
     if (capacity > 0U) {
         buffer[0] = '\0';
     }
@@ -62,6 +65,12 @@ static bool zlang_append_part_count(zlang_emitter_t *emitter, size_t count);
 
 static const char *zlang_find_cse(const zlang_emitter_t *emitter, size_t expression_index);
 
+static const char *zlang_find_pointer_cse(const zlang_emitter_t *emitter, size_t expression_index);
+
+static bool zlang_expression_equal(const zlang_program_t *program, size_t left, size_t right);
+
+static bool zlang_same_text(const char *left, const char *right);
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static const char *zlang_expression_type(const zlang_program_t *program,
                                          const zlang_emitter_t *emitter, size_t index);
@@ -71,6 +80,15 @@ static bool zlang_append_unsigned(zlang_emitter_t *emitter, uint32_t value) {
     const int _written_k = snprintf(_digits, sizeof(_digits), "%lu", (unsigned long)value);
     return _written_k >= 0 && (size_t)_written_k < sizeof(_digits) &&
            zlang_append_text(emitter, _digits);
+}
+
+static bool zlang_append_line_break(zlang_emitter_t *emitter) {
+    while (emitter->length_ > 0U && (emitter->buffer_[emitter->length_ - 1U] == ' ' ||
+                                     emitter->buffer_[emitter->length_ - 1U] == '\t')) {
+        --emitter->length_;
+        emitter->buffer_[emitter->length_] = '\0';
+    }
+    return zlang_append_text(emitter, "\n");
 }
 
 static bool zlang_append_indent(zlang_emitter_t *emitter, uint32_t depth) {
@@ -1089,6 +1107,13 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             _expression_k->kind_ == zlang_expression_field_assignment_
                 ? &program->expressions_[_expression_k->left_]
                 : _expression_k;
+        if (_expression_k->kind_ == zlang_expression_field_) {
+            const char *const _pointer_k = zlang_find_pointer_cse(emitter, index);
+            if (_pointer_k != NULL) {
+                return zlang_append_text(emitter, _pointer_k) && zlang_append_text(emitter, "->") &&
+                       zlang_append_text(emitter, _field_k->name_);
+            }
+        }
         if (_field_k->base_name_ != NULL) {
             const zlang_emitted_symbol_t *const _symbol_k =
                 zlang_find_active_symbol(emitter, _field_k->base_name_);
@@ -1542,6 +1567,63 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
            zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "}\n");
 }
 
+static bool zlang_emit_field_assignment(const zlang_program_t *program,
+                                        const zlang_ast_expression_t *expression,
+                                        zlang_emitter_t *emitter, uint32_t depth) {
+    const size_t _saved_pointer_cse_k = emitter->cse_pointer_count_;
+    const zlang_ast_expression_t *const _target_k = &program->expressions_[expression->left_];
+    const zlang_emitted_symbol_t *const _symbol_k =
+        zlang_find_active_symbol(emitter, _target_k->base_name_);
+    const char *const _type_k =
+        _symbol_k != NULL ? zlang_generated_type(program, emitter, _symbol_k->type_name_) : NULL;
+    char _pointer_name[32];
+    const int _written_k = snprintf(_pointer_name, sizeof(_pointer_name), "_zlang_field_ptr_%lu",
+                                    (unsigned long)emitter->next_index_++);
+    if (_type_k == NULL || _symbol_k == NULL || _written_k < 0 ||
+        (size_t)_written_k >= sizeof(_pointer_name)) {
+        emitter->cse_pointer_count_ = _saved_pointer_cse_k;
+        return false;
+    }
+    for (size_t _candidate = 0U; _candidate < program->expression_count_; ++_candidate) {
+        const zlang_ast_expression_t *const _candidate_k = &program->expressions_[_candidate];
+        if (_candidate_k->kind_ != zlang_expression_field_ ||
+            !zlang_same_text(_candidate_k->base_name_, _target_k->base_name_) ||
+            !zlang_expression_equal(program, _candidate_k->right_, _target_k->right_) ||
+            zlang_find_pointer_cse(emitter, _candidate) != NULL ||
+            emitter->cse_pointer_count_ >= ZLANG_EMITTED_CSE_CAPACITY) {
+            continue;
+        }
+        emitter->cse_pointer_indices_[emitter->cse_pointer_count_] = _candidate;
+        snprintf(emitter->cse_pointer_names_[emitter->cse_pointer_count_],
+                 sizeof(emitter->cse_pointer_names_[0]), "%s", _pointer_name);
+        ++emitter->cse_pointer_count_;
+    }
+    if (!zlang_append_text(emitter, "{\n") || !zlang_append_indent(emitter, depth + 1U) ||
+        !zlang_append_text(emitter, _type_k) || !zlang_append_text(emitter, " *") ||
+        !zlang_append_text(emitter, _pointer_name) || !zlang_append_text(emitter, " = (") ||
+        !zlang_append_text(emitter, _type_k) ||
+        !zlang_append_text(emitter, " *)zlang_array_get(") ||
+        !zlang_append_text(emitter, _symbol_k->generated_name_) ||
+        !zlang_append_text(emitter, ".data_, ") ||
+        !zlang_emit_expression(program, _target_k->right_, emitter) ||
+        !zlang_append_text(emitter, ", ") ||
+        !zlang_append_text(emitter, _symbol_k->generated_name_) ||
+        !zlang_append_text(emitter, ".length_, sizeof(") ||
+        !zlang_append_text(emitter, _symbol_k->generated_name_) ||
+        !zlang_append_text(emitter, ".data_[0]));\n") ||
+        !zlang_append_indent(emitter, depth + 1U) || !zlang_append_text(emitter, _pointer_name) ||
+        !zlang_append_text(emitter, "->") || !zlang_append_text(emitter, _target_k->name_) ||
+        !zlang_append_text(emitter, " = ") ||
+        !zlang_emit_expression(program, expression->right_, emitter) ||
+        !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth) ||
+        !zlang_append_text(emitter, "}\n")) {
+        emitter->cse_pointer_count_ = _saved_pointer_cse_k;
+        return false;
+    }
+    emitter->cse_pointer_count_ = _saved_pointer_cse_k;
+    return true;
+}
+
 static bool zlang_emit_body(const zlang_program_t *program, size_t start, size_t count,
                             zlang_emitter_t *emitter, uint32_t depth);
 
@@ -1740,9 +1822,9 @@ static bool zlang_save_condition_values(const zlang_program_t *program,
         const int _written_k = snprintf(_name, sizeof(_name), "_zlang_value_%lu",
                                         (unsigned long)emitter->next_index_++);
         if (_written_k < 0 || (size_t)_written_k >= sizeof(_name) ||
-            !zlang_append_indent(emitter, depth) || !zlang_append_text(emitter, _c_type_k) ||
-            !zlang_append_text(emitter, " ") || !zlang_append_text(emitter, _name) ||
-            !zlang_append_text(emitter, " = ") ||
+            !zlang_append_line_break(emitter) || !zlang_append_indent(emitter, depth) ||
+            !zlang_append_text(emitter, _c_type_k) || !zlang_append_text(emitter, " ") ||
+            !zlang_append_text(emitter, _name) || !zlang_append_text(emitter, " = ") ||
             !zlang_emit_expression(program, _candidate_k, emitter) ||
             !zlang_append_text(emitter, ";\n")) {
             return false;
@@ -2119,6 +2201,12 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         if (_expression_k != NULL && _expression_k->kind_ == zlang_expression_index_assignment_) {
             return zlang_emit_index_assignment(program, _expression_k, emitter, depth);
         }
+        if (_expression_k != NULL && _expression_k->kind_ == zlang_expression_field_assignment_ &&
+            _expression_k->left_ < program->expression_count_ &&
+            program->expressions_[_expression_k->left_].base_name_ != NULL &&
+            program->expressions_[_expression_k->left_].right_ != ZLANG_NO_EXPRESSION) {
+            return zlang_emit_field_assignment(program, _expression_k, emitter, depth);
+        }
         if (!zlang_emit_expression(program, statement->expression_, emitter)) {
             return false;
         }
@@ -2336,6 +2424,18 @@ static const char *zlang_find_cse(const zlang_emitter_t *emitter, size_t express
     for (size_t _index = 0U; _index < emitter->cse_count_; ++_index) {
         if (emitter->cse_expression_indices_[_index] == expression_index) {
             return emitter->cse_names_[_index];
+        }
+    }
+    return NULL;
+}
+
+static const char *zlang_find_pointer_cse(const zlang_emitter_t *emitter, size_t expression_index) {
+    if (emitter == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < emitter->cse_pointer_count_; ++_index) {
+        if (emitter->cse_pointer_indices_[_index] == expression_index) {
+            return emitter->cse_pointer_names_[_index];
         }
     }
     return NULL;

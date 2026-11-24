@@ -64,8 +64,9 @@ indexed `foreach`, nested loops, `break` and `continue`.
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source symbols use `_u_`, compiler
 temporaries use `_zlang_`, generated types use `zlang_` and runtime calls use `zlang_*`. Index reads
-lower to bounded `zlang_*` getters, repeated reads in condition chains become local temporaries,
-and `(void)` guards appear only for variables that are genuinely unused.
+lower to bounded `zlang_*` getters, field assignment to a sequence element uses a checked pointer
+temporary that is reused by the expression, repeated reads in condition chains become local
+temporaries, and `(void)` guards appear only for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -277,8 +278,14 @@ int main(void) {
         }
     }
 
-    (*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x = 9;
-    (*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).y = _u_add((*((zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0])))).x, 0);
+    {
+        zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0]));
+        _zlang_field_ptr_11->x = 9;
+    }
+    {
+        zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_u_points.data_, 0, _u_points.length_, sizeof(_u_points.data_[0]));
+        _zlang_field_ptr_12->y = _u_add(_zlang_field_ptr_12->x, 0);
+    }
     int32_t _u_total = 1;
     _u_total = zlang_add_i32(_u_total, _u_base);
 
@@ -287,10 +294,11 @@ int main(void) {
         zlang_print_i32(_u_scoped);
     }
 
-        int32_t _zlang_value_11 = zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_);
-    if (_zlang_value_11 > 3) {
+
+    int32_t _zlang_value_13 = zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_);
+    if (_zlang_value_13 > 3) {
         zlang_print(_zlang_literal_5);
-    } else if (_zlang_value_11 == 3) {
+    } else if (_zlang_value_13 == 3) {
         zlang_print_i32(zlang_array_get_i32(_u_fixed.data_, 0, _u_fixed.length_));
     } else {
         zlang_print(_zlang_literal_6);
@@ -300,7 +308,7 @@ int main(void) {
         break;
     }
 
-    for (uint32_t _zlang_repeat_12 = ZLANG_ZERO; _zlang_repeat_12 < _u_limit; ++_zlang_repeat_12) {
+    for (uint32_t _zlang_repeat_14 = ZLANG_ZERO; _zlang_repeat_14 < _u_limit; ++_zlang_repeat_14) {
         continue;
     }
 
@@ -311,12 +319,12 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_13 = ZLANG_ZERO; _zlang_foreach_13 < _u_values.length_; ++_zlang_foreach_13) {
-        uint32_t _u_row = _zlang_foreach_13;
-        int32_t _u_item = _u_values.data_[_zlang_foreach_13];
-        for (uint32_t _zlang_foreach_14 = ZLANG_ZERO; _zlang_foreach_14 < _u_values.length_; ++_zlang_foreach_14) {
-            uint32_t _u_column = _zlang_foreach_14;
-            int32_t _u_other = _u_values.data_[_zlang_foreach_14];
+    for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < _u_values.length_; ++_zlang_foreach_15) {
+        uint32_t _u_row = _zlang_foreach_15;
+        int32_t _u_item = _u_values.data_[_zlang_foreach_15];
+        for (uint32_t _zlang_foreach_16 = ZLANG_ZERO; _zlang_foreach_16 < _u_values.length_; ++_zlang_foreach_16) {
+            uint32_t _u_column = _zlang_foreach_16;
+            int32_t _u_other = _u_values.data_[_zlang_foreach_16];
             zlang_print_u32(_u_row);
             zlang_print_u32(_u_column);
             zlang_print_i32(_u_item);

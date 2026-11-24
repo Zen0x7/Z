@@ -93,6 +93,8 @@ typedef struct zlang_emitter_t {
     size_t cse_count_;
     size_t cse_pointer_indices_[ZLANG_EMITTED_CSE_CAPACITY];
     char cse_pointer_names_[ZLANG_EMITTED_CSE_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];
+    const char *cse_pointer_base_names_[ZLANG_EMITTED_CSE_CAPACITY];
+    const char *cse_pointer_dependency_names_[ZLANG_EMITTED_CSE_CAPACITY];
     size_t cse_pointer_count_;
     bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
     bool emit_comments_;

@@ -73,10 +73,11 @@ members use a trailing `_`, user functions use `_u_`, compiler temporaries use `
 types use `zlang_` and runtime calls use `zlang_*`. The `zlang`, `_zlang` and `ZLANG` identifier
 namespaces are reserved, so generated names cannot collide with source names. Only source blocks
 emit `{}`; compiler temporaries are declared directly in the enclosing C block. Zero-argument
-functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters, field assignment to a sequence
-element uses a checked pointer temporary that is reused by the expression, repeated reads in
-condition chains become local temporaries, and `(void)` guards appear only for variables that are
-genuinely unused.
+functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters. References to sequence elements are
+resolved once per context: a checked pointer temporary is materialized at the first field access and
+reused by later accesses to the same element until an index dependency changes or the scope ends.
+Repeated reads in condition chains also become local temporaries, and `(void)` guards appear only
+for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -350,8 +351,7 @@ int main(void) {
 
     zlang_point_t *_zlang_field_ptr_11 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
     _zlang_field_ptr_11->x_ = 9;
-    zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0]));
-    _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, _base);
+    _zlang_field_ptr_11->y_ = _u_add(_zlang_field_ptr_11->x_, _base);
     int32_t _total = 1;
     _total = zlang_add_i32(_total, _base);
 
@@ -361,10 +361,10 @@ int main(void) {
     }
 
 
-    int32_t _zlang_value_13 = zlang_array_get_i32(_fixed.data_, 0, _fixed.length_);
-    if (_zlang_value_13 > 3) {
+    int32_t _zlang_value_12 = zlang_array_get_i32(_fixed.data_, 0, _fixed.length_);
+    if (_zlang_value_12 > 3) {
         zlang_print(_zlang_literal_5);
-    } else if (_zlang_value_13 == 3) {
+    } else if (_zlang_value_12 == 3) {
         zlang_print_i32(zlang_array_get_i32(_fixed.data_, 0, _fixed.length_));
     } else {
         zlang_print(_zlang_literal_6);
@@ -374,7 +374,7 @@ int main(void) {
         break;
     }
 
-    for (uint32_t _zlang_repeat_14 = ZLANG_ZERO; _zlang_repeat_14 < _limit; ++_zlang_repeat_14) {
+    for (uint32_t _zlang_repeat_13 = ZLANG_ZERO; _zlang_repeat_13 < _limit; ++_zlang_repeat_13) {
         continue;
     }
 
@@ -385,12 +385,12 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < _values.length_; ++_zlang_foreach_15) {
-        uint32_t _row = _zlang_foreach_15;
-        int32_t _item = _values.data_[_zlang_foreach_15];
-        for (uint32_t _zlang_foreach_16 = ZLANG_ZERO; _zlang_foreach_16 < _values.length_; ++_zlang_foreach_16) {
-            uint32_t _column = _zlang_foreach_16;
-            int32_t _other = _values.data_[_zlang_foreach_16];
+    for (uint32_t _zlang_foreach_14 = ZLANG_ZERO; _zlang_foreach_14 < _values.length_; ++_zlang_foreach_14) {
+        uint32_t _row = _zlang_foreach_14;
+        int32_t _item = _values.data_[_zlang_foreach_14];
+        for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < _values.length_; ++_zlang_foreach_15) {
+            uint32_t _column = _zlang_foreach_15;
+            int32_t _other = _values.data_[_zlang_foreach_15];
             zlang_print_u32(_row);
             zlang_print_u32(_column);
             zlang_print_i32(_item);
@@ -407,7 +407,7 @@ int main(void) {
     zlang_print_bool(_ok);
     zlang_print(_label);
     zlang_print(zlang_array_get_string(_names.data_, 0, _names.length_));
-    zlang_print_i32((*((zlang_point_t *)zlang_array_get(_points.data_, 0, _points.length_, sizeof(_points.data_[0])))).x_);
+    zlang_print_i32(_zlang_field_ptr_11->x_);
     zlang_print_i32(_made.x_);
     zlang_print_i32(_painted.x_);
     zlang_print_u32(_current);

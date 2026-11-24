@@ -340,6 +340,37 @@ static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *con
     ZLANG_CHECK(context, strstr(_session.output_, "\n        {\n") == NULL);
 }
 
+static void reuses_field_pointers_contextually(zlang_test_context_t *const context) {
+    zlang_spec_session_t _reuse;
+    const char *const _reuse_source_k = "record Point { integer x; integer y; }\n"
+                                        "sequence[2] Point points;\n"
+                                        "Point origin;\n"
+                                        "append(points, origin);\n"
+                                        "points[0].x = 9;\n"
+                                        "points[0].y = 3;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_reuse, _reuse_source_k));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_reuse.output_,
+                                                      "zlang_point_t *_zlang_field_ptr_") == 1U);
+    ZLANG_CHECK(context, strstr(_reuse.output_, "->x_ = 9;") != NULL);
+    ZLANG_CHECK(context, strstr(_reuse.output_, "->y_ = 3;") != NULL);
+
+    zlang_spec_session_t _invalidate;
+    const char *const _invalidate_source_k = "record Point { integer x; }\n"
+                                             "sequence[2] Point points;\n"
+                                             "Point origin;\n"
+                                             "append(points, origin);\n"
+                                             "append(points, origin);\n"
+                                             "unsigned index = 0U;\n"
+                                             "points[index].x = 1;\n"
+                                             "index = 1U;\n"
+                                             "points[index].x = 2;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_invalidate, _invalidate_source_k));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_invalidate.output_,
+                                                      "zlang_point_t *_zlang_field_ptr_") == 2U);
+}
+
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
     static const char *const sources_k[] = {"integer zlang_value = 1;", "integer _zlang_value = 1;",
                                             "integer ZLANG_VALUE = 1;"};

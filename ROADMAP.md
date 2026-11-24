@@ -357,3 +357,20 @@ Status: Implemented.
 The generated namespace is now reserved, so compiler temporaries cannot collide with source names.
 Index and field temporaries no longer introduce synthetic scopes; only source-authored blocks emit
 braces in the generated C.
+
+## 0.10 — Contextual accessor CSE
+
+Status: Locked.
+
+- Resolve a sequence element reference once per lexical context.
+- Materialize its checked pointer at the first field access.
+- Reuse the pointer for later accesses to the same element.
+- Invalidate cached pointers when an index dependency changes or the scope ends.
+
+## 0.10 — Completion
+
+Status: Implemented.
+
+Field pointer temporaries now live in the emitter context instead of a single statement. Consecutive
+accesses to the same sequence element share one checked pointer, and assignments to index
+dependencies invalidate it.

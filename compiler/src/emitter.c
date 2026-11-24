@@ -300,12 +300,14 @@ static bool zlang_make_unique_name(zlang_emitter_t *emitter, const char *source,
 }
 
 static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_name,
-                                  const char *type_name, uint32_t capacity,
+                                  const char *type_name, const char *prefix, uint32_t capacity,
                                   bool has_explicit_capacity, bool needs_storage, bool is_sequence,
                                   char *generated, size_t generated_capacity) {
     char _user_name[ZLANG_EMITTED_NAME_CAPACITY];
     const int _user_written_k =
-        source_name != NULL ? snprintf(_user_name, sizeof(_user_name), "_u_%s", source_name) : -1;
+        source_name != NULL && prefix != NULL
+            ? snprintf(_user_name, sizeof(_user_name), "%s%s", prefix, source_name)
+            : -1;
     if (emitter->emitted_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY ||
         emitter->active_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY || _user_written_k < 0 ||
         (size_t)_user_written_k >= sizeof(_user_name) ||
@@ -335,6 +337,14 @@ static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_n
         emitter->emitted_symbol_count_ = emitter->active_symbol_count_;
     }
     return true;
+}
+
+static bool zlang_append_field_name(zlang_emitter_t *emitter, const char *name) {
+    if (name == NULL || name[0] == '\0') {
+        return false;
+    }
+    return zlang_append_text(emitter, name) &&
+           (name[strlen(name) - 1U] == '_' || zlang_append_text(emitter, "_"));
 }
 
 static const zlang_emitted_symbol_t *zlang_find_active_symbol(const zlang_emitter_t *emitter,
@@ -1202,7 +1212,7 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             const char *const _pointer_k = zlang_find_pointer_cse(emitter, index);
             if (_pointer_k != NULL) {
                 return zlang_append_text(emitter, _pointer_k) && zlang_append_text(emitter, "->") &&
-                       zlang_append_text(emitter, _field_k->name_);
+                       zlang_append_field_name(emitter, _field_k->name_);
             }
         }
         if (_field_k->base_name_ != NULL) {
@@ -1234,7 +1244,8 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         } else if (!zlang_emit_expression(program, _field_k->left_, emitter)) {
             return false;
         }
-        if (!zlang_append_text(emitter, ".") || !zlang_append_text(emitter, _field_k->name_)) {
+        if (!zlang_append_text(emitter, ".") ||
+            !zlang_append_field_name(emitter, _field_k->name_)) {
             return false;
         }
         if (_expression_k->kind_ == zlang_expression_field_assignment_) {
@@ -1703,7 +1714,7 @@ static bool zlang_emit_field_assignment(const zlang_program_t *program,
         !zlang_append_text(emitter, _symbol_k->generated_name_) ||
         !zlang_append_text(emitter, ".data_[0]));\n") ||
         !zlang_append_indent(emitter, depth + 1U) || !zlang_append_text(emitter, _pointer_name) ||
-        !zlang_append_text(emitter, "->") || !zlang_append_text(emitter, _target_k->name_) ||
+        !zlang_append_text(emitter, "->") || !zlang_append_field_name(emitter, _target_k->name_) ||
         !zlang_append_text(emitter, " = ") ||
         !zlang_emit_expression(program, expression->right_, emitter) ||
         !zlang_append_text(emitter, ";\n") || !zlang_append_indent(emitter, depth) ||
@@ -2131,7 +2142,7 @@ static bool zlang_emit_for_initializer(const zlang_program_t *program,
     }
     char _name[ZLANG_EMITTED_NAME_CAPACITY];
     const bool _is_string_k = strcmp(statement->type_name_, "string") == 0;
-    if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_,
+    if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_, "_",
                                statement->capacity_, statement->has_explicit_capacity_, false,
                                false, _name, sizeof(_name))) {
         return false;
@@ -2170,7 +2181,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             program->expressions_[statement->expression_].kind_ == zlang_expression_string_concat_;
         char _name[ZLANG_EMITTED_NAME_CAPACITY];
         const bool _needs_storage_k = _is_string_k && statement->has_explicit_capacity_;
-        if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_,
+        if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_, "_",
                                    statement->capacity_, statement->has_explicit_capacity_,
                                    _needs_storage_k, false, _name, sizeof(_name))) {
             return false;
@@ -2222,7 +2233,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         const bool _string_elements_k =
             statement->has_element_capacity_ && strcmp(statement->type_name_, "string") == 0;
         if (statement->capacity_ == 0U ||
-            !zlang_register_symbol(emitter, statement->name_, statement->type_name_,
+            !zlang_register_symbol(emitter, statement->name_, statement->type_name_, "_",
                                    statement->capacity_, statement->has_explicit_capacity_,
                                    _string_elements_k, true, _name, sizeof(_name))) {
             return false;
@@ -2412,9 +2423,9 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         const char *const _iterable_k = zlang_resolve_name(emitter, statement->iterable_name_);
         if (_loop_written_k < 0 || (size_t)_loop_written_k >= sizeof(_loop_index) ||
             (statement->index_name_ != NULL &&
-             !zlang_register_symbol(emitter, statement->index_name_, "unsigned", 0U, false, false,
-                                    false, _user_index_name, sizeof(_user_index_name))) ||
-            !zlang_register_symbol(emitter, statement->name_, statement->type_name_, 0U, false,
+             !zlang_register_symbol(emitter, statement->index_name_, "unsigned", "_", 0U, false,
+                                    false, false, _user_index_name, sizeof(_user_index_name))) ||
+            !zlang_register_symbol(emitter, statement->name_, statement->type_name_, "_", 0U, false,
                                    false, false, _item_name, sizeof(_item_name))) {
             return false;
         }
@@ -2458,8 +2469,8 @@ static bool zlang_emit_statement(const zlang_program_t *program,
     }
     case zlang_statement_function_: {
         char _name[ZLANG_EMITTED_NAME_CAPACITY];
-        if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_, 0U, false,
-                                   false, false, _name, sizeof(_name))) {
+        if (!zlang_register_symbol(emitter, statement->name_, statement->type_name_, "_u_", 0U,
+                                   false, false, false, _name, sizeof(_name))) {
             return false;
         }
         const size_t _function_scope_k = zlang_save_scope(emitter);
@@ -2476,8 +2487,8 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             const zlang_parameter_t *const _parameter_k =
                 &program->parameters_[statement->parameter_start_ + _index];
             char _parameter_name[ZLANG_EMITTED_NAME_CAPACITY];
-            if (!zlang_register_symbol(emitter, _parameter_k->name_, _parameter_k->type_name_, 0U,
-                                       false, false, false, _parameter_name,
+            if (!zlang_register_symbol(emitter, _parameter_k->name_, _parameter_k->type_name_, "",
+                                       0U, false, false, false, _parameter_name,
                                        sizeof(_parameter_name))) {
                 return false;
             }
@@ -2621,7 +2632,7 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
                     if (!zlang_emit_attached_comments(program, emitter, 1U, _field_k->line_) ||
                         _type_k == NULL || !zlang_append_text(emitter, "    ") ||
                         !zlang_append_text(emitter, _type_k) || !zlang_append_text(emitter, " ") ||
-                        !zlang_append_text(emitter, _field_k->name_) ||
+                        !zlang_append_field_name(emitter, _field_k->name_) ||
                         !zlang_append_text(emitter, ";\n")) {
                         return false;
                     }

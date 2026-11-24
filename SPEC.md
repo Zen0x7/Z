@@ -349,17 +349,18 @@ Every generated C file begins with:
 | `text[0]` | `zlang_string_byte(text, 0U)` |
 | `values[0] = x` | checked index statement, then direct store to `values.data_[0]` |
 | `append(values, x)` | `CheckCapacity` then `values.data_[values.length_++] = x;` |
-| `foreach (x in values)` | `for (uint32_t index = 0U; index < values.length_; ++index) { T x = values.data_[index]; ... }` |
+| `foreach (x in values)` | `for (uint32_t _zlang_foreach_N = ZLANG_ZERO; ... ) { T _x = values.data_[_zlang_foreach_N]; ... }` |
 | `if`, `while`, `repeat` | native C `if`, `while`, `for` |
-| `function f(...)` | `static` C function with the same name |
+| `function f(...)` | C function `_u_f(...)` |
 | `return x;` | `return x;` |
 | overflow, bounds, capacity, division-by-zero failure | `zlang_trap(<fixed code>)` |
 
 Generated C is laid out in this order: includes, generated value constants (`ZLANG_ZERO`,
 `ZLANG_ONE`, `ZLANG_TWO`), named capacity and initial-length macros, generated sequence typedefs,
-named string literal constants, user functions and `main`. Source symbols are emitted with an
-`_u_` prefix, compiler-generated temporaries with `_zlang_`, generated macros with `ZLANG_`,
-generated types with `zlang_` and runtime calls with `zlang_`. Trap sites use the public
+named string literal constants, user functions and `main`. Local source symbols are emitted with a
+leading `_`, function parameters keep their source names, record members use a trailing `_`, and
+user functions use `_u_`. Compiler-generated temporaries use `_zlang_`, generated macros use
+`ZLANG_`, generated types use `zlang_` and runtime calls use `zlang_`. Trap sites use the public
 `ZLANG_TRAP_*` constants rather than numeric literals.
 
 ### 12.4 Runtime API
@@ -698,6 +699,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | named generated value constants | `uses_readable_emitted_layout` |
 | records and enums | `emits_records_and_enums` |
 | repeated index read reuse | `reuses_repeated_index_reads` |
+| emitted C symbol naming | `emits_functions_with_user_defined_types`, `uses_readable_emitted_layout` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
 
 
@@ -714,6 +716,14 @@ Zlang 0.7 allows record and enum names in function parameters and return values,
 variables to be initialized from same-type values, and emits `(void)` for zero-argument functions.
 Source comments attach to the construct they document in the generated C, with `--disable-comments`
 available when the comments are not wanted.
+
+
+## 0.8 implementation status
+
+Zlang 0.8 separates emitted C names by role: local source symbols start with `_`, function
+parameters keep their source names, record members end with `_`, and user functions keep `_u_`.
+Compiler temporaries, generated macros, generated types and runtime calls keep their established
+prefixes.
 
 
 ## Emitted comments

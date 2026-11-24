@@ -320,3 +320,21 @@ Functions may now take and return user-defined types, and record variables may b
 values of the same record type. Zero-argument functions emit `(void)`, and unused parameters emit
 `(void)` guards. Source comments attach to declarations, functions, record fields and enum items,
 with consecutive `//` lines emitted as one block.
+
+## 0.8 — Emitted C symbol roles
+
+Status: Locked.
+
+- Emit local source symbols with a leading `_`.
+- Emit function parameters with their source names and no prefix.
+- Emit record members with a trailing `_`.
+- Keep user functions with `_u_`, compiler temporaries with `_zlang_`, generated types with
+  `zlang_` and macros with `ZLANG_`.
+
+## 0.8 — Completion
+
+Status: Implemented.
+
+Emitted C now makes the role of each source-derived name visible: `_x` is a local, `x` is a
+parameter, `x_` is a record member, `_u_f` is a user function and `_zlang_*` is a compiler
+temporary. The README language tour and its generated C output were regenerated with this naming.

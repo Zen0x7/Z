@@ -6,7 +6,7 @@
    expected C strings, keeping the contract in one place. */
 
 #define ZLANG_SPEC_SCALAR_SOURCE "integer var = 10;"
-#define ZLANG_SPEC_SCALAR_EXPECTED "int32_t _u_var = 10;"
+#define ZLANG_SPEC_SCALAR_EXPECTED "int32_t _var = 10;"
 
 #define ZLANG_SPEC_PRINT_SOURCE "print(\"Hello\");"
 #define ZLANG_SPEC_PRINT_EXPECTED "zlang_print(_zlang_literal_0);"
@@ -17,20 +17,20 @@
     "    print(\"Hello\");\n"                                                                      \
     "}"
 #define ZLANG_SPEC_FOREACH_SEQUENCE_EXPECTED                                                       \
-    "zlang_values_t _u_values = { { 0, 0, 0, 0 }, ZLANG_VALUES_LENGTH };"
+    "zlang_values_t _values = { { 0, 0, 0, 0 }, ZLANG_VALUES_LENGTH };"
 #define ZLANG_SPEC_FOREACH_LOOP_EXPECTED                                                           \
-    "for (uint32_t _zlang_foreach_1 = ZLANG_ZERO; _zlang_foreach_1 < _u_values.length_; "          \
+    "for (uint32_t _zlang_foreach_1 = ZLANG_ZERO; _zlang_foreach_1 < _values.length_; "            \
     "++_zlang_foreach_1)"
-#define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t _u_item = _u_values.data_[_zlang_foreach_1];"
+#define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t _item = _values.data_[_zlang_foreach_1];"
 #define ZLANG_SPEC_FOREACH_CALLBACK "zlang_for_each"
 
 #define ZLANG_SPEC_UNBOUNDED_SOURCE "sequence[] integer values;"
 #define ZLANG_SPEC_UNBOUNDED_EXPECTED_CODE 3001U
 
 #define ZLANG_SPEC_STATIC_SEQUENCE_SOURCE "sequence[32] integer values;"
-#define ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED "static zlang_values_t _u_values ="
+#define ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED "static zlang_values_t _values ="
 #define ZLANG_SPEC_ADD_SOURCE "integer total = 1 + 2;"
-#define ZLANG_SPEC_ADD_EXPECTED "int32_t _u_total = zlang_add_i32(1, 2);"
+#define ZLANG_SPEC_ADD_EXPECTED "int32_t _total = zlang_add_i32(1, 2);"
 
 #define ZLANG_SPEC_IF_SOURCE                                                                       \
     "boolean ready = true;\n"                                                                      \
@@ -39,7 +39,7 @@
     "} else {\n"                                                                                   \
     "    print(\"no\");\n"                                                                         \
     "}"
-#define ZLANG_SPEC_IF_EXPECTED "if (_u_ready) {"
+#define ZLANG_SPEC_IF_EXPECTED "if (_ready) {"
 #define ZLANG_SPEC_IF_ELSE_EXPECTED "} else {"
 
 #define ZLANG_SPEC_REPEAT_SOURCE "repeat (2U) { print(\"tick\"); }"
@@ -50,8 +50,8 @@
     "function add(integer left, integer right): integer {\n"                                       \
     "    return left + right;\n"                                                                   \
     "}"
-#define ZLANG_SPEC_FUNCTION_EXPECTED "int32_t _u_add(int32_t _u_left, int32_t _u_right) {"
-#define ZLANG_SPEC_FUNCTION_RETURN_EXPECTED "return zlang_add_i32(_u_left, _u_right);"
+#define ZLANG_SPEC_FUNCTION_EXPECTED "int32_t _u_add(int32_t left, int32_t right) {"
+#define ZLANG_SPEC_FUNCTION_RETURN_EXPECTED "return zlang_add_i32(left, right);"
 
 #define ZLANG_SPEC_FUNCTION_USER_TYPES_SOURCE                                                      \
     "record Point { integer x; integer y; }\n"                                                     \
@@ -70,17 +70,17 @@
     "Point painted = paint(made, chosen);"
 #define ZLANG_SPEC_FUNCTION_USER_TYPE_RETURN_EXPECTED "zlang_point_t _u_make(void) {"
 #define ZLANG_SPEC_FUNCTION_USER_TYPE_PARAMETERS_EXPECTED                                          \
-    "zlang_point_t _u_paint(zlang_point_t _u_value, zlang_color_t _u_color) {"
+    "zlang_point_t _u_paint(zlang_point_t value, zlang_color_t color) {"
 #define ZLANG_SPEC_FUNCTION_USER_TYPE_CALL_EXPECTED                                                \
-    "zlang_point_t _u_painted = _u_paint(_u_made, _u_chosen);"
+    "zlang_point_t _painted = _u_paint(_made, _chosen);"
 
 #define ZLANG_SPEC_APPEND_INDEX_SOURCE                                                             \
     "sequence[4] integer values;\n"                                                                \
     "append(values, 7);\n"                                                                         \
     "integer first = values[0];"
 #define ZLANG_SPEC_APPEND_EXPECTED                                                                 \
-    "zlang_array_append(_u_values.data_, &_u_values.length_, ZLANG_VALUES_CAPACITY"
-#define ZLANG_SPEC_INDEX_EXPECTED "_u_values.data_[0]"
+    "zlang_array_append(_values.data_, &_values.length_, ZLANG_VALUES_CAPACITY"
+#define ZLANG_SPEC_INDEX_EXPECTED "_values.data_[0]"
 
 #define ZLANG_SPEC_CONFORMANCE_SOURCE                                                              \
     "integer first = 1;\n"                                                                         \
@@ -97,37 +97,37 @@
     "first = 4;\n"                                                                                 \
     "boolean matched = first == 4;\n"
 
-#define ZLANG_SPEC_CONFORMANCE_INTEGER_EXPECTED "int32_t _u_first = 1;"
-#define ZLANG_SPEC_CONFORMANCE_UNSIGNED_EXPECTED "uint32_t _u_count = 2U;"
-#define ZLANG_SPEC_CONFORMANCE_BOOLEAN_EXPECTED "bool _u_ready = false;"
-#define ZLANG_SPEC_CONFORMANCE_STRING_EXPECTED "zlang_string_t _u_label = _zlang_literal_0;"
-#define ZLANG_SPEC_CONFORMANCE_BLOCK_EXPECTED "{\n        int32_t _u_scoped = 3;"
-#define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (_u_ready) {"
-#define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (_u_ready) {"
+#define ZLANG_SPEC_CONFORMANCE_INTEGER_EXPECTED "int32_t _first = 1;"
+#define ZLANG_SPEC_CONFORMANCE_UNSIGNED_EXPECTED "uint32_t _count = 2U;"
+#define ZLANG_SPEC_CONFORMANCE_BOOLEAN_EXPECTED "bool _ready = false;"
+#define ZLANG_SPEC_CONFORMANCE_STRING_EXPECTED "zlang_string_t _label = _zlang_literal_0;"
+#define ZLANG_SPEC_CONFORMANCE_BLOCK_EXPECTED "{\n        int32_t _scoped = 3;"
+#define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (_ready) {"
+#define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (_ready) {"
 #define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
-    "for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < _u_values.length_; "          \
+    "for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < _values.length_; "            \
     "++_zlang_foreach_2)"
 #define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED                                                     \
     "for (uint32_t _zlang_repeat_3 = ZLANG_ZERO; _zlang_repeat_3 < 2U;"
 #define ZLANG_SPEC_CONFORMANCE_FUNCTION_EXPECTED "void _u_noop(void) {"
 #define ZLANG_SPEC_CONFORMANCE_RETURN_EXPECTED "return;"
-#define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_u_first = 4;"
-#define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "_u_first == 4"
-#define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(_u_label);"
+#define ZLANG_SPEC_CONFORMANCE_ASSIGNMENT_EXPECTED "_first = 4;"
+#define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "_first == 4"
+#define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_print(_label);"
 
 #define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "sequence[] integer values = {1, 2, 3};"
 #define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED                                                   \
-    "zlang_values_t _u_values = { { 1, 2, 3 }, ZLANG_VALUES_LENGTH };"
+    "zlang_values_t _values = { { 1, 2, 3 }, ZLANG_VALUES_LENGTH };"
 
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "sequence[5] integer values = {1, 2, 3};"
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED                                                    \
-    "zlang_values_t _u_values = { { 1, 2, 3, 0, 0 }, ZLANG_VALUES_LENGTH };"
+    "zlang_values_t _values = { { 1, 2, 3, 0, 0 }, ZLANG_VALUES_LENGTH };"
 
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_SOURCE                                                         \
     "sequence[4] integer values;\n"                                                                \
     "append(values, 7);\n"                                                                         \
     "values[0] = 10;"
-#define ZLANG_SPEC_INDEX_ASSIGNMENT_EXPECTED "_u_values.data_[_zlang_index_0] = 10;"
+#define ZLANG_SPEC_INDEX_ASSIGNMENT_EXPECTED "_values.data_[_zlang_index_0] = 10;"
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_TRAP "zlang_trap(ZLANG_TRAP_BOUNDS);"
 
 #define ZLANG_SPEC_LITERAL_CONCAT_SOURCE "string message = \"temp_\" + \"_01\";"
@@ -143,7 +143,7 @@
     "    return left + right;\n"                                                                   \
     "}\n"                                                                                          \
     "integer total = add(2, 3);"
-#define ZLANG_SPEC_CALL_EXPECTED "int32_t _u_total = _u_add(2, 3);"
+#define ZLANG_SPEC_CALL_EXPECTED "int32_t _total = _u_add(2, 3);"
 
 #define ZLANG_SPEC_OPERATORS_SOURCE                                                                \
     "integer total = 4;\n"                                                                         \
@@ -152,13 +152,13 @@
     "boolean lower_equal = total <= 4;\n"                                                          \
     "boolean greater_equal = total >= 4;\n"                                                        \
     "boolean different = total != 2;"
-#define ZLANG_SPEC_LESS_EXPECTED "bool _u_smaller = _u_total < 10;"
-#define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool _u_different = _u_total != 2;"
+#define ZLANG_SPEC_LESS_EXPECTED "bool _smaller = _total < 10;"
+#define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool _different = _total != 2;"
 
 #define ZLANG_SPEC_SIBLING_SCOPES_SOURCE                                                           \
     "{ integer item = 1; }\n"                                                                      \
     "{ integer item = 2; print(item); }"
-#define ZLANG_SPEC_SIBLING_SCOPES_EXPECTED "int32_t _u_item_0 = 2;"
+#define ZLANG_SPEC_SIBLING_SCOPES_EXPECTED "int32_t _item_0 = 2;"
 
 #define ZLANG_SPEC_ELSE_IF_SOURCE                                                                  \
     "integer value = 2;\n"                                                                         \
@@ -166,8 +166,8 @@
     "else if (value == 2) { print(\"two\"); }\n"                                                   \
     "else if (value == 3) { print(\"three\"); }\n"                                                 \
     "else { print(\"other\"); }"
-#define ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED "} else if (_u_value == 2) {"
-#define ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED "} else if (_u_value == 3) {"
+#define ZLANG_SPEC_ELSE_IF_SECOND_EXPECTED "} else if (_value == 2) {"
+#define ZLANG_SPEC_ELSE_IF_THIRD_EXPECTED "} else if (_value == 3) {"
 #define ZLANG_SPEC_ELSE_IF_FINAL_EXPECTED "} else {"
 
 #define ZLANG_SPEC_LOGICAL_SOURCE                                                                  \
@@ -177,10 +177,10 @@
     "boolean both = a && b;\n"                                                                     \
     "boolean either = a || b;\n"                                                                   \
     "boolean mixed = !(a && b) || a;"
-#define ZLANG_SPEC_LOGICAL_NOT_EXPECTED "bool _u_negated = (!_u_a);"
-#define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool _u_both = (_u_a && _u_b);"
-#define ZLANG_SPEC_LOGICAL_OR_EXPECTED "bool _u_either = (_u_a || _u_b);"
-#define ZLANG_SPEC_LOGICAL_GROUP_EXPECTED "bool _u_mixed = ((!(_u_a && _u_b)) || _u_a);"
+#define ZLANG_SPEC_LOGICAL_NOT_EXPECTED "bool _negated = (!_a);"
+#define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool _both = (_a && _b);"
+#define ZLANG_SPEC_LOGICAL_OR_EXPECTED "bool _either = (_a || _b);"
+#define ZLANG_SPEC_LOGICAL_GROUP_EXPECTED "bool _mixed = ((!(_a && _b)) || _a);"
 
 #define ZLANG_SPEC_LOOP_JUMPS_SOURCE                                                               \
     "sequence[] integer values = {1, 2, 3};\n"                                                     \
@@ -197,7 +197,7 @@
 #define ZLANG_SPEC_SELF_CONCAT_SOURCE                                                              \
     "string[16] label = \"a\";\n"                                                                  \
     "label = label + \"b\";"
-#define ZLANG_SPEC_SELF_CONCAT_EXPECTED "(zlang_string_t[]){ _u_label, "
+#define ZLANG_SPEC_SELF_CONCAT_EXPECTED "(zlang_string_t[]){ _label, "
 
 #define ZLANG_SPEC_NESTED_NO_DUPLICATES_SOURCE                                                     \
     "sequence[] integer values = {1};\n"                                                           \
@@ -211,11 +211,11 @@
     "integer quotient = product / 2;\n"                                                            \
     "integer remainder = product % 5;\n"                                                           \
     "integer negative = -total;"
-#define ZLANG_SPEC_SUB_EXPECTED "int32_t _u_total = zlang_sub_i32(10, 2);"
-#define ZLANG_SPEC_MUL_EXPECTED "zlang_mul_i32(_u_total, 3)"
-#define ZLANG_SPEC_DIV_EXPECTED "zlang_div_i32(_u_product, 2)"
-#define ZLANG_SPEC_MOD_EXPECTED "zlang_mod_i32(_u_product, 5)"
-#define ZLANG_SPEC_NEGATIVE_EXPECTED "int32_t _u_negative = (-_u_total);"
+#define ZLANG_SPEC_SUB_EXPECTED "int32_t _total = zlang_sub_i32(10, 2);"
+#define ZLANG_SPEC_MUL_EXPECTED "zlang_mul_i32(_total, 3)"
+#define ZLANG_SPEC_DIV_EXPECTED "zlang_div_i32(_product, 2)"
+#define ZLANG_SPEC_MOD_EXPECTED "zlang_mod_i32(_product, 5)"
+#define ZLANG_SPEC_NEGATIVE_EXPECTED "int32_t _negative = (-_total);"
 
 #define ZLANG_SPEC_COMPOUND_SOURCE                                                                 \
     "integer total = 1;\n"                                                                         \
@@ -224,13 +224,13 @@
     "total *= 3;\n"                                                                                \
     "total /= 2;\n"                                                                                \
     "total %= 2;"
-#define ZLANG_SPEC_COMPOUND_ADD_EXPECTED "_u_total = zlang_add_i32(_u_total, 2);"
-#define ZLANG_SPEC_COMPOUND_MOD_EXPECTED "_u_total = zlang_mod_i32(_u_total, 2);"
+#define ZLANG_SPEC_COMPOUND_ADD_EXPECTED "_total = zlang_add_i32(_total, 2);"
+#define ZLANG_SPEC_COMPOUND_MOD_EXPECTED "_total = zlang_mod_i32(_total, 2);"
 
 #define ZLANG_SPEC_LENGTH_SOURCE                                                                   \
     "sequence[4] integer values = {1, 2};\n"                                                       \
     "unsigned count = length(values);"
-#define ZLANG_SPEC_LENGTH_EXPECTED "uint32_t _u_count = _u_values.length_;"
+#define ZLANG_SPEC_LENGTH_EXPECTED "uint32_t _count = _values.length_;"
 
 #define ZLANG_SPEC_SCALAR_PRINT_SOURCE                                                             \
     "print(1);\n"                                                                                  \
@@ -256,8 +256,8 @@
     "    print(values[index]);\n"                                                                  \
     "}"
 #define ZLANG_SPEC_FOR_EXPECTED                                                                    \
-    "for (uint32_t _u_index = 0U; (_u_index < _u_values.length_); _u_index = "                     \
-    "zlang_add_u32(_u_index, 1U))"
+    "for (uint32_t _index = 0U; (_index < _values.length_); _index = "                             \
+    "zlang_add_u32(_index, 1U))"
 
 #define ZLANG_SPEC_NESTED_LOOPS_SOURCE                                                             \
     "sequence[2] integer values = {1, 2};\n"                                                       \
@@ -278,16 +278,16 @@
     "    print(index);\n"                                                                          \
     "    print(item);\n"                                                                           \
     "}"
-#define ZLANG_SPEC_INDEXED_FOREACH_EXPECTED "uint32_t _u_index = _zlang_foreach_0;"
+#define ZLANG_SPEC_INDEXED_FOREACH_EXPECTED "uint32_t _index = _zlang_foreach_0;"
 
 #define ZLANG_SPEC_CONST_SOURCE "const integer limit = 10;"
-#define ZLANG_SPEC_CONST_EXPECTED "const int32_t _u_limit = 10;"
+#define ZLANG_SPEC_CONST_EXPECTED "const int32_t _limit = 10;"
 #define ZLANG_SPEC_CONST_ASSIGN_SOURCE "const integer limit = 10;\nlimit = 11;"
 
 #define ZLANG_SPEC_STRING_INDEX_SOURCE                                                             \
     "string[8] text = \"abc\";\n"                                                                  \
     "unsigned first = text[0];"
-#define ZLANG_SPEC_STRING_INDEX_EXPECTED "zlang_string_byte(_u_text, 0)"
+#define ZLANG_SPEC_STRING_INDEX_EXPECTED "zlang_string_byte(_text, 0)"
 
 #define ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE                                                   \
     "{ sequence[2] integer values; }\n"                                                            \
@@ -318,7 +318,7 @@
 #define ZLANG_SPEC_RECORD_TYPE_EXPECTED "typedef struct zlang_point_t"
 #define ZLANG_SPEC_ENUM_TYPE_EXPECTED "typedef enum zlang_color_t"
 #define ZLANG_SPEC_ENUM_VALUE_EXPECTED "ZLANG_COLOR_GREEN"
-#define ZLANG_SPEC_FIELD_ASSIGN_EXPECTED "_u_point.x = 1;"
+#define ZLANG_SPEC_FIELD_ASSIGN_EXPECTED "_point.x_ = 1;"
 #define ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED "_zlang_field_ptr_"
 
 #define ZLANG_SPEC_CSE_SOURCE                                                                      \

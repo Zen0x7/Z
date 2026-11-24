@@ -374,3 +374,19 @@ Status: Implemented.
 Field pointer temporaries now live in the emitter context instead of a single statement. Consecutive
 accesses to the same sequence element share one checked pointer, and assignments to index
 dependencies invalidate it.
+
+## 0.11 — Index value CSE
+
+Status: Locked.
+
+- Include branch bodies when collecting repeated index reads for an `if` chain.
+- Reuse one local temporary across the conditions and their branch bodies.
+- Keep cached index values alive for the whole statement context.
+- Invalidate cached index values on writes and scope exit.
+
+## 0.11 — Completion
+
+Status: Implemented.
+
+An index read used in an `if` condition and again inside a branch no longer calls the getter twice.
+The value temporary lives for the whole `if` statement, and writes clear the cached reads.

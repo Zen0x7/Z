@@ -366,8 +366,9 @@ user functions use `_u_`. Compiler-generated temporaries use `_zlang_`, generate
 `ZLANG_`, generated types use `zlang_` and runtime calls use `zlang_`. Only source blocks emit extra
 braces; compiler temporaries are declared in the enclosing C block. A reference to a sequence
 element is resolved once per context: the first field access materializes a checked pointer and later
-accesses to the same element reuse it until an index dependency changes or the scope ends. Trap sites
-use the public `ZLANG_TRAP_*` constants rather than numeric literals.
+accesses to the same element reuse it until an index dependency changes or the scope ends. An index
+read repeated across an `if` chain and its branch bodies is materialized once and reused there. Trap
+sites use the public `ZLANG_TRAP_*` constants rather than numeric literals.
 
 ### 12.4 Runtime API
 
@@ -709,6 +710,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | emitted C symbol naming | `emits_functions_with_user_defined_types`, `uses_readable_emitted_layout` |
 | generated temporaries without synthetic blocks | `emits_temporaries_without_synthetic_blocks` |
 | contextual field-pointer CSE | `reuses_field_pointers_contextually` |
+| contextual index-value CSE across branches | `reuses_index_values_across_if_branches` |
 | reserved generated namespace | `rejects_reserved_identifiers` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
 
@@ -750,6 +752,13 @@ Zlang 0.10 resolves sequence field references once per context. The emitter mate
 pointer at the first field access of an element and reuses it across statements until an index
 dependency is assigned or the lexical scope ends. Repeated reads in condition chains keep their
 existing local temporaries.
+
+
+## 0.11 implementation status
+
+Zlang 0.11 extends contextual CSE to index reads. A read repeated across an `if` chain and its branch
+bodies is materialized once before the chain and reused inside the branches. Cached reads are
+invalidated by writes and by scope exit.
 
 
 ## Emitted comments

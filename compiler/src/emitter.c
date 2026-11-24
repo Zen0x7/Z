@@ -914,18 +914,21 @@ static const char *zlang_expression_type(const zlang_program_t *program,
 
 typedef struct zlang_emitter_scope_t {
     size_t symbol_count_;
+    size_t cse_count_;
     size_t cse_pointer_count_;
 } zlang_emitter_scope_t;
 
 static zlang_emitter_scope_t zlang_save_scope(const zlang_emitter_t *emitter) {
     zlang_emitter_scope_t _scope_k;
     _scope_k.symbol_count_ = emitter->active_symbol_count_;
+    _scope_k.cse_count_ = emitter->cse_count_;
     _scope_k.cse_pointer_count_ = emitter->cse_pointer_count_;
     return _scope_k;
 }
 
 static void zlang_restore_scope(zlang_emitter_t *emitter, zlang_emitter_scope_t saved) {
     emitter->active_symbol_count_ = saved.symbol_count_;
+    emitter->cse_count_ = saved.cse_count_;
     emitter->cse_pointer_count_ = saved.cse_pointer_count_;
 }
 
@@ -1942,16 +1945,63 @@ static bool zlang_collect_index_expressions(const zlang_program_t *program, size
     return true;
 }
 
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
+zlang_collect_statement_index_expressions(const zlang_program_t *program,
+                                          const zlang_ast_statement_t *statement, size_t *items,
+                                          size_t *count,
+                                          size_t capacity) { // NOLINT(misc-no-recursion)
+    if (statement == NULL) {
+        return true;
+    }
+    if (!zlang_collect_index_expressions(program, statement->expression_, items, count, capacity) ||
+        !zlang_collect_index_expressions(program, statement->update_expression_, items, count,
+                                         capacity)) {
+        return false;
+    }
+    if (statement->initializer_statement_ != ZLANG_NO_STATEMENT &&
+        statement->initializer_statement_ < program->statement_count_ &&
+        !zlang_collect_statement_index_expressions(
+            program, &program->statements_[statement->initializer_statement_], items, count,
+            capacity)) {
+        return false;
+    }
+    const size_t _initializer_end_k = statement->initializer_start_ + statement->initializer_count_;
+    for (size_t _item = statement->initializer_start_;
+         _item < _initializer_end_k && _item < program->expression_count_; ++_item) {
+        if (!zlang_collect_index_expressions(program, _item, items, count, capacity)) {
+            return false;
+        }
+    }
+    const size_t _body_end_k = statement->body_start_ + statement->body_count_;
+    for (size_t _item = statement->body_start_;
+         _item < _body_end_k && _item < program->statement_count_; ++_item) {
+        if (!zlang_collect_statement_index_expressions(program, &program->statements_[_item], items,
+                                                       count, capacity)) {
+            return false;
+        }
+    }
+    const size_t _else_end_k = statement->else_start_ + statement->else_count_;
+    for (size_t _item = statement->else_start_;
+         _item < _else_end_k && _item < program->statement_count_; ++_item) {
+        if (!zlang_collect_statement_index_expressions(program, &program->statements_[_item], items,
+                                                       count, capacity)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool zlang_save_condition_values(const zlang_program_t *program,
                                         const zlang_ast_statement_t *statement,
                                         zlang_emitter_t *emitter, uint32_t depth) {
-    size_t _candidates[64];
-    size_t _candidate_count = 0U;
+    size_t _condition_candidates[64];
+    size_t _condition_count_k = 0U;
     const zlang_ast_statement_t *_current_k = statement;
     for (size_t _chain = 0U; _chain < 32U; ++_chain) {
-        if (!zlang_collect_index_expressions(program, _current_k->expression_, _candidates,
-                                             &_candidate_count,
-                                             sizeof(_candidates) / sizeof(_candidates[0]))) {
+        if (!zlang_collect_index_expressions(
+                program, _current_k->expression_, _condition_candidates, &_condition_count_k,
+                sizeof(_condition_candidates) / sizeof(_condition_candidates[0]))) {
             return false;
         }
         if (_current_k->else_count_ != 1U ||
@@ -1961,14 +2011,22 @@ static bool zlang_save_condition_values(const zlang_program_t *program,
         _current_k = &program->statements_[_current_k->else_start_];
     }
 
-    for (size_t _index = 0U; _index < _candidate_count; ++_index) {
-        const size_t _candidate_k = _candidates[_index];
+    size_t _all_candidates[128];
+    size_t _all_count_k = 0U;
+    if (!zlang_collect_statement_index_expressions(
+            program, statement, _all_candidates, &_all_count_k,
+            sizeof(_all_candidates) / sizeof(_all_candidates[0]))) {
+        return false;
+    }
+
+    for (size_t _index = 0U; _index < _condition_count_k; ++_index) {
+        const size_t _candidate_k = _condition_candidates[_index];
         if (zlang_find_cse(emitter, _candidate_k) != NULL) {
             continue;
         }
         size_t _occurrences = 0U;
-        for (size_t _other = 0U; _other < _candidate_count; ++_other) {
-            if (zlang_expression_equal(program, _candidate_k, _candidates[_other])) {
+        for (size_t _other = 0U; _other < _all_count_k; ++_other) {
+            if (zlang_expression_equal(program, _candidate_k, _all_candidates[_other])) {
                 ++_occurrences;
             }
         }
@@ -1991,12 +2049,12 @@ static bool zlang_save_condition_values(const zlang_program_t *program,
             !zlang_append_text(emitter, ";\n")) {
             return false;
         }
-        for (size_t _other = 0U; _other < _candidate_count; ++_other) {
-            if (!zlang_expression_equal(program, _candidate_k, _candidates[_other]) ||
-                zlang_find_cse(emitter, _candidates[_other]) != NULL) {
+        for (size_t _other = 0U; _other < _all_count_k; ++_other) {
+            if (!zlang_expression_equal(program, _candidate_k, _all_candidates[_other]) ||
+                zlang_find_cse(emitter, _all_candidates[_other]) != NULL) {
                 continue;
             }
-            emitter->cse_expression_indices_[emitter->cse_count_] = _candidates[_other];
+            emitter->cse_expression_indices_[emitter->cse_count_] = _all_candidates[_other];
             snprintf(emitter->cse_names_[emitter->cse_count_], sizeof(emitter->cse_names_[0]), "%s",
                      _name);
             ++emitter->cse_count_;
@@ -2010,9 +2068,9 @@ static bool zlang_emit_if_statement(const zlang_program_t *program,
                                     const zlang_ast_statement_t *statement,
                                     zlang_emitter_t *emitter, uint32_t depth,
                                     bool save_values) { // NOLINT(misc-no-recursion)
-    const size_t _saved_cse_k = emitter->cse_count_;
     bool _result_k = true;
     if (save_values) {
+        const size_t _saved_cse_k = emitter->cse_count_;
         _result_k = zlang_save_condition_values(program, statement, emitter, depth);
         if (_result_k && emitter->cse_count_ > _saved_cse_k) {
             _result_k = zlang_append_indent(emitter, depth);
@@ -2045,7 +2103,6 @@ static bool zlang_emit_if_statement(const zlang_program_t *program,
                     zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "}\n");
         zlang_restore_scope(emitter, _else_scope_k);
     }
-    emitter->cse_count_ = _saved_cse_k;
     return _result_k;
 }
 
@@ -2232,14 +2289,19 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         return false;
     }
     const char *_written_name_k = NULL;
+    bool _writes_k = false;
     if (statement->expression_ < program->expression_count_) {
         const zlang_ast_expression_t *const _expression_k =
             &program->expressions_[statement->expression_];
+        _writes_k = _expression_k->kind_ == zlang_expression_index_assignment_ ||
+                    _expression_k->kind_ == zlang_expression_field_assignment_ ||
+                    _expression_k->kind_ == zlang_expression_append_call_;
         if ((_expression_k->kind_ == zlang_expression_assignment_ ||
              _expression_k->kind_ == zlang_expression_compound_assignment_) &&
             _expression_k->left_ < program->expression_count_ &&
             program->expressions_[_expression_k->left_].kind_ == zlang_expression_identifier_) {
             _written_name_k = program->expressions_[_expression_k->left_].name_;
+            _writes_k = true;
         }
     }
     if (statement->update_expression_ < program->expression_count_) {
@@ -2250,9 +2312,13 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             _update_k->left_ < program->expression_count_ &&
             program->expressions_[_update_k->left_].kind_ == zlang_expression_identifier_) {
             _written_name_k = program->expressions_[_update_k->left_].name_;
+            _writes_k = true;
         }
     }
     zlang_invalidate_pointer_cse(emitter, _written_name_k);
+    if (_writes_k) {
+        emitter->cse_count_ = 0U;
+    }
     if (!zlang_materialize_field_references(program, statement, emitter, depth) ||
         !zlang_append_indent(emitter, depth)) {
         return false;
@@ -2436,8 +2502,12 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             return false;
         }
         return zlang_append_text(emitter, ";\n");
-    case zlang_statement_if_:
-        return zlang_emit_if_statement(program, statement, emitter, depth, true);
+    case zlang_statement_if_: {
+        const zlang_emitter_scope_t _statement_scope_k = zlang_save_scope(emitter);
+        const bool _result_k = zlang_emit_if_statement(program, statement, emitter, depth, true);
+        zlang_restore_scope(emitter, _statement_scope_k);
+        return _result_k;
+    }
     case zlang_statement_while_: {
         if (!zlang_append_text(emitter, "while ") ||
             !zlang_emit_condition(program, statement->expression_, emitter) ||

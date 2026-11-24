@@ -371,6 +371,26 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
                                                       "zlang_point_t *_zlang_field_ptr_") == 2U);
 }
 
+static void reuses_index_values_across_if_branches(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "sequence[4] integer values = {1, 2, 3};\n"
+                                  "if (values[0] > 3) {\n"
+                                  "    print(\"big\");\n"
+                                  "} else if (values[0] == 3) {\n"
+                                  "    print(values[0]);\n"
+                                  "} else {\n"
+                                  "    print(\"small\");\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_count_occurrences(_session.output_, "int32_t _zlang_value_") == 1U);
+    ZLANG_CHECK(context,
+                zlang_spec_count_occurrences(_session.output_, "zlang_array_get_i32") == 1U);
+    ZLANG_CHECK(context, strstr(_session.output_, "} else if (_zlang_value_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(_zlang_value_") != NULL);
+}
+
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
     static const char *const sources_k[] = {"integer zlang_value = 1;", "integer _zlang_value = 1;",
                                             "integer ZLANG_VALUE = 1;"};

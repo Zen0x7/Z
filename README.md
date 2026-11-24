@@ -76,8 +76,8 @@ emit `{}`; compiler temporaries are declared directly in the enclosing C block. 
 functions use `(void)` and unused parameters receive `(void)` guards. Index reads lower to bounded `zlang_*` getters. References to sequence elements are
 resolved once per context: a checked pointer temporary is materialized at the first field access and
 reused by later accesses to the same element until an index dependency changes or the scope ends.
-Repeated reads in condition chains also become local temporaries, and `(void)` guards appear only
-for variables that are genuinely unused.
+Repeated index reads also share one local temporary across a condition chain and its branch bodies,
+and `(void)` guards appear only for variables that are genuinely unused.
 
 ```zlang
 // A guided tour of the language.
@@ -365,7 +365,7 @@ int main(void) {
     if (_zlang_value_12 > 3) {
         zlang_print(_zlang_literal_5);
     } else if (_zlang_value_12 == 3) {
-        zlang_print_i32(zlang_array_get_i32(_fixed.data_, 0, _fixed.length_));
+        zlang_print_i32(_zlang_value_12);
     } else {
         zlang_print(_zlang_literal_6);
     }

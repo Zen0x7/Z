@@ -321,7 +321,7 @@ Every generated C file begins with:
 | `unsigned` | `uint32_t` |
 | `boolean` | `bool` |
 | `string` | `zlang_string_t` |
-| `T[N]` | generated aggregate `{ T data_[N]; uint32_t length_; }` |
+| `sequence[N] T name` | generated typedef `zlang_name_t` with a `ZLANG_NAME_CAPACITY` macro |
 
 ### 12.3 Construct mapping
 
@@ -351,6 +351,12 @@ Every generated C file begins with:
 | `function f(...)` | `static` C function with the same name |
 | `return x;` | `return x;` |
 | overflow, bounds, capacity, division-by-zero failure | `zlang_trap(<fixed code>)` |
+
+Generated C is laid out in this order: includes, named capacity macros, generated sequence
+typedefs, named string literal constants, user functions and `main`. Source symbols are emitted
+with an `_u_` prefix, compiler-generated temporaries with `_zlang_`, generated macros with
+`ZLANG_`, generated types with `zlang_` and runtime calls with `zlang_`. Trap sites use the public
+`ZLANG_TRAP_*` constants rather than numeric literals.
 
 ### 12.4 Runtime API
 
@@ -661,4 +667,5 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `const` declarations | `emits_const_declarations` |
 | `const` assignment rejection | `rejects_assignment_to_const` |
 | string indexing | `emits_string_index_read` |
+| readable emitted C layout | `uses_readable_emitted_layout` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |

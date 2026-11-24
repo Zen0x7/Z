@@ -13,8 +13,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define ZLANG_EMITTED_TYPE_CAPACITY 32U
 #define ZLANG_EMITTED_SYMBOL_CAPACITY 128U
+#define ZLANG_EMITTED_SEQUENCE_CAPACITY 32U
+#define ZLANG_EMITTED_LITERAL_CAPACITY 64U
 #define ZLANG_EMITTED_NAME_CAPACITY 64U
 
 /* The emitter owns no memory. The caller supplies the output buffer and the
@@ -30,6 +31,19 @@ typedef struct zlang_emitted_symbol_t {
     bool is_sequence_;
 } zlang_emitted_symbol_t;
 
+typedef struct zlang_emitted_sequence_t {
+    const zlang_ast_statement_t *statement_;
+    char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char capacity_macro_[ZLANG_EMITTED_NAME_CAPACITY];
+    char element_macro_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_sequence_t;
+
+typedef struct zlang_emitted_literal_t {
+    size_t expression_index_;
+    char data_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char view_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_literal_t;
+
 typedef struct zlang_emitter_t {
     char *buffer_;
     size_t capacity_;
@@ -37,11 +51,13 @@ typedef struct zlang_emitter_t {
     zlang_diagnostics_t *diagnostics_;
     const zlang_memory_plan_t *plan_;
     uint32_t next_index_;
-    char emitted_types_[ZLANG_EMITTED_TYPE_CAPACITY][64];
-    size_t emitted_type_count_;
     zlang_emitted_symbol_t emitted_symbols_[ZLANG_EMITTED_SYMBOL_CAPACITY];
     size_t emitted_symbol_count_;
     size_t active_symbol_count_;
+    zlang_emitted_sequence_t emitted_sequences_[ZLANG_EMITTED_SEQUENCE_CAPACITY];
+    size_t emitted_sequence_count_;
+    zlang_emitted_literal_t emitted_literals_[ZLANG_EMITTED_LITERAL_CAPACITY];
+    size_t emitted_literal_count_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

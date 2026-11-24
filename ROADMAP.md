@@ -229,3 +229,11 @@ Status: Implemented.
 Native `for`, indexed `foreach`, local `const` and read-only string indexing are implemented.
 Loops nest freely and the full language tour in `README.md` is compiled as a conformance test.
 Semantic errors found inside expressions now fail analysis consistently.
+
+## Emitted C layout — Completion
+
+Status: Implemented.
+
+Generated C now separates capacity macros, sequence typedefs, named string literals, user functions
+and `main`. Source symbols use `_u_`, compiler temporaries use `_zlang_`, generated types use
+`zlang_` and traps use the public `ZLANG_TRAP_*` constants.

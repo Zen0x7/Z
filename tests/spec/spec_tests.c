@@ -126,7 +126,7 @@ static void keeps_small_sequences_automatic(zlang_test_context_t *const context)
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FOREACH_SOURCE));
-    ZLANG_CHECK(context, strstr(_session.output_, "static ") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "static zlang_values_t") == NULL);
 }
 
 static void emits_a_scalar_declaration(zlang_test_context_t *const context) {
@@ -186,7 +186,7 @@ static void skips_comments_and_unescapes_strings(zlang_test_context_t *const con
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "say \\\"hi\\\"") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, ", 8U });") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_literal_0") != NULL);
 }
 
 static void rejects_a_duplicate_declaration(zlang_test_context_t *const context) {
@@ -390,7 +390,7 @@ static void renames_sibling_scope_declarations(zlang_test_context_t *const conte
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SCOPES_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_SCOPES_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(item_0)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(_u_item_0)") != NULL);
 }
 
 static void rejects_a_shadowed_declaration(zlang_test_context_t *const context) {
@@ -607,7 +607,7 @@ static void emits_indexed_foreach(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INDEXED_FOREACH_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEXED_FOREACH_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_u32(index)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_u32(_u_index)") != NULL);
 }
 
 static void emits_const_declarations(zlang_test_context_t *const context) {
@@ -630,6 +630,21 @@ static void emits_string_index_read(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_STRING_INDEX_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_STRING_INDEX_EXPECTED) != NULL);
+}
+
+static void uses_readable_emitted_layout(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_READABLE_LAYOUT_SOURCE));
+    const char *const _type_position_k = strstr(_session.output_, "typedef struct zlang_values_t");
+    const char *const _main_position_k = strstr(_session.output_, "int main(void)");
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_VALUES_CAPACITY 3U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t _u_base = 2;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_values_t _u_values") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_literal_0") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_trap(ZLANG_TRAP_BOUNDS)") != NULL);
+    ZLANG_CHECK(context, _type_position_k != NULL && _main_position_k != NULL &&
+                             _type_position_k < _main_position_k);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

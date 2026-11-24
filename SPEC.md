@@ -458,7 +458,8 @@ string, `ZLANG1003` invalid character, `ZLANG1004` unsupported construct,
 `ZLANG2003` undefined identifier, `ZLANG2004` type mismatch,
 `ZLANG2005` shadowed declaration, `ZLANG2006` string capacity required,
 `ZLANG3001` unbounded sequence, `ZLANG3002` unused capacity, and
-`ZLANG3003` initializer too long. Legacy postfix sequence declarations use `ZLANG1004`.
+`ZLANG3003` initializer too long. `ZLANG3004` warns about an unnecessary reference parameter.
+Legacy postfix sequence declarations use `ZLANG1004`.
 `ZLANG3002` is a warning: it is printed with
 the `warning[...]` prefix and does not stop compilation.
 
@@ -683,6 +684,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `ZLANG2006` string capacity required | `rejects_variable_concatenation_without_capacity` |
 | `ZLANG3002` unused capacity warning | `warns_about_unused_explicit_capacity` |
 | `ZLANG3003` initializer too long | `rejects_an_initializer_longer_than_capacity` |
+| `ZLANG3004` unnecessary reference | `warns_about_unnecessary_references`, `accepts_mutated_scalar_reference` |
 | sequence initializer and inferred capacity | `emits_an_inferred_sequence_initializer`, `emits_a_partial_explicit_sequence_initializer` |
 | checked index assignment | `emits_index_assignment_with_a_checked_store` |
 | literal string concatenation | `folds_literal_string_concatenation` |
@@ -785,6 +787,14 @@ Zlang 0.12 adds mandatory parameter qualifiers. Every parameter uses `clone` or 
 optional `const` before the mode. `clone` is a local value copy; `reference` is a caller-owned alias
 lowered to a C pointer that is never exposed in Zlang source. References cannot be stored or
 returned, and reference arguments must be lvalues.
+
+
+## 0.13 implementation status
+
+Zlang 0.13 warns with `ZLANG3004` when a `reference` parameter of a small value type has no
+mutational purpose. `const reference` to a scalar, string or enum is always warned about; a mutable
+`reference` is warned about only when the function body never mutates it. Mutated reference
+parameters and references to records are accepted without this warning.
 
 
 ## Emitted comments

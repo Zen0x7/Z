@@ -222,6 +222,12 @@ static bool zlang_type_matches(const char *expected, const char *actual) {
     return expected != NULL && actual != NULL && strcmp(expected, actual) == 0;
 }
 
+static bool zlang_is_small_value_type(const zlang_semantic_context_t *context,
+                                      const char *type_name) {
+    return type_name != NULL &&
+           (zlang_is_builtin_type(type_name) || zlang_is_enum_type(context->program_, type_name));
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_is_literal_string(const zlang_program_t *program,
                                     size_t index) { // NOLINT(misc-no-recursion)
@@ -361,6 +367,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           "compound assignment requires a matching numeric type");
             return NULL;
         }
+        zlang_mark_mutated(context, _symbol_k->name_);
         return _actual_k;
     }
     case zlang_expression_length_: {
@@ -455,9 +462,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           "assignment value does not match the declared type");
             return NULL;
         }
-        if (strcmp(_symbol_k->type_name_, "string") == 0) {
-            zlang_mark_mutated(context, _symbol_k->name_);
-        }
+        zlang_mark_mutated(context, _symbol_k->name_);
         return _actual_k;
     }
     case zlang_expression_index_assignment_: {
@@ -581,7 +586,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                               "cannot assign to a field of a const value");
                 return NULL;
             }
-            if (_base_symbol_k != NULL && _base_symbol_k->is_sequence_) {
+            if (_base_symbol_k != NULL &&
+                (_base_symbol_k->is_sequence_ || _base_symbol_k->is_reference_)) {
                 zlang_mark_mutated(context, _base_symbol_k->name_);
             }
         } else if (_target_k->left_ < context->program_->expression_count_) {
@@ -996,6 +1002,23 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         context->current_return_type_ = statement->type_name_;
         context->loop_depth_ = 0U;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
+        for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
+            const zlang_parameter_t *const _parameter_k =
+                &context->program_->parameters_[statement->parameter_start_ + _index];
+            const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _parameter_k->name_);
+            if (!_parameter_k->is_reference_ || _symbol_k == NULL ||
+                !zlang_is_small_value_type(context, _parameter_k->type_name_)) {
+                continue;
+            }
+            if (_parameter_k->is_const_ || !_symbol_k->is_mutated_) {
+                (void)zlang_diagnostics_add_warning(
+                    context->diagnostics_, ZLANG_DIAGNOSTIC_UNNECESSARY_REFERENCE,
+                    _parameter_k->line_, _parameter_k->column_,
+                    _parameter_k->is_const_
+                        ? "const reference to a small value type has no benefit; use const clone"
+                        : "reference parameter is never mutated; use clone");
+            }
+        }
         context->current_return_type_ = _previous_return_k;
         context->loop_depth_ = _previous_loop_k;
         context->symbol_count_ = _scope_start_k;

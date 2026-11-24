@@ -409,3 +409,19 @@ Status: Implemented.
 Parameters now declare their binding explicitly. `clone` mutates only a local copy, while
 `reference` mutates caller-owned storage through a compiler-managed pointer. The tour demonstrates
 both, and reference arguments are checked as lvalues by semantic analysis.
+
+## 0.13 — Reference intent warning
+
+Status: Locked.
+
+- Warn when `const reference` is used for a small value type.
+- Warn when a mutable `reference` to a small value type is never mutated.
+- Do not warn for mutated references or references to records.
+- Add diagnostic `ZLANG3004`.
+
+## 0.13 — Completion
+
+Status: Implemented.
+
+Semantic analysis now reports unnecessary references for scalar, string and enum parameters. A
+reference that actually mutates caller-owned state remains valid and warning-free.

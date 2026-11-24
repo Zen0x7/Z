@@ -70,7 +70,8 @@ Every parameter states its qualifier: `clone` is a mutable local copy, `const cl
 copy, `reference` is a mutable alias to caller-owned storage and `const reference` is a read-only
 alias. There are no `*` or `&` operators in Zlang; the emitter uses them internally when lowering a
 reference. References are parameter-only: they cannot be stored or returned, and a reference
-argument must be an lvalue.
+argument must be an lvalue. The compiler warns with `ZLANG3004` when a reference to a small value
+type has no mutational purpose.
 
 The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 sequence typedefs, named string literals and user functions. Source comments are preserved in the

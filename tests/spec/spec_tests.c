@@ -44,6 +44,16 @@ static const zlang_diagnostic_t *zlang_spec_find_diagnostic(const zlang_spec_ses
     return NULL;
 }
 
+static size_t zlang_spec_count_diagnostics(const zlang_spec_session_t *session, uint16_t code) {
+    size_t _count_k = 0U;
+    for (size_t _index = 0U; _index < session->diagnostics_.count_; ++_index) {
+        if (session->diagnostic_items_[_index].code_ == code) {
+            ++_count_k;
+        }
+    }
+    return _count_k;
+}
+
 static size_t zlang_spec_count_occurrences(const char *text, const char *needle) {
     size_t _count_k = 0U;
     const char *const _needle_k = needle;
@@ -451,6 +461,26 @@ static void rejects_non_lvalue_reference_argument(zlang_test_context_t *const co
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
                 zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void warns_about_unnecessary_references(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "function read(const reference integer value): integer { return value; }\n"
+        "function unused(reference boolean flag) { return; }";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(
+                             &_session, ZLANG_DIAGNOSTIC_UNNECESSARY_REFERENCE) == 2U);
+}
+
+static void accepts_mutated_scalar_reference(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function bump(reference integer value) { value = value + 1; }";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(
+                             &_session, ZLANG_DIAGNOSTIC_UNNECESSARY_REFERENCE) == 0U);
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {

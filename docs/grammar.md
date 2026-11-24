@@ -131,6 +131,7 @@ accepts strings, integers, unsigned integers and booleans, using fixed-stack run
 | `ZLANG3001` | Unbounded sequence |
 | `ZLANG3002` | Unused capacity warning |
 | `ZLANG3003` | Initializer too long |
+| `ZLANG3004` | Unnecessary reference parameter warning |
 
 Runtime traps use fixed codes: `1` overflow, `2` bounds, `3` capacity, `4` invalid argument and
 `5` division by zero.

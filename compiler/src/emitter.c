@@ -2633,9 +2633,22 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                    zlang_append_text(emitter, _symbol_k->generated_name_) &&
                    zlang_append_text(emitter, "))");
         }
+        const char *_target_type_k = zlang_expression_type(program, emitter, _expression_k->left_);
+        if (_target_type_k == NULL && _target_k->kind_ == zlang_expression_identifier_ &&
+            emitter->current_struct_ != NULL) {
+            uint32_t _field_depth_k = 0U;
+            const zlang_ast_statement_t *const _field_k = zlang_find_field_owner(
+                program, emitter->current_struct_, _target_k->name_, &_field_depth_k, 0U);
+            if (_field_k != NULL) {
+                _target_type_k = _field_k->type_name_;
+            }
+        }
         return zlang_emit_expression(program, _expression_k->left_, emitter) &&
                zlang_append_text(emitter, " = ") &&
-               zlang_emit_expression(program, _expression_k->right_, emitter);
+               (_target_type_k == NULL
+                    ? zlang_emit_expression(program, _expression_k->right_, emitter)
+                    : zlang_emit_expression_as(program, _expression_k->right_, emitter,
+                                               _target_type_k, false));
     }
     case zlang_expression_append_call_: {
         const zlang_ast_statement_t *const _sequence_k =

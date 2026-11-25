@@ -6272,11 +6272,11 @@ static bool zlang_emit_function_prototypes(const zlang_program_t *program,
 
 static bool zlang_emit_method_signature(const zlang_program_t *program, zlang_emitter_t *emitter,
                                         const zlang_ast_statement_t *method,
-                                        const char *generated_name) {
+                                        const char *owner_struct_name, const char *generated_name) {
     const zlang_ast_statement_t *const _struct_k =
-        zlang_find_struct_statement(program, method->owner_name_);
+        zlang_find_struct_statement(program, owner_struct_name);
     const char *const _return_type_k = zlang_generated_type(
-        program, emitter, method->is_constructor_ ? method->owner_name_ : method->type_name_);
+        program, emitter, method->is_constructor_ ? owner_struct_name : method->type_name_);
     const zlang_emitted_user_type_t *const _struct_type_k =
         _struct_k != NULL ? zlang_find_user_type(emitter, _struct_k->name_) : NULL;
     if (_return_type_k == NULL || _struct_type_k == NULL) {
@@ -6468,7 +6468,8 @@ static bool zlang_emit_method_prototypes(const zlang_program_t *program, zlang_e
         char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
         if (!zlang_method_generated_name(_method_k->owner_name_, _method_k->name_,
                                          _method_k->is_constructor_, _name_k, sizeof(_name_k)) ||
-            !zlang_emit_method_signature(program, emitter, _method_k, _name_k) ||
+            !zlang_emit_method_signature(program, emitter, _method_k, _method_k->owner_name_,
+                                         _name_k) ||
             !zlang_append_text(emitter, ";\n")) {
             return false;
         }
@@ -6493,7 +6494,8 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
         char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
         if (!zlang_method_generated_name(_method_k->owner_name_, _method_k->name_,
                                          _method_k->is_constructor_, _name_k, sizeof(_name_k)) ||
-            !zlang_emit_method_signature(program, emitter, _method_k, _name_k) ||
+            !zlang_emit_method_signature(program, emitter, _method_k, _method_k->owner_name_,
+                                         _name_k) ||
             !zlang_append_text(emitter, " {\n")) {
             return false;
         }

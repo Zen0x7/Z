@@ -26,16 +26,16 @@ arrays and functions together.
 
 | Example | Exercises |
 | --- | --- |
-| [bubble_sort](algorithms/bubble_sort/README.md) | nested `for`, checked indexed writes, `foreach` |
-| [collatz](algorithms/collatz/README.md) | `while`, modulo, conditional arithmetic |
-| [factorial](algorithms/factorial/README.md) | `for`, compound assignment |
-| [fibonacci](algorithms/fibonacci/README.md) | fixed arrays, indexed reads and writes |
-| [fizzbuzz](algorithms/fizzbuzz/README.md) | `else if` chains, modulo, scalar printing |
-| [gcd](algorithms/gcd/README.md) | functions, `clone` parameters, `while`, `return` |
-| [matrix_multiply](algorithms/matrix_multiply/README.md) | 2D arrays, nested loops, multidimensional `foreach` |
-| [pi](algorithms/pi/README.md) | integer-only approximation, boolean toggle |
-| [sieve](algorithms/sieve/README.md) | boolean arrays, nested loops, prime marking |
-| [sum_of_squares](algorithms/sum_of_squares/README.md) | `foreach`, checked arithmetic |
+| [bubble_sort](algorithms/bubble_sort/) | nested `for`, checked indexed writes, `foreach` |
+| [collatz](algorithms/collatz/) | `while`, modulo, conditional arithmetic |
+| [factorial](algorithms/factorial/) | `for`, compound assignment |
+| [fibonacci](algorithms/fibonacci/) | fixed arrays, indexed reads and writes |
+| [fizzbuzz](algorithms/fizzbuzz/) | `else if` chains, modulo, scalar printing |
+| [gcd](algorithms/gcd/) | functions, `clone` parameters, `while`, `return` |
+| [matrix_multiply](algorithms/matrix_multiply/) | 2D arrays, nested loops, multidimensional `foreach` |
+| [pi](algorithms/pi/) | integer-only approximation, boolean toggle |
+| [sieve](algorithms/sieve/) | boolean arrays, nested loops, prime marking |
+| [sum_of_squares](algorithms/sum_of_squares/) | `foreach`, checked arithmetic |
 
 ### Features
 
@@ -43,24 +43,24 @@ Small programs focused on one construct or a tight group of related constructs.
 
 | Example | Exercises |
 | --- | --- |
-| [arithmetic](features/arithmetic/README.md) | signed and unsigned arithmetic, compound assignment |
-| [array_fields](features/array_fields/README.md) | arrays embedded in records |
-| [arrays_1d](features/arrays_1d/README.md) | fixed 1D arrays, indexed writes, `foreach` |
-| [arrays_const_copy](features/arrays_const_copy/README.md) | `const` arrays, whole-array copy |
-| [arrays_inferred](features/arrays_inferred/README.md) | inferred array shapes, `length`, mixed ranks |
-| [arrays_nd](features/arrays_nd/README.md) | 2D, 3D and 4D arrays |
-| [comments](features/comments/README.md) | source comment preservation |
-| [conditions](features/conditions/README.md) | comparisons and logical operators |
-| [const_qualifiers](features/const_qualifiers/README.md) | `const clone` and `const reference` parameters |
-| [functions](features/functions/README.md) | function calls, returns and `reference` mutation |
-| [functions_array_specializations](features/functions_array_specializations/README.md) | one inferred array function called with two shapes |
-| [functions_arrays](features/functions_arrays/README.md) | inferred array parameters and returns |
-| [functions_user_types](features/functions_user_types/README.md) | records in signatures and by-reference mutation |
-| [hello](features/hello/README.md) | strings and newline escapes |
-| [loops](features/loops/README.md) | `while`, `repeat`, `for`, `break`, `continue`, `foreach` |
-| [records_enums](features/records_enums/README.md) | records, fields and enums |
-| [scopes](features/scopes/README.md) | user-authored blocks and non-shadowing scope access |
-| [strings](features/strings/README.md) | folding, bounded strings and string indexing |
+| [arithmetic](features/arithmetic/) | signed and unsigned arithmetic, compound assignment |
+| [array_fields](features/array_fields/) | arrays embedded in records |
+| [arrays_1d](features/arrays_1d/) | fixed 1D arrays, indexed writes, `foreach` |
+| [arrays_const_copy](features/arrays_const_copy/) | `const` arrays, whole-array copy |
+| [arrays_inferred](features/arrays_inferred/) | inferred array shapes, `length`, mixed ranks |
+| [arrays_nd](features/arrays_nd/) | 2D, 3D and 4D arrays |
+| [comments](features/comments/) | source comment preservation |
+| [conditions](features/conditions/) | comparisons and logical operators |
+| [const_qualifiers](features/const_qualifiers/) | `const clone` and `const reference` parameters |
+| [functions](features/functions/) | function calls, returns and `reference` mutation |
+| [functions_array_specializations](features/functions_array_specializations/) | one inferred array function called with two shapes |
+| [functions_arrays](features/functions_arrays/) | inferred array parameters and returns |
+| [functions_user_types](features/functions_user_types/) | records in signatures and by-reference mutation |
+| [hello](features/hello/) | strings and newline escapes |
+| [loops](features/loops/) | `while`, `repeat`, `for`, `break`, `continue`, `foreach` |
+| [records_enums](features/records_enums/) | records, fields and enums |
+| [scopes](features/scopes/) | user-authored blocks and non-shadowing scope access |
+| [strings](features/strings/) | folding, bounded strings and string indexing |
 
 ## Regenerating a golden
 

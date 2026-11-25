@@ -667,3 +667,50 @@ Acceptance criteria:
 - every standard function has a micro CMake test project with direct C cases and Zlang integration
   programs;
 - generated C compiles under the strict warning set in both default and `--tto` modes.
+
+## 0.21 — Design note
+
+Zlang 0.21 adds user modules and an explicit program entry point. A compilation still produces one
+C file with one C `main`; modules are assembled into that single translation unit rather than linked
+as separate programs.
+
+Every top-level declaration in a module is public. No `export` keyword is needed. Importing a
+declaration binds a reference to the canonical entity: functions, variables, records and enums are
+emitted once and shared by every module that imports them. Two files importing the same variable
+refer to the same generated object. Two modules may define the same local name because generated
+names are derived from canonical module paths.
+
+Module specifiers use three forms:
+
+```zlang
+import { my_function } from "./lib/my_function";
+import { my_function } from "@lib/my_function";
+import { generate_int32 } from "@std/random";
+```
+
+Relative paths resolve from the importing file. `@std` is reserved for standard domains. Other `@`
+names are aliases declared in `zlang.yaml`. `@std/random` is canonical; `from "random"` remains a
+compatibility form. Module imports are not transitive by name, but signatures resolve by canonical
+entity identity.
+
+The entry point is explicit and receives the host arguments:
+
+```zlang
+function main(reference integer argc, reference arguments argv): integer {
+    return 0;
+}
+```
+
+`arguments` is a read-only opaque handle created by the C `main` wrapper from `argc` and `char **argv`.
+Zlang does not expose pointer syntax. `reference` is required because these values are caller-owned
+host state; `clone` would copy values that represent external resources and would imply the wrong
+ownership model. Generated C still uses `int main(int argc, char **argv)`.
+
+Command line parsing belongs to `@std/program_options`, not to the language core. The first version
+provides `argument_count`, `argument_at`, `has_option`, `option_value` and `has_flag`. They return
+bounded string views over `argv` and never allocate.
+
+At this stage a user module has no hidden global runtime state of its own. Module variables are
+emitted once as module-qualified C objects; they are user-owned module state, not runtime state.
+The module graph is resolved before semantic analysis, with cycle detection and deterministic
+ordering. Generated names come from canonical paths, never from aliases.

@@ -6,16 +6,15 @@
 
 #include <string.h>
 
-static const zlang_std_function_t functions_k[] = {
-    {"random",
-     "generate_int32",
-     "integer",
-     "zlang_std_random_generate_int32",
-     "ZLANG_STD_RANDOM_GENERATE_INT32",
-     {"integer", "integer"},
-     2U,
-     true,
-     true}};
+static const zlang_std_function_t functions_k[] = {{"random",
+                                                    "generate_int32",
+                                                    "integer",
+                                                    "zlang_std_random_generate_int32",
+                                                    "ZLANG_STD_RANDOM_GENERATE_INT32",
+                                                    {"integer", "integer"},
+                                                    2U,
+                                                    true,
+                                                    true}};
 
 const zlang_std_function_t *zlang_std_find(const char *domain, const char *name) {
     if (domain == NULL || name == NULL) {

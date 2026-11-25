@@ -575,12 +575,14 @@ launches the compiler directly with `CreateProcessA`, avoiding `cmd.exe` quote l
 as `C:/Program Files/...`, and selects MSVC or GNU flags from the compiler frontend so MinGW GCC
 receives `-I` / `-o` instead of `/I` / `/Fe`.
 
-## 0.20 — Design note
+## 0.20 — Completion
 
 Zlang 0.19 exposes no user-callable standard functions: the runtime API is used only by generated
 C. The next language level adds a domain-based standard library and an optional transpile-time
 optimizer. The complete catalog, naming rules and classification dimensions are documented in
-[`docs/standard_library.md`](docs/standard_library.md).
+[`docs/standard_library.md`](docs/standard_library.md). This release implements imports, the
+standard library registry, `random.generate_int32`, the generated C provenance prefixes and the
+first transpile-time optimizer with `--tto`.
 
 Imports are intention-first:
 

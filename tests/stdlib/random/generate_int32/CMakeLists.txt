@@ -1,4 +1,4 @@
-zlang_add_test_module(zlang_stdlib_random_generate_int32)
+zlang_add_test_module(stdlib_random_generate_int32)
 
 add_test(
     NAME zlang.stdlib.random.generate_int32.basic

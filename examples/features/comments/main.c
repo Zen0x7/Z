@@ -10,29 +10,29 @@
 
 /* generated user types */
 // File-level traceability comment.
-typedef struct zlang_point_t {
+typedef struct app_record_point_t {
     // Field comment.
     int32_t x_;
-} zlang_point_t;
+} app_record_point_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = "\n";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
 /* generated function prototypes */
 
-int32_t _u_one(void);
+int32_t app_fn_one(void);
 
 // Function comment.
-int32_t _u_one(void) {
+int32_t app_fn_one(void) {
     // Body comment.
     return 1;
 }
 
 int main(void) {
-    zlang_print_i32(_u_one());
-    zlang_print(_zlang_literal_0);
+    zlang_print_i32(app_fn_one());
+    zlang_print(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

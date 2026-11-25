@@ -15,37 +15,37 @@
 
 
 /* generated sequence types */
-typedef struct zlang_fib_t {
+typedef struct app_array_fib_t {
     int32_t data_[ZLANG_FIB_CAPACITY];
-} zlang_fib_t;
+} app_array_fib_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = " ";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = " ";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 #define ZLANG_LITERAL_1_LENGTH 1U
-static const char _zlang_literal_1_data[] = "\n";
-static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+static const char zlang_gen_literal_1_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
 int main(void) {
-    zlang_fib_t _fib = { { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 } };
+    app_array_fib_t app_local_fib = { { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
-    for (int32_t _index = 2; (_index < 10); _index = zlang_add_i32(_index, 1)) {
-        uint32_t _zlang_index_2 = (uint32_t)_index;
-        if (_zlang_index_2 < 10) {
-            _fib.data_[_zlang_index_2] = zlang_add_i32(zlang_array_get_i32(_fib.data_, (uint32_t)zlang_sub_i32(_index, 1), 10), zlang_array_get_i32(_fib.data_, (uint32_t)zlang_sub_i32(_index, 2), 10));
+    for (int32_t app_local_index = 2; (app_local_index < 10); app_local_index = zlang_add_i32(app_local_index, 1)) {
+        uint32_t zlang_gen_index_2 = (uint32_t)app_local_index;
+        if (zlang_gen_index_2 < 10) {
+            app_local_fib.data_[zlang_gen_index_2] = zlang_add_i32(zlang_array_get_i32(app_local_fib.data_, (uint32_t)zlang_sub_i32(app_local_index, 1), 10), zlang_array_get_i32(app_local_fib.data_, (uint32_t)zlang_sub_i32(app_local_index, 2), 10));
         } else {
             zlang_trap(ZLANG_TRAP_BOUNDS);
         }
     }
 
-    for (uint32_t _zlang_foreach_3 = ZLANG_ZERO; _zlang_foreach_3 < 10; ++_zlang_foreach_3) {
-        int32_t _value = _fib.data_[_zlang_foreach_3];
-        zlang_print_i32(_value);
-        zlang_print(_zlang_literal_0);
+    for (uint32_t zlang_gen_foreach_3 = ZLANG_ZERO; zlang_gen_foreach_3 < 10; ++zlang_gen_foreach_3) {
+        int32_t app_local_value = app_local_fib.data_[zlang_gen_foreach_3];
+        zlang_print_i32(app_local_value);
+        zlang_print(zlang_gen_literal_0);
     }
 
-    zlang_print(_zlang_literal_1);
+    zlang_print(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

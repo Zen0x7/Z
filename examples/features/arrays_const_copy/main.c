@@ -18,34 +18,34 @@
 
 
 /* generated sequence types */
-typedef struct zlang_source_t {
+typedef struct app_array_source_t {
     int32_t data_[ZLANG_SOURCE_CAPACITY];
-} zlang_source_t;
+} app_array_source_t;
 
-typedef struct zlang_target_t {
+typedef struct app_array_target_t {
     int32_t data_[ZLANG_TARGET_CAPACITY];
-} zlang_target_t;
+} app_array_target_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = " ";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = " ";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 #define ZLANG_LITERAL_1_LENGTH 1U
-static const char _zlang_literal_1_data[] = "\n";
-static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+static const char zlang_gen_literal_1_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
 int main(void) {
-    const zlang_source_t _source = { { 1, 2, 3 } };
-    zlang_target_t _target = { { 0, 0, 0 } };
-    memcpy(&_target, &_source, sizeof(_target));
+    const app_array_source_t app_local_source = { { 1, 2, 3 } };
+    app_array_target_t app_local_target = { { 0, 0, 0 } };
+    memcpy(&app_local_target, &app_local_source, sizeof(app_local_target));
 
-    for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < 3; ++_zlang_foreach_2) {
-        int32_t _value = _target.data_[_zlang_foreach_2];
-        zlang_print_i32(_value);
-        zlang_print(_zlang_literal_0);
+    for (uint32_t zlang_gen_foreach_2 = ZLANG_ZERO; zlang_gen_foreach_2 < 3; ++zlang_gen_foreach_2) {
+        int32_t app_local_value = app_local_target.data_[zlang_gen_foreach_2];
+        zlang_print_i32(app_local_value);
+        zlang_print(zlang_gen_literal_0);
     }
 
-    zlang_print(_zlang_literal_1);
+    zlang_print(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

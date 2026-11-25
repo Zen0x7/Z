@@ -1,6 +1,7 @@
 # Standard library design
 
-**Status:** planned for Zlang 0.20. Nothing in this document is implemented in 0.19.
+**Status:** implemented in Zlang 0.20. The standard library catalog is a roadmap for additional
+domains; only `random.generate_int32` is implemented in this release.
 
 Zlang currently exposes no user-callable standard functions. Generated C uses the internal runtime
 API, but Zlang programs cannot call a standard library function. The 0.20 design adds a small,

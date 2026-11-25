@@ -10,26 +10,26 @@
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = "\n";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
 /* generated function prototypes */
 
-int32_t _u_gcd(int32_t, int32_t);
+int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right);
 
-int32_t _u_gcd(int32_t left, int32_t right) {
-    while (right != 0) {
-        int32_t _remainder = zlang_mod_i32(left, right);
-        left = right;
-        right = _remainder;
+int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right) {
+    while (app_param_right != 0) {
+        int32_t app_local_remainder = zlang_mod_i32(app_param_left, app_param_right);
+        app_param_left = app_param_right;
+        app_param_right = app_local_remainder;
     }
 
-    return left;
+    return app_param_left;
 }
 
 int main(void) {
-    zlang_print_i32(_u_gcd(1071, 462));
-    zlang_print(_zlang_literal_0);
+    zlang_print_i32(app_fn_gcd(1071, 462));
+    zlang_print(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

@@ -15,62 +15,62 @@
 
 
 /* generated sequence types */
-typedef struct zlang_values_t {
+typedef struct app_array_values_t {
     int32_t data_[ZLANG_VALUES_CAPACITY];
-} zlang_values_t;
+} app_array_values_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = ":";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = ":";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 #define ZLANG_LITERAL_1_LENGTH 1U
-static const char _zlang_literal_1_data[] = " ";
-static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+static const char zlang_gen_literal_1_data[] = " ";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 #define ZLANG_LITERAL_2_LENGTH 1U
-static const char _zlang_literal_2_data[] = "\n";
-static const zlang_string_t _zlang_literal_2 = { _zlang_literal_2_data, ZLANG_LITERAL_2_LENGTH };
+static const char zlang_gen_literal_2_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_2 = { zlang_gen_literal_2_data, ZLANG_LITERAL_2_LENGTH };
 
 int main(void) {
-    int32_t _total = 0;
+    int32_t app_local_total = 0;
 
-    while (_total < 2) {
-        _total = zlang_add_i32(_total, 1);
+    while (app_local_total < 2) {
+        app_local_total = zlang_add_i32(app_local_total, 1);
     }
 
-    for (uint32_t _zlang_repeat_3 = ZLANG_ZERO; _zlang_repeat_3 < 2U; ++_zlang_repeat_3) {
-        _total = zlang_add_i32(_total, 1);
+    for (uint32_t zlang_gen_repeat_3 = ZLANG_ZERO; zlang_gen_repeat_3 < 2U; ++zlang_gen_repeat_3) {
+        app_local_total = zlang_add_i32(app_local_total, 1);
     }
 
-    for (int32_t _index = 0; (_index < 3); _index = zlang_add_i32(_index, 1)) {
-        if (_index == 1) {
+    for (int32_t app_local_index = 0; (app_local_index < 3); app_local_index = zlang_add_i32(app_local_index, 1)) {
+        if (app_local_index == 1) {
             continue;
         }
 
-        _total = zlang_add_i32(_total, _index);
+        app_local_total = zlang_add_i32(app_local_total, app_local_index);
     }
 
-    zlang_values_t _values = { { 1, 2, 3, 4 } };
+    app_array_values_t app_local_values = { { 1, 2, 3, 4 } };
 
-    for (uint32_t _zlang_foreach_4 = ZLANG_ZERO; _zlang_foreach_4 < 4; ++_zlang_foreach_4) {
-        int32_t _value = _values.data_[_zlang_foreach_4];
-        if (_value == 3) {
+    for (uint32_t zlang_gen_foreach_4 = ZLANG_ZERO; zlang_gen_foreach_4 < 4; ++zlang_gen_foreach_4) {
+        int32_t app_local_value = app_local_values.data_[zlang_gen_foreach_4];
+        if (app_local_value == 3) {
             break;
         }
 
-        _total = zlang_add_i32(_total, _value);
+        app_local_total = zlang_add_i32(app_local_total, app_local_value);
     }
 
-    for (uint32_t _zlang_foreach_5 = ZLANG_ZERO; _zlang_foreach_5 < 4; ++_zlang_foreach_5) {
-        uint32_t _index = _zlang_foreach_5;
-        int32_t _item = _values.data_[_zlang_foreach_5];
-        zlang_print_u32(_index);
-        zlang_print(_zlang_literal_0);
-        zlang_print_i32(_item);
-        zlang_print(_zlang_literal_1);
+    for (uint32_t zlang_gen_foreach_5 = ZLANG_ZERO; zlang_gen_foreach_5 < 4; ++zlang_gen_foreach_5) {
+        uint32_t app_local_index = zlang_gen_foreach_5;
+        int32_t app_local_item = app_local_values.data_[zlang_gen_foreach_5];
+        zlang_print_u32(app_local_index);
+        zlang_print(zlang_gen_literal_0);
+        zlang_print_i32(app_local_item);
+        zlang_print(zlang_gen_literal_1);
     }
 
-    zlang_print_i32(_total);
-    zlang_print(_zlang_literal_2);
+    zlang_print_i32(app_local_total);
+    zlang_print(zlang_gen_literal_2);
 
     return ZLANG_ZERO;
 }

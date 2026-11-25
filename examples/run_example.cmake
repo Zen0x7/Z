@@ -12,7 +12,7 @@ configure_file("${SOURCE}" "${_source}" COPYONLY)
 
 execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env "ZLANG_CC=${C_COMPILER}" "ZLANG_CC_STYLE=${CC_STYLE}"
-            "${ZLANG_COMPILE}" "${_source}"
+            "${ZLANG_COMPILE}" "${_source}" --tto
     WORKING_DIRECTORY "${WORK_DIR}"
     RESULT_VARIABLE _compile_result
     OUTPUT_VARIABLE _compile_output

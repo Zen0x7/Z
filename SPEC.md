@@ -481,7 +481,7 @@ The following are explicitly outside Zlang:
 - heap-backed strings or vectors, or any operation that grows storage dynamically;
 - garbage collection or reference counting;
 - hard realtime timing guarantees beyond predictable memory behavior;
-- module imports; each compilation unit is one source file.
+- imports are limited to standard library functions; user modules are not supported.
 
 ---
 
@@ -705,6 +705,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `-`, unary `-`, `*`, `/`, `%` | `emits_arithmetic_operators` |
 | compound assignment | `emits_compound_assignments` |
 | `length(sequence)` | `emits_length_builtin` |
+| standard imports | `zlang.stdlib.random.generate_int32.basic` |
+| transpile-time optimization | `zlang.cli.tto` |
 | scalar printing | `emits_scalar_print` |
 | string array elements | `emits_string_sequence_operations` |
 | legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
@@ -839,11 +841,21 @@ Zlang 0.17 removes `array_get` and `array_set` from source. The generated C stil
 but source code only uses `array[i]...`.
 
 
-## 0.19 implementation status
+## 0.20 implementation status
 
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.20 implementation status
+
+Zlang 0.20 supports standard library imports and the `random.generate_int32` function. Imports are
+explicit, domain-based and activated in generated C by one macro per function. `--tto` enables a
+fixed-point transpile-time optimizer for constant expressions and literal array access folding.
+
+Generated C uses provenance prefixes: `app_*` for user-derived declarations, `zlang_gen_*` for
+compiler support, `zlang_std_*` for standard functions, `zlang_*` for the runtime API and `ZLANG_*`
+for language constants.
 
 ## 0.18 implementation status
 

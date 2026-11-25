@@ -93,6 +93,7 @@ typedef struct zlang_emitted_function_t {
     const zlang_ast_statement_t *statement_;
     const zlang_array_specialization_t *specialization_;
     char generated_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    bool needs_state_;
 } zlang_emitted_function_t;
 
 typedef struct zlang_emitter_t {

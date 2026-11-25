@@ -10,18 +10,18 @@
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = "\n";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
 int main(void) {
-    int32_t _factorial = 1;
+    int32_t app_local_factorial = 1;
 
-    for (int32_t _factor = 2; (_factor <= 6); _factor = zlang_add_i32(_factor, 1)) {
-        _factorial = zlang_mul_i32(_factorial, _factor);
+    for (int32_t app_local_factor = 2; (app_local_factor <= 6); app_local_factor = zlang_add_i32(app_local_factor, 1)) {
+        app_local_factorial = zlang_mul_i32(app_local_factorial, app_local_factor);
     }
 
-    zlang_print_i32(_factorial);
-    zlang_print(_zlang_literal_0);
+    zlang_print_i32(app_local_factorial);
+    zlang_print(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

@@ -11,7 +11,7 @@ made by the compiler.
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
-`foreach`, `function`, `if`, `in`, `integer`, `length`, `print`, `record`, `reference`, `repeat`,
+`foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `length`, `print`, `record`, `reference`, `repeat`,
 `return`, `array`, `string`, `true`, `unsigned` and `while`.
 
 Integer literals are decimal and may carry a `u` suffix. String literals are double-quoted and
@@ -20,6 +20,16 @@ support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` a
 
 Identifiers beginning with `zlang`, `_zlang` or `ZLANG` are reserved for generated C and are rejected
 with `ZLANG1004`.
+
+## Imports
+
+```zlang
+import { generate_int32, generate_bytes } from "random";
+import { tcp_listener } from "networking";
+```
+
+Imports appear at file scope and introduce standard library function names. They do not import user
+modules. Generated C activates only the imported runtime headers.
 
 ## Declarations
 

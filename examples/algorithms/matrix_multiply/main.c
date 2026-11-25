@@ -9,19 +9,19 @@
 #define ZLANG_TWO 2U
 
 /* generated array helpers */
-static inline uint32_t _zlang_array_offset_2(uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
+static inline uint32_t zlang_gen_array_offset_2(uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
     if (index_0 >= extent_0 || index_1 >= extent_1) {
         zlang_trap(ZLANG_TRAP_BOUNDS);
     }
     return extent_1 * index_0 + index_1;
 }
 
-static inline int32_t _zlang_array_get_2_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
-    return data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)];
+static inline int32_t zlang_gen_array_get_2_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
+    return data_[zlang_gen_array_offset_2(extent_0, extent_1, index_0, index_1)];
 }
 
-static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1, int32_t value_) {
-    data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
+static inline void zlang_gen_array_set_2_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1, int32_t value_) {
+    data_[zlang_gen_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
 }
 
 /* generated capacities */
@@ -40,51 +40,51 @@ static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uin
 
 
 /* generated sequence types */
-typedef struct zlang_left_t {
+typedef struct app_array_left_t {
     int32_t data_[ZLANG_LEFT_CAPACITY];
-} zlang_left_t;
+} app_array_left_t;
 
-typedef struct zlang_right_t {
+typedef struct app_array_right_t {
     int32_t data_[ZLANG_RIGHT_CAPACITY];
-} zlang_right_t;
+} app_array_right_t;
 
-typedef struct zlang_result_t {
+typedef struct app_array_result_t {
     int32_t data_[ZLANG_RESULT_CAPACITY];
-} zlang_result_t;
+} app_array_result_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
-static const char _zlang_literal_0_data[] = " ";
-static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+static const char zlang_gen_literal_0_data[] = " ";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 #define ZLANG_LITERAL_1_LENGTH 1U
-static const char _zlang_literal_1_data[] = "\n";
-static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+static const char zlang_gen_literal_1_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
 int main(void) {
-    zlang_left_t _left = { { 1, 2, 3, 4 } };
-    zlang_right_t _right = { { 5, 6, 7, 8 } };
-    zlang_result_t _result = { { 0, 0, 0, 0 } };
+    app_array_left_t app_local_left = { { 1, 2, 3, 4 } };
+    app_array_right_t app_local_right = { { 5, 6, 7, 8 } };
+    app_array_result_t app_local_result = { { 0, 0, 0, 0 } };
 
-    for (int32_t _row = 0; (_row < 2); _row = zlang_add_i32(_row, 1)) {
-        for (int32_t _column = 0; (_column < 2); _column = zlang_add_i32(_column, 1)) {
-            int32_t _cell = 0;
+    for (int32_t app_local_row = 0; (app_local_row < 2); app_local_row = zlang_add_i32(app_local_row, 1)) {
+        for (int32_t app_local_column = 0; (app_local_column < 2); app_local_column = zlang_add_i32(app_local_column, 1)) {
+            int32_t app_local_cell = 0;
 
-            for (int32_t _inner = 0; (_inner < 2); _inner = zlang_add_i32(_inner, 1)) {
-                _cell = zlang_add_i32(_cell, zlang_mul_i32(_zlang_array_get_2_i32(_left.data_, 2, 2, (uint32_t)_row, (uint32_t)_inner), _zlang_array_get_2_i32(_right.data_, 2, 2, (uint32_t)_inner, (uint32_t)_column)));
+            for (int32_t app_local_inner = 0; (app_local_inner < 2); app_local_inner = zlang_add_i32(app_local_inner, 1)) {
+                app_local_cell = zlang_add_i32(app_local_cell, zlang_mul_i32(zlang_gen_array_get_2_i32(app_local_left.data_, 2, 2, (uint32_t)app_local_row, (uint32_t)app_local_inner), zlang_gen_array_get_2_i32(app_local_right.data_, 2, 2, (uint32_t)app_local_inner, (uint32_t)app_local_column)));
             }
 
-            _zlang_array_set_2_i32(_result.data_, 2, 2, (uint32_t)_row, (uint32_t)_column, _cell);
+            zlang_gen_array_set_2_i32(app_local_result.data_, 2, 2, (uint32_t)app_local_row, (uint32_t)app_local_column, app_local_cell);
         }
     }
 
-    for (uint32_t _row_3 = ZLANG_ZERO; _row_3 < 2; ++_row_3) {
-        for (uint32_t _column_4 = ZLANG_ZERO; _column_4 < 2; ++_column_4) {
-            zlang_print_i32(_zlang_array_get_2_i32(_result.data_, 2, 2, _row_3, _column_4));
-            zlang_print(_zlang_literal_0);
+    for (uint32_t app_local_row_3 = ZLANG_ZERO; app_local_row_3 < 2; ++app_local_row_3) {
+        for (uint32_t app_local_column_4 = ZLANG_ZERO; app_local_column_4 < 2; ++app_local_column_4) {
+            zlang_print_i32(zlang_gen_array_get_2_i32(app_local_result.data_, 2, 2, app_local_row_3, app_local_column_4));
+            zlang_print(zlang_gen_literal_0);
         }
     }
 
-    zlang_print(_zlang_literal_1);
+    zlang_print(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

@@ -51,7 +51,8 @@ static const zlang_ast_statement_t *zlang_tto_array_decl(const zlang_program_t *
 static bool zlang_tto_is_written(const zlang_program_t *program, const char *name) {
     for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
         const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
-        if (_expression_k->kind_ == zlang_expression_index_assignment_ &&
+        if ((_expression_k->kind_ == zlang_expression_index_assignment_ ||
+             _expression_k->kind_ == zlang_expression_direct_index_assignment_) &&
             _expression_k->name_ != NULL && name != NULL &&
             strcmp(_expression_k->name_, name) == 0) {
             return true;
@@ -70,6 +71,7 @@ static bool zlang_tto_is_assignment_target(const zlang_program_t *program, size_
     return false;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_tto_eval(const zlang_program_t *program, size_t index, zlang_constant_t *result,
                            uint32_t depth) {
     if (result == NULL || depth > 16U || index >= program->expression_count_) {

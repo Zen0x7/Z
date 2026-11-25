@@ -6,3 +6,5 @@ print(first);
 print(" ");
 print(total);
 print("\n");
+print(fixed[1]);
+print("\n");

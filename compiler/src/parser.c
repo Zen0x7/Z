@@ -1128,21 +1128,21 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     if (_statement_k == (size_t)-1) {
         return false;
     }
-    zlang_ast_statement_t *const _statement_k_ptr_k = &parser->statements_[_statement_k];
-    _statement_k_ptr_k->kind_ = zlang_statement_foreach_;
-    _statement_k_ptr_k->type_name_ = zlang_parser_sequence_type(parser, _iterable_k->text_);
-    _statement_k_ptr_k->iterable_name_ = _iterable_k->text_;
-    _statement_k_ptr_k->line_ = _names_k[0]->line_;
-    _statement_k_ptr_k->column_ = _names_k[0]->column_;
+    zlang_ast_statement_t *const _statement_k_k = &parser->statements_[_statement_k];
+    _statement_k_k->kind_ = zlang_statement_foreach_;
+    _statement_k_k->type_name_ = zlang_parser_sequence_type(parser, _iterable_k->text_);
+    _statement_k_k->iterable_name_ = _iterable_k->text_;
+    _statement_k_k->line_ = _names_k[0]->line_;
+    _statement_k_k->column_ = _names_k[0]->column_;
     if (_coordinates_k) {
-        _statement_k_ptr_k->foreach_rank_ = (uint32_t)_name_count_k;
+        _statement_k_k->foreach_rank_ = (uint32_t)_name_count_k;
         for (size_t _name = 0U; _name < _name_count_k; ++_name) {
-            _statement_k_ptr_k->foreach_names_[_name] = _names_k[_name]->text_;
+            _statement_k_k->foreach_names_[_name] = _names_k[_name]->text_;
         }
     } else {
-        _statement_k_ptr_k->name_ = _names_k[_name_count_k - 1U]->text_;
+        _statement_k_k->name_ = _names_k[_name_count_k - 1U]->text_;
         if (_name_count_k == 2U) {
-            _statement_k_ptr_k->index_name_ = _names_k[0]->text_;
+            _statement_k_k->index_name_ = _names_k[0]->text_;
         }
     }
 
@@ -1150,8 +1150,8 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     if (!zlang_parse_block(parser, _statement_k)) { // NOLINT(misc-no-recursion)
         return false;
     }
-    _statement_k_ptr_k->body_start_ = _body_start_k;
-    _statement_k_ptr_k->body_count_ = parser->statement_count_ - _body_start_k;
+    _statement_k_k->body_start_ = _body_start_k;
+    _statement_k_k->body_count_ = parser->statement_count_ - _body_start_k;
     return true;
 }
 
@@ -1397,12 +1397,12 @@ static bool zlang_parse_import(zlang_parser_t *parser) {
         if (_statement_k == (size_t)-1) {
             return false;
         }
-        zlang_ast_statement_t *const _statement_k_ptr = &parser->statements_[_statement_k];
-        _statement_k_ptr->kind_ = zlang_statement_import_;
-        _statement_k_ptr->name_ = _names_k[_index];
-        _statement_k_ptr->type_name_ = _domain_k->text_;
-        _statement_k_ptr->line_ = _start_k->line_;
-        _statement_k_ptr->column_ = _start_k->column_;
+        zlang_ast_statement_t *const _import_statement_k = &parser->statements_[_statement_k];
+        _import_statement_k->kind_ = zlang_statement_import_;
+        _import_statement_k->name_ = _names_k[_index];
+        _import_statement_k->type_name_ = _domain_k->text_;
+        _import_statement_k->line_ = _start_k->line_;
+        _import_statement_k->column_ = _start_k->column_;
     }
     return true;
 }

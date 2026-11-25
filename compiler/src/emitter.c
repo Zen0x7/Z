@@ -5887,8 +5887,10 @@ static bool zlang_emit_vtable_definitions(const zlang_program_t *program,
     }
     for (size_t _index = 0U; _index < emitter->emitted_vtable_count_; ++_index) {
         zlang_emitted_vtable_t *const _entry_k = &emitter->emitted_vtables_[_index];
-        if (_entry_k->statement_->base_name_ != NULL ||
-            !zlang_collect_vtable_slots(emitter, program, _entry_k) ||
+        if (_entry_k->statement_->base_name_ != NULL) {
+            continue;
+        }
+        if (!zlang_collect_vtable_slots(emitter, program, _entry_k) ||
             !zlang_append_text(emitter, "struct ") ||
             !zlang_append_text(emitter, _entry_k->type_name_) ||
             !zlang_append_text(emitter, " {\n")) {
@@ -5917,6 +5919,10 @@ static bool zlang_emit_vtable_definitions(const zlang_program_t *program,
             if (!zlang_append_text(emitter, ");\n")) {
                 return false;
             }
+        }
+        if (_entry_k->slot_count_ == 0U &&
+            !zlang_append_text(emitter, "    uint32_t zlang_reserved_;\n")) {
+            return false;
         }
         if (!zlang_append_text(emitter, "};\n\n")) {
             return false;
@@ -6171,7 +6177,7 @@ static bool zlang_emit_vtable_instances(zlang_emitter_t *emitter) {
         if (!zlang_append_text(emitter, "static const ") ||
             !zlang_append_text(emitter, _entry_k->type_name_) || !zlang_append_text(emitter, " ") ||
             !zlang_append_text(emitter, _entry_k->instance_name_) ||
-            !zlang_append_text(emitter, " = { 0 }")) {
+            !zlang_append_text(emitter, " = { 0")) {
             return false;
         }
         for (size_t _slot = 0U; _slot < _entry_k->slot_count_; ++_slot) {
@@ -6179,7 +6185,7 @@ static bool zlang_emit_vtable_instances(zlang_emitter_t *emitter) {
                 return false;
             }
         }
-        if (!zlang_append_text(emitter, "};\n")) {
+        if (!zlang_append_text(emitter, " };\n")) {
             return false;
         }
     }

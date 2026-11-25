@@ -746,6 +746,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | standard output | `emits_scalar_write` |
 | bounded input | `emits_io_read_calls` |
 | bounded input validation | `rejects_read_without_bounded_string` |
+| range-proven index folding | `folds_proven_loop_indices` |
+| unproven bounds preservation | `keeps_unproven_bounds_traps` |
 | wide and floating primitives | `emits_wide_and_floating_primitives` |
 | explicit numeric conversions | `emits_explicit_numeric_conversions` |
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
@@ -898,6 +900,14 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.26 implementation status
+
+With `--tto`, Zlang 0.26 proves ranges for canonical `for` loops over signed `integer` variables with
+constant start, constant `<` or `<=` bound and `+= 1` update. One-dimensional array reads and writes
+whose indices are the induction variable plus or minus a constant are emitted as direct `data_[]`
+accesses when the whole proven range is inside the array extent. An index whose range cannot be
+proved keeps its bounds check and `ZLANG_TRAP_BOUNDS`.
 
 ## 0.25 implementation status
 

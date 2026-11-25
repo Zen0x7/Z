@@ -2176,6 +2176,11 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             return zlang_emit_array_typed_call(program, emitter, _symbol_k, _expression_k, false,
                                                ZLANG_NO_EXPRESSION);
         }
+        if (_expression_k->is_proven_ && _symbol_k->is_sequence_) {
+            return zlang_append_text(emitter, _name_k) && zlang_append_text(emitter, ".data_[") &&
+                   zlang_emit_index_expression(program, _expression_k->right_, emitter) &&
+                   zlang_append_text(emitter, "]");
+        }
         if (!_symbol_k->is_sequence_ && strcmp(_symbol_k->type_name_, "string") == 0) {
             return zlang_append_text(emitter, "zlang_string_byte(") &&
                    zlang_append_text(emitter, _name_k) && zlang_append_text(emitter, ", ") &&
@@ -3410,6 +3415,15 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
         return false;
     }
     const zlang_ast_statement_t *const _sequence_k = zlang_find_sequence(emitter, _target_k->name_);
+    const bool _string_element_k = _sequence_k != NULL && _sequence_k->has_element_capacity_ &&
+                                   strcmp(_sequence_k->type_name_, "string") == 0;
+    if (_target_k->is_proven_ && !_string_element_k) {
+        return zlang_append_text(emitter, _generated_k) && zlang_append_text(emitter, ".data_[") &&
+               zlang_emit_index_expression(program, _target_k->right_, emitter) &&
+               zlang_append_text(emitter, "] = ") &&
+               zlang_emit_expression(program, expression->right_, emitter) &&
+               zlang_append_text(emitter, ";\n");
+    }
     if (_target_k->argument_count_ > 1U) {
         uint32_t _rank_k = 0U;
         if (_symbol_k->is_array_) {
@@ -3424,8 +3438,6 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
                                            expression->right_) &&
                zlang_append_text(emitter, ";\n");
     }
-    const bool _string_element_k = _sequence_k != NULL && _sequence_k->has_element_capacity_ &&
-                                   strcmp(_sequence_k->type_name_, "string") == 0;
     char _element_capacity[ZLANG_EMITTED_NAME_CAPACITY];
     if (_string_element_k &&
         !zlang_sequence_element_capacity_text(program, emitter, _sequence_k, _element_capacity,

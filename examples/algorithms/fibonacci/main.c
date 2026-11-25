@@ -39,12 +39,7 @@ int32_t app_fn_main(void) {
     app_array_fib_t app_local_fib = { { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
     for (int32_t app_local_index = 2; (app_local_index < 10); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        uint32_t zlang_gen_index_2 = (uint32_t)app_local_index;
-        if (zlang_gen_index_2 < 10) {
-            app_local_fib.data_[zlang_gen_index_2] = zlang_add_i32(zlang_array_get_i32(app_local_fib.data_, (uint32_t)zlang_sub_i32(app_local_index, 1), 10), zlang_array_get_i32(app_local_fib.data_, (uint32_t)zlang_sub_i32(app_local_index, 2), 10));
-        } else {
-            zlang_trap(ZLANG_TRAP_BOUNDS);
-        }
+        app_local_fib.data_[(uint32_t)app_local_index] = zlang_add_i32(app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 1)], app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 2)]);
     }
 
     for (uint32_t zlang_gen_foreach_3 = ZLANG_ZERO; zlang_gen_foreach_3 < 10; ++zlang_gen_foreach_3) {

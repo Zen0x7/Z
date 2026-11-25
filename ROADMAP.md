@@ -943,3 +943,22 @@ are normalized across platforms and overflow traps without allocation.
 
 Every golden example now has an explicit Zlang `main`, and all committed C goldens were regenerated
 through `zc --tto`. The CLI suite includes a stdin-driven test for `read` and `read_line`.
+
+## 0.26 — Design note
+
+Status: Locked.
+
+Zlang 0.26 adds range-proven index folding to `--tto`. The optimizer recognizes canonical `for`
+loops over signed `integer` variables with constant start, constant `<` or `<=` bound and `+= 1`
+update. It proves the range of the induction variable and of `variable +/- constant` expressions.
+One-dimensional array reads and writes whose whole proven range is inside the declared extent are
+emitted as direct C `data_[]` accesses. A non-canonical loop, a mutated induction variable or any
+index outside the proven range keeps the bounds check and `ZLANG_TRAP_BOUNDS`.
+
+## 0.26 — Completion
+
+Zlang 0.26 is implemented at language level 0.26. With `--tto`, canonical signed `for` loops with
+constant bounds and `+= 1` updates prove induction-variable ranges. Safe one-dimensional reads and
+writes become direct C `data_[]` accesses; the `fibonacci` golden now contains no
+`ZLANG_TRAP_BOUNDS` and no checked `zlang_array_get_i32` calls. Unproven indices keep their original
+bounds checks. Golden C files were regenerated through `zc --tto`.

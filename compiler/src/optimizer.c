@@ -393,6 +393,234 @@ static bool zlang_tto_store_literal(zlang_ast_expression_t *expression,
     return true;
 }
 
+typedef struct zlang_loop_range_t {
+    const char *variable_name_;
+    int64_t min_;
+    int64_t max_;
+    bool inclusive_;
+} zlang_loop_range_t;
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_tto_contains_expression(const zlang_program_t *program, size_t root,
+                                          size_t index) {
+    if (root == ZLANG_NO_EXPRESSION || root >= program->expression_count_) {
+        return false;
+    }
+    if (root == index) {
+        return true;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[root];
+    if (zlang_tto_contains_expression(program, _expression_k->left_, index) ||
+        zlang_tto_contains_expression(program, _expression_k->right_, index)) {
+        return true;
+    }
+    for (size_t _argument = 0U;
+         _argument < _expression_k->argument_count_ && _argument < ZLANG_CALL_ARGUMENT_CAPACITY;
+         ++_argument) {
+        if (zlang_tto_contains_expression(program, _expression_k->argument_indices_[_argument],
+                                          index)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_tto_statement_owns_expression(const zlang_program_t *program, size_t statement,
+                                                size_t expression) {
+    if (statement >= program->statement_count_) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _statement_k = &program->statements_[statement];
+    if (zlang_tto_contains_expression(program, _statement_k->expression_, expression) ||
+        zlang_tto_contains_expression(program, _statement_k->update_expression_, expression)) {
+        return true;
+    }
+    const size_t _end_k = _statement_k->initializer_start_ + _statement_k->initializer_count_;
+    for (size_t _item = _statement_k->initializer_start_;
+         _item < _end_k && _item < program->expression_count_; ++_item) {
+        if (_item == expression) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_tto_expression_in_body(const zlang_program_t *program, size_t expression,
+                                         const zlang_ast_statement_t *loop) {
+    const size_t _end_k = loop->body_start_ + loop->body_count_;
+    for (size_t _statement = loop->body_start_;
+         _statement < _end_k && _statement < program->statement_count_; ++_statement) {
+        if (zlang_tto_statement_owns_expression(program, _statement, expression)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_tto_eval_signed(const zlang_program_t *program, size_t index, int64_t *value) {
+    zlang_constant_t _constant;
+    if (!zlang_tto_eval(program, index, &_constant, 0U) || !_constant.known_ ||
+        _constant.boolean_ || _constant.unsigned_) {
+        return false;
+    }
+    *value = (int64_t)_constant.signed_value_;
+    return true;
+}
+
+static bool zlang_tto_same_identifier(const zlang_program_t *program, size_t index,
+                                      const char *name) {
+    if (index >= program->expression_count_ || name == NULL) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    return _expression_k->kind_ == zlang_expression_identifier_ && _expression_k->name_ != NULL &&
+           strcmp(_expression_k->name_, name) == 0;
+}
+
+static bool zlang_tto_loop_range(const zlang_program_t *program, const zlang_ast_statement_t *loop,
+                                 zlang_loop_range_t *range) {
+    if (loop->kind_ != zlang_statement_for_ ||
+        loop->initializer_statement_ >= program->statement_count_) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _initializer_k =
+        &program->statements_[loop->initializer_statement_];
+    if (_initializer_k->kind_ != zlang_statement_declaration_ || _initializer_k->is_const_ ||
+        _initializer_k->type_name_ == NULL || strcmp(_initializer_k->type_name_, "integer") != 0 ||
+        _initializer_k->name_ == NULL ||
+        _initializer_k->expression_ >= program->expression_count_) {
+        return false;
+    }
+    int64_t _min_k = 0;
+    if (!zlang_tto_eval_signed(program, _initializer_k->expression_, &_min_k)) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _condition_k =
+        loop->expression_ < program->expression_count_ ? &program->expressions_[loop->expression_]
+                                                       : NULL;
+    if (_condition_k == NULL ||
+        !zlang_tto_same_identifier(program, _condition_k->left_, _initializer_k->name_)) {
+        return false;
+    }
+    int64_t _bound_k = 0;
+    if (!zlang_tto_eval_signed(program, _condition_k->right_, &_bound_k)) {
+        return false;
+    }
+    const bool _inclusive_k = _condition_k->kind_ == zlang_expression_less_equal_;
+    if (_condition_k->kind_ != zlang_expression_less_ && !_inclusive_k) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _update_k =
+        loop->update_expression_ < program->expression_count_
+            ? &program->expressions_[loop->update_expression_]
+            : NULL;
+    if (_update_k == NULL || _update_k->kind_ != zlang_expression_compound_assignment_ ||
+        _update_k->operator_ != zlang_expression_add_ ||
+        !zlang_tto_same_identifier(program, _update_k->left_, _initializer_k->name_)) {
+        return false;
+    }
+    int64_t _step_k = 0;
+    if (!zlang_tto_eval_signed(program, _update_k->right_, &_step_k) || _step_k != 1) {
+        return false;
+    }
+    range->variable_name_ = _initializer_k->name_;
+    range->min_ = _min_k;
+    range->max_ = _inclusive_k ? _bound_k : _bound_k - 1;
+    range->inclusive_ = _inclusive_k;
+    return true;
+}
+
+static bool zlang_tto_variable_mutated(const zlang_program_t *program,
+                                       const zlang_ast_statement_t *loop, const char *name) {
+    const size_t _end_k = loop->body_start_ + loop->body_count_;
+    for (size_t _statement = loop->body_start_;
+         _statement < _end_k && _statement < program->statement_count_; ++_statement) {
+        for (size_t _expression = 0U; _expression < program->expression_count_; ++_expression) {
+            if (!zlang_tto_statement_owns_expression(program, _statement, _expression)) {
+                continue;
+            }
+            const zlang_ast_expression_t *const _expression_k = &program->expressions_[_expression];
+            const bool _assignment_k =
+                _expression_k->kind_ == zlang_expression_assignment_ ||
+                _expression_k->kind_ == zlang_expression_compound_assignment_;
+            if (_assignment_k && zlang_tto_same_identifier(program, _expression_k->left_, name)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool zlang_tto_index_offset(const zlang_program_t *program, size_t expression,
+                                   const zlang_loop_range_t *range, int64_t *min, int64_t *max) {
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[expression];
+    if (zlang_tto_same_identifier(program, expression, range->variable_name_)) {
+        *min = range->min_;
+        *max = range->max_;
+        return true;
+    }
+    int64_t _offset_k = 0;
+    if (_expression_k->kind_ == zlang_expression_sub_ &&
+        zlang_tto_same_identifier(program, _expression_k->left_, range->variable_name_) &&
+        zlang_tto_eval_signed(program, _expression_k->right_, &_offset_k)) {
+        *min = range->min_ - _offset_k;
+        *max = range->max_ - _offset_k;
+        return true;
+    }
+    if (_expression_k->kind_ == zlang_expression_add_ &&
+        zlang_tto_same_identifier(program, _expression_k->left_, range->variable_name_) &&
+        zlang_tto_eval_signed(program, _expression_k->right_, &_offset_k)) {
+        *min = range->min_ + _offset_k;
+        *max = range->max_ + _offset_k;
+        return true;
+    }
+    return false;
+}
+
+static bool zlang_tto_mark_proven_ranges(zlang_program_t *program) {
+    for (size_t _statement = 0U; _statement < program->statement_count_; ++_statement) {
+        zlang_loop_range_t _range;
+        if (!zlang_tto_loop_range(program, &program->statements_[_statement], &_range) ||
+            zlang_tto_variable_mutated(program, &program->statements_[_statement],
+                                       _range.variable_name_)) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _loop_k = &program->statements_[_statement];
+        for (size_t _expression = 0U; _expression < program->expression_count_; ++_expression) {
+            zlang_ast_expression_t *const _expression_k = &program->expressions_[_expression];
+            zlang_ast_expression_t *_target_k = NULL;
+            if (_expression_k->kind_ == zlang_expression_index_ ||
+                _expression_k->kind_ == zlang_expression_index_assignment_) {
+                if (_expression_k->kind_ == zlang_expression_index_) {
+                    _target_k = _expression_k;
+                } else if (_expression_k->left_ < program->expression_count_) {
+                    _target_k = &program->expressions_[_expression_k->left_];
+                }
+            }
+            if (_target_k == NULL || _target_k->kind_ != zlang_expression_index_ ||
+                _target_k->argument_count_ != 1U ||
+                !zlang_tto_expression_in_body(program, _expression, _loop_k)) {
+                continue;
+            }
+            const zlang_ast_statement_t *const _array_k =
+                zlang_tto_array_decl(program, _target_k->name_);
+            if (_array_k == NULL || _array_k->rank_ != 1U || _array_k->type_name_ == NULL ||
+                strcmp(_array_k->type_name_, "string") == 0) {
+                continue;
+            }
+            int64_t _min_k = 0;
+            int64_t _max_k = 0;
+            if (!zlang_tto_index_offset(program, _target_k->argument_indices_[0], &_range, &_min_k,
+                                        &_max_k) ||
+                _min_k < 0 || _max_k < _min_k || _max_k >= (int64_t)_array_k->extents_[0]) {
+                continue;
+            }
+            _target_k->is_proven_ = true;
+        }
+    }
+    return true;
+}
+
 static bool zlang_tto_fold_index_assignment(zlang_program_t *program, size_t index) {
     zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
     if (_expression_k->kind_ != zlang_expression_index_assignment_ ||
@@ -436,6 +664,9 @@ bool zlang_optimize_program(zlang_program_t *program, zlang_optimizer_context_t 
     if (program == NULL || context == NULL) {
         return false;
     }
+    if (!zlang_tto_mark_proven_ranges(program)) {
+        return false;
+    }
     zlang_optimizer_queue_all(program, context);
     while (context->worklist_front_ < context->worklist_count_ &&
            context->round_count_ < ZLANG_TTO_MAX_ROUNDS) {
@@ -456,6 +687,9 @@ bool zlang_optimize_program(zlang_program_t *program, zlang_optimizer_context_t 
         }
         if (_changed_k) {
             ++context->generation_;
+            if (!zlang_tto_mark_proven_ranges(program)) {
+                return false;
+            }
             zlang_optimizer_queue_all(program, context);
         }
     }

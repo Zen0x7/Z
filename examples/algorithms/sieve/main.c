@@ -39,19 +39,14 @@ int32_t app_fn_main(void) {
     app_array_prime_t app_local_prime = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
     for (int32_t app_local_index = 0; (app_local_index < 30); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        uint32_t zlang_gen_index_2 = (uint32_t)app_local_index;
-        if (zlang_gen_index_2 < 30) {
-            app_local_prime.data_[zlang_gen_index_2] = true;
-        } else {
-            zlang_trap(ZLANG_TRAP_BOUNDS);
-        }
+        app_local_prime.data_[(uint32_t)app_local_index] = true;
     }
 
     app_local_prime.data_[0] = false;
     app_local_prime.data_[1] = false;
 
     for (int32_t app_local_candidate = 2; (app_local_candidate < 30); app_local_candidate = zlang_add_i32(app_local_candidate, 1)) {
-        if (zlang_array_get_bool(app_local_prime.data_, (uint32_t)app_local_candidate, 30)) {
+        if (app_local_prime.data_[(uint32_t)app_local_candidate]) {
             for (int32_t app_local_multiple = zlang_mul_i32(app_local_candidate, app_local_candidate); (app_local_multiple < 30); app_local_multiple = zlang_add_i32(app_local_multiple, app_local_candidate)) {
                 uint32_t zlang_gen_index_3 = (uint32_t)app_local_multiple;
                 if (zlang_gen_index_3 < 30) {
@@ -64,7 +59,7 @@ int32_t app_fn_main(void) {
     }
 
     for (int32_t app_local_index = 0; (app_local_index < 30); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        if (zlang_array_get_bool(app_local_prime.data_, (uint32_t)app_local_index, 30)) {
+        if (app_local_prime.data_[(uint32_t)app_local_index]) {
             zlang_std_io_write_i32(app_local_index);
             zlang_std_io_write_string(zlang_gen_literal_0);
         }

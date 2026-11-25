@@ -85,6 +85,7 @@ typedef struct zlang_ast_expression_t {
     bool is_uint64_;
     bool is_float_;
     bool is_string_;
+    bool is_proven_;
 } zlang_ast_expression_t;
 
 typedef enum zlang_statement_kind_t {

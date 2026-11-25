@@ -1,5 +1,6 @@
 #include "zlang/compiler/diagnostics.h"
 #include "zlang/compiler/emitter.h"
+#include "zlang/compiler/optimizer.h"
 #include "zlang/compiler/parser.h"
 #include "zlang/compiler/planner.h"
 #include "zlang/compiler/semantics.h"
@@ -1176,6 +1177,48 @@ static void rejects_read_without_bounded_string(zlang_test_context_t *const cont
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
                 zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static bool zlang_spec_transpile_tto(zlang_spec_session_t *session, const char *source) {
+    if (!zlang_spec_transpile(session, source)) {
+        return false;
+    }
+    zlang_optimizer_context_t _optimizer;
+    zlang_optimizer_context_init(&_optimizer);
+    if (!zlang_optimize_program(&session->result_.program_, &_optimizer)) {
+        return false;
+    }
+    session->output_[0] = '\0';
+    zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
+                       &session->diagnostics_, &session->plan_);
+    return zlang_emit_program(&session->result_.program_, &session->emitter_);
+}
+
+static void folds_proven_loop_indices(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { write } from \"@std/io\";\n"
+                                  "array[10] integer values;\n"
+                                  "for (integer index = 2; index < 10; index += 1) {\n"
+                                  "    values[index] = values[index - 1] + values[index - 2];\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile_tto(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_trap(ZLANG_TRAP_BOUNDS)") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_get_i32") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ".data_[(uint32_t)app_local_index]") != NULL);
+}
+
+static void keeps_unproven_bounds_traps(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { write } from \"@std/io\";\n"
+                                  "array[4] integer values;\n"
+                                  "integer limit = 6;\n"
+                                  "for (integer index = 0; index < limit; index += 1) {\n"
+                                  "    values[index] = 1;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile_tto(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_trap(ZLANG_TRAP_BOUNDS)") != NULL);
 }
 
 static void rejects_print_keyword(zlang_test_context_t *const context) {

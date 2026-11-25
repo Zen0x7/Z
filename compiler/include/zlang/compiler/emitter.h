@@ -17,6 +17,8 @@
 #define ZLANG_EMITTED_SEQUENCE_CAPACITY 32U
 #define ZLANG_EMITTED_LITERAL_CAPACITY 64U
 #define ZLANG_EMITTED_USER_TYPE_CAPACITY 32U
+#define ZLANG_EMITTED_VTABLE_CAPACITY 32U
+#define ZLANG_EMITTED_TYPE_TAG_CAPACITY 32U
 #define ZLANG_EMITTED_ENUM_ITEM_CAPACITY 128U
 #define ZLANG_EMITTED_COMMENT_CAPACITY 128U
 #define ZLANG_EMITTED_CSE_CAPACITY 16U
@@ -69,6 +71,17 @@ typedef struct zlang_emitted_user_type_t {
     char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
 } zlang_emitted_user_type_t;
 
+typedef struct zlang_emitted_vtable_t {
+    const zlang_ast_statement_t *statement_;
+    char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char instance_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_vtable_t;
+
+typedef struct zlang_emitted_type_tag_t {
+    const zlang_ast_statement_t *statement_;
+    char macro_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_type_tag_t;
+
 typedef struct zlang_emitted_enum_item_t {
     const char *source_name_;
     const char *type_name_;
@@ -114,6 +127,10 @@ typedef struct zlang_emitter_t {
     size_t emitted_capacity_count_;
     zlang_emitted_user_type_t emitted_user_types_[ZLANG_EMITTED_USER_TYPE_CAPACITY];
     size_t emitted_user_type_count_;
+    zlang_emitted_vtable_t emitted_vtables_[ZLANG_EMITTED_VTABLE_CAPACITY];
+    size_t emitted_vtable_count_;
+    zlang_emitted_type_tag_t emitted_type_tags_[ZLANG_EMITTED_TYPE_TAG_CAPACITY];
+    size_t emitted_type_tag_count_;
     zlang_emitted_enum_item_t emitted_enum_items_[ZLANG_EMITTED_ENUM_ITEM_CAPACITY];
     size_t emitted_enum_item_count_;
     size_t cse_expression_indices_[ZLANG_EMITTED_CSE_CAPACITY];
@@ -139,6 +156,7 @@ typedef struct zlang_emitter_t {
     bool has_explicit_main_;
     const zlang_program_t *program_;
     const zlang_ast_statement_t *current_struct_;
+    const char *current_return_type_;
     const char *current_self_name_;
     bool current_self_is_pointer_;
     char activated_macros_[ZLANG_EMITTED_SYMBOL_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];

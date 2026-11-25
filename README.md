@@ -59,8 +59,8 @@ when traceability is not needed.
 
 This program exercises the language end to end: comments attached to their source constructs,
 `const`, records, enums, all four scalar types, explicit and inferred array declarations, bounded string
-elements, functions with `clone` and `reference` parameters, `return`, user-defined function
-parameter and return types, scopes,
+elements, functions with `clone` and `reference` parameters, inferred array parameters and returns,
+`return`, user-defined function parameter and return types, scopes,
 assignments, indexed access and assignment, field access and assignment, arithmetic,
 compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
 printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
@@ -145,12 +145,20 @@ function shift(reference Point point, clone integer amount) {
     point.x = point.x + amount;
 }
 
+// Copies an array through an inferred array parameter and return type.
+function stamp(clone array source): array {
+    array result;
+    result[0][1] = source[0][1] + 1;
+    return result;
+}
+
 Point made = make();
 Color chosen = GREEN;
 Point painted = paint(made, chosen);
 shift(made, 3);
 array[2][3] integer grid;
 grid[0][1] = 5;
+array[2][3] integer stamped = stamp(grid);
 
 fixed[0] = add(values[1], base);
 names[0] = "z";
@@ -210,7 +218,9 @@ print(points[0].x);
 print(made.x);
 print(painted.x);
 integer cell = grid[0][1];
+integer stamped_cell = stamped[0][1];
 print(cell);
+print(stamped_cell);
 print(current);
 ```
 
@@ -277,10 +287,18 @@ typedef enum zlang_color_t {
 #define ZLANG_POINTS_CAPACITY 2U
 #define ZLANG_POINTS_LENGTH ZLANG_POINTS_EXTENT_0
 #define ZLANG_POINTS_EXTENT_0 2U
+#define ZLANG_RESULT_CAPACITY 6U
+#define ZLANG_RESULT_LENGTH ZLANG_RESULT_EXTENT_0
+#define ZLANG_RESULT_EXTENT_0 2U
+#define ZLANG_RESULT_EXTENT_1 3U
 #define ZLANG_GRID_CAPACITY 6U
 #define ZLANG_GRID_LENGTH ZLANG_GRID_EXTENT_0
 #define ZLANG_GRID_EXTENT_0 2U
 #define ZLANG_GRID_EXTENT_1 3U
+#define ZLANG_STAMPED_CAPACITY 6U
+#define ZLANG_STAMPED_LENGTH ZLANG_STAMPED_EXTENT_0
+#define ZLANG_STAMPED_EXTENT_0 2U
+#define ZLANG_STAMPED_EXTENT_1 3U
 #define ZLANG_LABEL_CAPACITY 32U
 
 /* generated sequence types */
@@ -301,9 +319,9 @@ typedef struct zlang_points_t {
     zlang_point_t data_[ZLANG_POINTS_CAPACITY];
 } zlang_points_t;
 
-typedef struct zlang_grid_t {
-    int32_t data_[ZLANG_GRID_CAPACITY];
-} zlang_grid_t;
+typedef struct zlang_array_i32_2_3_t {
+    int32_t data_[ZLANG_RESULT_CAPACITY];
+} zlang_array_i32_2_3_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 5U
@@ -356,6 +374,15 @@ void _u_shift(zlang_point_t *point, int32_t amount) {
     point->x_ = zlang_add_i32(point->x_, amount);
 }
 
+// Copies an array through an inferred array parameter and return type.
+zlang_array_i32_2_3_t _u_stamp(zlang_array_i32_2_3_t source) {
+    zlang_array_i32_2_3_t _result = { { 0, 0, 0, 0, 0, 0 } };
+
+    _zlang_array_set_2_i32(_result.data_, ZLANG_RESULT_EXTENT_0, ZLANG_RESULT_EXTENT_1, 0, 1, zlang_add_i32(_zlang_array_get_2_i32(source.data_, ZLANG_RESULT_EXTENT_0, ZLANG_RESULT_EXTENT_1, 0, 1), 1));
+
+    return _result;
+}
+
 int main(void) {
     // A guided tour of the language.
     const int32_t _base = 2;
@@ -364,8 +391,8 @@ int main(void) {
     uint32_t _limit = 3U;
     bool _ready = true;
     zlang_string_t _name = _zlang_literal_0;
-    char _zlang_label_storage_7[ZLANG_LABEL_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
-    zlang_string_t _label = zlang_string_concat(_zlang_label_storage_7, ZLANG_LABEL_CAPACITY, (zlang_string_t[]){ _name, _zlang_literal_1 }, ZLANG_TWO);
+    char _zlang_label_storage_8[ZLANG_LABEL_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
+    zlang_string_t _label = zlang_string_concat(_zlang_label_storage_8, ZLANG_LABEL_CAPACITY, (zlang_string_t[]){ _name, _zlang_literal_1 }, ZLANG_TWO);
     zlang_names_t _names = { ZLANG_ZERO };
     _names.data_[0] = zlang_string_concat(_names.storage_[0], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_2 }, ZLANG_ONE);
     _names.data_[1] = zlang_string_concat(_names.storage_[1], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_3 }, ZLANG_ONE);
@@ -374,27 +401,29 @@ int main(void) {
     zlang_color_t _chosen = ZLANG_COLOR_GREEN;
     zlang_point_t _painted = _u_paint(_made, _chosen);
     _u_shift(&_made, 3);
-    zlang_grid_t _grid = { { 0, 0, 0, 0, 0, 0 } };
+    zlang_array_i32_2_3_t _grid = { { 0, 0, 0, 0, 0, 0 } };
 
     _zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, 0, 1, 5);
 
-    uint32_t _zlang_index_10 = 0;
-    if (_zlang_index_10 < ZLANG_FIXED_EXTENT_0) {
-        _fixed.data_[_zlang_index_10] = _u_add(zlang_array_get_i32(_values.data_, 1, ZLANG_VALUES_EXTENT_0), _base);
-    } else {
-        zlang_trap(ZLANG_TRAP_BOUNDS);
-    }
+    zlang_array_i32_2_3_t _stamped = _u_stamp(_grid);
 
     uint32_t _zlang_index_11 = 0;
-    if (_zlang_index_11 < ZLANG_NAMES_EXTENT_0) {
-        _names.data_[_zlang_index_11] = zlang_string_concat(_names.storage_[_zlang_index_11], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
+    if (_zlang_index_11 < ZLANG_FIXED_EXTENT_0) {
+        _fixed.data_[_zlang_index_11] = _u_add(zlang_array_get_i32(_values.data_, 1, ZLANG_VALUES_EXTENT_0), _base);
     } else {
         zlang_trap(ZLANG_TRAP_BOUNDS);
     }
 
-    zlang_point_t *_zlang_field_ptr_12 = (zlang_point_t *)zlang_array_get(_points.data_, 0, ZLANG_POINTS_EXTENT_0, sizeof(_points.data_[0]));
-    _zlang_field_ptr_12->x_ = 9;
-    _zlang_field_ptr_12->y_ = _u_add(_zlang_field_ptr_12->x_, _base);
+    uint32_t _zlang_index_12 = 0;
+    if (_zlang_index_12 < ZLANG_NAMES_EXTENT_0) {
+        _names.data_[_zlang_index_12] = zlang_string_concat(_names.storage_[_zlang_index_12], ZLANG_NAMES_ELEMENT_CAPACITY, (zlang_string_t[]){ _zlang_literal_4 }, ZLANG_ONE);
+    } else {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+    }
+
+    zlang_point_t *_zlang_field_ptr_13 = (zlang_point_t *)zlang_array_get(_points.data_, 0, ZLANG_POINTS_EXTENT_0, sizeof(_points.data_[0]));
+    _zlang_field_ptr_13->x_ = 9;
+    _zlang_field_ptr_13->y_ = _u_add(_zlang_field_ptr_13->x_, _base);
     int32_t _total = 1;
     _total = zlang_add_i32(_total, _base);
 
@@ -404,11 +433,11 @@ int main(void) {
     }
 
 
-    int32_t _zlang_value_13 = zlang_array_get_i32(_fixed.data_, 0, ZLANG_FIXED_EXTENT_0);
-    if (_zlang_value_13 > 3) {
+    int32_t _zlang_value_14 = zlang_array_get_i32(_fixed.data_, 0, ZLANG_FIXED_EXTENT_0);
+    if (_zlang_value_14 > 3) {
         zlang_print(_zlang_literal_5);
-    } else if (_zlang_value_13 == 3) {
-        zlang_print_i32(_zlang_value_13);
+    } else if (_zlang_value_14 == 3) {
+        zlang_print_i32(_zlang_value_14);
     } else {
         zlang_print(_zlang_literal_6);
     }
@@ -417,7 +446,7 @@ int main(void) {
         break;
     }
 
-    for (uint32_t _zlang_repeat_14 = ZLANG_ZERO; _zlang_repeat_14 < _limit; ++_zlang_repeat_14) {
+    for (uint32_t _zlang_repeat_15 = ZLANG_ZERO; _zlang_repeat_15 < _limit; ++_zlang_repeat_15) {
         continue;
     }
 
@@ -428,12 +457,12 @@ int main(void) {
         }
     }
 
-    for (uint32_t _zlang_foreach_15 = ZLANG_ZERO; _zlang_foreach_15 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_15) {
-        uint32_t _row = _zlang_foreach_15;
-        int32_t _item = _values.data_[_zlang_foreach_15];
-        for (uint32_t _zlang_foreach_16 = ZLANG_ZERO; _zlang_foreach_16 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_16) {
-            uint32_t _column = _zlang_foreach_16;
-            int32_t _other = _values.data_[_zlang_foreach_16];
+    for (uint32_t _zlang_foreach_16 = ZLANG_ZERO; _zlang_foreach_16 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_16) {
+        uint32_t _row = _zlang_foreach_16;
+        int32_t _item = _values.data_[_zlang_foreach_16];
+        for (uint32_t _zlang_foreach_17 = ZLANG_ZERO; _zlang_foreach_17 < ZLANG_VALUES_EXTENT_0; ++_zlang_foreach_17) {
+            uint32_t _column = _zlang_foreach_17;
+            int32_t _other = _values.data_[_zlang_foreach_17];
             zlang_print_u32(_row);
             zlang_print_u32(_column);
             zlang_print_i32(_item);
@@ -450,11 +479,13 @@ int main(void) {
     zlang_print_bool(_ok);
     zlang_print(_label);
     zlang_print(zlang_array_get_string(_names.data_, 0, ZLANG_NAMES_EXTENT_0));
-    zlang_print_i32(_zlang_field_ptr_12->x_);
+    zlang_print_i32(_zlang_field_ptr_13->x_);
     zlang_print_i32(_made.x_);
     zlang_print_i32(_painted.x_);
     int32_t _cell = _zlang_array_get_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, 0, 1);
+    int32_t _stamped_cell = _zlang_array_get_2_i32(_stamped.data_, ZLANG_STAMPED_EXTENT_0, ZLANG_STAMPED_EXTENT_1, 0, 1);
     zlang_print_i32(_cell);
+    zlang_print_i32(_stamped_cell);
     zlang_print_u32(_current);
 
     return ZLANG_ZERO;

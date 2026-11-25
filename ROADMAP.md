@@ -727,3 +727,80 @@ automatically. CLI coverage verifies relative imports, aliases from `z.yaml`, `@
 dependencies, duplicate local names in separate modules, shared variables, records, enums,
 functions, cyclic import rejection, root escape rejection, canonical generated names and the
 explicit `main` entry point.
+
+## 0.22 — Design note
+
+Status: Proposed.
+
+Zlang 0.22 completes the numeric primitive set and resolves the deferred runtime-state and
+inferred-array questions. It also removes backward compatibility from standard imports: the only
+canonical form is `@std/<domain>`. A specifier such as `random` or `program_options` is no longer a
+standard import; it is resolved as a user module path and fails if no such module exists. Existing
+sources must be migrated, and current documentation and tests use only the canonical spelling.
+
+### Numeric primitives
+
+The scalar set gains four primitives:
+
+| Zlang type | Width and sign | Generated C type |
+| --- | --- | --- |
+| `integer` | signed 32-bit | `int32_t` |
+| `unsigned` | unsigned 32-bit | `uint32_t` |
+| `int64` | signed 64-bit | `int64_t` |
+| `uint64` | unsigned 64-bit | `uint64_t` |
+| `float` | IEEE-754 binary32 | `float` |
+| `double` | IEEE-754 binary64 | `double` |
+
+`boolean` and `string` keep their 0.21 definitions. `arguments` remains an opaque entry-point
+handle. There is no implicit conversion between any two numeric types. Every widening, narrowing
+or reinterpretation requires an explicit conversion expression. The conversion syntax is the
+remaining open decision for this design note and must be fixed in `SPEC.md` before implementation.
+
+Integer literals keep the decimal spelling and the `u` suffix. Literals for 64-bit integers use
+the `i64` and `u64` suffixes. Floating-point literals are decimal with either a decimal point or
+an exponent; the `f` suffix selects `float`, and no suffix selects `double`. Integer literals do
+not acquire a floating-point type implicitly.
+
+Arithmetic follows the C/IEEE-754 model for each emitted type. Integer division by zero keeps the
+existing Zlang trap. Floating-point division follows IEEE-754: division by zero produces an
+infinity or NaN according to the standard, with no Zlang trap. `%` remains valid only for integer
+types. Comparisons between numeric types require both operands to have exactly the same type.
+Printing uses bounded runtime helpers with deterministic textual forms; generated programs still
+perform no dynamic allocation.
+
+### Standard random functions
+
+`@std/random` exposes `generate_int32`, `generate_uint32`, `generate_int64`, `generate_uint64`,
+`generate_float32` and `generate_float64`. Floating-point generators use the existing deterministic
+PRNG and produce values in `[from, to)`. Invalid ranges trap with the existing invalid-argument
+trap. Results remain opaque to `--tto`: arguments may be folded, but calls are never folded.
+
+### Explicit runtime context
+
+The runtime state becomes one caller-owned C object named `zlang_runtime_context_t`. It contains
+the deterministic PRNG state and any future runtime-owned state. The emitter passes it as a hidden
+parameter only to generated C functions that transitively need runtime state. Zlang source never
+exposes a `context` type, keyword or parameter, and module variables remain user-owned file-scope
+objects. This is an internal generated-C contract, not a user-visible language feature.
+
+### Inferred array specializations
+
+Inferred array functions are monomorphized by concrete shape: element type, rank and every extent.
+A function called with `array[4] integer` and `array[2][3] integer` emits two C functions with
+canonical shape-derived names. Semantic analysis resolves the inferred shape for each call site and
+validates the function body for every distinct shape. Two different shapes are not a conflict;
+they are two specializations. A conflict is reported only when one call site cannot provide a
+unique shape, or when the function body is invalid for one of its inferred shapes.
+
+### Acceptance criteria
+
+- `float`, `double`, `int64` and `uint64` work in declarations, parameters, returns, arrays,
+  records and arithmetic;
+- explicit conversions are required and reject implicit numeric coercion;
+- floating-point division by zero follows IEEE-754 and does not trap;
+- standard random functions remain deterministic, stateful and opaque to `--tto`;
+- generated C uses one internal `zlang_runtime_context_t` instead of per-domain hidden state;
+- inferred array functions called with different shapes emit one canonical C function per shape;
+- `from "random"` is rejected and every current fixture uses `@std/random`;
+- at least one golden example demonstrates a multi-module project;
+- the full CI matrix, sanitizers, coverage, fuzzers, docs and package checks stay green.

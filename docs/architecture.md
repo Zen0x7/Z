@@ -64,7 +64,7 @@ multi-architecture builds.
 
 The standard library will be domain-based rather than a set of keywords. The catalog, naming rules
 and classification dimensions live in [`standard_library.md`](standard_library.md). Source code
-imports a function with `import { generate_int32 } from "random";`. The compiler records the import
+imports a function with `import { generate_int32 } from "@std/random";`. The compiler records the import
 in semantic analysis and the emitter activates the matching function macro before including
 `<zlang/runtime/runtime.h>`. Domain implementations live under
 `include/zlang/standard/<domain>/<function>.h`, and the base runtime includes them only when their

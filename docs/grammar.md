@@ -24,7 +24,7 @@ with `ZLANG1004`.
 ## Imports
 
 ```zlang
-import { generate_int32, generate_bytes } from "random";
+import { generate_int32, generate_bytes } from "@std/random";
 import { tcp_listener } from "networking";
 ```
 

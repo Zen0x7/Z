@@ -14,7 +14,7 @@ static const char *zlang_semantic_std_domain(const char *specifier) {
     const char *const _prefix_k = "@std/";
     const size_t _prefix_length_k = strlen(_prefix_k);
     return strncmp(specifier, _prefix_k, _prefix_length_k) == 0 ? specifier + _prefix_length_k
-                                                                : specifier;
+                                                                : NULL;
 }
 
 void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol_t *symbols,

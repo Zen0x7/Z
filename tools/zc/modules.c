@@ -785,9 +785,7 @@ static bool zlang_modules_load(zlang_modules_t *modules, const char *path, bool 
     }
     for (size_t _import = 0U; _import < _module_k->import_count_; ++_import) {
         const char *const _domain_k = _module_k->import_domains_[_import];
-        const bool _std_domain_k = strncmp(_domain_k, "@std/", 5U) == 0 ||
-                                   strcmp(_domain_k, "random") == 0 ||
-                                   strcmp(_domain_k, "program_options") == 0;
+        const bool _std_domain_k = strncmp(_domain_k, "@std/", 5U) == 0;
         if (_std_domain_k) {
             bool _exists_k = false;
             for (size_t _std = 0U; _std < modules->std_import_count_; ++_std) {

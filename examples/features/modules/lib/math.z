@@ -1,0 +1,3 @@
+function add(clone integer value): integer {
+    return value + 2;
+}

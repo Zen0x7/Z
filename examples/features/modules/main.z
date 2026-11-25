@@ -1,0 +1,8 @@
+import { base } from "@lib/config";
+import { add } from "@lib/math";
+
+function main(): integer {
+    print(add(base));
+    print("\n");
+    return 0;
+}

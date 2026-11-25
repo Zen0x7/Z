@@ -1,4 +1,4 @@
-import { generate_int32 } from "random";
+import { generate_int32 } from "@std/random";
 
 function pure_add(clone integer left, clone integer right): integer {
     return left + right;

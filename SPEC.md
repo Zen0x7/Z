@@ -481,7 +481,8 @@ The following are explicitly outside Zlang:
 - heap-backed strings or vectors, or any operation that grows storage dynamically;
 - garbage collection or reference counting;
 - hard realtime timing guarantees beyond predictable memory behavior;
-- imports are limited to standard library functions; user modules are not supported.
+- standard library imports use canonical `@std/<domain>` specifiers; user modules use relative
+  paths or `@alias/...` paths declared in `z.yaml`.
 
 ---
 
@@ -709,6 +710,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | canonical generated names | `zlang.cli.modules` |
 | cyclic module rejection | `zlang.cli.modules_cycle` |
 | module root escape rejection | `zlang.cli.modules_escape` |
+| legacy `"random"` import rejection | `zlang.cli.legacy_std_import` |
 | explicit `main` with host arguments | `zlang.cli.program_options` |
 | standard command line options | `zlang.cli.program_options` |
 | standard imports | `zlang.stdlib.random.generate_int32.basic` |

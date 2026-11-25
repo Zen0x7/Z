@@ -3,12 +3,13 @@ if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT GOLDEN_C OR NOT EXPECTED OR NOT WORK_D
 endif()
 
 get_filename_component(_stem "${SOURCE}" NAME_WE)
+get_filename_component(_project_dir "${SOURCE}" DIRECTORY)
 set(_source "${WORK_DIR}/${_stem}.z")
 set(_generated_c "${WORK_DIR}/${_stem}.c")
 set(_executable "${WORK_DIR}/${_stem}${EXECUTABLE_SUFFIX}")
 
 file(MAKE_DIRECTORY "${WORK_DIR}")
-configure_file("${SOURCE}" "${_source}" COPYONLY)
+file(COPY "${_project_dir}/" DESTINATION "${WORK_DIR}")
 
 execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env "ZLANG_CC=${C_COMPILER}" "ZLANG_CC_STYLE=${CC_STYLE}"

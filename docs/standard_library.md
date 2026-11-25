@@ -9,8 +9,8 @@ User modules are resolved through the same import syntax with relative paths and
 A program opts into standard functions by name:
 
 ```zlang
-import { generate_int32 } from "random";
-import { generate_int32, generate_bytes } from "random";
+import { generate_int32 } from "@std/random";
+import { generate_int32, generate_bytes } from "@std/random";
 import { tcp_listener, send_bytes } from "networking";
 ```
 
@@ -36,7 +36,7 @@ Rules:
 The import must read as an intention:
 
 ```zlang
-import { generate_int32 } from "random";
+import { generate_int32 } from "@std/random";
 ```
 
 This reads as “from randomness, generate an int32”. The following are rejected by naming review:
@@ -76,7 +76,7 @@ A function name answers “what do I want to do?” inside its domain.
 Examples:
 
 ```zlang
-import { generate_int32, generate_bytes } from "random";
+import { generate_int32, generate_bytes } from "@std/random";
 import { tcp_listener, tcp_connect, send_bytes } from "networking";
 import { parse_int32, starts_with, to_upper } from "text";
 ```
@@ -341,7 +341,7 @@ Semantic checks:
 
 ## Acceptance criteria for 0.20
 
-- `import { generate_int32, generate_bytes } from "random";` compiles into the expected activation
+- `import { generate_int32, generate_bytes } from "@std/random";` compiles into the expected activation
   macros.
 - `import { listener } from "inet";` fails because the domain is not in the catalog.
 - `import { listener } from "networking";` fails naming review because the name is not expressive.

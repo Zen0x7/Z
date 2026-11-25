@@ -4859,7 +4859,15 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
                 break;
             }
         }
-        if (_main_k == NULL ||
+        if (_main_k == NULL) {
+            return false;
+        }
+        const bool _has_host_arguments_k =
+            _main_k->statement_ != NULL && _main_k->statement_->parameter_count_ == 2U;
+        if (!_has_host_arguments_k && !zlang_append_text(emitter, "int main(void) {\n")) {
+            return false;
+        }
+        if (_has_host_arguments_k &&
             !zlang_append_text(emitter,
                                "int main(int argc, char **argv) {\n"
                                "    zlang_arguments_t _zlang_arguments = { argc, argv };\n")) {
@@ -4871,11 +4879,18 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
             return false;
         }
         if (!zlang_append_text(emitter, "    return (int)") ||
-            !zlang_append_text(emitter, _main_k->generated_name_) ||
-            !zlang_append_text(emitter, "(argc, &_zlang_arguments")) {
+            !zlang_append_text(emitter, _main_k->generated_name_)) {
             return false;
         }
-        if (_main_k->needs_state_ && !zlang_append_text(emitter, ", &_zlang_std_state")) {
+        if (_has_host_arguments_k && !zlang_append_text(emitter, "(argc, &_zlang_arguments")) {
+            return false;
+        }
+        if (!_has_host_arguments_k && !zlang_append_text(emitter, "(")) {
+            return false;
+        }
+        if (_main_k->needs_state_ &&
+            !zlang_append_text(emitter, _has_host_arguments_k ? ", &_zlang_std_state"
+                                                              : "&_zlang_std_state")) {
             return false;
         }
         return zlang_append_text(emitter, ");\n}\n");

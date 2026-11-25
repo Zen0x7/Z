@@ -149,6 +149,17 @@ if(ZLANG_BUILD_TESTS)
         set_tests_properties(zlang.cli.${_case} PROPERTIES LABELS module:cli)
     endforeach()
 
+    add_test(NAME zlang.cli.legacy_std_import
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/legacy_std_import.z
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/legacy_std_import
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DMESSAGE=cannot resolve module import
+                     -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_modules_failure.cmake)
+    set_tests_properties(zlang.cli.legacy_std_import PROPERTIES LABELS module:cli)
+
     add_test(NAME zlang.cli.program_options
              COMMAND ${CMAKE_COMMAND}
                      -DZLANG_COMPILE=$<TARGET_FILE:zc>
@@ -172,6 +183,7 @@ if(ZLANG_BUILD_TESTS)
                              zlang.cli.modules
                              zlang.cli.modules_cycle
                              zlang.cli.modules_escape
+                             zlang.cli.legacy_std_import
                              zlang.cli.program_options
                              PROPERTIES ENVIRONMENT "${ZLANG_SANITIZER_ENV}")
     endif()

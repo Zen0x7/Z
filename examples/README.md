@@ -58,6 +58,7 @@ Small programs focused on one construct or a tight group of related constructs.
 | [functions_user_types](features/functions_user_types/) | records in signatures and by-reference mutation |
 | [hello](features/hello/) | strings and newline escapes |
 | [loops](features/loops/) | `while`, `repeat`, `for`, `break`, `continue`, `foreach` |
+| [modules](features/modules/) | `z.yaml` aliases, relative project modules, explicit `main` |
 | [records_enums](features/records_enums/) | records, fields and enums |
 | [scopes](features/scopes/) | user-authored blocks and non-shadowing scope access |
 | [strings](features/strings/) | folding, bounded strings and string indexing |

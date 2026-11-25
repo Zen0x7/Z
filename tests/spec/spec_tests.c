@@ -1110,6 +1110,23 @@ static void emits_records_and_enums(zlang_test_context_t *const context) {
                 strstr(_session.output_, ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED) != NULL);
 }
 
+static void emits_function_prototypes(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FORWARD_CALL_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FORWARD_PROTOTYPE_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "/* generated function prototypes */") != NULL);
+}
+
+static void emits_only_used_array_helpers(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_USED_HELPERS_SOURCE));
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_get_2_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_UNUSED_HELPER) == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_helpers_keep") == NULL);
+}
+
 static void reuses_repeated_index_reads(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 

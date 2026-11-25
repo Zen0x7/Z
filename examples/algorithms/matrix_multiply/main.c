@@ -24,12 +24,6 @@ static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uin
     data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
 }
 
-static void _zlang_array_helpers_keep(void) {
-    (void)_zlang_array_offset_2;
-    (void)_zlang_array_get_2_i32;
-    (void)_zlang_array_set_2_i32;
-}
-
 /* generated capacities */
 #define ZLANG_LEFT_CAPACITY 4U
 #define ZLANG_LEFT_LENGTH ZLANG_LEFT_EXTENT_0
@@ -67,7 +61,6 @@ static const char _zlang_literal_1_data[] = "\n";
 static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
 int main(void) {
-    _zlang_array_helpers_keep();
     zlang_left_t _left = { { 1, 2, 3, 4 } };
     zlang_right_t _right = { { 5, 6, 7, 8 } };
     zlang_result_t _result = { { 0, 0, 0, 0 } };

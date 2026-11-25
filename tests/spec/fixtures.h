@@ -332,3 +332,18 @@
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
 
 #endif /* ZLANG_SPEC_FIXTURES_H */
+
+#define ZLANG_SPEC_FORWARD_CALL_SOURCE                                                             \
+    "function first(): integer {\n"                                                                \
+    "    return second();\n"                                                                       \
+    "}\n"                                                                                          \
+    "function second(): integer {\n"                                                               \
+    "    return 7;\n"                                                                              \
+    "}\n"                                                                                          \
+    "print(first());"
+#define ZLANG_SPEC_FORWARD_PROTOTYPE_EXPECTED "int32_t _u_second(void);"
+
+#define ZLANG_SPEC_USED_HELPERS_SOURCE                                                             \
+    "array[2][2] integer grid = {{1, 2}, {3, 4}};\n"                                               \
+    "integer value = grid[0][1];"
+#define ZLANG_SPEC_UNUSED_HELPER "static inline void _zlang_array_set_2_i32"

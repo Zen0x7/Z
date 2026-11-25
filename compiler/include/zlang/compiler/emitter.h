@@ -21,6 +21,7 @@
 #define ZLANG_EMITTED_COMMENT_CAPACITY 128U
 #define ZLANG_EMITTED_CSE_CAPACITY 16U
 #define ZLANG_MAX_ARRAY_SPECIALIZATIONS 16U
+#define ZLANG_EMITTED_ARRAY_HELPER_CAPACITY 64U
 #define ZLANG_EMITTED_NAME_CAPACITY 64U
 
 /* The emitter owns no memory. The caller supplies the output buffer and the
@@ -81,6 +82,19 @@ typedef struct zlang_array_specialization_t {
     uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
 } zlang_array_specialization_t;
 
+typedef struct zlang_emitted_array_helper_t {
+    char name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    uint32_t rank_;
+    bool is_set_;
+} zlang_emitted_array_helper_t;
+
+typedef struct zlang_emitted_function_t {
+    const zlang_ast_statement_t *statement_;
+    const zlang_array_specialization_t *specialization_;
+    char generated_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_function_t;
+
 typedef struct zlang_emitter_t {
     char *buffer_;
     size_t capacity_;
@@ -111,8 +125,11 @@ typedef struct zlang_emitter_t {
     size_t cse_pointer_count_;
     bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
     bool emit_comments_;
-    bool array_helpers_emitted_;
-    bool emitted_array_ranks_[ZLANG_ARRAY_MAX_RANK + 1U];
+    zlang_emitted_array_helper_t requested_array_helpers_[ZLANG_EMITTED_ARRAY_HELPER_CAPACITY];
+    size_t requested_array_helper_count_;
+    bool collecting_array_helpers_;
+    zlang_emitted_function_t emitted_functions_[ZLANG_EMITTED_SYMBOL_CAPACITY];
+    size_t emitted_function_count_;
     zlang_array_specialization_t array_specializations_[ZLANG_MAX_ARRAY_SPECIALIZATIONS];
     size_t array_specialization_count_;
     const zlang_array_specialization_t *active_specialization_;

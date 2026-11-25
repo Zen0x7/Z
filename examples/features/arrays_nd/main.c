@@ -34,36 +34,12 @@ static inline int32_t _zlang_array_get_2_i32(const int32_t *data_, uint32_t exte
     return data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)];
 }
 
-static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1, int32_t value_) {
-    data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
-}
-
 static inline int32_t _zlang_array_get_3_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t extent_2, uint32_t index_0, uint32_t index_1, uint32_t index_2) {
     return data_[_zlang_array_offset_3(extent_0, extent_1, extent_2, index_0, index_1, index_2)];
 }
 
-static inline void _zlang_array_set_3_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t extent_2, uint32_t index_0, uint32_t index_1, uint32_t index_2, int32_t value_) {
-    data_[_zlang_array_offset_3(extent_0, extent_1, extent_2, index_0, index_1, index_2)] = value_;
-}
-
 static inline int32_t _zlang_array_get_4_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t extent_2, uint32_t extent_3, uint32_t index_0, uint32_t index_1, uint32_t index_2, uint32_t index_3) {
     return data_[_zlang_array_offset_4(extent_0, extent_1, extent_2, extent_3, index_0, index_1, index_2, index_3)];
-}
-
-static inline void _zlang_array_set_4_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t extent_2, uint32_t extent_3, uint32_t index_0, uint32_t index_1, uint32_t index_2, uint32_t index_3, int32_t value_) {
-    data_[_zlang_array_offset_4(extent_0, extent_1, extent_2, extent_3, index_0, index_1, index_2, index_3)] = value_;
-}
-
-static void _zlang_array_helpers_keep(void) {
-    (void)_zlang_array_offset_2;
-    (void)_zlang_array_offset_3;
-    (void)_zlang_array_offset_4;
-    (void)_zlang_array_get_2_i32;
-    (void)_zlang_array_set_2_i32;
-    (void)_zlang_array_get_3_i32;
-    (void)_zlang_array_set_3_i32;
-    (void)_zlang_array_get_4_i32;
-    (void)_zlang_array_set_4_i32;
 }
 
 /* generated capacities */
@@ -103,7 +79,6 @@ static const char _zlang_literal_0_data[] = "\n";
 static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
 int main(void) {
-    _zlang_array_helpers_keep();
     zlang_square_t _square = { { 1, 2, 3, 4 } };
     zlang_cube_t _cube = { { 1, 2, 3, 4, 5, 6, 7, 8 } };
     zlang_hyper_t _hyper = { { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 } };

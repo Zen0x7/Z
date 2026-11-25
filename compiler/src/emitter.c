@@ -2354,13 +2354,13 @@ static bool zlang_emit_expression_as(const zlang_program_t *program, size_t inde
     }
     if (is_reference) {
         if (_symbol_k != NULL && _symbol_k->is_reference_) {
-            return zlang_append_text(emitter, "(") || zlang_append_text(emitter, _type_k) ||
-                   zlang_append_text(emitter, " *)") ||
+            return zlang_append_text(emitter, "(") && zlang_append_text(emitter, _type_k) &&
+                   zlang_append_text(emitter, " *)") &&
                    zlang_append_text(emitter, _symbol_k->generated_name_);
         }
         if (_symbol_k != NULL) {
-            return zlang_append_text(emitter, "&") ||
-                   zlang_append_text(emitter, _symbol_k->generated_name_) ||
+            return zlang_append_text(emitter, "&") &&
+                   zlang_append_text(emitter, _symbol_k->generated_name_) &&
                    zlang_emit_base_chain(emitter, _depth_k, false);
         }
         return false;
@@ -3031,11 +3031,9 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             if (_argument > 0U && !zlang_append_text(emitter, ", ")) {
                 return false;
             }
-            if (_parameter_k != NULL && _parameter_k->is_reference_) {
-                if (!zlang_emit_reference_argument(program, _index_k, emitter)) {
-                    return false;
-                }
-            } else if (!zlang_emit_expression(program, _index_k, emitter)) {
+            if (!zlang_emit_expression_as(program, _index_k, emitter,
+                                          _parameter_k != NULL ? _parameter_k->type_name_ : NULL,
+                                          _parameter_k != NULL && _parameter_k->is_reference_)) {
                 return false;
             }
         }
@@ -5236,7 +5234,8 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             return zlang_append_text(emitter, "return;\n");
         }
         if (!zlang_append_text(emitter, "return ") ||
-            !zlang_emit_expression(program, statement->expression_, emitter)) {
+            !zlang_emit_expression_as(program, statement->expression_, emitter,
+                                      emitter->current_return_type_, false)) {
             return false;
         }
         return zlang_append_text(emitter, ";\n");

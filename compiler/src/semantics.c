@@ -29,6 +29,7 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->has_error_ = false;
     context->diagnostics_ = diagnostics;
     context->program_ = program;
+    context->current_struct_ = NULL;
 }
 
 static zlang_symbol_t *zlang_find_mutable_symbol(zlang_semantic_context_t *context,
@@ -104,6 +105,27 @@ static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *progr
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_owner_method(const zlang_program_t *program,
+                                                            const char *owner_name,
+                                                            const char *method_name) {
+    const zlang_ast_statement_t *const _owner_k = zlang_find_struct(program, owner_name) != NULL
+                                                      ? zlang_find_struct(program, owner_name)
+                                                      : zlang_find_trait(program, owner_name);
+    if (_owner_k == NULL || method_name == NULL) {
+        return NULL;
+    }
+    const size_t _end_k = _owner_k->body_start_ + _owner_k->body_count_;
+    for (size_t _index = _owner_k->body_start_;
+         _index < _end_k && _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _member_k = &program->statements_[_index];
+        if (_member_k->kind_ == zlang_statement_function_ && _member_k->name_ != NULL &&
+            strcmp(_member_k->name_, method_name) == 0) {
+            return _member_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_struct_method(const zlang_program_t *program,
                                                              const char *struct_name,
                                                              const char *method_name) {
@@ -143,7 +165,7 @@ static const zlang_ast_statement_t *zlang_find_struct_method_any(const zlang_pro
             continue;
         }
         const zlang_ast_statement_t *const _method_k =
-            zlang_find_struct_method(program, _trait_k->name_, method_name);
+            zlang_find_owner_method(program, _trait_k->name_, method_name);
         if (_method_k != NULL) {
             return _method_k;
         }
@@ -231,9 +253,9 @@ static const zlang_ast_statement_t *zlang_find_enum_owner(const zlang_program_t 
     return NULL;
 }
 
-static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *program,
-                                                     const zlang_ast_statement_t *structure,
-                                                     const char *name) {
+static const zlang_ast_statement_t *zlang_find_field_local(const zlang_program_t *program,
+                                                           const zlang_ast_statement_t *structure,
+                                                           const char *name) {
     if (structure == NULL || name == NULL) {
         return NULL;
     }
@@ -248,6 +270,41 @@ static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *prog
         }
     }
     return NULL;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *program,
+                                                     const zlang_ast_statement_t *structure,
+                                                     const char *name) {
+    if (structure == NULL || name == NULL) {
+        return NULL;
+    }
+    const zlang_ast_statement_t *const _local_k = zlang_find_field_local(program, structure, name);
+    if (_local_k != NULL) {
+        return _local_k;
+    }
+    if (structure->base_name_ == NULL) {
+        return NULL;
+    }
+    return zlang_find_field(program, zlang_find_struct(program, structure->base_name_), name);
+}
+
+static bool zlang_struct_has_cycle(const zlang_program_t *program, const char *name,
+                                   uint32_t depth) {
+    if (name == NULL || depth > 16U) {
+        return true;
+    }
+    const zlang_ast_statement_t *const _structure_k = zlang_find_struct(program, name);
+    if (_structure_k == NULL) {
+        return false;
+    }
+    if (_structure_k->base_name_ == NULL) {
+        return false;
+    }
+    if (strcmp(_structure_k->base_name_, name) == 0) {
+        return true;
+    }
+    return zlang_struct_has_cycle(program, _structure_k->base_name_, depth + 1U);
 }
 
 static bool zlang_report(zlang_semantic_context_t *context, uint16_t code,
@@ -1024,7 +1081,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             }
             const char *const _actual_k =
                 zlang_analyze_expression(context, _expression_index_k, statement);
-            if (!zlang_type_matches(_expected_k, _actual_k)) {
+            if (!zlang_type_accepts(context->program_, _expected_k, _actual_k)) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
                                               _expression_index_k, statement,
                                               "call argument does not match the parameter type");
@@ -1080,6 +1137,35 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
     bool _result_k = true;
     switch (statement->kind_) {
     case zlang_statement_struct_: {
+        if (statement->base_name_ != NULL) {
+            if (zlang_find_struct(context->program_, statement->base_name_) == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "base struct is not declared");
+            } else if (zlang_struct_has_cycle(context->program_, statement->name_, 0U)) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                         "cyclic struct inheritance");
+            }
+        }
+        for (size_t _trait = 0U; _trait < statement->uses_count_; ++_trait) {
+            const zlang_ast_statement_t *const _trait_k =
+                zlang_find_trait(context->program_, statement->uses_names_[_trait]);
+            if (_trait_k == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "trait is not declared");
+                continue;
+            }
+            for (size_t _requirement = 0U; _requirement < _trait_k->requires_count_;
+                 ++_requirement) {
+                const zlang_ast_statement_t *const _field_k = zlang_find_field(
+                    context->program_, statement, _trait_k->requires_names_[_requirement]);
+                if (_field_k == NULL ||
+                    !zlang_type_matches(_trait_k->requires_type_names_[_requirement],
+                                        _field_k->type_name_)) {
+                    _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                             "struct does not satisfy trait requirements");
+                }
+            }
+        }
         const size_t _end_k = statement->body_start_ + statement->body_count_;
         for (size_t _index = statement->body_start_;
              _index < _end_k && _index < context->program_->statement_count_; ++_index) {
@@ -1133,6 +1219,23 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             if (_member_k->kind_ == zlang_statement_function_ &&
                 !zlang_analyze_statement(context, _member_k)) {
                 _result_k = false;
+            }
+        }
+        for (size_t _trait = 0U; _trait < statement->uses_count_; ++_trait) {
+            const zlang_ast_statement_t *const _trait_k =
+                zlang_find_trait(context->program_, statement->uses_names_[_trait]);
+            if (_trait_k == NULL) {
+                continue;
+            }
+            const size_t _trait_end_k = _trait_k->body_start_ + _trait_k->body_count_;
+            for (size_t _index = _trait_k->body_start_;
+                 _index < _trait_end_k && _index < context->program_->statement_count_; ++_index) {
+                const zlang_ast_statement_t *const _method_k =
+                    &context->program_->statements_[_index];
+                if (_method_k->kind_ == zlang_statement_function_ &&
+                    !zlang_analyze_statement(context, _method_k)) {
+                    _result_k = false;
+                }
             }
         }
         context->current_struct_ = _previous_struct_k;
@@ -1402,7 +1505,11 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         if (_member_k && !statement->is_static_) {
             zlang_ast_statement_t _self_statement_k = {0};
             _self_statement_k.kind_ = zlang_statement_declaration_;
-            _self_statement_k.type_name_ = statement->owner_name_;
+            _self_statement_k.type_name_ =
+                zlang_find_trait(context->program_, statement->owner_name_) != NULL &&
+                        context->current_struct_ != NULL
+                    ? context->current_struct_->name_
+                    : statement->owner_name_;
             _self_statement_k.name_ = "self";
             if (!zlang_add_symbol(context, &_self_statement_k, 0U, false, false)) {
                 context->symbol_count_ = _scope_start_k;

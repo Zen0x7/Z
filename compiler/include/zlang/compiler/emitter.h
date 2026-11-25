@@ -133,6 +133,8 @@ typedef struct zlang_emitter_t {
     zlang_array_specialization_t array_specializations_[ZLANG_MAX_ARRAY_SPECIALIZATIONS];
     size_t array_specialization_count_;
     const zlang_array_specialization_t *active_specialization_;
+    bool uses_stateful_std_;
+    bool in_function_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

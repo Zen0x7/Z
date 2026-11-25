@@ -1,0 +1,5 @@
+import { generate_int32 } from "random";
+
+integer value = generate_int32(1, 1);
+print(value);
+print("\n");

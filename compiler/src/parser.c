@@ -160,6 +160,7 @@ static bool zlang_parse_enum(zlang_parser_t *parser);
 static bool zlang_parse_simple_block_statement(zlang_parser_t *parser, zlang_statement_kind_t kind);
 static bool zlang_parse_foreach(zlang_parser_t *parser);
 static bool zlang_parse_function(zlang_parser_t *parser);
+static bool zlang_parse_import(zlang_parser_t *parser);
 static bool zlang_parse_return(zlang_parser_t *parser);
 static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_kind_t kind);
 static bool zlang_parse_block(zlang_parser_t *parser, size_t statement);
@@ -1352,6 +1353,60 @@ zlang_parse_for(zlang_parser_t *parser) { // NOLINT(misc-no-recursion)
     return true;
 }
 
+static bool zlang_parse_import(zlang_parser_t *parser) {
+    const zlang_token_t *const _start_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_import_, "expected 'import'")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_left_brace_, "expected '{' after import")) {
+        return false;
+    }
+    const char *_names_k[ZLANG_CALL_ARGUMENT_CAPACITY];
+    size_t _name_count_k = 0U;
+    for (;;) {
+        const zlang_token_t *const _name_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                 "expected imported function name")) {
+            return false;
+        }
+        if (_name_count_k >= ZLANG_CALL_ARGUMENT_CAPACITY) {
+            zlang_parser_unsupported(parser, "too many imported names");
+            return false;
+        }
+        _names_k[_name_count_k++] = _name_k->text_;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    if (!zlang_parser_expect(parser, zlang_token_right_brace_, "expected '}' after imports")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_from_, "expected 'from' after imports")) {
+        return false;
+    }
+    const zlang_token_t *const _domain_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_string_literal_, "expected a domain string")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after import")) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < _name_count_k; ++_index) {
+        const size_t _statement_k = zlang_parser_add_statement(parser);
+        if (_statement_k == (size_t)-1) {
+            return false;
+        }
+        zlang_ast_statement_t *const _statement_k_ptr = &parser->statements_[_statement_k];
+        _statement_k_ptr->kind_ = zlang_statement_import_;
+        _statement_k_ptr->name_ = _names_k[_index];
+        _statement_k_ptr->type_name_ = _domain_k->text_;
+        _statement_k_ptr->line_ = _start_k->line_;
+        _statement_k_ptr->column_ = _start_k->column_;
+    }
+    return true;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_parse_statements(zlang_parser_t *parser) {
     while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
@@ -1391,6 +1446,10 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
             }
         } else if (_kind_k == zlang_token_function_) {
             if (!zlang_parse_function(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_import_) {
+            if (!zlang_parse_import(parser)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_return_) {
@@ -1899,6 +1958,10 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
             }
         } else if (_kind_k == zlang_token_function_) {
             if (!zlang_parse_function(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_import_) {
+            if (!zlang_parse_import(parser)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_return_) {

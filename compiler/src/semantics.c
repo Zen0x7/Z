@@ -3,6 +3,7 @@
  */
 
 #include "zlang/compiler/semantics.h"
+#include "zlang/compiler/stdlib.h"
 
 #include <string.h>
 
@@ -677,6 +678,27 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           statement, "call target is not a declared function");
             return NULL;
         }
+        if (_function_k->declaration_ != NULL &&
+            _function_k->declaration_->kind_ == zlang_statement_import_) {
+            const zlang_std_function_t *const _std_k =
+                zlang_std_find(_function_k->declaration_->type_name_, _expression_k->name_);
+            if (_std_k == NULL || _expression_k->argument_count_ != _std_k->parameter_count_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement, "standard call argument count mismatch");
+                return NULL;
+            }
+            for (size_t _argument = 0U; _argument < _std_k->parameter_count_; ++_argument) {
+                const size_t _argument_index_k = _expression_k->argument_indices_[_argument];
+                const char *const _actual_k =
+                    zlang_analyze_expression(context, _argument_index_k, statement);
+                if (!zlang_type_matches(_std_k->parameter_types_[_argument], _actual_k)) {
+                    (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                                  _argument_index_k, statement,
+                                                  "standard call argument type mismatch");
+                }
+            }
+            return _std_k->return_type_;
+        }
         if (_expression_k->argument_count_ != _function_k->parameter_count_) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "call argument count does not match the declaration");
@@ -1199,8 +1221,53 @@ static void zlang_report_unused_capacities(zlang_semantic_context_t *context) {
     }
 }
 
+static bool zlang_register_imports(const zlang_program_t *program,
+                                   zlang_semantic_context_t *context) {
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_import_) {
+            continue;
+        }
+        if (zlang_is_nested(program, _index)) {
+            return zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, _statement_k,
+                                "imports are only valid at file scope");
+        }
+        const zlang_std_function_t *const _function_k =
+            zlang_std_find(_statement_k->type_name_, _statement_k->name_);
+        if (_function_k == NULL) {
+            return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _statement_k,
+                                "standard function is not in the registry");
+        }
+        zlang_symbol_t *const _symbol_k = zlang_find_mutable_symbol(context, _statement_k->name_);
+        if (_symbol_k != NULL) {
+            if (_symbol_k->is_function_ && _symbol_k->declaration_ != NULL &&
+                _symbol_k->declaration_->kind_ == zlang_statement_import_ &&
+                strcmp(_symbol_k->declaration_->type_name_, _statement_k->type_name_) == 0) {
+                continue;
+            }
+            return zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, _statement_k,
+                                "imported name conflicts with another declaration");
+        }
+        if (context->symbol_count_ >= context->symbol_capacity_) {
+            return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _statement_k,
+                                "symbol table capacity exceeded");
+        }
+        zlang_symbol_t *const _entry_k = &context->symbols_[context->symbol_count_++];
+        memset(_entry_k, 0, sizeof(*_entry_k));
+        _entry_k->name_ = _statement_k->name_;
+        _entry_k->type_name_ = _function_k->return_type_;
+        _entry_k->declaration_ = _statement_k;
+        _entry_k->scope_depth_ = context->scope_depth_;
+        _entry_k->is_function_ = true;
+    }
+    return true;
+}
+
 bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_context_t *context) {
     context->program_ = program;
+    if (!zlang_register_imports(program, context)) {
+        return false;
+    }
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if (_statement_k->kind_ == zlang_statement_function_ && !zlang_is_nested(program, _index) &&
@@ -1211,7 +1278,8 @@ bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_contex
     bool _result_k = true;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (!zlang_is_nested(program, _index) && !zlang_analyze_statement(context, _statement_k)) {
+        if (_statement_k->kind_ != zlang_statement_import_ && !zlang_is_nested(program, _index) &&
+            !zlang_analyze_statement(context, _statement_k)) {
             _result_k = false;
         }
     }

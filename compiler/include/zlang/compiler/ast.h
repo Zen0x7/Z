@@ -87,6 +87,7 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_foreach_,
     zlang_statement_repeat_,
     zlang_statement_function_,
+    zlang_statement_import_,
     zlang_statement_return_,
     zlang_statement_block_,
     zlang_statement_for_,

@@ -406,4 +406,8 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
     ++(*length);
 }
 
+#if defined(ZLANG_STD_RANDOM_GENERATE_INT32)
+#include "zlang/standard/random/generate_int32.h"
+#endif
+
 #endif /* ZLANG_RUNTIME_RUNTIME_H */

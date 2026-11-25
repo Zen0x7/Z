@@ -589,6 +589,12 @@ import { generate_int32, generate_bytes } from "random";
 import { tcp_listener, send_bytes } from "networking";
 ```
 
+Generated C carries explicit provenance prefixes: `app_*` for names translated from user source,
+`zlang_gen_*` for compiler support derived from source, `zlang_std_*` for standard library
+functions, `zlang_*` for the public runtime API and `ZLANG_*` for language constants. A source
+literal's content belongs to the user, but its generated C storage is compiler support and uses
+`zlang_gen_*`.
+
 Domains are full, expressive capability names: `random`, `algorithms`, `text`, `encoding`, `math`,
 `memory`, `time`, `streams`, `filesystem`, `networking` and `system`. Function names say what they
 do: `generate_int32`, `parse_int32`, `encode_hex`, `sort_int32`, `tcp_listener`. Generic names such
@@ -656,4 +662,6 @@ Acceptance criteria:
 - imported and unimported standard functions are distinguished by semantic analysis;
 - a standard function may call another standard function regardless of source import order;
 - dependencies are activated from metadata, not from user imports;
+- every standard function has a micro CMake test project with direct C cases and Zlang integration
+  programs;
 - generated C compiles under the strict warning set in both default and `--tto` modes.

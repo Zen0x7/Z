@@ -83,6 +83,48 @@ import { tcp_listener, tcp_connect, send_bytes } from "networking";
 import { parse_int32, starts_with, to_upper } from "text";
 ```
 
+## Generated C provenance
+
+Generated C should tell the reader where each name comes from. Prefixes are ownership clues, not
+decoration. The 0.20 naming map is:
+
+| Prefix | Owner | Meaning | Example |
+| --- | --- | --- | --- |
+| `app_fn_` | user source | C translation of a user-defined function | `app_fn_add` |
+| `app_local_` | user source | C translation of a user local variable | `app_local_total` |
+| `app_param_` | user source | C translation of a user parameter | `app_param_left` |
+| `app_record_`, `app_enum_`, `app_array_` | user source | C type generated from a user declaration | `app_record_point_t` |
+| `zlang_gen_` | compiler | Support derived from user source; not user-editable | `zlang_gen_literal_0` |
+| `zlang_std_` | standard library | Registered standard function | `zlang_std_random_generate_int32` |
+| `zlang_` | runtime | Public runtime API used by generated C | `zlang_print_i32` |
+| `ZLANG_` | language | Compile-time constants and macros | `ZLANG_TRAP_BOUNDS` |
+
+`app_` is the canonical prefix for “this comes from the program I wrote”. It is preferred over
+`user_` because the generated file is the compiled application module, and over all-caps role
+prefixes because all-caps names read as macros or types. No prefix starts with `_` at file scope, so
+generated C avoids C's reserved leading-underscore namespace.
+
+Compiler-generated storage for a source string is source-derived but not user-authored. Its name
+uses `zlang_gen_`, not `app_`:
+
+```c
+static const char zlang_gen_literal_0_data[] = "\n";
+static const zlang_string_t zlang_gen_literal_0 = {
+    zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH
+};
+
+zlang_print(zlang_gen_literal_0);
+```
+
+The literal's content belongs to the user's program; the C object is compiler support. A bug in the
+value comes from the source string. A bug in the C object's declaration or lifetime belongs to the
+compiler. This distinction is the point: a reader should know which code to inspect.
+
+Runtime calls keep `zlang_*` because they are documented API. Standard functions keep
+`zlang_std_*` because they belong to the language library, not to the user's application. User
+functions, locals, parameters and declared types use `app_*` because they map back to source the
+user owns.
+
 ## Domain catalog
 
 The catalog is the allowed set of top-level domains. New domains require a design decision and a
@@ -230,6 +272,52 @@ an explicit runtime context. If the emitter must thread that context through use
 a hidden C parameter to definitions, prototypes and call sites together. Zlang source signatures do
 not expose it.
 
+## Testing standard functions
+
+Every registered standard function gets one test module. The directory is a micro CMake project
+that can be configured standalone and is also added from `tests/stdlib/`:
+
+```text
+tests/stdlib/random/generate_int32/
+  CMakeLists.txt
+  README.md
+  test_cases.h
+  generate_int32_tests.c
+  programs/basic/main.zlang
+  programs/basic/main.c
+  programs/basic/expected.txt
+```
+
+Rules:
+
+- one directory, one executable, one X-macro case list, following the existing test module model;
+- CTest case names are `zlang.stdlib.<domain>.<function>.<case>`;
+- labels are `module:stdlib`, `domain:<domain>` and `function:<function>`;
+- each function has at least one direct C case using the header-only test framework;
+- each function has at least one Zlang integration program using `import`;
+- integration programs use plain `.zlang`, committed golden `.c` and `expected.txt`;
+- the generated C is compiled with the strict warning set and then executed;
+- configure-time validation rejects a registered function without a matching test directory.
+
+The direct C cases cover boundaries, invalid arguments, traps and explicit state. The Zlang cases
+cover import activation, dependency closure, emitter output and runtime linkage. This separates
+runtime correctness from language integration.
+
+Portability rules:
+
+- tests depend only on C99 and Zlang headers;
+- no third-party test framework;
+- no locale, timezone or host entropy in expected stdout;
+- `DRAFT`/`UNSAFE` entropy functions assert ranges or structural invariants, not exact values;
+- deterministic functions assert exact values;
+- `PLATFORM` functions are guarded by compile-time capability checks and test the contract, not
+  host-specific output;
+- the same suite runs with GCC, Clang, MSVC, clang-cl, MinGW, sanitizers and Valgrind.
+
+Stateful functions use an explicit injected state in their C cases. If deterministic runtime state
+is selected, tests use a fixed seed. If OS entropy is selected, tests never depend on a specific
+drawn value.
+
 ## Validation
 
 Configure-time checks:
@@ -260,5 +348,7 @@ Semantic checks:
 - `import { listener } from "networking";` fails naming review because the name is not expressive.
 - `import { tcp_listener } from "networking";` succeeds.
 - `shuffle_int32` activates `random.generate_int32` transitively.
-- `generate_int32` is never constant-folded under `--tto`.
+- `generate_int32` is never constant-folded under `--tto`;
+- generated C uses `app_*`, `zlang_gen_*`, `zlang_std_*`, `zlang_*` and `ZLANG_*` consistently;
+- every standard function has a micro CMake test project with direct C and Zlang integration cases.
 - Pure functions such as `math.clamp_int32` are foldable under `--tto`.

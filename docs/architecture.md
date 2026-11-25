@@ -84,6 +84,16 @@ dependencies. Generation produces the activation macros, declaration headers, se
 table and documentation entries. The standard header contains only the implementation body. This
 keeps authoring local and makes validation mechanical.
 
+Generated C uses provenance prefixes so readers can tell what belongs to the source program and
+what belongs to the language. `app_*` names translate user declarations; `zlang_gen_*` names are
+compiler support derived from source; `zlang_std_*` names are standard functions; `zlang_*` names
+are the public runtime API; `ZLANG_*` names are language constants.
+
+Each standard function has one test directory under `tests/stdlib/<domain>/<function>/`. The
+directory is a micro CMake project with direct C cases and Zlang integration programs. Direct
+cases test runtime boundaries and state. Integration programs test imports, dependency activation,
+golden C and stdout under the strict warning set.
+
 Stateful standard functions never own mutable globals and never hide mutable `static` state in a
 header. If a stateful deterministic PRNG is selected, runtime state is explicit. The emitter adds a
 hidden state parameter only to generated C functions that transitively call stateful standard

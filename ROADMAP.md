@@ -505,3 +505,38 @@ Status: Implemented.
 
 The only array access syntax in Zlang is `array[i]...`. Generated C uses shape-typed helpers for
 bounds-checked reads and writes, but users never name them.
+
+## 0.18 — Complete arrays
+
+Status: Locked.
+
+- Support multiple monomorphizations per inferred array function. A function written with `array`
+  parameters or return types may be called with different shapes; each shape gets its own generated
+  C function and canonical array typedef.
+- Support nested array initializers:
+  ```zlang
+  array integer grid = {
+      {1, 2, 3},
+      {4, 5, 6}
+  };
+  ```
+  The initializer shape contributes rank and extents to inference.
+- Define multidimensional iteration. `foreach (row, col in grid)` visits every index tuple in
+  row-major order; the index variables are unsigned and bounds are compile-time known from the array
+  shape.
+- Allow array fields in records. A record field may be `array[A][B] T`, emitted as an embedded
+  canonical array typedef with its own bounds checks.
+- Allow `const array[A][B] T` declarations and reject indexed writes to them.
+- Allow whole-array assignment and copy for compatible shapes:
+  ```zlang
+  destination = source;
+  ```
+  Shape mismatch is a type diagnostic.
+
+Acceptance criteria:
+
+- A generic inferred-array function can be called with two shapes in one program.
+- Nested initializers infer the same extents as explicit declarations.
+- `foreach` over a 2D array visits all cells exactly once.
+- Arrays work as record fields without losing bounds checks.
+- `const` arrays reject writes and whole-array copies require identical shape.

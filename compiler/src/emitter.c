@@ -37,6 +37,9 @@ static bool zlang_vtable_wrapper_name(const char *struct_name, const char *metho
                                       char *output, size_t capacity);
 static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
                                        zlang_emitted_vtable_t *vtable);
+static const zlang_ast_statement_t *zlang_effective_method(const zlang_program_t *program,
+                                                           const char *struct_name,
+                                                           const char *method_name);
 static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool is_reference);
 static bool zlang_emit_expression_as(const zlang_program_t *program, size_t index,
                                      zlang_emitter_t *emitter, const char *expected_type,
@@ -117,6 +120,7 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     (void)zlang_method_is_virtual;
     (void)zlang_vtable_wrapper_name;
     (void)zlang_collect_vtable_slots;
+    (void)zlang_effective_method;
     (void)zlang_emit_base_chain;
     (void)zlang_emit_expression_as;
     (void)zlang_emit_vtable_thunk_prototypes;
@@ -1582,12 +1586,39 @@ static bool zlang_collect_struct_vtable_slots(const zlang_program_t *program,
 
 static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
                                        zlang_emitted_vtable_t *vtable) {
-    (void)emitter;
-    if (vtable == NULL || vtable->statement_ == NULL || vtable->statement_->base_name_ != NULL) {
+    if (vtable == NULL || vtable->statement_ == NULL) {
+        return true;
+    }
+    const zlang_ast_statement_t *const _root_k =
+        zlang_struct_root_name(program, vtable->statement_->name_);
+    if (_root_k == NULL) {
+        return false;
+    }
+    if (strcmp(_root_k->name_, vtable->statement_->name_) != 0) {
+        const zlang_emitted_vtable_t *const _root_vtable_k =
+            zlang_find_vtable(emitter, _root_k->name_);
+        if (_root_vtable_k == NULL) {
+            return false;
+        }
+        vtable->slot_count_ = _root_vtable_k->slot_count_;
+        memcpy(vtable->slot_methods_, _root_vtable_k->slot_methods_,
+               sizeof(vtable->slot_methods_[0]) * vtable->slot_count_);
+        memcpy(vtable->slot_names_, _root_vtable_k->slot_names_,
+               sizeof(vtable->slot_names_[0]) * vtable->slot_count_);
         return true;
     }
     vtable->slot_count_ = 0U;
     return zlang_collect_struct_vtable_slots(program, vtable, vtable->statement_->name_, 0U);
+}
+
+static const zlang_ast_statement_t *zlang_effective_method(const zlang_program_t *program,
+                                                           const char *struct_name,
+                                                           const char *method_name) {
+    const char *_owner_k = NULL;
+    bool _is_trait_k = false;
+    const zlang_ast_statement_t *const _method_k =
+        zlang_find_method(program, struct_name, method_name, &_owner_k, &_is_trait_k);
+    return !_is_trait_k ? _method_k : NULL;
 }
 
 static const zlang_ast_statement_t *zlang_find_function_statement(const zlang_program_t *program,
@@ -5883,15 +5914,21 @@ static bool zlang_emit_vtable_type_declarations(zlang_emitter_t *emitter) {
     return zlang_append_text(emitter, "\n");
 }
 
-static bool zlang_emit_vtable_initializer(zlang_emitter_t *emitter, const char *struct_name,
+static bool zlang_emit_vtable_initializer(const zlang_program_t *program, zlang_emitter_t *emitter,
+                                          const char *struct_name,
                                           const zlang_emitted_vtable_t *vtable,
                                           const zlang_emitted_type_tag_t *tag) {
-    (void)struct_name;
-    return vtable != NULL && tag != NULL && zlang_append_text(emitter, "    self") &&
-           zlang_emit_base_chain(emitter, 0U, false) &&
+    const zlang_ast_statement_t *const _root_k = zlang_struct_root_name(program, struct_name);
+    if (vtable == NULL || tag == NULL || _root_k == NULL) {
+        return false;
+    }
+    const uint32_t _depth_k = zlang_struct_depth(program, _root_k->name_, struct_name);
+    return zlang_append_text(emitter, "    self") &&
+           zlang_emit_base_chain(emitter, _depth_k, false) &&
            zlang_append_text(emitter, ".zlang_vtable_ = &") &&
            zlang_append_text(emitter, vtable->instance_name_) &&
-           zlang_append_text(emitter, ";\n    self") && zlang_emit_base_chain(emitter, 0U, false) &&
+           zlang_append_text(emitter, ";\n    self") &&
+           zlang_emit_base_chain(emitter, _depth_k, false) &&
            zlang_append_text(emitter, ".zlang_type_ = ") &&
            zlang_append_text(emitter, tag->macro_) && zlang_append_text(emitter, ";\n");
 }
@@ -5994,15 +6031,16 @@ static bool zlang_emit_user_types(const zlang_program_t *program, zlang_emitter_
             if (_statement_k->base_name_ != NULL && _base_type_k == NULL) {
                 return false;
             }
-            if (_vtable_k != NULL && (!zlang_append_text(emitter, "    const ") ||
-                                      !zlang_append_text(emitter, _vtable_k->type_name_) ||
-                                      !zlang_append_text(emitter, " *zlang_vtable_;\n") ||
-                                      !zlang_append_text(emitter, "    uint32_t zlang_type_;\n"))) {
-                return false;
-            }
             if (_base_type_k != NULL && (!zlang_append_text(emitter, "    ") ||
                                          !zlang_append_text(emitter, _base_type_k->type_name_) ||
                                          !zlang_append_text(emitter, " zlang_base_;\n"))) {
+                return false;
+            }
+            if (_vtable_k != NULL && _statement_k->base_name_ == NULL &&
+                (!zlang_append_text(emitter, "    const ") ||
+                 !zlang_append_text(emitter, _vtable_k->type_name_) ||
+                 !zlang_append_text(emitter, " *zlang_vtable_;\n") ||
+                 !zlang_append_text(emitter, "    uint32_t zlang_type_;\n"))) {
                 return false;
             }
             const size_t _end_k = _statement_k->body_start_ + _statement_k->body_count_;
@@ -6218,11 +6256,15 @@ static bool zlang_emit_vtable_thunk_definitions(const zlang_program_t *program,
                 return false;
             }
             char _method_name_k[ZLANG_EMITTED_NAME_CAPACITY];
+            const char *_owner_k = NULL;
+            bool _is_trait_k = false;
+            const zlang_ast_statement_t *const _effective_k = zlang_find_method(
+                program, _entry_k->statement_->name_, _method_k->name_, &_owner_k, &_is_trait_k);
             const zlang_emitted_user_type_t *const _struct_type_k =
-                zlang_find_user_type(emitter, _entry_k->statement_->name_);
-            if (_struct_type_k == NULL ||
-                !zlang_method_generated_name(_entry_k->statement_->name_, _method_k->name_, false,
-                                             _method_name_k, sizeof(_method_name_k)) ||
+                zlang_find_user_type(emitter, _owner_k);
+            if (_effective_k == NULL || _is_trait_k || _struct_type_k == NULL ||
+                !zlang_method_generated_name(_owner_k, _method_k->name_, false, _method_name_k,
+                                             sizeof(_method_name_k)) ||
                 !zlang_append_text(emitter, _method_name_k) || !zlang_append_text(emitter, "((") ||
                 !zlang_append_text(emitter, _struct_type_k->type_name_) ||
                 !zlang_append_text(emitter, " *)self")) {
@@ -6282,7 +6324,6 @@ static bool zlang_emit_vtable_thunk_prototypes(const zlang_program_t *program,
 }
 
 static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_emitter_t *emitter) {
-    (void)program;
     if (emitter->emitted_vtable_count_ == 0U) {
         return true;
     }
@@ -6298,7 +6339,18 @@ static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_em
             return false;
         }
         for (size_t _slot = 0U; _slot < _entry_k->slot_count_; ++_slot) {
-            if (!zlang_append_text(emitter, ", 0")) {
+            const zlang_ast_statement_t *const _method_k = zlang_effective_method(
+                program, _entry_k->statement_->name_, _entry_k->slot_methods_[_slot]->name_);
+            if (_method_k == NULL) {
+                if (!zlang_append_text(emitter, ", 0")) {
+                    return false;
+                }
+                continue;
+            }
+            char _thunk_k[ZLANG_EMITTED_NAME_CAPACITY];
+            if (!zlang_vtable_wrapper_name(_entry_k->statement_->name_, _method_k->name_, _thunk_k,
+                                           sizeof(_thunk_k)) ||
+                !zlang_append_text(emitter, ", ") || !zlang_append_text(emitter, _thunk_k)) {
                 return false;
             }
         }
@@ -6381,9 +6433,10 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
                         zlang_append_text(emitter, " self = { ZLANG_ZERO };\n");
             if (_result_k && _struct_k != NULL &&
                 zlang_find_vtable(emitter, _struct_k->name_) != NULL) {
-                _result_k = zlang_emit_vtable_initializer(
-                    emitter, _struct_k->name_, zlang_find_vtable(emitter, _struct_k->name_),
-                    zlang_find_type_tag(emitter, _struct_k->name_));
+                _result_k =
+                    zlang_emit_vtable_initializer(program, emitter, _struct_k->name_,
+                                                  zlang_find_vtable(emitter, _struct_k->name_),
+                                                  zlang_find_type_tag(emitter, _struct_k->name_));
             }
         }
         if (_result_k) {

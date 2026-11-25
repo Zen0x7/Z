@@ -136,6 +136,47 @@ static bool zlang_cli_report_diagnostics(const zlang_diagnostics_t *diagnostics,
     return _reported_k;
 }
 
+static bool zlang_cli_equals_ignore_case(const char *left, const char *right) {
+    for (;; ++left, ++right) {
+        unsigned char _left_k = (unsigned char)*left;
+        unsigned char _right_k = (unsigned char)*right;
+        if (_left_k >= (unsigned char)'A' && _left_k <= (unsigned char)'Z') {
+            _left_k = (unsigned char)(_left_k - (unsigned char)'A' + (unsigned char)'a');
+        }
+        if (_right_k >= (unsigned char)'A' && _right_k <= (unsigned char)'Z') {
+            _right_k = (unsigned char)(_right_k - (unsigned char)'A' + (unsigned char)'a');
+        }
+        if (_left_k != _right_k) {
+            return false;
+        }
+        if (_left_k == '\0') {
+            return true;
+        }
+    }
+}
+
+static const char *zlang_cli_base_name(const char *path) {
+    const char *_base_k = path;
+    for (const char *_cursor_k = path; *_cursor_k != '\0'; ++_cursor_k) {
+        if (*_cursor_k == '/' || *_cursor_k == '\\') {
+            _base_k = _cursor_k + 1;
+        }
+    }
+    return _base_k;
+}
+
+static bool zlang_cli_compiler_uses_msvc_style(const char *compiler) {
+    const char *const _style_k = getenv("ZLANG_CC_STYLE");
+    if (_style_k != NULL && _style_k[0] != '\0') {
+        return zlang_cli_equals_ignore_case(_style_k, "MSVC");
+    }
+    const char *const _base_k = zlang_cli_base_name(compiler);
+    return zlang_cli_equals_ignore_case(_base_k, "cl") ||
+           zlang_cli_equals_ignore_case(_base_k, "cl.exe") ||
+           zlang_cli_equals_ignore_case(_base_k, "clang-cl") ||
+           zlang_cli_equals_ignore_case(_base_k, "clang-cl.exe");
+}
+
 static bool zlang_cli_quote(const char *path, char *buffer, size_t capacity) {
     const size_t _length_k = strlen(path);
     if (strchr(path, '"') != NULL || _length_k + 3U > capacity) {
@@ -206,26 +247,28 @@ static bool zlang_cli_compile_c(const char *c_path, const char *executable_path)
     size_t _command_length_k = 0U;
     _command[0] = '\0';
     bool _built_k = zlang_cli_append(_command, sizeof(_command), &_command_length_k, _compiler_arg);
-#if defined(_WIN32)
-    _built_k = _built_k &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k, " /nologo /I \"") &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k,
-                                ZLANG_RUNTIME_INCLUDE_DIR) &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k, "\" /Fe") &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k, _executable_arg) &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k, " ") &&
-               zlang_cli_append(_command, sizeof(_command), &_command_length_k, _c_arg);
-#else
-    _built_k =
-        _built_k &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, " -std=c99 -O2 -I \"") &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k,
-                         ZLANG_RUNTIME_INCLUDE_DIR) &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, "\" ") &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, _c_arg) &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, " -o ") &&
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, _executable_arg);
-#endif
+    if (zlang_cli_compiler_uses_msvc_style(_compiler_k)) {
+        _built_k =
+            _built_k &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, " /nologo /I \"") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k,
+                             ZLANG_RUNTIME_INCLUDE_DIR) &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, "\" /Fe") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, _executable_arg) &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, " ") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, _c_arg);
+    } else {
+        _built_k =
+            _built_k &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k,
+                             " -std=c99 -O2 -I \"") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k,
+                             ZLANG_RUNTIME_INCLUDE_DIR) &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, "\" ") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, _c_arg) &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, " -o ") &&
+            zlang_cli_append(_command, sizeof(_command), &_command_length_k, _executable_arg);
+    }
     if (!_built_k) {
         (void)fprintf(stderr, "error: compile command is too long\n");
         return false;

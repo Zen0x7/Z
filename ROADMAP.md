@@ -639,15 +639,26 @@ Registration is declarative. Each domain owns a registry file, and each function
 
 ```cmake
 zlang_std_function(
-    NAME random
+    NAME random_int32
     DOMAIN algorithms
-    SIGNATURE "function random(clone integer from, clone integer to): integer"
-    C_SYMBOL zlang_std_algorithms_random_i32
+    SIGNATURE "function random_int32(clone integer from, clone integer to): integer"
+    C_SYMBOL zlang_std_algorithms_random_int32
+    STATUS DRAFT UNSTABLE UNSAFE
     DEPENDS "")
 ```
 
-The registry is the single source of truth for the Zlang signature, the C symbol and the dependency
-list. Configure-time generation writes the activation macros, the declaration headers, the
+Standard functions are named for what they return, not with a generic verb. `random_int32` leaves
+room for `random_bytes`, `random_char`, `random_uint32` and `random_float` without renaming the
+first API or guessing its result type.
+
+The `STATUS` field has two independent axes. Lifecycle is `DRAFT`, `UNSTABLE` or `STABLE`. Safety is
+`SAFE` or `UNSAFE`. A draft function is usable now but may change; an unstable function has a
+committed signature but not a committed implementation algorithm; a stable function has both. An
+unsafe function is opaque, stateful or otherwise not eligible for transpile-time evaluation. This
+allows `random_int32` to exist before the final PRNG algorithm is chosen.
+
+The registry is the single source of truth for the Zlang signature, the C symbol, status and the
+dependency list. Configure-time generation writes the activation macros, the declaration headers, the
 semantic signature table used by imports and the documentation index. Maintainers implement only the
 C body in the matching standard header; they do not hand-edit `runtime.h` or a second prototype
 table.
@@ -670,9 +681,10 @@ zlang_std_function(
     DEPENDS lucky)
 ```
 
-Importing `lucky_pair` activates `lucky_pair`, `lucky` and `random` through the transitive closure.
-The declaration phase exposes all three prototypes before any implementation body is compiled, so
-`lucky_pair` may call `lucky`, and `lucky` may call `random`, regardless of include order.
+Importing `lucky_pair` activates `lucky_pair`, `lucky` and `random_int32` through the transitive
+closure. The declaration phase exposes all three prototypes before any implementation body is
+compiled, so `lucky_pair` may call `lucky`, and `lucky` may call `random_int32`, regardless of
+include order.
 
 Configure-time validation rejects duplicate `(domain, name)` pairs, duplicate C symbols, missing
 headers, missing dependencies, signatures that disagree with generated declarations and dependency
@@ -681,10 +693,12 @@ activation cycles terminate through a visited set.
 
 The exact PRNG state model is still an open decision. A deterministic PRNG needs explicit state
 passed through generated code; an opaque OS-entropy call avoids hidden state but changes test
-strategy. If deterministic state is chosen, the emitter adds a hidden state parameter only to user
-functions that transitively call stateful standard functions. Source signatures remain unchanged;
-prototypes, definitions and call sites receive the hidden parameter together. That decision must be
-made before implementing `random`.
+strategy. In either case, standard functions do not declare mutable globals and do not use hidden
+`static` state inside their headers. If deterministic state is chosen, the emitter adds a hidden
+state parameter only to generated C functions that transitively call stateful standard functions.
+Source signatures remain unchanged; prototypes, definitions and call sites receive the hidden
+parameter together. A future global-state feature must expose state through an explicit runtime
+context type, not by letting standard headers own mutable globals.
 
 ### Transpile-time optimization
 
@@ -725,7 +739,7 @@ Acceptance criteria:
 - `line[0] = 9` under `--tto` emits a direct store without a bounds `if` for that literal index;
 - a later read of the same unmodified cell may become a constant under `--tto`;
 - any may-write to that array cell invalidates the known value;
-- `random(1, 6)` is never constant-folded;
+- `random_int32(1, 6)` is never constant-folded;
 - imported and unimported standard functions are distinguished by semantic analysis;
 - a standard function may call another standard function regardless of source import order;
 - transitive dependencies are activated by library metadata, not by user imports;

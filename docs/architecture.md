@@ -3,7 +3,7 @@
 ## Pipeline
 
 ```text
-source.zlang
+source.z
   -> lexer          tokens + scratch-copied identifiers and strings
   -> parser         flat AST with expression and statement indices
   -> semantics      scopes, bindings, type checks and diagnostics
@@ -12,7 +12,7 @@ source.zlang
   -> host compiler  native executable
 ```
 
-`zlang-compile --emit-c` stops after the emitter. The generated C includes
+`zc --emit-c` stops after the emitter. The generated C includes
 `<zlang/runtime/runtime.h>` and contains no runtime class registry, no VM opcodes and no hidden
 allocation.
 

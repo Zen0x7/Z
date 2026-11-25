@@ -66,7 +66,7 @@ if(ZLANG_BUILD_TESTS)
 endif()
 
 add_subdirectory(compiler)
-add_subdirectory(tools/zlang-compile)
+add_subdirectory(tools/zc)
 add_subdirectory(examples)
 
 if(ZLANG_BUILD_TESTS)
@@ -93,7 +93,7 @@ if(ZLANG_COVERAGE)
     # The build tree is passed as gcovr's positional search path so stale
     # build directories in the source tree are never scanned.
     get_property(_zlang_test_targets GLOBAL PROPERTY ZLANG_TEST_TARGETS)
-    list(APPEND _zlang_test_targets zlang_compile)
+    list(APPEND _zlang_test_targets zc)
 
     add_custom_target(zlang_coverage
         DEPENDS ${_zlang_test_targets}

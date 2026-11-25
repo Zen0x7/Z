@@ -3,17 +3,17 @@
 Z contains two related pieces:
 
 - `libzlang`, a header-only C99 runtime library used by generated programs.
-- `zlang-compile`, a source-to-source compiler that translates Zlang into portable C.
+- `zc`, a source-to-source compiler that translates Zlang into portable C.
 
 The CMake targets are `zlang::zlang` for the runtime, `zlang::compiler_core` for the compiler
-library and `zlang-compile` for the command line driver.
+library and `zc` for the command line driver.
 
 ## Start here
 
 - [Compiler architecture](architecture.md) describes the pipeline and ownership rules.
 - [Zlang grammar](grammar.md) lists the current syntax and diagnostics.
 - [Standard library design](standard_library.md) describes the planned domain catalog and import model.
-- The sections below list the runtime headers, compiler headers and `zlang-compile` behavior.
+- The sections below list the runtime headers, compiler headers and `zc` behavior.
 
 ## Public API
 
@@ -52,15 +52,15 @@ part of the product contract.
 ## CLI
 
 ```sh
-zlang-compile input.zlang --emit-c                       # write input.c
-zlang-compile input.zlang                                # write input.c and build a native executable
-zlang-compile input.zlang --emit-c --disable-comments    # omit source comments from input.c
+zc input.z --emit-c                       # write input.c
+zc input.z                                # write input.c and build a native executable
+zc input.z --emit-c --disable-comments    # omit source comments from input.c
 ```
 
 Diagnostics use the canonical form:
 
 ```text
-input.zlang:12:5: error[ZLANG3001]: sequence 'names' has no declared capacity
+input.z:12:5: error[ZLANG3001]: sequence 'names' has no declared capacity
 ```
 
 ## Building

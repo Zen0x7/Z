@@ -8,7 +8,7 @@
 </p>
 
 Zlang is a small source-to-source language for bounded, deterministic programs. You write
-`.zlang` source, `zlang-compile` emits readable C99, and your normal C toolchain builds the
+`.z` source, `zc` emits readable C99, and your normal C toolchain builds the
 executable. The runtime is header-only.
 
 There is no VM, bytecode, garbage collector or hidden runtime allocator. Types, capacities and
@@ -22,7 +22,7 @@ cmake --build build -j
 ctest --test-dir build --output-on-failure -j
 ```
 
-Create `hello.zlang`:
+Create `hello.z`:
 
 ```zlang
 print("Hello from Zlang");
@@ -32,14 +32,14 @@ print("\n");
 Then compile and run it:
 
 ```sh
-./build/tools/zlang-compile/zlang-compile hello.zlang
+./build/tools/zc/zc hello.z
 ./hello
 ```
 
 Use `--emit-c` to write only the generated C file:
 
 ```sh
-./build/tools/zlang-compile/zlang-compile hello.zlang --emit-c
+./build/tools/zc/zc hello.z --emit-c
 ```
 
 ## Design in three lines

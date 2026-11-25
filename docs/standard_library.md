@@ -284,7 +284,7 @@ tests/stdlib/random/generate_int32/
   README.md
   test_cases.h
   generate_int32_tests.c
-  programs/basic/main.zlang
+  programs/basic/main.z
   programs/basic/main.c
   programs/basic/expected.txt
 ```
@@ -296,7 +296,7 @@ Rules:
 - labels are `module:stdlib`, `domain:<domain>` and `function:<function>`;
 - each function has at least one direct C case using the header-only test framework;
 - each function has at least one Zlang integration program using `import`;
-- integration programs use plain `.zlang`, committed golden `.c` and `expected.txt`;
+- integration programs use plain `.z`, committed golden `.c` and `expected.txt`;
 - the generated C is compiled with the strict warning set and then executed;
 - configure-time validation rejects a registered function without a matching test directory.
 

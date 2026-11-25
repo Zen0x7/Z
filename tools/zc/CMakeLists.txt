@@ -1,25 +1,25 @@
-add_executable(zlang_compile main.c)
-set_target_properties(zlang_compile PROPERTIES OUTPUT_NAME zlang-compile)
-target_link_libraries(zlang_compile PRIVATE zlang::compiler_core)
+add_executable(zc main.c)
+set_target_properties(zc PROPERTIES OUTPUT_NAME zc)
+target_link_libraries(zc PRIVATE zlang::compiler_core)
 target_compile_definitions(
-    zlang_compile PRIVATE ZLANG_RUNTIME_INCLUDE_DIR="${CMAKE_SOURCE_DIR}/include")
+    zc PRIVATE ZLANG_RUNTIME_INCLUDE_DIR="${CMAKE_SOURCE_DIR}/include")
 
-install(TARGETS zlang_compile RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS zc RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 if(ZLANG_BUILD_TESTS)
-    configure_file(tests/emit_c.zlang ${CMAKE_CURRENT_BINARY_DIR}/emit_c.zlang COPYONLY)
-    configure_file(tests/invalid_diagnostic.zlang
-                   ${CMAKE_CURRENT_BINARY_DIR}/invalid_diagnostic.zlang COPYONLY)
-    configure_file(tests/compiles.zlang ${CMAKE_CURRENT_BINARY_DIR}/compiles.zlang COPYONLY)
-    configure_file(tests/comments.zlang ${CMAKE_CURRENT_BINARY_DIR}/comments.zlang COPYONLY)
-    configure_file(tests/user_types.zlang ${CMAKE_CURRENT_BINARY_DIR}/user_types.zlang COPYONLY)
-    configure_file(tests/multidimensional.zlang ${CMAKE_CURRENT_BINARY_DIR}/multidimensional.zlang COPYONLY)
-    configure_file(tests/forward_calls.zlang ${CMAKE_CURRENT_BINARY_DIR}/forward_calls.zlang COPYONLY)
-    configure_file(tests/tto.zlang ${CMAKE_CURRENT_BINARY_DIR}/tto.zlang COPYONLY)
-    configure_file(tests/stateful_calls.zlang ${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.zlang COPYONLY)
+    configure_file(tests/emit_c.z ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z COPYONLY)
+    configure_file(tests/invalid_diagnostic.z
+                   ${CMAKE_CURRENT_BINARY_DIR}/invalid_diagnostic.z COPYONLY)
+    configure_file(tests/compiles.z ${CMAKE_CURRENT_BINARY_DIR}/compiles.z COPYONLY)
+    configure_file(tests/comments.z ${CMAKE_CURRENT_BINARY_DIR}/comments.z COPYONLY)
+    configure_file(tests/user_types.z ${CMAKE_CURRENT_BINARY_DIR}/user_types.z COPYONLY)
+    configure_file(tests/multidimensional.z ${CMAKE_CURRENT_BINARY_DIR}/multidimensional.z COPYONLY)
+    configure_file(tests/forward_calls.z ${CMAKE_CURRENT_BINARY_DIR}/forward_calls.z COPYONLY)
+    configure_file(tests/tto.z ${CMAKE_CURRENT_BINARY_DIR}/tto.z COPYONLY)
+    configure_file(tests/stateful_calls.z ${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.z COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
-             COMMAND $<TARGET_FILE:zlang_compile> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.zlang --emit-c)
+             COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z --emit-c)
     add_test(NAME zlang.cli.emit_c.output
              COMMAND ${CMAKE_COMMAND}
                      -DEXPECTED_FILE=${CMAKE_CURRENT_BINARY_DIR}/emit_c.c
@@ -30,13 +30,13 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.diagnostic_format
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/invalid_diagnostic.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/invalid_diagnostic.z
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_diagnostic_format.cmake)
     set_tests_properties(zlang.cli.diagnostic_format PROPERTIES LABELS module:cli)
 
     add_test(NAME zlang.cli.disable_comments
-             COMMAND $<TARGET_FILE:zlang_compile> ${CMAKE_CURRENT_BINARY_DIR}/comments.zlang
+             COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/comments.z
                      --emit-c --disable-comments)
     add_test(NAME zlang.cli.disable_comments.output
              COMMAND ${CMAKE_COMMAND}
@@ -48,8 +48,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.compiles_generated_c
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/compiles.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/compiles.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
@@ -60,8 +60,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.compiles_user_types
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/user_types.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/user_types.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
@@ -72,8 +72,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.compiles_multidimensional
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/multidimensional.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/multidimensional.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
@@ -84,8 +84,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.compiles_forward_calls
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/forward_calls.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/forward_calls.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
@@ -96,8 +96,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.tto
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/tto.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/tto.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
@@ -108,8 +108,8 @@ if(ZLANG_BUILD_TESTS)
 
     add_test(NAME zlang.cli.compiles_stateful_calls
              COMMAND ${CMAKE_COMMAND}
-                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.zlang
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.z
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
                      -DC_COMPILER=${CMAKE_C_COMPILER}
                      -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}

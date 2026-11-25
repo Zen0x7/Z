@@ -3,8 +3,8 @@ zlang_add_test_module(stdlib_random_generate_int32)
 add_test(
     NAME zlang.stdlib.random.generate_int32.basic
     COMMAND ${CMAKE_COMMAND}
-            -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
-            -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/programs/basic/main.zlang
+            -DZLANG_COMPILE=$<TARGET_FILE:zc>
+            -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/programs/basic/main.z
             -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/programs/basic/expected.txt
             -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/basic
             -DC_COMPILER=${CMAKE_C_COMPILER}

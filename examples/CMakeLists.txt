@@ -10,7 +10,7 @@ endif()
 
 foreach(_category IN ITEMS algorithms features)
     file(GLOB _sources RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/${_category}"
-         "${_category}/*/main.zlang")
+         "${_category}/*/main.z")
 
     foreach(_source IN LISTS _sources)
         get_filename_component(_example_dir "${_source}" DIRECTORY)
@@ -19,7 +19,7 @@ foreach(_category IN ITEMS algorithms features)
         add_test(
             NAME "${_test_name}"
             COMMAND "${CMAKE_COMMAND}"
-                    -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
+                    -DZLANG_COMPILE=$<TARGET_FILE:zc>
                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/${_category}/${_source}
                     -DGOLDEN_C=${CMAKE_CURRENT_SOURCE_DIR}/${_category}/${_example_dir}/main.c
                     -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/${_category}/${_example_dir}/expected.txt

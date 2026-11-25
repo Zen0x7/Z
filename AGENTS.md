@@ -35,8 +35,8 @@ Use the compiler driver. `--emit-c` writes `<stem>.c` next to the source; withou
 the driver also invokes `$ZLANG_CC` (or `cc`, `cl` on Windows) to produce the executable:
 
 ```sh
-./build/tools/zlang-compile/zlang-compile example.zlang --emit-c
-./build/tools/zlang-compile/zlang-compile example.zlang
+./build/tools/zc/zc example.z --emit-c
+./build/tools/zc/zc example.z
 ```
 
 Check that the installed package works for an external consumer:
@@ -88,11 +88,11 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/standard/` | Header-only standard library domains activated by generated macros |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
 | `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, memory planner, and C emitter |
-| `tools/zlang-compile/` | Compiler driver: `--emit-c` writes `<stem>.c`; default mode also links a binary |
+| `tools/zc/` | Compiler driver: `--emit-c` writes `<stem>.c`; default mode also links a binary |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
-| `examples/` | Documented golden examples in `algorithms/` and `features/`; each directory has `main.zlang`, generated `main.c`, `expected.txt`, README and one CTest |
+| `examples/` | Documented golden examples in `algorithms/` and `features/`; each directory has `main.z`, generated `main.c`, `expected.txt`, README and one CTest |
 | `fuzz/` | Clang libFuzzer harnesses for the public API, lexer, parser and emitter |
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
 | `Doxyfile` | Doxygen configuration; writes HTML into `build/docs/html` |

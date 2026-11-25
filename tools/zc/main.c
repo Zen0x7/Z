@@ -45,7 +45,7 @@
 
 static void zlang_cli_usage(void) {
     (void)fprintf(stderr,
-                  "usage: zlang-compile <source.zlang> [--emit-c] [--disable-comments] [--tto]\n");
+                  "usage: zc <source.z> [--emit-c] [--disable-comments] [--tto]\n");
 }
 
 static bool zlang_cli_read_source(const char *path, char *buffer, size_t capacity, size_t *length) {

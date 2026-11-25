@@ -9,7 +9,7 @@ execute_process(
     WORKING_DIRECTORY "${WORK_DIR}"
     RESULT_VARIABLE _emit OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
 if(NOT _emit EQUAL 0)
-    message(FATAL_ERROR "zlang-compile --tto failed: ${_error}${_output}")
+    message(FATAL_ERROR "zc --tto failed: ${_error}${_output}")
 endif()
 file(READ "${_emitted}" _text)
 foreach(_fragment "int32_t app_local_total = 14;" "int32_t app_local_first = 1;" "app_local_fixed.data_[1] = app_local_total;")

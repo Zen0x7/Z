@@ -12,7 +12,7 @@ Status: Implemented.
 
 Zlang is a source-to-source language for bounded, deterministic applications. A Zlang program is compiled to valid, readable C that calls a small, audited C API (`zlang_*`). The generated C is an intermediate representation: it is not a runtime, and it is not code the application author is expected to maintain.
 
-The promise is simple: **no magic**. `--emit-c` shows exactly which C will be compiled. Without that flag, `zlang-compile` goes directly from `.zlang` source to a native binary.
+The promise is simple: **no magic**. `--emit-c` shows exactly which C will be compiled. Without that flag, `zc` goes directly from `.z` source to a native binary.
 
 ### Locked decisions
 
@@ -23,7 +23,7 @@ The promise is simple: **no magic**. `--emit-c` shows exactly which C will be co
 - **Limit violations trap.** When a declared capacity is exceeded, the binary traps with a fixed code. It never grows a buffer and never builds an error message at runtime.
 - **Diagnostics are first-class.** Syntax, type, and resource/allocation errors are separate categories and are reported in Zlang terms, not as C compiler output.
 - **The C API is thin and auditable.** It is small, readable, and verified by the existing CI: sanitizers, coverage, Valgrind, and the multi-platform matrix.
-- **Distribution is twofold.** A local `zlang-compile` binary compiles `.zlang` files, and a provided GitHub Action does the same in CI and publishes the resulting artifact.
+- **Distribution is twofold.** A local `zc` binary compiles `.z` files, and a provided GitHub Action does the same in CI and publishes the resulting artifact.
 
 ### Non-goals
 
@@ -36,8 +36,8 @@ The promise is simple: **no magic**. `--emit-c` shows exactly which C will be co
 ### Architecture
 
 ```text
-main.zlang
-    -> zlang-compile
+main.z
+    -> zc
         -> front end: lexer, parser, AST, source locations
         -> semantic analysis: scopes, types, explicit limits
         -> memory planner: sizes, offsets, stack vs static regions
@@ -70,14 +70,14 @@ The C emitter has one rule: an operation is lowered to a call into the Zlang API
    Bounded strings, sequences, print, trap, and checked arithmetic helpers as thin C functions.
 
 7. **Tooling**
-   `zlang-compile` with `--emit-c` and direct native compilation. Packaging, release artifacts, and the Zlang GitHub Action were intentionally deferred to version 1.0.
+   `zc` with `--emit-c` and direct native compilation. Packaging, release artifacts, and the Zlang GitHub Action were intentionally deferred to version 1.0.
 
 8. **Hardening**
    Lexer, parser, and emitter fuzz harnesses. Trap paths covered in child processes. Diagnostics and supported limits documented in `SPEC.md`, including the Annex D conformance matrix.
 
 ### Definition of done
 
-A bounded `.zlang` program compiles to native C-backed code; `--emit-c` shows the generated C; the binary performs zero dynamic allocation; an unbounded program is rejected with a source location; and the whole path runs through the existing CI matrix.
+A bounded `.z` program compiles to native C-backed code; `--emit-c` shows the generated C; the binary performs zero dynamic allocation; an unbounded program is rejected with a source location; and the whole path runs through the existing CI matrix.
 
 ## 0.2 — Practical language ergonomics
 
@@ -556,7 +556,7 @@ cast to `uint32_t`, and logical negation of a comparison keeps the comparison gr
 
 The `examples/` tree is now a golden suite: every example has committed generated C and expected
 stdout, grouped under `algorithms/` and `features/` and checked by CTest. Each example is a
-self-contained directory with `main.zlang`, generated `main.c`, `expected.txt` and a `README.md`
+self-contained directory with `main.z`, generated `main.c`, `expected.txt` and a `README.md`
 explaining the constructs it exercises; `examples/README.md` indexes both categories. The
 multidimensional CLI smoke fixture covers rank 3 and rank 4 helper generation. Semantic symbols now
 copy array rank and extents so whole-array copy never reads uninitialized symbol state under
@@ -689,7 +689,7 @@ import { generate_int32 } from "@std/random";
 ```
 
 Relative paths resolve from the importing file. `@std` is reserved for standard domains. Other `@`
-names are aliases declared in `zlang.yaml`. `@std/random` is canonical; `from "random"` remains a
+names are aliases declared in `z.yaml`. `@std/random` is canonical; `from "random"` remains a
 compatibility form. Module imports are not transitive by name, but signatures resolve by canonical
 entity identity.
 

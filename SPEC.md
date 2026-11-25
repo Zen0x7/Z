@@ -2,7 +2,7 @@
 
 **Status:** Current
 
-**Scope:** the core language implemented by `zlang-compile`.
+**Scope:** the core language implemented by `zc`.
 
 This document defines Zlang. It does not define the compiler internals, the command-line interface, or the CI pipeline. Those are implementation concerns and are described in `ROADMAP.md`.
 
@@ -465,7 +465,7 @@ the `warning[...]` prefix and does not stop compilation.
 Resource errors point at the declaration that needs a limit, not at the later use.
 
 ```text
-main.zlang:3:9: error[ZLANG3001]: unbounded array 'values' requires an explicit capacity.
+main.z:3:9: error[ZLANG3001]: unbounded array 'values' requires an explicit capacity.
 ```
 
 The compiler may emit more than one diagnostic, but it must not generate C for a program that has any error.
@@ -617,7 +617,7 @@ The iteration exists as a `for_each` node in the compiler's intermediate represe
 ## Implementation status
 
 The language described here is implemented across the lexer, parser, semantic analyzer, memory
-planner, C emitter, runtime and `zlang-compile` driver. Diagnostics use the exact format in
+planner, C emitter, runtime and `zc` driver. Diagnostics use the exact format in
 clause 13, and every diagnostic carries the line and column of the source construct that caused
 it. Version-by-version history is kept in `ROADMAP.md`.
 

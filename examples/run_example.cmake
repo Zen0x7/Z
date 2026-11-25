@@ -3,7 +3,7 @@ if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT GOLDEN_C OR NOT EXPECTED OR NOT WORK_D
 endif()
 
 get_filename_component(_stem "${SOURCE}" NAME_WE)
-set(_source "${WORK_DIR}/${_stem}.zlang")
+set(_source "${WORK_DIR}/${_stem}.z")
 set(_generated_c "${WORK_DIR}/${_stem}.c")
 set(_executable "${WORK_DIR}/${_stem}${EXECUTABLE_SUFFIX}")
 
@@ -18,7 +18,7 @@ execute_process(
     OUTPUT_VARIABLE _compile_output
     ERROR_VARIABLE _compile_error)
 if(NOT _compile_result EQUAL 0)
-    message(FATAL_ERROR "zlang-compile failed: ${_compile_error}${_compile_output}")
+    message(FATAL_ERROR "zc failed: ${_compile_error}${_compile_output}")
 endif()
 if(NOT EXISTS "${_generated_c}")
     message(FATAL_ERROR "generated C not found at ${_generated_c}")

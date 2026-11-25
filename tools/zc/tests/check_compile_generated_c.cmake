@@ -13,10 +13,10 @@ execute_process(
     OUTPUT_VARIABLE _emit_output
     ERROR_VARIABLE _emit_error)
 if(NOT _emit_result EQUAL 0)
-    message(FATAL_ERROR "zlang-compile failed: ${_emit_error}${_emit_output}")
+    message(FATAL_ERROR "zc failed: ${_emit_error}${_emit_output}")
 endif()
 if(NOT EXISTS "${_emitted}")
-    message(FATAL_ERROR "zlang-compile did not write ${_emitted}")
+    message(FATAL_ERROR "zc did not write ${_emitted}")
 endif()
 
 if(C_COMPILER_ID MATCHES "MSVC" OR C_COMPILER_FRONTEND STREQUAL "MSVC")

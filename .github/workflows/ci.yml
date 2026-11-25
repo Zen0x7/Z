@@ -378,7 +378,7 @@ jobs:
           clang-format --dry-run --Werror
           include/zlang/*.h include/zlang/*/*.h
           compiler/include/zlang/compiler/*.h compiler/src/*.c
-          tests/*/*.c tests/*/*.h fuzz/*.c fuzz/*.h tools/zlang-compile/*.c
+          tests/*/*.c tests/*/*.h fuzz/*.c fuzz/*.h tools/zc/*.c
       - name: cppcheck
         run: >-
           cppcheck --enable=warning,style,performance,portability

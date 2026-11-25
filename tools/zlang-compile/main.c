@@ -4,6 +4,7 @@
 
 #include "zlang/compiler/diagnostics.h"
 #include "zlang/compiler/emitter.h"
+#include "zlang/compiler/optimizer.h"
 #include "zlang/compiler/parser.h"
 #include "zlang/compiler/planner.h"
 #include "zlang/compiler/semantics.h"
@@ -43,7 +44,8 @@
 #endif
 
 static void zlang_cli_usage(void) {
-    (void)fprintf(stderr, "usage: zlang-compile <source.zlang> [--emit-c] [--disable-comments]\n");
+    (void)fprintf(stderr,
+                  "usage: zlang-compile <source.zlang> [--emit-c] [--disable-comments] [--tto]\n");
 }
 
 static bool zlang_cli_read_source(const char *path, char *buffer, size_t capacity, size_t *length) {
@@ -295,6 +297,7 @@ int main(int argc, char **argv) {
     static zlang_symbol_t _symbols[ZLANG_CLI_SYMBOL_CAPACITY];
     static zlang_memory_plan_entry_t _plan_entries[ZLANG_CLI_PLAN_CAPACITY];
     static zlang_diagnostic_t _diagnostics[ZLANG_CLI_DIAGNOSTIC_CAPACITY];
+    static zlang_optimizer_context_t _optimizer;
 
     if (argc < 2 || strcmp(argv[1], "--help") == 0) {
         zlang_cli_usage();
@@ -302,11 +305,14 @@ int main(int argc, char **argv) {
     }
     bool _emit_only_k = false;
     bool _disable_comments_k = false;
+    bool _tto_k = false;
     for (int _argument = 2; _argument < argc; ++_argument) {
         if (strcmp(argv[_argument], "--emit-c") == 0) {
             _emit_only_k = true;
         } else if (strcmp(argv[_argument], "--disable-comments") == 0) {
             _disable_comments_k = true;
+        } else if (strcmp(argv[_argument], "--tto") == 0) {
+            _tto_k = true;
         } else {
             zlang_cli_usage();
             return 1;
@@ -341,6 +347,13 @@ int main(int argc, char **argv) {
                                 &_diagnostic_state, &_result.program_);
     if (!zlang_analyze_program(&_result.program_, &_semantic)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 4 : 2;
+    }
+
+    if (_tto_k) {
+        zlang_optimizer_context_init(&_optimizer);
+        if (!zlang_optimize_program(&_result.program_, &_optimizer)) {
+            return 2;
+        }
     }
 
     zlang_memory_plan_init(&_plan, _plan_entries, sizeof(_plan_entries) / sizeof(_plan_entries[0]),

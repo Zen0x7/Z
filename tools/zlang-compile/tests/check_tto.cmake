@@ -1,0 +1,33 @@
+if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT WORK_DIR OR NOT C_COMPILER)
+    message(FATAL_ERROR "check_tto.cmake requires ZLANG_COMPILE, SOURCE, WORK_DIR and C_COMPILER")
+endif()
+get_filename_component(_stem "${SOURCE}" NAME_WE)
+set(_emitted "${WORK_DIR}/${_stem}.c")
+set(_object "${WORK_DIR}/${_stem}.obj")
+execute_process(
+    COMMAND "${ZLANG_COMPILE}" "${SOURCE}" --emit-c --tto
+    WORKING_DIRECTORY "${WORK_DIR}"
+    RESULT_VARIABLE _emit OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
+if(NOT _emit EQUAL 0)
+    message(FATAL_ERROR "zlang-compile --tto failed: ${_error}${_output}")
+endif()
+file(READ "${_emitted}" _text)
+foreach(_fragment "int32_t _total = 14;" "int32_t _first = 1;" "_fixed.data_[1] = _total;")
+    string(FIND "${_text}" "${_fragment}" _position)
+    if(_position LESS 0)
+        message(FATAL_ERROR "missing tto rewrite: ${_fragment}")
+    endif()
+endforeach()
+if(_text MATCHES "if \\(_zlang_index")
+    message(FATAL_ERROR "constant index still emits a bounds branch")
+endif()
+if(C_COMPILER_ID MATCHES "MSVC" OR C_COMPILER_FRONTEND STREQUAL "MSVC")
+    execute_process(COMMAND "${C_COMPILER}" /nologo /W4 /WX /c "/I${INCLUDE_DIR}" "/Fo${_object}" "${_emitted}"
+                    RESULT_VARIABLE _compile OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
+else()
+    execute_process(COMMAND "${C_COMPILER}" -std=c99 -Wall -Wextra -Werror -pedantic "-I${INCLUDE_DIR}" -c "${_emitted}" -o "${_object}"
+                    RESULT_VARIABLE _compile OUTPUT_VARIABLE _output ERROR_VARIABLE _error)
+endif()
+if(NOT _compile EQUAL 0)
+    message(FATAL_ERROR "Generated C failed to compile: ${_error}${_output}")
+endif()

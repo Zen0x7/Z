@@ -52,7 +52,8 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_length_,
     zlang_expression_enum_item_,
     zlang_expression_field_,
-    zlang_expression_field_assignment_
+    zlang_expression_field_assignment_,
+    zlang_expression_direct_index_assignment_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {

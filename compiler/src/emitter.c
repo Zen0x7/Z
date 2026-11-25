@@ -3371,6 +3371,12 @@ static bool zlang_expression_is_write_target(const zlang_program_t *program, siz
             _expression_k->left_ == index) {
             return true;
         }
+        if (_candidate == index &&
+            _expression_k->kind_ == zlang_expression_direct_index_assignment_ &&
+            _expression_k->name_ != NULL && name != NULL &&
+            strcmp(_expression_k->name_, name) == 0) {
+            return true;
+        }
         if (_candidate == index && _expression_k->kind_ == zlang_expression_index_ &&
             _expression_k->name_ != NULL && name != NULL &&
             strcmp(_expression_k->name_, name) == 0 &&
@@ -3395,12 +3401,17 @@ static bool zlang_name_is_read(const zlang_program_t *program, const char *name)
     }
     for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
         const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
+        if (_expression_k->kind_ == zlang_expression_direct_index_assignment_ &&
+            _expression_k->name_ != NULL && strcmp(_expression_k->name_, name) == 0) {
+            return true;
+        }
         const bool _is_field_k = _expression_k->kind_ == zlang_expression_field_ ||
                                  _expression_k->kind_ == zlang_expression_field_assignment_;
         const char *const _candidate_k =
             _is_field_k ? _expression_k->base_name_ : _expression_k->name_;
         if ((_expression_k->kind_ != zlang_expression_identifier_ &&
-             _expression_k->kind_ != zlang_expression_index_ && !_is_field_k) ||
+             _expression_k->kind_ != zlang_expression_index_ &&
+             _expression_k->kind_ != zlang_expression_direct_index_assignment_ && !_is_field_k) ||
             _candidate_k == NULL || strcmp(_candidate_k, name) != 0) {
             continue;
         }
@@ -3486,6 +3497,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         const zlang_ast_expression_t *const _expression_k =
             &program->expressions_[statement->expression_];
         _writes_k = _expression_k->kind_ == zlang_expression_index_assignment_ ||
+                    _expression_k->kind_ == zlang_expression_direct_index_assignment_ ||
                     _expression_k->kind_ == zlang_expression_field_assignment_ ||
                     _expression_k->kind_ == zlang_expression_array_set_ ||
                     _expression_k->kind_ == zlang_expression_append_call_;
@@ -3715,6 +3727,21 @@ static bool zlang_emit_statement(const zlang_program_t *program,
                 : NULL;
         if (_expression_k != NULL && _expression_k->kind_ == zlang_expression_index_assignment_) {
             return zlang_emit_index_assignment(program, _expression_k, emitter, depth);
+        }
+        if (_expression_k != NULL &&
+            _expression_k->kind_ == zlang_expression_direct_index_assignment_) {
+            const char *const _name_k = zlang_resolve_name(emitter, _expression_k->name_);
+            if (_name_k == NULL || _expression_k->argument_count_ != 1U ||
+                !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, ".data_[")) {
+                return false;
+            }
+            if (!zlang_append_unsigned(emitter, (uint32_t)_expression_k->argument_indices_[0]) ||
+                !zlang_append_text(emitter, "] = ") ||
+                !zlang_emit_expression(program, _expression_k->right_, emitter) ||
+                !zlang_append_text(emitter, ";\n")) {
+                return false;
+            }
+            return true;
         }
         if (_expression_k != NULL && _expression_k->kind_ == zlang_expression_field_assignment_ &&
             _expression_k->left_ < program->expression_count_ &&

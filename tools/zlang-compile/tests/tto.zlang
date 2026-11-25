@@ -1,0 +1,8 @@
+array[3] integer fixed = {1, 2, 3};
+integer total = 2 + 3 * 4;
+integer first = fixed[0];
+fixed[1] = total;
+print(first);
+print(" ");
+print(total);
+print("\n");

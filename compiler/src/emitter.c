@@ -5877,6 +5877,19 @@ static bool zlang_emit_vtable_type_declarations(zlang_emitter_t *emitter) {
     return zlang_append_text(emitter, "\n");
 }
 
+static bool zlang_emit_vtable_initializer(zlang_emitter_t *emitter, const char *struct_name,
+                                          const zlang_emitted_vtable_t *vtable,
+                                          const zlang_emitted_type_tag_t *tag) {
+    (void)struct_name;
+    return vtable != NULL && tag != NULL && zlang_append_text(emitter, "    self") &&
+           zlang_emit_base_chain(emitter, 0U, false) &&
+           zlang_append_text(emitter, ".zlang_vtable_ = &") &&
+           zlang_append_text(emitter, vtable->instance_name_) &&
+           zlang_append_text(emitter, ";\n    self") && zlang_emit_base_chain(emitter, 0U, false) &&
+           zlang_append_text(emitter, ".zlang_type_ = ") &&
+           zlang_append_text(emitter, tag->macro_) && zlang_append_text(emitter, ";\n");
+}
+
 static bool zlang_emit_vtable_definitions(const zlang_program_t *program,
                                           zlang_emitter_t *emitter) {
     if (emitter->emitted_vtable_count_ == 0U) {
@@ -6165,7 +6178,8 @@ static bool zlang_emit_method_signature(const zlang_program_t *program, zlang_em
     return zlang_append_text(emitter, ")");
 }
 
-static bool zlang_emit_vtable_instances(zlang_emitter_t *emitter) {
+static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_emitter_t *emitter) {
+    (void)program;
     if (emitter->emitted_vtable_count_ == 0U) {
         return true;
     }
@@ -6262,6 +6276,12 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
             _result_k = _struct_type_k != NULL && zlang_append_text(emitter, "    ") &&
                         zlang_append_text(emitter, _struct_type_k->type_name_) &&
                         zlang_append_text(emitter, " self = { ZLANG_ZERO };\n");
+            if (_result_k && _struct_k != NULL &&
+                zlang_find_vtable(emitter, _struct_k->name_) != NULL) {
+                _result_k = zlang_emit_vtable_initializer(
+                    emitter, _struct_k->name_, zlang_find_vtable(emitter, _struct_k->name_),
+                    zlang_find_type_tag(emitter, _struct_k->name_));
+            }
         }
         if (_result_k) {
             _result_k = zlang_emit_body(program, _method_k->body_start_, _method_k->body_count_,
@@ -6305,7 +6325,8 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         !zlang_collect_literals(emitter, program) ||
         (!emitter->collecting_array_helpers_ && !zlang_emit_array_helpers(program, emitter)) ||
         !zlang_emit_generated_declarations(program, emitter) ||
-        !zlang_emit_method_prototypes(program, emitter) || !zlang_emit_vtable_instances(emitter) ||
+        !zlang_emit_method_prototypes(program, emitter) ||
+        !zlang_emit_vtable_instances(program, emitter) ||
         !zlang_emit_function_prototypes(program, emitter)) {
         return false;
     }

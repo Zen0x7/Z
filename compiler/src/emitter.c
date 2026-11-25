@@ -2836,51 +2836,120 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         return zlang_append_text(emitter, ")");
     }
     case zlang_expression_method_call_: {
-        char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
-        const zlang_ast_statement_t *const _struct_k =
+        const zlang_ast_statement_t *const _static_owner_k =
             zlang_find_struct_statement(program, _expression_k->base_name_);
-        const bool _static_k = _struct_k != NULL;
-        const char *_struct_name_k = _static_k ? _expression_k->base_name_ : NULL;
-        if (!_static_k) {
-            const zlang_emitted_symbol_t *const _symbol_k =
-                zlang_find_active_symbol(emitter, _expression_k->base_name_);
-            if (_symbol_k != NULL) {
-                const zlang_ast_statement_t *const _owner_k =
-                    zlang_find_struct_statement(program, _symbol_k->type_name_);
-                _struct_name_k = _owner_k != NULL ? _owner_k->name_ : NULL;
+        const bool _static_k = _static_owner_k != NULL;
+        const zlang_emitted_symbol_t *_receiver_symbol_k = NULL;
+        const char *_receiver_type_k = NULL;
+        if (_static_k) {
+            _receiver_type_k = _expression_k->base_name_;
+        } else {
+            _receiver_symbol_k = zlang_find_active_symbol(emitter, _expression_k->base_name_);
+            if (_receiver_symbol_k == NULL) {
+                return false;
             }
+            _receiver_type_k = _receiver_symbol_k->type_name_;
         }
-        if (_struct_name_k == NULL ||
-            !zlang_method_generated_name(_struct_name_k, _expression_k->name_, false, _name_k,
-                                         sizeof(_name_k)) ||
-            !zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, "(")) {
+        const char *_owner_k = NULL;
+        bool _is_trait_k = false;
+        const zlang_ast_statement_t *const _method_k = zlang_find_method(
+            program, _receiver_type_k, _expression_k->name_, &_owner_k, &_is_trait_k);
+        if (_method_k == NULL || _owner_k == NULL) {
             return false;
         }
-        if (!_static_k) {
-            const size_t _base_index_k = ZLANG_NO_EXPRESSION;
-            const zlang_emitted_symbol_t *const _symbol_k =
-                zlang_find_active_symbol(emitter, _expression_k->base_name_);
-            if (_symbol_k == NULL) {
+        const zlang_emitted_user_type_t *const _owner_type_k =
+            zlang_find_user_type(emitter, _owner_k);
+        if (_owner_type_k == NULL) {
+            return false;
+        }
+        char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_method_generated_name(_owner_k, _expression_k->name_, false, _name_k,
+                                         sizeof(_name_k))) {
+            return false;
+        }
+        const bool _virtual_k = !_static_k && !_is_trait_k && !_method_k->is_static_ &&
+                                !_method_k->is_constructor_ &&
+                                zlang_struct_is_polymorphic(program, _receiver_type_k);
+        if (_virtual_k) {
+            const zlang_ast_statement_t *const _root_k =
+                zlang_struct_root_name(program, _receiver_type_k);
+            const zlang_emitted_user_type_t *const _root_type_k =
+                zlang_find_user_type(emitter, _root_k != NULL ? _root_k->name_ : NULL);
+            char _slot_k[ZLANG_EMITTED_NAME_CAPACITY];
+            if (_root_type_k == NULL ||
+                !zlang_slot_name(_expression_k->name_, _slot_k, sizeof(_slot_k))) {
                 return false;
             }
-            if (_symbol_k->is_reference_) {
-                if (!zlang_append_text(emitter, _expression_k->base_name_)) {
+            if (!zlang_append_text(emitter, "((") ||
+                !zlang_append_text(emitter, _root_type_k->type_name_) ||
+                !zlang_append_text(emitter, " *)")) {
+                return false;
+            }
+            if (_receiver_symbol_k->is_reference_) {
+                if (!zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
                     return false;
                 }
-            } else if (!zlang_append_text(emitter, "&") ||
-                       !zlang_append_text(emitter, _symbol_k->generated_name_)) {
+            } else {
+                if (!zlang_append_text(emitter, "&") ||
+                    !zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
+                    return false;
+                }
+            }
+            if (!zlang_append_text(emitter, ")->zlang_vtable_->") ||
+                !zlang_append_text(emitter, _slot_k) || !zlang_append_text(emitter, "((") ||
+                !zlang_append_text(emitter, _root_type_k->type_name_) ||
+                !zlang_append_text(emitter, " *)")) {
                 return false;
             }
-            (void)_base_index_k;
+            if (_receiver_symbol_k->is_reference_) {
+                if (!zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
+                    return false;
+                }
+            } else {
+                if (!zlang_append_text(emitter, "&") ||
+                    !zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
+                    return false;
+                }
+            }
+            if (!zlang_append_text(emitter, ")")) {
+                return false;
+            }
+        } else {
+            if (!zlang_append_text(emitter, _name_k) || !zlang_append_text(emitter, "(")) {
+                return false;
+            }
+            if (!_static_k) {
+                if (_receiver_symbol_k->is_reference_) {
+                    if (!zlang_append_text(emitter, "(") ||
+                        !zlang_append_text(emitter, _owner_type_k->type_name_) ||
+                        !zlang_append_text(emitter, " *)") ||
+                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_) ||
+                        !zlang_append_text(emitter, ")")) {
+                        return false;
+                    }
+                } else {
+                    if (!zlang_append_text(emitter, "&") ||
+                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
+                        return false;
+                    }
+                }
+            }
         }
         for (size_t _argument = 0U;
              _argument < _expression_k->argument_count_ && _argument < ZLANG_CALL_ARGUMENT_CAPACITY;
              ++_argument) {
+            const zlang_parameter_t *_parameter_k = NULL;
+            if (_argument < _method_k->parameter_count_ &&
+                _method_k->parameter_start_ + _argument < program->parameter_count_) {
+                _parameter_k = &program->parameters_[_method_k->parameter_start_ + _argument];
+            }
             if ((_argument > 0U || !_static_k) && !zlang_append_text(emitter, ", ")) {
                 return false;
             }
-            if (!zlang_emit_expression(program, _expression_k->argument_indices_[_argument],
-                                       emitter)) {
+            if (!zlang_emit_expression_as(program, _expression_k->argument_indices_[_argument],
+                                          emitter,
+                                          _parameter_k != NULL ? _parameter_k->type_name_ : NULL,
+                                          _parameter_k != NULL && _parameter_k->is_reference_)) {
                 return false;
             }
         }

@@ -26,9 +26,14 @@ function isDocsActive(to: string) {
 
       <div class="hidden items-center gap-2 lg:flex">
         <ThemeToggle />
-        <NuxtLink to="/doxygen" class="btn-secondary btn--tiny">
+        <a
+          href="https://z-doxyzen.iantorres.cl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-secondary btn--tiny"
+        >
           API
-        </NuxtLink>
+        </a>
         <a
           href="https://github.com/Zen0x7/Z"
           target="_blank"

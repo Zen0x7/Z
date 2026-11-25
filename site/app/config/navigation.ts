@@ -7,6 +7,6 @@ export const docsNavigation = [
 ] as const
 
 export const projectLinks = [
-  { label: 'Doxygen API', to: '/doxygen', description: 'libzlang and zc reference' },
+  { label: 'Doxygen API', href: 'https://z-doxyzen.iantorres.cl', description: 'libzlang and zc reference' },
   { label: 'GitHub', href: 'https://github.com/Zen0x7/Z', description: 'Source repository' },
 ] as const

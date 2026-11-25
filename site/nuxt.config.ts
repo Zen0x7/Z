@@ -26,7 +26,7 @@ function collectContentRoutes(directory: string, base = '/docs'): string[] {
   return routes
 }
 
-const prerenderRoutes = ['/', '/doxygen', ...new Set(collectContentRoutes(contentRoot))]
+const prerenderRoutes = ['/', ...new Set(collectContentRoutes(contentRoot))]
 
 export default defineNuxtConfig({
   modules: [
@@ -42,7 +42,6 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: false,
       routes: prerenderRoutes,
-      ignore: ['/doxygen/**'],
     },
   },
 

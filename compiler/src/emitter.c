@@ -6159,6 +6159,33 @@ static bool zlang_emit_method_signature(const zlang_program_t *program, zlang_em
     return zlang_append_text(emitter, ")");
 }
 
+static bool zlang_emit_vtable_instances(zlang_emitter_t *emitter) {
+    if (emitter->emitted_vtable_count_ == 0U) {
+        return true;
+    }
+    if (!zlang_append_text(emitter, "/* generated vtables */\n\n")) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < emitter->emitted_vtable_count_; ++_index) {
+        const zlang_emitted_vtable_t *const _entry_k = &emitter->emitted_vtables_[_index];
+        if (!zlang_append_text(emitter, "static const ") ||
+            !zlang_append_text(emitter, _entry_k->type_name_) || !zlang_append_text(emitter, " ") ||
+            !zlang_append_text(emitter, _entry_k->instance_name_) ||
+            !zlang_append_text(emitter, " = { 0 }")) {
+            return false;
+        }
+        for (size_t _slot = 0U; _slot < _entry_k->slot_count_; ++_slot) {
+            if (!zlang_append_text(emitter, ", 0")) {
+                return false;
+            }
+        }
+        if (!zlang_append_text(emitter, "};\n")) {
+            return false;
+        }
+    }
+    return zlang_append_text(emitter, "\n");
+}
+
 static bool zlang_emit_method_prototypes(const zlang_program_t *program, zlang_emitter_t *emitter) {
     bool _header_k = false;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
@@ -6272,7 +6299,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         !zlang_collect_literals(emitter, program) ||
         (!emitter->collecting_array_helpers_ && !zlang_emit_array_helpers(program, emitter)) ||
         !zlang_emit_generated_declarations(program, emitter) ||
-        !zlang_emit_method_prototypes(program, emitter) ||
+        !zlang_emit_method_prototypes(program, emitter) || !zlang_emit_vtable_instances(emitter) ||
         !zlang_emit_function_prototypes(program, emitter)) {
         return false;
     }

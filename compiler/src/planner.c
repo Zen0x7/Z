@@ -51,8 +51,14 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
     if (type_name == NULL || size == NULL || depth > 8U) {
         return false;
     }
-    if (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0) {
+    if (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0 ||
+        strcmp(type_name, "float") == 0) {
         *size = 4U;
+        return true;
+    }
+    if (strcmp(type_name, "int64") == 0 || strcmp(type_name, "uint64") == 0 ||
+        strcmp(type_name, "double") == 0) {
+        *size = 8U;
         return true;
     }
     if (strcmp(type_name, "boolean") == 0) {

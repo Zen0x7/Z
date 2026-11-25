@@ -29,7 +29,7 @@ typedef struct zlang_spec_session_t {
     zlang_memory_plan_t plan_;
     zlang_parser_t parser_;
     zlang_parse_result_t result_;
-    char scratch_[1024];
+    char scratch_[2048];
     char output_[8192];
     zlang_emitter_t emitter_;
 } zlang_spec_session_t;
@@ -1135,6 +1135,77 @@ static void emits_function_prototypes(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_FORWARD_CALL_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_FORWARD_PROTOTYPE_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "/* generated function prototypes */") != NULL);
+}
+
+static void emits_wide_and_floating_primitives(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "int64 big = 9000000000i64 + 1i64;\n"
+                                  "uint64 wide = 18000000000000000000u64;\n"
+                                  "float ratio = 1.5f * 2f;\n"
+                                  "double exact = 2.5 + 1.25;\n"
+                                  "print(big);\n"
+                                  "print(wide);\n"
+                                  "print(ratio);\n"
+                                  "print(exact);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "int64_t app_local_big") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "uint64_t app_local_wide") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "float app_local_ratio") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "double app_local_exact") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_add_i64(9000000000LL, 1LL)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "(1.5f * 2.0f)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_f32(app_local_ratio)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_f64(app_local_exact)") != NULL);
+}
+
+static void emits_explicit_numeric_conversions(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "integer truncated = to_integer(3.75);\n"
+                                  "double widened = to_double(7);\n"
+                                  "int64 signed_value = to_int64(9U);\n"
+                                  "float narrowed = to_float(widened);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_to_i32_f64(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "(double)7") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_to_i64_i64(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "(float)app_local_widened") != NULL);
+}
+
+static void rejects_implicit_numeric_conversion(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "integer value = 2.5;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void rejects_index_outside_inferred_shape(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function stamp(clone array source): array {\n"
+                                  "    array result;\n"
+                                  "    result[9] = 1;\n"
+                                  "    return result;\n"
+                                  "}\n"
+                                  "array[2] integer small;\n"
+                                  "array[4] integer large;\n"
+                                  "array[2] integer a = stamp(small);\n"
+                                  "array[4] integer b = stamp(large);";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE) != NULL);
+}
+
+static void rejects_float_modulo(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "float value = 2.5f % 1.5f;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
 }
 
 static void emits_only_used_array_helpers(zlang_test_context_t *const context) {

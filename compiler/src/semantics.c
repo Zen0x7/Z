@@ -95,8 +95,21 @@ static bool zlang_is_user_type(const zlang_program_t *program, const char *name)
 
 static bool zlang_is_builtin_type(const char *name) {
     return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+                            strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||
+                            strcmp(name, "float") == 0 || strcmp(name, "double") == 0 ||
                             strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0 ||
                             strcmp(name, "arguments") == 0);
+}
+
+static bool zlang_is_numeric_type(const char *name) {
+    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+                            strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||
+                            strcmp(name, "float") == 0 || strcmp(name, "double") == 0);
+}
+
+static bool zlang_is_integral_type(const char *name) {
+    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+                            strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0);
 }
 
 static bool zlang_is_known_type(const zlang_program_t *program, const char *name) {
@@ -303,7 +316,25 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     const zlang_ast_expression_t *const _expression_k = &context->program_->expressions_[index];
     switch (_expression_k->kind_) {
     case zlang_expression_integer_literal_:
+        if (_expression_k->is_int64_) {
+            return "int64";
+        }
+        if (_expression_k->is_uint64_) {
+            return "uint64";
+        }
         return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+    case zlang_expression_float_literal_:
+        return _expression_k->is_float_ ? "float" : "double";
+    case zlang_expression_conversion_: {
+        const char *const _source_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        if (!zlang_is_numeric_type(_source_k) || !zlang_is_numeric_type(_expression_k->name_)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "conversion requires a numeric operand and target");
+            return NULL;
+        }
+        return _expression_k->name_;
+    }
     case zlang_expression_boolean_literal_:
         return "boolean";
     case zlang_expression_string_literal_:
@@ -331,12 +362,15 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_negative_: {
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
-        if (!zlang_type_matches("integer", _actual_k)) {
+        const bool _signed_k =
+            zlang_type_matches("integer", _actual_k) || zlang_type_matches("int64", _actual_k) ||
+            zlang_type_matches("float", _actual_k) || zlang_type_matches("double", _actual_k);
+        if (!_signed_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
-                                          "unary negation requires an integer operand");
+                                          "unary negation requires a signed numeric operand");
             return NULL;
         }
-        return "integer";
+        return _actual_k;
     }
     case zlang_expression_sub_:
     case zlang_expression_mul_:
@@ -346,8 +380,12 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             zlang_analyze_expression(context, _expression_k->left_, statement);
         const char *const _right_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
-        const bool _numeric_k =
-            zlang_type_matches("integer", _left_k) || zlang_type_matches("unsigned", _left_k);
+        if (_expression_k->kind_ == zlang_expression_mod_ && !zlang_is_integral_type(_left_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "modulo requires integral operands");
+            return NULL;
+        }
+        const bool _numeric_k = zlang_is_numeric_type(_left_k);
         if (!_numeric_k || !zlang_type_matches(_left_k, _right_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "arithmetic requires two matching numeric operands");
@@ -377,8 +415,13 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
-        const bool _numeric_k = zlang_type_matches("integer", _symbol_k->type_name_) ||
-                                zlang_type_matches("unsigned", _symbol_k->type_name_);
+        if (_expression_k->operator_ == zlang_expression_mod_ &&
+            !zlang_is_integral_type(_symbol_k->type_name_)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "modulo requires an integral target");
+            return NULL;
+        }
+        const bool _numeric_k = zlang_is_numeric_type(_symbol_k->type_name_);
         if (!_numeric_k || !zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "compound assignment requires a matching numeric type");
@@ -538,9 +581,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
         const bool _printable_k =
-            zlang_type_matches("string", _actual_k) || zlang_type_matches("integer", _actual_k) ||
-            zlang_type_matches("unsigned", _actual_k) || zlang_type_matches("boolean", _actual_k) ||
-            zlang_is_enum_type(context->program_, _actual_k);
+            zlang_type_matches("string", _actual_k) || zlang_type_matches("boolean", _actual_k) ||
+            zlang_is_numeric_type(_actual_k) || zlang_is_enum_type(context->program_, _actual_k);
         if (!_printable_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "print argument must be string or scalar");
@@ -1276,9 +1318,103 @@ static bool zlang_register_imports(const zlang_program_t *program,
     return true;
 }
 
+static bool zlang_is_inferred_array_name(const zlang_program_t *program,
+                                         const zlang_ast_statement_t *function, const char *name) {
+    if (name == NULL) {
+        return false;
+    }
+    const size_t _parameter_end_k = function->parameter_start_ + function->parameter_count_;
+    for (size_t _index = function->parameter_start_;
+         _index < _parameter_end_k && _index < program->parameter_count_; ++_index) {
+        if (program->parameters_[_index].is_array_ &&
+            strcmp(program->parameters_[_index].name_, name) == 0) {
+            return true;
+        }
+    }
+    const size_t _body_end_k = function->body_start_ + function->body_count_;
+    for (size_t _index = function->body_start_;
+         _index < _body_end_k && _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_array_declaration_ &&
+            _statement_k->is_inferred_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_validate_shape_index(const zlang_program_t *program, size_t index,
+                                       const zlang_ast_statement_t *function,
+                                       const zlang_inferred_shape_t *shape,
+                                       zlang_diagnostics_t *diagnostics) {
+    if (index == ZLANG_NO_EXPRESSION || index >= program->expression_count_) {
+        return true;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    const zlang_ast_expression_t *_indexed_k = NULL;
+    if (_expression_k->kind_ == zlang_expression_index_) {
+        _indexed_k = _expression_k;
+    } else if (_expression_k->kind_ == zlang_expression_index_assignment_ &&
+               _expression_k->left_ < program->expression_count_) {
+        _indexed_k = &program->expressions_[_expression_k->left_];
+    }
+    if (_indexed_k == NULL || _indexed_k->kind_ != zlang_expression_index_ ||
+        !zlang_is_inferred_array_name(program, function, _indexed_k->name_)) {
+        return true;
+    }
+    if (_indexed_k->argument_count_ == 0U || _indexed_k->argument_count_ > shape->rank_) {
+        (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, _indexed_k->line_,
+                                    _indexed_k->column_,
+                                    "array index rank does not match inferred shape");
+        return false;
+    }
+    for (size_t _axis = 0U; _axis < _indexed_k->argument_count_; ++_axis) {
+        const size_t _argument_k = _indexed_k->argument_indices_[_axis];
+        if (_argument_k >= program->expression_count_) {
+            return false;
+        }
+        const zlang_ast_expression_t *const _argument_expression_k =
+            &program->expressions_[_argument_k];
+        if (_argument_expression_k->kind_ != zlang_expression_integer_literal_) {
+            continue;
+        }
+        const int64_t _value_k =
+            _argument_expression_k->is_unsigned_ || _argument_expression_k->is_uint64_
+                ? (int64_t)_argument_expression_k->integer64_value_
+                : (int64_t)_argument_expression_k->integer_value_;
+        if (_value_k < 0 || (uint64_t)_value_k >= (uint64_t)shape->extents_[_axis]) {
+            (void)zlang_diagnostics_add(
+                diagnostics, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, _argument_expression_k->line_,
+                _argument_expression_k->column_, "literal index exceeds inferred array extent");
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool zlang_validate_inferred_shapes(const zlang_program_t *program,
+                                           zlang_diagnostics_t *diagnostics) {
+    for (size_t _shape = 0U; _shape < program->inferred_shape_count_; ++_shape) {
+        const zlang_inferred_shape_t *const _shape_k = &program->inferred_shapes_[_shape];
+        if (_shape_k->function_statement_ >= program->statement_count_) {
+            return false;
+        }
+        const zlang_ast_statement_t *const _function_k =
+            &program->statements_[_shape_k->function_statement_];
+        for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
+            if (!zlang_validate_shape_index(program, _index, _function_k, _shape_k, diagnostics)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_context_t *context) {
     context->program_ = program;
-    if (!zlang_register_imports(program, context)) {
+    if (!zlang_register_imports(program, context) ||
+        !zlang_validate_inferred_shapes(program, context->diagnostics_)) {
         return false;
     }
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {

@@ -69,7 +69,25 @@ static size_t zlang_parser_add_statement(zlang_parser_t *parser) {
 
 static bool zlang_token_is_type(const zlang_token_t *token) {
     return token->kind_ == zlang_token_integer_ || token->kind_ == zlang_token_unsigned_ ||
+           token->kind_ == zlang_token_int64_ || token->kind_ == zlang_token_uint64_ ||
+           token->kind_ == zlang_token_float_ || token->kind_ == zlang_token_double_ ||
            token->kind_ == zlang_token_boolean_ || token->kind_ == zlang_token_string_;
+}
+
+static const char *zlang_conversion_target(const char *name) {
+    if (name == NULL) {
+        return NULL;
+    }
+    static const char *const targets_k[] = {"to_integer", "to_unsigned", "to_int64",
+                                            "to_uint64",  "to_float",    "to_double"};
+    static const char *const types_k[] = {"integer", "unsigned", "int64",
+                                          "uint64",  "float",    "double"};
+    for (size_t _index = 0U; _index < sizeof(targets_k) / sizeof(targets_k[0]); ++_index) {
+        if (strcmp(name, targets_k[_index]) == 0) {
+            return types_k[_index];
+        }
+    }
+    return NULL;
 }
 
 static bool zlang_parser_is_user_type(const zlang_parser_t *parser, const zlang_token_t *token) {
@@ -232,7 +250,20 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         }
         parser->expressions_[_expression_k].kind_ = zlang_expression_integer_literal_;
         parser->expressions_[_expression_k].integer_value_ = _token_k->integer_value_;
+        parser->expressions_[_expression_k].integer64_value_ = _token_k->integer64_value_;
         parser->expressions_[_expression_k].is_unsigned_ = _token_k->is_unsigned_;
+        parser->expressions_[_expression_k].is_int64_ = _token_k->is_int64_;
+        parser->expressions_[_expression_k].is_uint64_ = _token_k->is_uint64_;
+        zlang_parser_advance(parser);
+        break;
+    case zlang_token_float_literal_:
+        _expression_k = zlang_parser_add_expression(parser);
+        if (_expression_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_expression_k].kind_ = zlang_expression_float_literal_;
+        parser->expressions_[_expression_k].float_value_ = _token_k->float_value_;
+        parser->expressions_[_expression_k].is_float_ = _token_k->is_float_;
         zlang_parser_advance(parser);
         break;
     case zlang_token_true_:
@@ -302,6 +333,32 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         break;
     }
     case zlang_token_identifier_: {
+        if (parser->position_ + 1U < parser->token_count_ &&
+            parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&
+            zlang_conversion_target(_token_k->text_) != NULL) {
+            const char *const _target_k = zlang_conversion_target(_token_k->text_);
+            zlang_parser_advance(parser);
+            size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
+            size_t _argument_count_k = 0U;
+            if (!zlang_parse_call_arguments(parser, _arguments_k, &_argument_count_k,
+                                            ZLANG_CALL_ARGUMENT_CAPACITY)) {
+                return false;
+            }
+            if (_argument_count_k != 1U) {
+                zlang_parser_unsupported(parser, "conversion requires one argument");
+                return false;
+            }
+            _expression_k = zlang_parser_add_expression(parser);
+            if (_expression_k == ZLANG_NO_EXPRESSION) {
+                return false;
+            }
+            parser->expressions_[_expression_k].kind_ = zlang_expression_conversion_;
+            parser->expressions_[_expression_k].name_ = _target_k;
+            parser->expressions_[_expression_k].left_ = _arguments_k[0];
+            parser->expressions_[_expression_k].line_ = _token_k->line_;
+            parser->expressions_[_expression_k].column_ = _token_k->column_;
+            break;
+        }
         if (parser->position_ + 1U < parser->token_count_ &&
             parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_) {
             zlang_parser_advance(parser);
@@ -1810,6 +1867,82 @@ static bool zlang_infer_foreach_shapes(zlang_program_t *program, zlang_diagnosti
     return true;
 }
 
+static bool zlang_add_inferred_shape(zlang_program_t *program, size_t function_statement,
+                                     const zlang_ast_statement_t *array) {
+    if (array == NULL || array->type_name_ == NULL || array->rank_ == 0U ||
+        program->inferred_shape_count_ >= ZLANG_MAX_INFERRED_SHAPES) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < program->inferred_shape_count_; ++_index) {
+        zlang_inferred_shape_t *const _entry_k = &program->inferred_shapes_[_index];
+        if (_entry_k->function_statement_ != function_statement ||
+            _entry_k->rank_ != array->rank_ ||
+            strcmp(_entry_k->type_name_, array->type_name_) != 0) {
+            continue;
+        }
+        bool _same_k = true;
+        for (uint32_t _axis = 0U; _axis < array->rank_; ++_axis) {
+            if (_entry_k->extents_[_axis] != array->extents_[_axis]) {
+                _same_k = false;
+                break;
+            }
+        }
+        if (_same_k) {
+            return true;
+        }
+    }
+    zlang_inferred_shape_t *const _entry_k =
+        &program->inferred_shapes_[program->inferred_shape_count_++];
+    _entry_k->function_statement_ = function_statement;
+    _entry_k->type_name_ = array->type_name_;
+    _entry_k->rank_ = array->rank_;
+    _entry_k->capacity_ = array->capacity_;
+    for (uint32_t _axis = 0U; _axis < array->rank_; ++_axis) {
+        _entry_k->extents_[_axis] = array->extents_[_axis];
+    }
+    return true;
+}
+
+static bool zlang_collect_inferred_shapes(zlang_program_t *program, size_t function_statement,
+                                          const zlang_ast_statement_t *function) {
+    for (size_t _expression = 0U; _expression < program->expression_count_; ++_expression) {
+        const zlang_ast_expression_t *const _call_k = &program->expressions_[_expression];
+        if (_call_k->kind_ != zlang_expression_call_ || _call_k->name_ == NULL ||
+            strcmp(_call_k->name_, function->name_) != 0) {
+            continue;
+        }
+        const zlang_ast_statement_t *_shape_k = NULL;
+        for (size_t _argument = 0U;
+             _argument < _call_k->argument_count_ && _argument < ZLANG_CALL_ARGUMENT_CAPACITY;
+             ++_argument) {
+            const size_t _argument_k = _call_k->argument_indices_[_argument];
+            if (_argument_k >= program->expression_count_ ||
+                program->expressions_[_argument_k].kind_ != zlang_expression_identifier_) {
+                continue;
+            }
+            _shape_k =
+                zlang_find_array_statement(program, program->expressions_[_argument_k].name_);
+            if (_shape_k != NULL) {
+                break;
+            }
+        }
+        if (_shape_k == NULL) {
+            for (size_t _candidate = 0U; _candidate < program->statement_count_; ++_candidate) {
+                const zlang_ast_statement_t *const _candidate_k = &program->statements_[_candidate];
+                if (_candidate_k->kind_ == zlang_statement_array_declaration_ &&
+                    _candidate_k->expression_ == _expression) {
+                    _shape_k = _candidate_k;
+                    break;
+                }
+            }
+        }
+        if (_shape_k != NULL && !zlang_add_inferred_shape(program, function_statement, _shape_k)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool zlang_infer_function_array_shapes(zlang_program_t *program,
                                               zlang_diagnostics_t *diagnostics) {
     for (size_t _statement = 0U; _statement < program->statement_count_; ++_statement) {
@@ -1854,7 +1987,7 @@ static bool zlang_infer_function_array_shapes(zlang_program_t *program,
                 break;
             }
         }
-        if (_shape_k == NULL) {
+        if (_shape_k == NULL || !zlang_collect_inferred_shapes(program, _statement, _function_k)) {
             (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE,
                                         _function_k->line_, _function_k->column_,
                                         "cannot infer function array shape");
@@ -2027,6 +2160,7 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
         return false;
     }
 
+    memset(&result->program_, 0, sizeof(result->program_));
     result->program_.statements_ = parser->statements_;
     result->program_.statement_count_ = parser->statement_count_;
     result->program_.expressions_ = parser->expressions_;

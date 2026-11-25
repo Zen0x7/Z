@@ -94,6 +94,13 @@ static bool zlang_append_integer(zlang_emitter_t *emitter, int32_t value) {
 
 static bool zlang_append_part_count(zlang_emitter_t *emitter, size_t count);
 
+static bool zlang_append_u64(zlang_emitter_t *emitter, uint64_t value) {
+    char _digits[24];
+    const int _written_k = snprintf(_digits, sizeof(_digits), "%llu", (unsigned long long)value);
+    return _written_k >= 0 && (size_t)_written_k < sizeof(_digits) &&
+           zlang_append_text(emitter, _digits);
+}
+
 static const char *zlang_find_cse(const zlang_emitter_t *emitter, size_t expression_index);
 
 static const char *zlang_find_pointer_cse(const zlang_emitter_t *emitter, size_t expression_index);
@@ -274,6 +281,18 @@ static const char *zlang_c_type(const char *type_name) {
     }
     if (strcmp(type_name, "unsigned") == 0) {
         return "uint32_t";
+    }
+    if (strcmp(type_name, "int64") == 0) {
+        return "int64_t";
+    }
+    if (strcmp(type_name, "uint64") == 0) {
+        return "uint64_t";
+    }
+    if (strcmp(type_name, "float") == 0) {
+        return "float";
+    }
+    if (strcmp(type_name, "double") == 0) {
+        return "double";
     }
     if (strcmp(type_name, "boolean") == 0) {
         return "bool";
@@ -1017,6 +1036,8 @@ static const char *zlang_generated_type(const zlang_program_t *program,
     }
     if (type_name != NULL &&
         (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0 ||
+         strcmp(type_name, "int64") == 0 || strcmp(type_name, "uint64") == 0 ||
+         strcmp(type_name, "float") == 0 || strcmp(type_name, "double") == 0 ||
          strcmp(type_name, "boolean") == 0 || strcmp(type_name, "string") == 0 ||
          strcmp(type_name, "arguments") == 0 || strcmp(type_name, "void") == 0)) {
         return zlang_c_type(type_name);
@@ -1207,7 +1228,17 @@ static const char *zlang_expression_type(const zlang_program_t *program,
     const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
     switch (_expression_k->kind_) {
     case zlang_expression_integer_literal_:
+        if (_expression_k->is_int64_) {
+            return "int64";
+        }
+        if (_expression_k->is_uint64_) {
+            return "uint64";
+        }
         return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+    case zlang_expression_float_literal_:
+        return _expression_k->is_float_ ? "float" : "double";
+    case zlang_expression_conversion_:
+        return _expression_k->name_;
     case zlang_expression_boolean_literal_:
         return "boolean";
     case zlang_expression_string_literal_:
@@ -1403,24 +1434,151 @@ static const char *zlang_print_function(const char *type_name) {
     if (strcmp(type_name, "integer") == 0) {
         return "zlang_print_i32(";
     }
+    if (strcmp(type_name, "int64") == 0) {
+        return "zlang_print_i64(";
+    }
+    if (strcmp(type_name, "uint64") == 0) {
+        return "zlang_print_u64(";
+    }
+    if (strcmp(type_name, "float") == 0) {
+        return "zlang_print_f32(";
+    }
+    if (strcmp(type_name, "double") == 0) {
+        return "zlang_print_f64(";
+    }
     return NULL;
 }
 
-static const char *zlang_arithmetic_function(zlang_expression_kind_t kind, bool is_unsigned) {
+static const char *zlang_arithmetic_function(zlang_expression_kind_t kind, const char *type_name) {
+    if (type_name == NULL) {
+        return NULL;
+    }
+    const bool _unsigned_k = strcmp(type_name, "unsigned") == 0;
+    const bool _signed_64_k = strcmp(type_name, "int64") == 0;
+    const bool _unsigned_64_k = strcmp(type_name, "uint64") == 0;
     switch (kind) {
     case zlang_expression_add_:
-        return is_unsigned ? "zlang_add_u32(" : "zlang_add_i32(";
+        if (_signed_64_k) {
+            return "zlang_add_i64(";
+        }
+        if (_unsigned_64_k) {
+            return "zlang_add_u64(";
+        }
+        return _unsigned_k ? "zlang_add_u32(" : "zlang_add_i32(";
     case zlang_expression_sub_:
-        return is_unsigned ? "zlang_sub_u32(" : "zlang_sub_i32(";
+        if (_signed_64_k) {
+            return "zlang_sub_i64(";
+        }
+        if (_unsigned_64_k) {
+            return "zlang_sub_u64(";
+        }
+        return _unsigned_k ? "zlang_sub_u32(" : "zlang_sub_i32(";
     case zlang_expression_mul_:
-        return is_unsigned ? "zlang_mul_u32(" : "zlang_mul_i32(";
+        if (_signed_64_k) {
+            return "zlang_mul_i64(";
+        }
+        if (_unsigned_64_k) {
+            return "zlang_mul_u64(";
+        }
+        return _unsigned_k ? "zlang_mul_u32(" : "zlang_mul_i32(";
     case zlang_expression_div_:
-        return is_unsigned ? "zlang_div_u32(" : "zlang_div_i32(";
+        if (_signed_64_k) {
+            return "zlang_div_i64(";
+        }
+        if (_unsigned_64_k) {
+            return "zlang_div_u64(";
+        }
+        return _unsigned_k ? "zlang_div_u32(" : "zlang_div_i32(";
     case zlang_expression_mod_:
-        return is_unsigned ? "zlang_mod_u32(" : "zlang_mod_i32(";
+        if (_signed_64_k) {
+            return "zlang_mod_i64(";
+        }
+        if (_unsigned_64_k) {
+            return "zlang_mod_u64(";
+        }
+        return _unsigned_k ? "zlang_mod_u32(" : "zlang_mod_i32(";
     default:
         return NULL;
     }
+}
+
+static const char *zlang_arithmetic_operator(zlang_expression_kind_t kind) {
+    switch (kind) {
+    case zlang_expression_add_:
+        return "+";
+    case zlang_expression_sub_:
+        return "-";
+    case zlang_expression_mul_:
+        return "*";
+    case zlang_expression_div_:
+        return "/";
+    default:
+        return NULL;
+    }
+}
+
+static const char *zlang_conversion_function(const char *target, const char *source) {
+    if (target == NULL || source == NULL) {
+        return NULL;
+    }
+    if (strcmp(target, source) == 0) {
+        return NULL;
+    }
+    const bool _source_float_k = strcmp(source, "float") == 0 || strcmp(source, "double") == 0;
+    const bool _source_i64_k = strcmp(source, "integer") == 0 || strcmp(source, "int64") == 0;
+    const bool _source_u32_k = strcmp(source, "unsigned") == 0;
+    const bool _source_u64_k = strcmp(source, "uint64") == 0;
+    if (strcmp(target, "integer") == 0) {
+        if (_source_i64_k) {
+            return "zlang_to_i32_i64(";
+        }
+        if (_source_u32_k) {
+            return "zlang_to_i32_u32(";
+        }
+        if (_source_u64_k) {
+            return "zlang_to_i32_u64(";
+        }
+        if (_source_float_k) {
+            return "zlang_to_i32_f64(";
+        }
+    }
+    if (strcmp(target, "unsigned") == 0) {
+        if (_source_i64_k) {
+            return "zlang_to_u32_i64(";
+        }
+        if (_source_u32_k) {
+            return "zlang_to_u32_u32(";
+        }
+        if (_source_u64_k) {
+            return "zlang_to_u32_u64(";
+        }
+        if (_source_float_k) {
+            return "zlang_to_u32_f64(";
+        }
+    }
+    if (strcmp(target, "int64") == 0) {
+        if (_source_i64_k || _source_u32_k) {
+            return "zlang_to_i64_i64(";
+        }
+        if (_source_u64_k) {
+            return "zlang_to_i64_u64(";
+        }
+        if (_source_float_k) {
+            return "zlang_to_i64_f64(";
+        }
+    }
+    if (strcmp(target, "uint64") == 0) {
+        if (_source_i64_k) {
+            return "zlang_to_u64_i64(";
+        }
+        if (_source_u32_k || _source_u64_k) {
+            return "zlang_to_u64_u64(";
+        }
+        if (_source_float_k) {
+            return "zlang_to_u64_f64(";
+        }
+    }
+    return NULL;
 }
 
 static bool
@@ -1472,11 +1630,77 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
     const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
     switch (_expression_k->kind_) {
     case zlang_expression_integer_literal_:
+        if (_expression_k->is_uint64_) {
+            return zlang_append_u64(emitter, _expression_k->integer64_value_) &&
+                   zlang_append_text(emitter, "ULL");
+        }
+        if (_expression_k->is_int64_) {
+            return zlang_append_u64(emitter, _expression_k->integer64_value_) &&
+                   zlang_append_text(emitter, "LL");
+        }
         if (_expression_k->is_unsigned_) {
             return zlang_append_unsigned(emitter, (uint32_t)_expression_k->integer_value_) &&
                    zlang_append_text(emitter, "U");
         }
         return zlang_append_integer(emitter, _expression_k->integer_value_);
+    case zlang_expression_float_literal_: {
+        char _number_k[64];
+        const int _written_k =
+            snprintf(_number_k, sizeof(_number_k), _expression_k->is_float_ ? "%.9g" : "%.17g",
+                     _expression_k->float_value_);
+        if (_written_k < 0 || (size_t)_written_k >= sizeof(_number_k)) {
+            return false;
+        }
+        bool _has_decimal_k = false;
+        bool _has_exponent_k = false;
+        for (char *_cursor_k = _number_k; *_cursor_k != '\0'; ++_cursor_k) {
+            if (*_cursor_k == '.') {
+                _has_decimal_k = true;
+            } else if (*_cursor_k == 'e' || *_cursor_k == 'E') {
+                _has_exponent_k = true;
+            }
+        }
+        if (_has_exponent_k && !_has_decimal_k) {
+            const char *_e_k = strchr(_number_k, 'e');
+            if (_e_k == NULL) {
+                _e_k = strchr(_number_k, 'E');
+            }
+            const size_t _mantissa_k = (size_t)(_e_k - _number_k);
+            if (_mantissa_k + 2U >= sizeof(_number_k)) {
+                return false;
+            }
+            memmove(_number_k + _mantissa_k + 2U, _number_k + _mantissa_k,
+                    strlen(_number_k + _mantissa_k) + 1U);
+            _number_k[_mantissa_k] = '.';
+            _number_k[_mantissa_k + 1U] = '0';
+        } else if (!_has_decimal_k) {
+            const size_t _length_k = strlen(_number_k);
+            if (_length_k + 2U >= sizeof(_number_k)) {
+                return false;
+            }
+            memmove(_number_k + _length_k + 2U, _number_k + _length_k, 1U);
+            _number_k[_length_k] = '.';
+            _number_k[_length_k + 1U] = '0';
+        }
+        return zlang_append_text(emitter, _number_k) &&
+               (!_expression_k->is_float_ || zlang_append_text(emitter, "f"));
+    }
+    case zlang_expression_conversion_: {
+        const char *const _source_k = zlang_expression_type(program, emitter, _expression_k->left_);
+        const char *const _function_k = zlang_conversion_function(_expression_k->name_, _source_k);
+        const char *const _c_type_k = zlang_c_type(_expression_k->name_);
+        if (_c_type_k == NULL ||
+            (_function_k != NULL && !zlang_append_text(emitter, _function_k))) {
+            return false;
+        }
+        if (_function_k == NULL &&
+            (!zlang_append_text(emitter, "(") || !zlang_append_text(emitter, _c_type_k) ||
+             !zlang_append_text(emitter, ")"))) {
+            return false;
+        }
+        return zlang_emit_expression(program, _expression_k->left_, emitter) &&
+               (_function_k == NULL || zlang_append_text(emitter, ")"));
+    }
     case zlang_expression_boolean_literal_:
         return zlang_append_text(emitter, _expression_k->bool_value_ ? "true" : "false");
     case zlang_expression_string_literal_:
@@ -1499,8 +1723,19 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
     case zlang_expression_mod_: {
         const char *const _left_type_k =
             zlang_expression_type(program, emitter, _expression_k->left_);
-        const char *const _function_k = zlang_arithmetic_function(
-            _expression_k->kind_, _left_type_k != NULL && strcmp(_left_type_k, "unsigned") == 0);
+        const bool _floating_k = _left_type_k != NULL && (strcmp(_left_type_k, "float") == 0 ||
+                                                          strcmp(_left_type_k, "double") == 0);
+        if (_floating_k) {
+            const char *const _operator_k = zlang_arithmetic_operator(_expression_k->kind_);
+            return _operator_k != NULL && zlang_append_text(emitter, "(") &&
+                   zlang_emit_expression(program, _expression_k->left_, emitter) &&
+                   zlang_append_text(emitter, " ") && zlang_append_text(emitter, _operator_k) &&
+                   zlang_append_text(emitter, " ") &&
+                   zlang_emit_expression(program, _expression_k->right_, emitter) &&
+                   zlang_append_text(emitter, ")");
+        }
+        const char *const _function_k =
+            zlang_arithmetic_function(_expression_k->kind_, _left_type_k);
         if (_function_k == NULL || !zlang_append_text(emitter, _function_k) ||
             !zlang_emit_expression(program, _expression_k->left_, emitter) ||
             !zlang_append_text(emitter, ", ") ||
@@ -1523,9 +1758,8 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         const zlang_ast_expression_t *const _target_k =
             &program->expressions_[_expression_k->left_];
         const char *const _left_type_k = zlang_expression_type(program, emitter, index);
-        const char *const _function_k = zlang_arithmetic_function(
-            _expression_k->operator_,
-            _left_type_k != NULL && strcmp(_left_type_k, "unsigned") == 0);
+        const char *const _function_k =
+            zlang_arithmetic_function(_expression_k->operator_, _left_type_k);
         if (_function_k == NULL || !zlang_emit_symbol_lvalue(emitter, _target_k->name_) ||
             !zlang_append_text(emitter, " = ") || !zlang_append_text(emitter, _function_k) ||
             !zlang_emit_symbol_value(emitter, _target_k->name_) ||
@@ -1793,8 +2027,8 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                 return false;
             }
             if (_std_k->is_stateful_ &&
-                !zlang_append_text(emitter, emitter->in_function_ ? "zlang_std_state"
-                                                                  : "&_zlang_std_state")) {
+                !zlang_append_text(emitter,
+                                   emitter->in_function_ ? "zlang_context" : "&_zlang_context")) {
                 return false;
             }
             for (size_t _argument = 0U; _argument < _expression_k->argument_count_; ++_argument) {
@@ -1854,7 +2088,7 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         if (zlang_function_marked(emitter, _expression_k->name_) &&
             ((_expression_k->argument_count_ > 0U && !zlang_append_text(emitter, ", ")) ||
              !zlang_append_text(emitter,
-                                emitter->in_function_ ? "zlang_std_state" : "&_zlang_std_state"))) {
+                                emitter->in_function_ ? "zlang_context" : "&_zlang_context"))) {
             return false;
         }
         return zlang_append_text(emitter, ")");
@@ -1941,6 +2175,18 @@ static bool zlang_array_type_suffix(const char *type_name, char *output, size_t 
     }
     if (strcmp(type_name, "uint32_t") == 0) {
         return zlang_copy_name("u32", output, capacity);
+    }
+    if (strcmp(type_name, "int64_t") == 0) {
+        return zlang_copy_name("i64", output, capacity);
+    }
+    if (strcmp(type_name, "uint64_t") == 0) {
+        return zlang_copy_name("u64", output, capacity);
+    }
+    if (strcmp(type_name, "float") == 0) {
+        return zlang_copy_name("f32", output, capacity);
+    }
+    if (strcmp(type_name, "double") == 0) {
+        return zlang_copy_name("f64", output, capacity);
     }
     if (strcmp(type_name, "bool") == 0) {
         return zlang_copy_name("bool", output, capacity);
@@ -4268,7 +4514,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             const bool _state_param_k =
                 !_needs_state_k ||
                 (zlang_append_text(emitter, statement->parameter_count_ == 0U ? "" : ", ") &&
-                 zlang_append_text(emitter, "zlang_std_random_state_t *zlang_std_state"));
+                 zlang_append_text(emitter, "zlang_runtime_context_t *zlang_context"));
             const bool _result_k =
                 _state_param_k && zlang_append_text(emitter, ") {\n") &&
                 zlang_emit_unused_parameter_guards(program, statement, emitter, depth + 1U) &&
@@ -4788,7 +5034,7 @@ static bool zlang_emit_function_prototype(const zlang_program_t *program, zlang_
     }
     if (entry->needs_state_ &&
         (!zlang_append_text(emitter, _statement_k->parameter_count_ == 0U ? "" : ", ") ||
-         !zlang_append_text(emitter, "zlang_std_random_state_t *zlang_std_state"))) {
+         !zlang_append_text(emitter, "zlang_runtime_context_t *zlang_context"))) {
         return false;
     }
     return zlang_append_text(emitter, ");\n");
@@ -4874,8 +5120,8 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
             return false;
         }
         if (_main_k->needs_state_ &&
-            !zlang_append_text(emitter, "    zlang_std_random_state_t _zlang_std_state = { "
-                                        "0x6D2B79F5U };\n")) {
+            !zlang_append_text(emitter,
+                               "    zlang_runtime_context_t _zlang_context = { 0x6D2B79F5U };\n")) {
             return false;
         }
         if (!zlang_append_text(emitter, "    return (int)") ||
@@ -4889,8 +5135,8 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
             return false;
         }
         if (_main_k->needs_state_ &&
-            !zlang_append_text(emitter, _has_host_arguments_k ? ", &_zlang_std_state"
-                                                              : "&_zlang_std_state")) {
+            !zlang_append_text(emitter,
+                               _has_host_arguments_k ? ", &_zlang_context" : "&_zlang_context")) {
             return false;
         }
         return zlang_append_text(emitter, ");\n}\n");
@@ -4900,8 +5146,8 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         return false;
     }
     if (emitter->uses_stateful_std_ &&
-        (!zlang_append_text(emitter, "    zlang_std_random_state_t _zlang_std_state = { "
-                                     "0x6D2B79F5U };\n\n"))) {
+        (!zlang_append_text(emitter,
+                            "    zlang_runtime_context_t _zlang_context = { 0x6D2B79F5U };\n\n"))) {
         return false;
     }
     bool _has_previous_k = false;

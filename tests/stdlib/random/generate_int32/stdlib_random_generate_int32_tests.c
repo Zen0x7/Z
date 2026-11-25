@@ -5,7 +5,7 @@
 #include "zlang/runtime/runtime.h"
 
 static void generate_int32_stays_in_range(zlang_test_context_t *const context) {
-    zlang_std_random_state_t _state;
+    zlang_runtime_context_t _state;
     zlang_std_random_seed(&_state, 1U);
     for (int32_t _iteration = 0; _iteration < 100; ++_iteration) {
         const int32_t _value_k = zlang_std_random_generate_int32(&_state, 3, 9);
@@ -14,7 +14,7 @@ static void generate_int32_stays_in_range(zlang_test_context_t *const context) {
 }
 
 static void generate_int32_extreme_ranges(zlang_test_context_t *const context) {
-    zlang_std_random_state_t _state;
+    zlang_runtime_context_t _state;
     zlang_std_random_seed(&_state, 7U);
     for (int32_t _iteration = 0; _iteration < 100; ++_iteration) {
         const int32_t _value_k = zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MAX);
@@ -27,7 +27,7 @@ static void generate_int32_extreme_ranges(zlang_test_context_t *const context) {
 }
 
 static void generate_int32_rejects_inverted_range(zlang_test_context_t *const context) {
-    zlang_std_random_state_t _state;
+    zlang_runtime_context_t _state;
     zlang_std_random_seed(&_state, 1U);
     (void)zlang_std_random_generate_int32(&_state, 9, 3);
     ZLANG_CHECK(context, true);

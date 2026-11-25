@@ -4,6 +4,8 @@
 
 #include "zlang/compiler/lexer.h"
 
+#include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct zlang_keyword_t {
@@ -25,6 +27,10 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"if", zlang_token_if_},
                                              {"in", zlang_token_in_},
                                              {"integer", zlang_token_integer_},
+                                             {"int64", zlang_token_int64_},
+                                             {"uint64", zlang_token_uint64_},
+                                             {"float", zlang_token_float_},
+                                             {"double", zlang_token_double_},
                                              {"length", zlang_token_length_},
                                              {"print", zlang_token_print_},
                                              {"record", zlang_token_record_},
@@ -153,7 +159,9 @@ static bool zlang_lex_string(zlang_lexer_t *lexer, zlang_token_t *token,
 static bool zlang_lex_number(zlang_lexer_t *lexer, zlang_token_t *token,
                              zlang_diagnostics_t *diagnostics, const uint32_t line,
                              const uint32_t column) {
-    uint64_t _value = 0U;
+    uint64_t _value_k = 0U;
+    bool _overflow_k = false;
+    bool _floating_k = false;
     token->kind_ = zlang_token_integer_literal_;
     token->text_ = lexer->source_ + lexer->position_;
     token->line_ = line;
@@ -161,32 +169,128 @@ static bool zlang_lex_number(zlang_lexer_t *lexer, zlang_token_t *token,
 
     while (lexer->source_[lexer->position_] >= '0' && lexer->source_[lexer->position_] <= '9') {
         const uint32_t _digit_k = (uint32_t)(lexer->source_[lexer->position_] - '0');
-        if (_value > (UINT64_MAX - _digit_k) / 10U) {
-            _value = UINT64_MAX;
+        if (_value_k > (UINT64_MAX - _digit_k) / 10U) {
+            _overflow_k = true;
         } else {
-            _value = _value * 10U + _digit_k;
+            _value_k = _value_k * 10U + _digit_k;
         }
         zlang_lexer_advance(lexer);
     }
 
-    if (lexer->source_[lexer->position_] == 'u' || lexer->source_[lexer->position_] == 'U') {
-        token->is_unsigned_ = true;
+    if (lexer->source_[lexer->position_] == '.') {
+        const char _next_k = lexer->source_[lexer->position_ + 1U];
+        if (_next_k >= '0' && _next_k <= '9') {
+            _floating_k = true;
+            zlang_lexer_advance(lexer);
+            while (lexer->source_[lexer->position_] >= '0' &&
+                   lexer->source_[lexer->position_] <= '9') {
+                zlang_lexer_advance(lexer);
+            }
+        }
+    }
+    if (lexer->source_[lexer->position_] == 'e' || lexer->source_[lexer->position_] == 'E') {
+        _floating_k = true;
         zlang_lexer_advance(lexer);
+        if (lexer->source_[lexer->position_] == '+' || lexer->source_[lexer->position_] == '-') {
+            zlang_lexer_advance(lexer);
+        }
+        if (lexer->source_[lexer->position_] < '0' || lexer->source_[lexer->position_] > '9') {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, line,
+                                        column, "exponent requires decimal digits");
+            return false;
+        }
+        while (lexer->source_[lexer->position_] >= '0' && lexer->source_[lexer->position_] <= '9') {
+            zlang_lexer_advance(lexer);
+        }
+    }
+
+    if (_floating_k) {
+        const size_t _start_k = lexer->scratch_length_;
+        const size_t _length_k = (size_t)((lexer->source_ + lexer->position_) - token->text_);
+        if (_length_k + 1U > lexer->scratch_capacity_ - _start_k) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, line,
+                                        column, "numeric literal is too long");
+            return false;
+        }
+        for (size_t _index = 0U; _index < _length_k; ++_index) {
+            lexer->scratch_[_start_k + _index] = token->text_[_index];
+        }
+        lexer->scratch_[_start_k + _length_k] = '\0';
+        lexer->scratch_length_ = _start_k + _length_k + 1U;
+        char *_end_k = NULL;
+        token->float_value_ = strtod(lexer->scratch_ + _start_k, &_end_k);
+        if (_end_k == NULL || *_end_k != '\0' || !isfinite(token->float_value_)) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
+                                        column, "floating literal out of range");
+            return false;
+        }
+        token->kind_ = zlang_token_float_literal_;
+        token->is_float_ =
+            lexer->source_[lexer->position_] == 'f' || lexer->source_[lexer->position_] == 'F';
+        if (token->is_float_) {
+            zlang_lexer_advance(lexer);
+        }
+        token->length_ = (uint32_t)((lexer->source_ + lexer->position_) - token->text_);
+        return true;
+    }
+
+    if (lexer->source_[lexer->position_] == 'f' || lexer->source_[lexer->position_] == 'F') {
+        token->float_value_ = (double)_value_k;
+        token->is_float_ = true;
+        token->kind_ = zlang_token_float_literal_;
+        zlang_lexer_advance(lexer);
+        token->length_ = (uint32_t)((lexer->source_ + lexer->position_) - token->text_);
+        return true;
+    }
+
+    const bool _u64_k =
+        lexer->source_[lexer->position_] == 'u' || lexer->source_[lexer->position_] == 'U';
+    const bool _i64_k =
+        lexer->source_[lexer->position_] == 'i' || lexer->source_[lexer->position_] == 'I';
+    if (_u64_k || _i64_k) {
+        const char _second_k = lexer->source_[lexer->position_ + 1U];
+        const char _third_k = lexer->source_[lexer->position_ + 2U];
+        if (_second_k == '6' && _third_k == '4') {
+            if (_i64_k) {
+                token->is_int64_ = true;
+            } else {
+                token->is_uint64_ = true;
+            }
+            zlang_lexer_advance(lexer);
+            zlang_lexer_advance(lexer);
+            zlang_lexer_advance(lexer);
+        } else if (_u64_k) {
+            token->is_unsigned_ = true;
+            zlang_lexer_advance(lexer);
+        }
     }
 
     token->length_ = (uint32_t)((lexer->source_ + lexer->position_) - token->text_);
-    if (token->is_unsigned_) {
-        if (_value > UINT32_MAX) {
+    token->integer64_value_ = _value_k;
+    if (token->is_int64_) {
+        if (_overflow_k || _value_k > (uint64_t)INT64_MAX) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
+                                        column, "int64 literal out of range");
+            return false;
+        }
+    } else if (token->is_uint64_) {
+        if (_overflow_k) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
+                                        column, "uint64 literal out of range");
+            return false;
+        }
+    } else if (token->is_unsigned_) {
+        if (_overflow_k || _value_k > UINT32_MAX) {
             (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
                                         column, "unsigned literal out of range");
             return false;
         }
-    } else if (_value > INT32_MAX) {
+    } else if (_overflow_k || _value_k > (uint64_t)INT32_MAX) {
         (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
                                     column, "integer literal out of range");
         return false;
     }
-    token->integer_value_ = (int32_t)_value;
+    token->integer_value_ = (int32_t)_value_k;
     return true;
 }
 

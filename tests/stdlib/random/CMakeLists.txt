@@ -1,1 +1,2 @@
 add_subdirectory(generate_int32)
+add_subdirectory(generators)

@@ -83,7 +83,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 | Element | Rule |
 | --- | --- |
 | Identifier | `[A-Za-z_][A-Za-z0-9_]*` |
-| Integer literal | decimal digits, with optional `u` suffix for unsigned |
+| Integer literal | decimal digits with optional `u`, `i64` or `u64` suffix |
+| Floating literal | decimal digits with `.` or exponent, optional `f` suffix |
 | String literal | `"..."` with escapes `\" \\ \n \t` |
 | Comment | `//` to end of line, or `/* ... */` |
 | Whitespace | space, tab, carriage return, line feed |
@@ -91,8 +92,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 Keywords are reserved and cannot be used as identifiers:
 
 ```text
-boolean break clone const continue else enum false for foreach function if integer
-length print record reference repeat return sequence string true unsigned while
+boolean break clone const continue double else enum false float for foreach function if integer
+int64 length print record reference repeat return sequence string true uint64 unsigned while
 ```
 
 The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
@@ -100,13 +101,15 @@ The generated-code namespace is also reserved. An identifier beginning with `zla
 
 ### 6.3 Numeric literals
 
-An integer literal without `u` has type `integer`. With `u`, it has type `unsigned`. A literal outside the range of its type is a type diagnostic.
+An integer literal without a suffix has type `integer`. With `u`, it has type `unsigned`. With
+`i64`, it has type `int64`. With `u64`, it has type `uint64`. A floating literal has type `double`;
+with the `f` suffix it has type `float`. A literal outside the range of its type is a diagnostic.
 
 ---
 
 ## 7. Values and types
 
-Zlang has four scalar value types, plus user-defined record and enum types.
+Zlang has eight numeric and scalar primitive types, plus user-defined record and enum types.
 
 ### 7.1 `integer`
 
@@ -116,17 +119,33 @@ A signed 32-bit value. Emitted as `int32_t` from `<stdint.h>`.
 
 An unsigned 32-bit value. Emitted as `uint32_t` from `<stdint.h>`.
 
-### 7.3 `boolean`
+### 7.3 `int64`
+
+A signed 64-bit value. Emitted as `int64_t` from `<stdint.h>`.
+
+### 7.4 `uint64`
+
+An unsigned 64-bit value. Emitted as `uint64_t` from `<stdint.h>`.
+
+### 7.5 `float`
+
+An IEEE-754 binary32 value. Emitted as `float`, with `f`-suffixed literals.
+
+### 7.6 `double`
+
+An IEEE-754 binary64 value. Emitted as `double`.
+
+### 7.7 `boolean`
 
 The values `true` and `false`. Emitted as `bool` from `<stdbool.h>`.
 
-### 7.4 `string`
+### 7.8 `string`
 
 An immutable, non-owning view over UTF-8 bytes. It has two fields: a pointer to the first byte and a byte length. It never allocates and never owns memory.
 
 A string literal is interned by the compiler and emitted in read-only storage. String concatenation is supported, but it never allocates. When every operand is a literal, the compiler folds the result into one emitted literal. When any operand is a variable, the declaration must use explicit capacity syntax, the compiler reserves a fixed backing buffer, and `zlang_string_concat` copies the views into it. Overflow traps instead of growing the buffer.
 
-### 7.5 Sequence values
+### 7.9 Sequence values
 
 An array is a fixed-shape container written as `<type>[<capacity>]`. Capacity is part of the type, not a dynamic property.
 
@@ -143,9 +162,15 @@ An array has no logical length. Every extent is fixed at compile time and every 
 - larger arrays are emitted as `static` storage with internal linkage;
 - the compiler must document the threshold used when it differs from the default.
 
-### 7.6 Type compatibility
+### 7.10 Type compatibility
 
-There is no implicit conversion between `integer` and `unsigned`, or between numeric types and `boolean`. A string can only be used where a `string` is expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
+There is no implicit conversion between numeric types, or between numeric types and `boolean`.
+Explicit conversion calls are `to_integer`, `to_unsigned`, `to_int64`, `to_uint64`, `to_float` and
+`to_double`; they take exactly one numeric operand. Conversion to an integer type traps when the
+value is out of range, and conversion from a floating-point value truncates toward zero and traps
+on non-finite input. Floating arithmetic follows IEEE-754, so division by zero produces an infinity
+or NaN instead of a Zlang trap. `%` is valid only for integral types. A string can only be used
+where a `string` is expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
 
 ---
 
@@ -716,6 +741,11 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | standard imports | `zlang.stdlib.random.generate_int32.basic` |
 | transpile-time optimization | `zlang.cli.tto` |
 | scalar printing | `emits_scalar_print` |
+| wide and floating primitives | `emits_wide_and_floating_primitives` |
+| explicit numeric conversions | `emits_explicit_numeric_conversions` |
+| implicit conversion rejection | `rejects_implicit_numeric_conversion` |
+| floating modulo rejection | `rejects_float_modulo` |
+| inferred shape index validation | `rejects_index_outside_inferred_shape` |
 | string array elements | `emits_string_sequence_operations` |
 | legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
@@ -854,6 +884,13 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.22 implementation status
+
+Zlang 0.22 adds `int64`, `uint64`, `float` and `double`, explicit `to_*` numeric conversions, IEEE-754
+floating arithmetic and deterministic random generators for all six numeric types. Standard stateful
+functions share one internal `zlang_runtime_context_t`; Zlang source never exposes it. Inferred array
+functions emit one canonical C function per concrete shape.
 
 ## 0.20 implementation status
 

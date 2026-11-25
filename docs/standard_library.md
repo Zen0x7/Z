@@ -1,7 +1,8 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.21. The catalog below is the allowed namespace map; the
-implemented standard functions are `random.generate_int32` and the `@std/program_options` domain.
+**Status:** implemented in Zlang 0.22. The catalog below is the allowed namespace map; the
+implemented standard functions are the deterministic `random` generators and the
+`@std/program_options` domain.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
 
 ## Import grammar
@@ -143,15 +144,16 @@ implemented.
 
 | Domain | Meaning | Proposed functions | Evaluation |
 | --- | --- | --- | --- |
-| `random` | Entropy and pseudo-random generation | `generate_int32`, `generate_uint32`, `generate_bytes`, `generate_bool` | opaque, unsafe until PRNG semantics are fixed |
+| `random` | Deterministic pseudo-random generation | `generate_int32`, `generate_uint32`, `generate_int64`, `generate_uint64`, `generate_float32`, `generate_float64` | opaque, deterministic, explicit runtime context |
 | `time` | Clocks and delays | `now_unix_seconds`, `now_monotonic_millis`, `sleep_millis` | opaque, stateful or platform-dependent |
 | `streams` | Input and output streams | `read_line`, `write_string`, `read_bytes`, `write_bytes` | effectful, explicit buffers |
 | `filesystem` | Files and directories | `open_file`, `read_file`, `write_file`, `file_exists`, `close_file` | resource-based, explicit close |
 | `networking` | Sockets and protocols | `tcp_listener`, `tcp_connect`, `send_bytes`, `receive_bytes`, `close_socket` | resource-based, explicit close |
 | `system` | Process and environment access | `exit_process`, `args_count`, `arg_at`, `environment_get` | effectful, platform-dependent |
 
-`random_float` is deferred until Zlang has a floating-point type. `cryptography` is deferred until
-there is a stable security and entropy policy. Avoid adding a domain before its capability has a
+`generate_float32` and `generate_float64` use the same deterministic PRNG as the integer generators.
+They produce values in `[from, to)` and trap on invalid or non-finite bounds. `cryptography` remains
+deferred until there is a stable security and entropy policy. Avoid adding a domain before its capability has a
 clear boundary.
 
 ## Classification dimensions
@@ -278,6 +280,7 @@ that can be configured standalone and is also added from `tests/stdlib/`:
 
 ```text
 tests/stdlib/random/generate_int32/
+tests/stdlib/random/generators/
   CMakeLists.txt
   README.md
   test_cases.h
@@ -348,6 +351,7 @@ Semantic checks:
 - `import { tcp_listener } from "networking";` succeeds.
 - `shuffle_int32` activates `random.generate_int32` transitively.
 - `generate_int32` is never constant-folded under `--tto`;
+- all random generators share one `zlang_runtime_context_t`;
 - generated C uses `app_*`, `zlang_gen_*`, `zlang_std_*`, `zlang_*` and `ZLANG_*` consistently;
 - every standard function has a micro CMake test project with direct C and Zlang integration cases.
 - Pure functions such as `math.clamp_int32` are foldable under `--tto`.

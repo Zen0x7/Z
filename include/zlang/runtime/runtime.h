@@ -2,8 +2,10 @@
 #define ZLANG_RUNTIME_RUNTIME_H
 
 #include "zlang/detail/inline.h"
+#include "zlang/runtime/context.h"
 
 #include <limits.h>
+#include <math.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -247,6 +249,323 @@ ZLANG_STATIC_INLINE uint32_t zlang_mod_u32(uint32_t left, uint32_t right) {
 }
 
 /**
+ * @brief Print a signed 64-bit integer using fixed stack storage.
+ */
+ZLANG_STATIC_INLINE bool zlang_print_i64(int64_t value) {
+    char _digits[24];
+    size_t _position_k = sizeof(_digits) - 1U;
+    uint64_t _magnitude_k = value < 0 ? (uint64_t)(-(value + 1)) + 1U : (uint64_t)value;
+
+    _digits[_position_k] = '\0';
+    do {
+        _digits[--_position_k] = (char)('0' + (_magnitude_k % 10U));
+        _magnitude_k /= 10U;
+    } while (_magnitude_k != 0U);
+    if (value < 0) {
+        _digits[--_position_k] = '-';
+    }
+    return zlang_write(stdout, (zlang_string_t){_digits + _position_k,
+                                                (uint32_t)(sizeof(_digits) - 1U - _position_k)});
+}
+
+/**
+ * @brief Print an unsigned 64-bit integer using fixed stack storage.
+ */
+ZLANG_STATIC_INLINE bool zlang_print_u64(uint64_t value) {
+    char _digits[24];
+    size_t _position_k = sizeof(_digits) - 1U;
+
+    _digits[_position_k] = '\0';
+    do {
+        _digits[--_position_k] = (char)('0' + (value % 10U));
+        value /= 10U;
+    } while (value != 0U);
+    return zlang_write(stdout, (zlang_string_t){_digits + _position_k,
+                                                (uint32_t)(sizeof(_digits) - 1U - _position_k)});
+}
+
+/**
+ * @brief Print a 32-bit float with a deterministic decimal form.
+ */
+ZLANG_STATIC_INLINE bool zlang_print_f32(float value) {
+    char _digits[64];
+    const int _written_k = snprintf(_digits, sizeof(_digits), "%.9g", (double)value);
+    if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits)) {
+        return false;
+    }
+    return zlang_print((zlang_string_t){_digits, (uint32_t)_written_k});
+}
+
+/**
+ * @brief Print a 64-bit double with a deterministic decimal form.
+ */
+ZLANG_STATIC_INLINE bool zlang_print_f64(double value) {
+    char _digits[64];
+    const int _written_k = snprintf(_digits, sizeof(_digits), "%.17g", value);
+    if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits)) {
+        return false;
+    }
+    return zlang_print((zlang_string_t){_digits, (uint32_t)_written_k});
+}
+
+/**
+ * @brief Add two signed 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_add_i64(int64_t left, int64_t right) {
+    const bool _overflow_k =
+        (right > 0 && left > INT64_MAX - right) || (right < 0 && left < INT64_MIN - right);
+    if (_overflow_k) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return left + right;
+}
+
+/**
+ * @brief Add two unsigned 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_add_u64(uint64_t left, uint64_t right) {
+    if (right > UINT64_MAX - left) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return left + right;
+}
+
+/**
+ * @brief Subtract two signed 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_sub_i64(int64_t left, int64_t right) {
+    const bool _overflow_k =
+        (right < 0 && left > INT64_MAX + right) || (right > 0 && left < INT64_MIN + right);
+    if (_overflow_k) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return left - right;
+}
+
+/**
+ * @brief Subtract two unsigned 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_sub_u64(uint64_t left, uint64_t right) {
+    if (right > left) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return left - right;
+}
+
+/**
+ * @brief Multiply two signed 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_mul_i64(int64_t left, int64_t right) {
+    if ((left == -1 && right == INT64_MIN) || (right == -1 && left == INT64_MIN)) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    uint64_t _magnitude_left_k = left < 0 ? (uint64_t)(-(left + 1)) + 1U : (uint64_t)left;
+    uint64_t _magnitude_right_k = right < 0 ? (uint64_t)(-(right + 1)) + 1U : (uint64_t)right;
+    const uint64_t _limit_k =
+        (left < 0) != (right < 0) ? (uint64_t)INT64_MAX + 1U : (uint64_t)INT64_MAX;
+    if (_magnitude_left_k != 0U && _magnitude_right_k > _limit_k / _magnitude_left_k) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    const uint64_t _result_k = _magnitude_left_k * _magnitude_right_k;
+    if ((left < 0) != (right < 0)) {
+        if (_result_k == (uint64_t)INT64_MAX + 1U) {
+            return INT64_MIN;
+        }
+        return -(int64_t)_result_k;
+    }
+    return (int64_t)_result_k;
+}
+
+/**
+ * @brief Multiply two unsigned 64-bit integers, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_mul_u64(uint64_t left, uint64_t right) {
+    if (left != 0U && right > UINT64_MAX / left) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return left * right;
+}
+
+/**
+ * @brief Divide two signed 64-bit integers, trapping on zero and overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_div_i64(int64_t left, int64_t right) {
+    if (right == 0) {
+        zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
+    }
+    if (left == INT64_MIN && right == -1) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
+    return left / right;
+}
+
+/**
+ * @brief Divide two unsigned 64-bit integers, trapping on zero.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_div_u64(uint64_t left, uint64_t right) {
+    if (right == 0U) {
+        zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
+    }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
+    return left / right;
+}
+
+/**
+ * @brief Remainder of two signed 64-bit integers.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_mod_i64(int64_t left, int64_t right) {
+    if (right == 0) {
+        zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
+    }
+    if (left == INT64_MIN && right == -1) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
+    return left % right;
+}
+
+/**
+ * @brief Remainder of two unsigned 64-bit integers.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_mod_u64(uint64_t left, uint64_t right) {
+    if (right == 0U) {
+        zlang_trap(ZLANG_TRAP_DIVISION_BY_ZERO);
+    }
+    // cppcheck-suppress zerodiv
+    // cppcheck-suppress zerodivcond
+    return left % right;
+}
+
+/**
+ * @brief Convert a signed 64-bit value to int32_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_to_i32_i64(int64_t value) {
+    if (value < (int64_t)INT32_MIN || value > (int64_t)INT32_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (int32_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 32-bit value to int32_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_to_i32_u32(uint32_t value) {
+    if (value > (uint32_t)INT32_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (int32_t)value;
+}
+
+/**
+ * @brief Convert a floating value to int32_t, trapping on invalid input.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_to_i32_f64(double value) {
+    if (!isfinite(value) || value < (double)INT32_MIN || value > (double)INT32_MAX) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    return (int32_t)value;
+}
+
+/**
+ * @brief Convert a signed 64-bit value to uint32_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_to_u32_i64(int64_t value) {
+    if (value < 0 || value > (int64_t)UINT32_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (uint32_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 32-bit value to uint32_t.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_to_u32_u32(uint32_t value) { return value; }
+
+/**
+ * @brief Convert a floating value to uint32_t, trapping on invalid input.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_to_u32_f64(double value) {
+    if (!isfinite(value) || value < 0.0 || value > (double)UINT32_MAX) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    return (uint32_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 64-bit value to int32_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_to_i32_u64(uint64_t value) {
+    if (value > (uint64_t)INT32_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (int32_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 64-bit value to uint32_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint32_t zlang_to_u32_u64(uint64_t value) {
+    if (value > (uint64_t)UINT32_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (uint32_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 64-bit value to int64_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_to_i64_u64(uint64_t value) {
+    if (value > (uint64_t)INT64_MAX) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (int64_t)value;
+}
+
+/**
+ * @brief Convert a signed 64-bit value to uint64_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_to_u64_i64(int64_t value) {
+    if (value < 0) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return (uint64_t)value;
+}
+
+/**
+ * @brief Convert an unsigned 64-bit value to uint64_t.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_to_u64_u64(uint64_t value) { return value; }
+
+/**
+ * @brief Convert a floating value to uint64_t, trapping on invalid input.
+ */
+ZLANG_STATIC_INLINE uint64_t zlang_to_u64_f64(double value) {
+    if (!isfinite(value) || value < 0.0 || value >= 18446744073709551616.0) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    return (uint64_t)value;
+}
+
+/**
+ * @brief Convert a signed 64-bit value to int64_t, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_to_i64_i64(int64_t value) { return value; }
+
+/**
+ * @brief Convert a floating value to int64_t, trapping on invalid input.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_to_i64_f64(double value) {
+    if (!isfinite(value) || value < -9223372036854775808.0 || value >= 9223372036854775808.0) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    return (int64_t)value;
+}
+
+/**
  * @brief Concatenate string views into caller-owned storage.
  * @param storage Destination buffer with room for `capacity + 1` bytes.
  * @param capacity Maximum number of content bytes, excluding the terminator.
@@ -412,8 +731,29 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
     ++(*length);
 }
 
+#if defined(ZLANG_STD_RANDOM_GENERATE_INT32) || defined(ZLANG_STD_RANDOM_GENERATE_UINT32) ||       \
+    defined(ZLANG_STD_RANDOM_GENERATE_INT64) || defined(ZLANG_STD_RANDOM_GENERATE_UINT64) ||       \
+    defined(ZLANG_STD_RANDOM_GENERATE_FLOAT32) || defined(ZLANG_STD_RANDOM_GENERATE_FLOAT64)
+#include "zlang/standard/random/state.h"
+#endif
+
 #if defined(ZLANG_STD_RANDOM_GENERATE_INT32)
 #include "zlang/standard/random/generate_int32.h"
+#endif
+#if defined(ZLANG_STD_RANDOM_GENERATE_UINT32)
+#include "zlang/standard/random/generate_uint32.h"
+#endif
+#if defined(ZLANG_STD_RANDOM_GENERATE_INT64)
+#include "zlang/standard/random/generate_int64.h"
+#endif
+#if defined(ZLANG_STD_RANDOM_GENERATE_UINT64)
+#include "zlang/standard/random/generate_uint64.h"
+#endif
+#if defined(ZLANG_STD_RANDOM_GENERATE_FLOAT32)
+#include "zlang/standard/random/generate_float32.h"
+#endif
+#if defined(ZLANG_STD_RANDOM_GENERATE_FLOAT64)
+#include "zlang/standard/random/generate_float64.h"
 #endif
 
 #if defined(ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT) ||                                           \

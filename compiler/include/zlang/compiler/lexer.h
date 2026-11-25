@@ -16,6 +16,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_end_of_file_,
     zlang_token_identifier_,
     zlang_token_integer_literal_,
+    zlang_token_float_literal_,
     zlang_token_string_literal_,
     zlang_token_boolean_,
     zlang_token_clone_,
@@ -31,6 +32,10 @@ typedef enum zlang_token_kind_t {
     zlang_token_if_,
     zlang_token_in_,
     zlang_token_integer_,
+    zlang_token_int64_,
+    zlang_token_uint64_,
+    zlang_token_float_,
+    zlang_token_double_,
     zlang_token_print_,
     zlang_token_record_,
     zlang_token_reference_,
@@ -77,16 +82,22 @@ typedef enum zlang_token_kind_t {
     zlang_token_percent_equal_
 } zlang_token_kind_t;
 
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 typedef struct zlang_token_t {
-    zlang_token_kind_t kind_;
     const char *text_;
+    uint64_t integer64_value_;
+    double float_value_;
+    size_t offset_;
+    zlang_token_kind_t kind_;
     uint32_t length_;
     uint32_t value_length_;
     int32_t integer_value_;
-    bool is_unsigned_;
-    size_t offset_;
     uint32_t line_;
     uint32_t column_;
+    bool is_unsigned_;
+    bool is_int64_;
+    bool is_uint64_;
+    bool is_float_;
 } zlang_token_t;
 
 typedef struct zlang_lexer_t {

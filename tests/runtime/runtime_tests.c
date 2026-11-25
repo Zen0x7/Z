@@ -98,6 +98,36 @@ static void arithmetic_helpers_compute(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_mod_u32(13U, 4U) == 1U);
 }
 
+static void numeric_helpers_compute(zlang_test_context_t *const context) {
+    ZLANG_CHECK(context, zlang_add_i64(9000000000LL, 1LL) == 9000000001LL);
+    ZLANG_CHECK(context, zlang_add_u64(10ULL, 20ULL) == 30ULL);
+    ZLANG_CHECK(context, zlang_sub_i64(10LL, 3LL) == 7LL);
+    ZLANG_CHECK(context, zlang_sub_u64(10ULL, 3ULL) == 7ULL);
+    ZLANG_CHECK(context, zlang_mul_i64(-3LL, 4LL) == -12LL);
+    ZLANG_CHECK(context, zlang_mul_u64(3ULL, 4ULL) == 12ULL);
+    ZLANG_CHECK(context, zlang_div_i64(-12LL, 4LL) == -3LL);
+    ZLANG_CHECK(context, zlang_div_u64(12ULL, 4ULL) == 3ULL);
+    ZLANG_CHECK(context, zlang_mod_i64(-13LL, 4LL) == -1LL);
+    ZLANG_CHECK(context, zlang_mod_u64(13ULL, 4ULL) == 1ULL);
+}
+
+static void numeric_conversions_compute(zlang_test_context_t *const context) {
+    ZLANG_CHECK(context, zlang_to_i32_i64(7LL) == 7);
+    ZLANG_CHECK(context, zlang_to_i32_u32(7U) == 7);
+    ZLANG_CHECK(context, zlang_to_i32_f64(3.75) == 3);
+    ZLANG_CHECK(context, zlang_to_u32_i64(7LL) == 7U);
+    ZLANG_CHECK(context, zlang_to_u32_u32(7U) == 7U);
+    ZLANG_CHECK(context, zlang_to_u32_f64(3.75) == 3U);
+    ZLANG_CHECK(context, zlang_to_i32_u64(7ULL) == 7);
+    ZLANG_CHECK(context, zlang_to_u32_u64(7ULL) == 7U);
+    ZLANG_CHECK(context, zlang_to_i64_i64(7LL) == 7LL);
+    ZLANG_CHECK(context, zlang_to_i64_u64(7ULL) == 7LL);
+    ZLANG_CHECK(context, zlang_to_i64_f64(3.75) == 3LL);
+    ZLANG_CHECK(context, zlang_to_u64_i64(7LL) == 7ULL);
+    ZLANG_CHECK(context, zlang_to_u64_u64(7ULL) == 7ULL);
+    ZLANG_CHECK(context, zlang_to_u64_f64(3.75) == 3ULL);
+}
+
 static void checked_index_reads_return_values(zlang_test_context_t *const context) {
     const int32_t _signed_k[] = {7, 9};
     const uint32_t _unsigned_k[] = {3U, 4U};

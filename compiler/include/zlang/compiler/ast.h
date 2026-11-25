@@ -17,9 +17,11 @@
 #define ZLANG_NO_STATEMENT ((size_t) - 1)
 #define ZLANG_CALL_ARGUMENT_CAPACITY 32U
 #define ZLANG_ARRAY_MAX_RANK 4U
+#define ZLANG_MAX_INFERRED_SHAPES 16U
 
 typedef enum zlang_expression_kind_t {
     zlang_expression_integer_literal_,
+    zlang_expression_float_literal_,
     zlang_expression_boolean_literal_,
     zlang_expression_string_literal_,
     zlang_expression_identifier_,
@@ -53,7 +55,8 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_enum_item_,
     zlang_expression_field_,
     zlang_expression_field_assignment_,
-    zlang_expression_direct_index_assignment_
+    zlang_expression_direct_index_assignment_,
+    zlang_expression_conversion_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -71,11 +74,16 @@ typedef struct zlang_ast_expression_t {
     zlang_ast_string_value_t string_;
     zlang_expression_kind_t kind_;
     int32_t integer_value_;
+    uint64_t integer64_value_;
+    double float_value_;
     zlang_expression_kind_t operator_;
     uint32_t line_;
     uint32_t column_;
     bool bool_value_;
     bool is_unsigned_;
+    bool is_int64_;
+    bool is_uint64_;
+    bool is_float_;
     bool is_string_;
 } zlang_ast_expression_t;
 
@@ -148,6 +156,14 @@ typedef struct zlang_ast_statement_t {
     uint32_t column_;
 } zlang_ast_statement_t;
 
+typedef struct zlang_inferred_shape_t {
+    size_t function_statement_;
+    const char *type_name_;
+    uint32_t rank_;
+    uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t capacity_;
+} zlang_inferred_shape_t;
+
 typedef struct zlang_comment_t {
     const char *text_;
     uint32_t length_;
@@ -166,6 +182,8 @@ typedef struct zlang_program_t {
     size_t parameter_count_;
     const zlang_comment_t *comments_;
     size_t comment_count_;
+    zlang_inferred_shape_t inferred_shapes_[ZLANG_MAX_INFERRED_SHAPES];
+    size_t inferred_shape_count_;
 } zlang_program_t;
 
 #endif /* ZLANG_COMPILER_AST_H */

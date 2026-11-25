@@ -730,7 +730,7 @@ explicit `main` entry point.
 
 ## 0.22 — Design note
 
-Status: Proposed.
+Status: Locked.
 
 Zlang 0.22 completes the numeric primitive set and resolves the deferred runtime-state and
 inferred-array questions. It also removes backward compatibility from standard imports: the only
@@ -752,9 +752,11 @@ The scalar set gains four primitives:
 | `double` | IEEE-754 binary64 | `double` |
 
 `boolean` and `string` keep their 0.21 definitions. `arguments` remains an opaque entry-point
-handle. There is no implicit conversion between any two numeric types. Every widening, narrowing
-or reinterpretation requires an explicit conversion expression. The conversion syntax is the
-remaining open decision for this design note and must be fixed in `SPEC.md` before implementation.
+handle. There is no implicit conversion between any two numeric types. Every widening or narrowing
+uses an explicit conversion call named for the target type: `to_integer`, `to_unsigned`, `to_int64`,
+`to_uint64`, `to_float` and `to_double`. There is no `reinterpret` or other bit-level conversion form
+in 0.22. Conversion to an integer type traps on an out-of-range value; conversion from a
+floating-point value truncates toward zero and traps on non-finite input.
 
 Integer literals keep the decimal spelling and the `u` suffix. Literals for 64-bit integers use
 the `i64` and `u64` suffixes. Floating-point literals are decimal with either a decimal point or
@@ -804,3 +806,27 @@ unique shape, or when the function body is invalid for one of its inferred shape
 - `from "random"` is rejected and every current fixture uses `@std/random`;
 - at least one golden example demonstrates a multi-module project;
 - the full CI matrix, sanitizers, coverage, fuzzers, docs and package checks stay green.
+
+## 0.22 — Completion
+
+Zlang 0.22 is implemented at language level 0.22. The numeric set contains `integer`, `unsigned`,
+`int64`, `uint64`, `float`, `double`, `boolean`, `string` and the opaque `arguments` handle. Integer
+literals accept `u`, `i64` and `u64` suffixes; floating literals accept a decimal point or exponent
+and the `f` suffix. There is no implicit numeric conversion. Conversion calls are named for their
+target type and trap on out-of-range or non-finite input where required. Integer arithmetic remains
+checked at the emitted C level; floating arithmetic follows IEEE-754, so division by zero produces
+an infinity or NaN and does not trap.
+
+`@std/random` now exposes six deterministic generators: `generate_int32`, `generate_uint32`,
+`generate_int64`, `generate_uint64`, `generate_float32` and `generate_float64`. Every generator uses
+the same PRNG state, embedded in one internal `zlang_runtime_context_t`. The emitter passes that
+context only to generated C functions that need it; no `context` type or keyword is visible in Zlang
+source. Full-range 64-bit ranges are handled without overflow.
+
+Inferred array functions are monomorphized by concrete element type, rank and extents. The emitter
+registers one C function per shape, gives each one a canonical shape-derived name, and selects the
+right specialization at each call site. A call whose shape cannot be proved is still rejected with
+`ZLANG3001`.
+
+The legacy `from "random"` spelling was removed in the previous change. All current sources use
+`@std/random`, and the golden example suite includes a real multi-module project.

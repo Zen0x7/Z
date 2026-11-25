@@ -20,6 +20,10 @@ typedef struct zlang_point_t {
 static const char _zlang_literal_0_data[] = "\n";
 static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
+/* generated function prototypes */
+
+int32_t _u_one(void);
+
 // Function comment.
 int32_t _u_one(void) {
     // Body comment.

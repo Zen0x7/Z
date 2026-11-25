@@ -18,6 +18,11 @@ typedef struct zlang_point_t {
 static const char _zlang_literal_0_data[] = "\n";
 static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
+/* generated function prototypes */
+
+zlang_point_t _u_make(void);
+void _u_shift(zlang_point_t *, int32_t);
+
 zlang_point_t _u_make(void) {
     zlang_point_t _result = { ZLANG_ZERO };
     _result.x_ = 1;

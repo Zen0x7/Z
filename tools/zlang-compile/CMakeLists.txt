@@ -14,6 +14,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/comments.zlang ${CMAKE_CURRENT_BINARY_DIR}/comments.zlang COPYONLY)
     configure_file(tests/user_types.zlang ${CMAKE_CURRENT_BINARY_DIR}/user_types.zlang COPYONLY)
     configure_file(tests/multidimensional.zlang ${CMAKE_CURRENT_BINARY_DIR}/multidimensional.zlang COPYONLY)
+    configure_file(tests/forward_calls.zlang ${CMAKE_CURRENT_BINARY_DIR}/forward_calls.zlang COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zlang_compile> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.zlang --emit-c)
@@ -79,11 +80,24 @@ if(ZLANG_BUILD_TESTS)
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_multidimensional PROPERTIES LABELS module:cli)
 
+    add_test(NAME zlang.cli.compiles_forward_calls
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zlang_compile>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/forward_calls.zlang
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DC_COMPILER_FRONTEND=${CMAKE_C_COMPILER_FRONTEND_VARIANT}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
+    set_tests_properties(zlang.cli.compiles_forward_calls PROPERTIES LABELS module:cli)
+
     if(ZLANG_SANITIZER_ENV)
         set_tests_properties(zlang.cli.emit_c zlang.cli.emit_c.output zlang.cli.diagnostic_format
                              zlang.cli.disable_comments zlang.cli.disable_comments.output
                              zlang.cli.compiles_generated_c zlang.cli.compiles_user_types
                              zlang.cli.compiles_multidimensional
+                             zlang.cli.compiles_forward_calls
                              PROPERTIES ENVIRONMENT "${ZLANG_SANITIZER_ENV}")
     endif()
 endif()

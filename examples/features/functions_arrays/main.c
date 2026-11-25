@@ -16,18 +16,12 @@ static inline uint32_t _zlang_array_offset_2(uint32_t extent_0, uint32_t extent_
     return extent_1 * index_0 + index_1;
 }
 
-static inline int32_t _zlang_array_get_2_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
-    return data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)];
-}
-
 static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1, int32_t value_) {
     data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
 }
 
-static void _zlang_array_helpers_keep(void) {
-    (void)_zlang_array_offset_2;
-    (void)_zlang_array_get_2_i32;
-    (void)_zlang_array_set_2_i32;
+static inline int32_t _zlang_array_get_2_i32(const int32_t *data_, uint32_t extent_0, uint32_t extent_1, uint32_t index_0, uint32_t index_1) {
+    return data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)];
 }
 
 /* generated capacities */
@@ -55,6 +49,10 @@ typedef struct zlang_array_i32_2_3_t {
 static const char _zlang_literal_0_data[] = "\n";
 static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
+/* generated function prototypes */
+
+zlang_array_i32_2_3_t _u_stamp_2_3_i32(zlang_array_i32_2_3_t);
+
 zlang_array_i32_2_3_t _u_stamp_2_3_i32(zlang_array_i32_2_3_t source) {
     zlang_array_i32_2_3_t _result = { { 0, 0, 0, 0, 0, 0 } };
 
@@ -64,7 +62,6 @@ zlang_array_i32_2_3_t _u_stamp_2_3_i32(zlang_array_i32_2_3_t source) {
 }
 
 int main(void) {
-    _zlang_array_helpers_keep();
     zlang_array_i32_2_3_t _grid = { { 0, 0, 0, 0, 0, 0 } };
 
     _zlang_array_set_2_i32(_grid.data_, 2, 3, 0, 1, 5);

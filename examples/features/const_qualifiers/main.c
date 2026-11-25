@@ -21,6 +21,11 @@ static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LI
 static const char _zlang_literal_1_data[] = "\n";
 static const zlang_string_t _zlang_literal_1 = { _zlang_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
+/* generated function prototypes */
+
+int32_t _u_read(const zlang_point_t *);
+int32_t _u_copy_value(const int32_t);
+
 int32_t _u_read(const zlang_point_t *point) {
     return point->x_;
 }

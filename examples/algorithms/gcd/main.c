@@ -13,6 +13,10 @@
 static const char _zlang_literal_0_data[] = "\n";
 static const zlang_string_t _zlang_literal_0 = { _zlang_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
+/* generated function prototypes */
+
+int32_t _u_gcd(int32_t, int32_t);
+
 int32_t _u_gcd(int32_t left, int32_t right) {
     while (right != 0) {
         int32_t _remainder = zlang_mod_i32(left, right);

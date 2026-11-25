@@ -1,3 +1,5 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -17,8 +19,8 @@ static const char zlang_gen_literal_1_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
 int main(void) {
-    zlang_print(zlang_gen_literal_0);
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 const integer base = 2;
 array[] integer values = {1, 2, 3};
 array[5] integer fixed = {4, 5};
@@ -9,11 +10,11 @@ boolean a = true;
 boolean b = false;
 boolean ok = !(a && b) || a;
 if (ok) {
-    print("yes");
+    write("yes");
 } else if (b) {
-    print("no");
+    write("no");
 } else {
-    print("maybe");
+    write("maybe");
 }
 foreach (item in values) {
     if (item == 2) {
@@ -22,7 +23,7 @@ foreach (item in values) {
     if (item == 3) {
         break;
     }
-    print("kept");
+    write("kept");
 }
 while (a) {
     break;
@@ -32,18 +33,18 @@ function add(clone integer left, clone integer right) : integer { return left + 
 integer total = add(1, base);
 for (unsigned outer = 0U; outer < 2U; outer += 1U) {
     for (unsigned inner = 0U; inner < 2U; inner += 1U) {
-        print(outer);
-        print(inner);
+        write(outer);
+        write(inner);
     }
 }
 foreach (row, item in values) {
     foreach (column, other in values) {
-        print(row);
-        print(column);
-        print(item);
-        print(other);
+        write(row);
+        write(column);
+        write(item);
+        write(other);
     }
 }
 string[8] text = "abc";
 unsigned first = text[0];
-print(first);
+write(first);

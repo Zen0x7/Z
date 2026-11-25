@@ -1,14 +1,15 @@
+import { write } from "@std/io";
 string folded = "z" + "lang";
 string[32] bounded = folded + " tour";
 unsigned first = bounded[0];
 string[8] letter = "abc";
 letter = "z";
 
-print(folded);
-print(" ");
-print(bounded);
-print(" ");
-print(first);
-print(" ");
-print(letter);
-print("\n");
+write(folded);
+write(" ");
+write(bounded);
+write(" ");
+write(first);
+write(" ");
+write(letter);
+write("\n");

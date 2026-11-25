@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -33,12 +37,12 @@ int main(void) {
     app_local_point.x_ = 3;
     app_local_point.y_ = 4;
     app_enum_color_t app_local_color = ZLANG_COLOR_BLUE;
-    zlang_print_i32(app_local_point.x_);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_point.y_);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_u32(app_local_color);
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(app_local_point.x_);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_point.y_);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32((int32_t)app_local_color);
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

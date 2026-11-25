@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -33,8 +37,8 @@ int main(void) {
         app_local_total = zlang_add_i32(app_local_total, zlang_mul_i32(app_local_value, app_local_value));
     }
 
-    zlang_print_i32(app_local_total);
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_total);
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

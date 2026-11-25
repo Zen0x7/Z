@@ -1,8 +1,9 @@
+import { write } from "@std/io";
 integer factorial = 1;
 
 for (integer factor = 2; factor <= 6; factor += 1) {
     factorial *= factor;
 }
 
-print(factorial);
-print("\n");
+write(factorial);
+write("\n");

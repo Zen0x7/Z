@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -21,14 +25,14 @@ int main(void) {
 
     {
         int32_t app_local_inner = 2;
-        zlang_print_i32(app_local_outer);
-        zlang_print(zlang_gen_literal_0);
-        zlang_print_i32(app_local_inner);
-        zlang_print(zlang_gen_literal_1);
+        zlang_std_io_write_i32(app_local_outer);
+        zlang_std_io_write_string(zlang_gen_literal_0);
+        zlang_std_io_write_i32(app_local_inner);
+        zlang_std_io_write_string(zlang_gen_literal_1);
     }
 
-    zlang_print_i32(app_local_outer);
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(app_local_outer);
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

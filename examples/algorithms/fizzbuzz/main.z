@@ -1,12 +1,13 @@
+import { write } from "@std/io";
 for (integer value = 1; value <= 15; value += 1) {
     if (value % 15 == 0) {
-        print("fizzbuzz");
+        write("fizzbuzz");
     } else if (value % 3 == 0) {
-        print("fizz");
+        write("fizz");
     } else if (value % 5 == 0) {
-        print("buzz");
+        write("buzz");
     } else {
-        print(value);
+        write(value);
     }
-    print("\n");
+    write("\n");
 }

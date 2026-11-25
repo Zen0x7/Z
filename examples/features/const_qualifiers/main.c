@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -37,10 +41,10 @@ int32_t app_fn_copy_value(const int32_t app_param_value) {
 int main(void) {
     app_record_point_t app_local_point = { ZLANG_ZERO };
     app_local_point.x_ = 6;
-    zlang_print_i32(app_fn_read(&app_local_point));
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_fn_copy_value(app_local_point.x_));
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(app_fn_read(&app_local_point));
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_fn_copy_value(app_local_point.x_));
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

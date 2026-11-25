@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 // File-level traceability comment.
 record Point {
     // Field comment.
@@ -10,5 +11,5 @@ function one(): integer {
     return 1;
 }
 
-print(one());
-print("\n");
+write(one());
+write("\n");

@@ -25,8 +25,8 @@ ctest --test-dir build --output-on-failure -j
 Create `hello.z`:
 
 ```zlang
-print("Hello from Zlang");
-print("\n");
+write("Hello from Zlang");
+write("\n");
 ```
 
 Then compile and run it:

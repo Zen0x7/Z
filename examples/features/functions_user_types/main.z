@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 record Point {
     integer x;
 }
@@ -15,5 +16,5 @@ function shift(reference Point point, clone integer amount) {
 Point point = make();
 shift(point, 4);
 
-print(point.x);
-print("\n");
+write(point.x);
+write("\n");

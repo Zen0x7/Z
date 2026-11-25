@@ -1,3 +1,9 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
+#define ZLANG_STD_IO_WRITE_U32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -32,22 +38,22 @@ int main(void) {
     app_local_left = zlang_mul_i32(app_local_left, app_local_right);
     app_local_left = zlang_div_i32(app_local_left, app_local_right);
     app_local_left = zlang_mod_i32(app_local_left, app_local_right);
-    zlang_print_i32(app_local_sum);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_difference);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_product);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_quotient);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_remainder);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_u32(app_local_grown);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_negative);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_local_left);
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(app_local_sum);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_difference);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_product);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_quotient);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_remainder);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_u32(app_local_grown);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_negative);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_left);
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

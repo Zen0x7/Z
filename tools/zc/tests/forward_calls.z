@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 function first(): integer {
     return second();
 }
@@ -6,5 +7,5 @@ function second(): integer {
     return 7;
 }
 
-print(first());
-print("\n");
+write(first());
+write("\n");

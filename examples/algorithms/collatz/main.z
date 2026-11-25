@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 integer value = 27;
 integer steps = 0;
 
@@ -10,5 +11,5 @@ while (value != 1) {
     steps += 1;
 }
 
-print(steps);
-print("\n");
+write(steps);
+write("\n");

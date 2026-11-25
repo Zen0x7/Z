@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 array[30] boolean prime;
 
 for (integer index = 0; index < 30; index += 1) {
@@ -16,8 +17,8 @@ for (integer candidate = 2; candidate < 30; candidate += 1) {
 
 for (integer index = 0; index < 30; index += 1) {
     if (prime[index]) {
-        print(index);
-        print(" ");
+        write(index);
+        write(" ");
     }
 }
-print("\n");
+write("\n");

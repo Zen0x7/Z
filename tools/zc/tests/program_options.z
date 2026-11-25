@@ -1,15 +1,16 @@
+import { write } from "@std/io";
 import { argument_count, argument_at, has_option, option_value, has_flag } from "@std/program_options";
 
 function main(integer argc, arguments argv): integer {
-    print(argument_count(argv));
-    print(" ");
-    print(argument_at(argv, 1U));
-    print(" ");
-    print(has_option(argv, "--name"));
-    print(" ");
-    print(option_value(argv, "--name"));
-    print(" ");
-    print(has_flag(argv, "--verbose"));
-    print("\n");
+    write(argument_count(argv));
+    write(" ");
+    write(argument_at(argv, 1U));
+    write(" ");
+    write(has_option(argv, "--name"));
+    write(" ");
+    write(option_value(argv, "--name"));
+    write(" ");
+    write(has_flag(argv, "--verbose"));
+    write("\n");
     return 0;
 }

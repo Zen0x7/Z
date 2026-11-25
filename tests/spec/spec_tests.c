@@ -29,6 +29,7 @@ typedef struct zlang_spec_session_t {
     zlang_memory_plan_t plan_;
     zlang_parser_t parser_;
     zlang_parse_result_t result_;
+    char source_[8192];
     char scratch_[2048];
     char output_[8192];
     zlang_emitter_t emitter_;
@@ -91,6 +92,19 @@ static void zlang_spec_expect_warning(zlang_test_context_t *context,
 
 static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *source) {
     session->output_[0] = '\0';
+    const size_t _source_length_k = strlen(source);
+    const bool _has_write_k = strstr(source, "write(") != NULL;
+    const bool _has_import_k = strstr(source, "from \"@std/io\"") != NULL;
+    if (_has_write_k && !_has_import_k) {
+        const char _import_k[] = "\nimport { write } from \"@std/io\";";
+        const size_t _import_length_k = sizeof(_import_k) - 1U;
+        if (_source_length_k + _import_length_k >= sizeof(session->source_)) {
+            return false;
+        }
+        memcpy(session->source_, source, _source_length_k);
+        memcpy(session->source_ + _source_length_k, _import_k, _import_length_k + 1U);
+        source = session->source_;
+    }
     zlang_diagnostics_init(&session->diagnostics_, session->diagnostic_items_,
                            sizeof(session->diagnostic_items_) /
                                sizeof(session->diagnostic_items_[0]));
@@ -148,7 +162,7 @@ static void emits_a_scalar_declaration(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
 }
 
-static void emits_a_print_call(zlang_test_context_t *const context) {
+static void emits_a_write_call(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_PRINT_SOURCE));
@@ -193,7 +207,7 @@ static void reports_lexer_diagnostics_and_emits_while(zlang_test_context_t *cons
 static void preserves_comments_and_unescapes_strings(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "// first line\ninteger var = 10; /* block */\nprint(\"say \\\"hi\\\"\");";
+        "// first line\ninteger var = 10; /* block */\nwrite(\"say \\\"hi\\\"\");";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
@@ -201,7 +215,8 @@ static void preserves_comments_and_unescapes_strings(zlang_test_context_t *const
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_gen_literal_0") != NULL);
     ZLANG_CHECK(context,
                 strstr(_session.output_, "    // first line\n    int32_t app_local_var") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "    /* block */\n    zlang_print") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "    /* block */\n    zlang_std_io_write") != NULL);
 }
 
 static void attaches_comments_to_source_constructs(zlang_test_context_t *const context) {
@@ -382,11 +397,11 @@ static void reuses_index_values_across_if_branches(zlang_test_context_t *const c
     zlang_spec_session_t _session;
     const char *const _source_k = "array[4] integer values = {1, 2, 3};\n"
                                   "if (values[0] > 3) {\n"
-                                  "    print(\"big\");\n"
+                                  "    write(\"big\");\n"
                                   "} else if (values[0] == 3) {\n"
-                                  "    print(values[0]);\n"
+                                  "    write(values[0]);\n"
                                   "} else {\n"
-                                  "    print(\"small\");\n"
+                                  "    write(\"small\");\n"
                                   "}";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -395,7 +410,8 @@ static void reuses_index_values_across_if_branches(zlang_test_context_t *const c
     ZLANG_CHECK(context,
                 zlang_spec_count_occurrences(_session.output_, "zlang_array_get_i32") == 1U);
     ZLANG_CHECK(context, strstr(_session.output_, "} else if (zlang_gen_value_") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(zlang_gen_value_") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_std_io_write_i32(zlang_gen_value_") != NULL);
 }
 
 static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const context) {
@@ -724,7 +740,7 @@ static void reports_syntax_diagnostics_with_source_locations(zlang_test_context_
     ZLANG_CHECK(context, !zlang_spec_transpile(&_unexpected, "integer var 10;"));
     zlang_spec_expect_diagnostic(context, &_unexpected, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, 1U, 13U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_unterminated, "print(\"oops);"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_unterminated, "write(\"oops);"));
     zlang_spec_expect_diagnostic(context, &_unterminated, ZLANG_DIAGNOSTIC_UNTERMINATED_STRING, 1U,
                                  7U);
 
@@ -833,7 +849,8 @@ static void renames_sibling_scope_declarations(zlang_test_context_t *const conte
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SIBLING_SCOPES_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SIBLING_SCOPES_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_i32(app_local_item_0)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_std_io_write_i32(app_local_item_0)") != NULL);
 }
 
 static void rejects_a_shadowed_declaration(zlang_test_context_t *const context) {
@@ -1002,7 +1019,7 @@ static void emits_length_builtin(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LENGTH_EXPECTED) != NULL);
 }
 
-static void emits_scalar_print(zlang_test_context_t *const context) {
+static void emits_scalar_write(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_SCALAR_PRINT_SOURCE));
@@ -1050,7 +1067,8 @@ static void emits_indexed_foreach(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_INDEXED_FOREACH_SOURCE));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_INDEXED_FOREACH_EXPECTED) != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_u32(app_local_index)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_std_io_write_u32(app_local_index)") != NULL);
 }
 
 static void emits_const_declarations(zlang_test_context_t *const context) {
@@ -1137,6 +1155,14 @@ static void emits_function_prototypes(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "/* generated function prototypes */") != NULL);
 }
 
+static void rejects_print_keyword(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "print(\"x\");"));
+    ZLANG_CHECK(context, zlang_spec_find_diagnostic(&_session,
+                                                    ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER) != NULL);
+}
+
 static void rejects_mixed_numeric_addition(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
@@ -1213,10 +1239,10 @@ static void emits_wide_and_floating_primitives(zlang_test_context_t *const conte
                                   "uint64 wide = 18000000000000000000u64;\n"
                                   "float ratio = 1.5f * 2f;\n"
                                   "double exact = 2.5 + 1.25;\n"
-                                  "print(big);\n"
-                                  "print(wide);\n"
-                                  "print(ratio);\n"
-                                  "print(exact);";
+                                  "write(big);\n"
+                                  "write(wide);\n"
+                                  "write(ratio);\n"
+                                  "write(exact);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "int64_t app_local_big") != NULL);
@@ -1225,8 +1251,10 @@ static void emits_wide_and_floating_primitives(zlang_test_context_t *const conte
     ZLANG_CHECK(context, strstr(_session.output_, "double app_local_exact") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_add_i64(9000000000LL, 1LL)") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "(1.5f * 2.0f)") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_f32(app_local_ratio)") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "zlang_print_f64(app_local_exact)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_std_io_write_f32(app_local_ratio)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_std_io_write_f64(app_local_exact)") != NULL);
 }
 
 static void emits_explicit_numeric_conversions(zlang_test_context_t *const context) {

@@ -311,27 +311,6 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].column_ = _token_k->column_;
         break;
     }
-    case zlang_token_print_: {
-        zlang_parser_advance(parser);
-        if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after print")) {
-            return false;
-        }
-        size_t _argument_k = ZLANG_NO_EXPRESSION;
-        if (!zlang_parse_expression(parser, &_argument_k)) {
-            return false;
-        }
-        if (!zlang_parser_expect(parser, zlang_token_right_paren_,
-                                 "expected ')' after print argument")) {
-            return false;
-        }
-        _expression_k = zlang_parser_add_expression(parser);
-        if (_expression_k == ZLANG_NO_EXPRESSION) {
-            return false;
-        }
-        parser->expressions_[_expression_k].kind_ = zlang_expression_print_call_;
-        parser->expressions_[_expression_k].left_ = _argument_k;
-        break;
-    }
     case zlang_token_identifier_: {
         if (parser->position_ + 1U < parser->token_count_ &&
             parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&

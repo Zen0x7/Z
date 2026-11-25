@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -37,8 +41,8 @@ void app_fn_shift(app_record_point_t *app_param_point, int32_t app_param_amount)
 int main(void) {
     app_record_point_t app_local_point = app_fn_make();
     app_fn_shift(&app_local_point, 4);
-    zlang_print_i32(app_local_point.x_);
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_point.x_);
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

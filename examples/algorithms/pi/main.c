@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -33,10 +37,10 @@ int main(void) {
         app_local_add_term = (!app_local_add_term);
     }
 
-    zlang_print_i32(zlang_div_i32(app_local_total, app_local_scale));
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(zlang_mod_i32(app_local_total, app_local_scale));
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(zlang_div_i32(app_local_total, app_local_scale));
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(zlang_mod_i32(app_local_total, app_local_scale));
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

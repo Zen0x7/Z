@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -28,8 +32,8 @@ int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right) {
 }
 
 int main(void) {
-    zlang_print_i32(app_fn_gcd(1071, 462));
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_fn_gcd(1071, 462));
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

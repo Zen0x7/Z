@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -57,12 +61,12 @@ int main(void) {
 
     for (int32_t app_local_index = 0; (app_local_index < 30); app_local_index = zlang_add_i32(app_local_index, 1)) {
         if (zlang_array_get_bool(app_local_prime.data_, (uint32_t)app_local_index, 30)) {
-            zlang_print_i32(app_local_index);
-            zlang_print(zlang_gen_literal_0);
+            zlang_std_io_write_i32(app_local_index);
+            zlang_std_io_write_string(zlang_gen_literal_0);
         }
     }
 
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 array[5] integer values = {1, 2, 3, 4, 5};
 integer total = 0;
 
@@ -5,5 +6,5 @@ foreach (value in values) {
     total += value * value;
 }
 
-print(total);
-print("\n");
+write(total);
+write("\n");

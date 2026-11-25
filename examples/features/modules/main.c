@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -24,8 +28,8 @@ int32_t app_fn_m_lib_math_z_add(int32_t app_param_value) {
 }
 
 int32_t app_fn_main(void) {
-    zlang_print_i32(app_fn_m_lib_math_z_add(app_local_m_lib_config_z_base));
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_fn_m_lib_math_z_add(app_local_m_lib_config_z_base));
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return 0;
 }

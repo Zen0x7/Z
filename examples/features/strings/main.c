@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_U32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -40,14 +44,14 @@ int main(void) {
     char zlang_gen_letter_storage_7[ZLANG_LETTER_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
     zlang_string_t app_local_letter = zlang_string_concat(zlang_gen_letter_storage_7, ZLANG_LETTER_CAPACITY, (zlang_string_t[]){ zlang_gen_literal_2 }, ZLANG_ONE);
     app_local_letter = zlang_gen_literal_3;
-    zlang_print(app_local_folded);
-    zlang_print(zlang_gen_literal_4);
-    zlang_print(app_local_bounded);
-    zlang_print(zlang_gen_literal_4);
-    zlang_print_u32(app_local_first);
-    zlang_print(zlang_gen_literal_4);
-    zlang_print(app_local_letter);
-    zlang_print(zlang_gen_literal_5);
+    zlang_std_io_write_string(app_local_folded);
+    zlang_std_io_write_string(zlang_gen_literal_4);
+    zlang_std_io_write_string(app_local_bounded);
+    zlang_std_io_write_string(zlang_gen_literal_4);
+    zlang_std_io_write_u32(app_local_first);
+    zlang_std_io_write_string(zlang_gen_literal_4);
+    zlang_std_io_write_string(app_local_letter);
+    zlang_std_io_write_string(zlang_gen_literal_5);
 
     return ZLANG_ZERO;
 }

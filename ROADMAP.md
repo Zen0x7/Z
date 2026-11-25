@@ -886,3 +886,39 @@ is no `@std/text` domain. All three functions operate on bounded non-owning stri
 The golden suite includes the arithmetic golden regenerated for checked unary negation. New spec,
 runtime and standard-library modules cover numeric discipline, string equality, string ordering
 rejection, checked negation and the new standard APIs.
+
+## 0.24 — Design note
+
+Status: Locked.
+
+Zlang 0.24 moves output out of the language core. `print` is no longer a keyword; it is rejected as
+an undeclared identifier. The only source-level output function is `write`, imported from
+`@std/io`. There is no compatibility spelling.
+
+`@std/io.write` is overloaded by argument type across `string`, `boolean`, `integer`, `unsigned`,
+`int64`, `uint64`, `float` and `double`. Each overload has one activation macro and one generated C
+symbol. The wrappers call the existing bounded runtime print primitives, so generated programs keep
+zero dynamic allocation. Enum values use explicit `to_integer(...)` before `write`.
+
+`@std/streams` remains reserved for future explicit stream handles. `read` is not introduced in this
+release because input source, EOF, bounded destination storage and trap semantics need a separate
+contract.
+
+## 0.24 — Completion
+
+Zlang 0.24 is implemented at language level 0.24. The `print` keyword and its AST node were
+removed. Output is now a standard import:
+
+```zlang
+import { write } from "@std/io";
+
+write("hello");
+```
+
+`@std/io.write` is resolved by argument type and emits one of eight bounded wrapper calls. Runtime
+primitives remain available to generated C, but source programs cannot write without importing the
+domain. Enum values are written through explicit `to_integer(...)`. No compatibility path for
+`print` exists.
+
+The golden example suite, CLI fixtures, standard-library tests, spec matrix and documentation were
+migrated to `write`. `read` is deliberately deferred until its input contract is specified.

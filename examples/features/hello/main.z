@@ -1,2 +1,3 @@
-print("Hello from Zlang");
-print("\n");
+import { write } from "@std/io";
+write("Hello from Zlang");
+write("\n");

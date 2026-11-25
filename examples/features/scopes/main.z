@@ -1,12 +1,13 @@
+import { write } from "@std/io";
 integer outer = 1;
 
 {
     integer inner = 2;
-    print(outer);
-    print(" ");
-    print(inner);
-    print("\n");
+    write(outer);
+    write(" ");
+    write(inner);
+    write("\n");
 }
 
-print(outer);
-print("\n");
+write(outer);
+write("\n");

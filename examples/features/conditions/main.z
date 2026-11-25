@@ -1,20 +1,21 @@
+import { write } from "@std/io";
 integer value = 2;
 boolean ready = true;
 
 if (value == 1) {
-    print("one");
+    write("one");
 } else if (value == 2) {
-    print("two");
+    write("two");
 } else {
-    print("other");
+    write("other");
 }
 
-print(" ");
-print(ready && value == 2);
-print(" ");
-print(!ready || value == 2);
-print(" ");
-print(value < 3 && value >= 2);
-print(" ");
-print(value != 2 || !(value > 10));
-print("\n");
+write(" ");
+write(ready && value == 2);
+write(" ");
+write(!ready || value == 2);
+write(" ");
+write(value < 3 && value >= 2);
+write(" ");
+write(value != 2 || !(value > 10));
+write("\n");

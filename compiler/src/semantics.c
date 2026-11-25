@@ -342,7 +342,13 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_conversion_: {
         const char *const _source_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
-        if (!zlang_is_numeric_type(_source_k) || !zlang_is_numeric_type(_expression_k->name_)) {
+        const bool _enum_source_k = zlang_is_enum_type(context->program_, _source_k);
+        const bool _integer_target_k = zlang_type_matches("integer", _expression_k->name_) ||
+                                       zlang_type_matches("unsigned", _expression_k->name_) ||
+                                       zlang_type_matches("int64", _expression_k->name_) ||
+                                       zlang_type_matches("uint64", _expression_k->name_);
+        if ((!zlang_is_numeric_type(_source_k) && !(_enum_source_k && _integer_target_k)) ||
+            !zlang_is_numeric_type(_expression_k->name_)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "conversion requires a numeric operand and target");
             return NULL;
@@ -619,19 +625,6 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         zlang_mark_mutated(context, _symbol_k->name_);
         return _actual_k;
     }
-    case zlang_expression_print_call_: {
-        const char *const _actual_k =
-            zlang_analyze_expression(context, _expression_k->left_, statement);
-        const bool _printable_k =
-            zlang_type_matches("string", _actual_k) || zlang_type_matches("boolean", _actual_k) ||
-            zlang_is_numeric_type(_actual_k) || zlang_is_enum_type(context->program_, _actual_k);
-        if (!_printable_k) {
-            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
-                                          "print argument must be string or scalar");
-            return NULL;
-        }
-        return "void";
-    }
     case zlang_expression_append_call_: {
         const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
         if (_target_k == NULL || !_target_k->is_sequence_) {
@@ -785,6 +778,12 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                 const size_t _argument_index_k = _expression_k->argument_indices_[_argument];
                 _argument_types_k[_argument] =
                     zlang_analyze_expression(context, _argument_index_k, statement);
+                if (_argument_types_k[_argument] != NULL &&
+                    _argument_index_k < context->program_->expression_count_) {
+                    zlang_ast_expression_t *const _argument_expression_k =
+                        &context->program_->expressions_[_argument_index_k];
+                    _argument_expression_k->resolved_type_name_ = _argument_types_k[_argument];
+                }
             }
             const zlang_std_function_t *const _std_k = zlang_std_resolve_by_name(
                 _expression_k->name_, _argument_types_k, _argument_count_k);

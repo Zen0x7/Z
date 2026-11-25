@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_BOOL
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -30,22 +34,22 @@ int main(void) {
     bool app_local_ready = true;
 
     if (app_local_value == 1) {
-        zlang_print(zlang_gen_literal_0);
+        zlang_std_io_write_string(zlang_gen_literal_0);
     } else if (app_local_value == 2) {
-        zlang_print(zlang_gen_literal_1);
+        zlang_std_io_write_string(zlang_gen_literal_1);
     } else {
-        zlang_print(zlang_gen_literal_2);
+        zlang_std_io_write_string(zlang_gen_literal_2);
     }
 
-    zlang_print(zlang_gen_literal_3);
-    zlang_print_bool((app_local_ready && app_local_value == 2));
-    zlang_print(zlang_gen_literal_3);
-    zlang_print_bool(((!app_local_ready) || app_local_value == 2));
-    zlang_print(zlang_gen_literal_3);
-    zlang_print_bool((app_local_value < 3 && app_local_value >= 2));
-    zlang_print(zlang_gen_literal_3);
-    zlang_print_bool((app_local_value != 2 || (!(app_local_value > 10))));
-    zlang_print(zlang_gen_literal_4);
+    zlang_std_io_write_string(zlang_gen_literal_3);
+    zlang_std_io_write_bool((app_local_ready && app_local_value == 2));
+    zlang_std_io_write_string(zlang_gen_literal_3);
+    zlang_std_io_write_bool(((!app_local_ready) || app_local_value == 2));
+    zlang_std_io_write_string(zlang_gen_literal_3);
+    zlang_std_io_write_bool((app_local_value < 3 && app_local_value >= 2));
+    zlang_std_io_write_string(zlang_gen_literal_3);
+    zlang_std_io_write_bool((app_local_value != 2 || (!(app_local_value > 10))));
+    zlang_std_io_write_string(zlang_gen_literal_4);
 
     return ZLANG_ZERO;
 }

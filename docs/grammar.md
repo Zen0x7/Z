@@ -11,7 +11,7 @@ made by the compiler.
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
-`double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `int64`, `length`, `print`,
+`double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `int64`, `length`,
 `record`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `unsigned`
 and `while`.
 
@@ -28,6 +28,7 @@ with `ZLANG1004`.
 
 ```zlang
 import { generate_int32, generate_bytes } from "@std/random";
+import { write } from "@std/io";
 import { tcp_listener } from "networking";
 ```
 
@@ -103,7 +104,7 @@ needed.
 | `function name(const? clone type name, ...): type {...}` | Function with value parameters |
 | `function name(const? reference type name, ...): type {...}` | Function with caller-owned references |
 | `return expression;` / `return;` | Return from a function |
-| `print(expression);` | Write a string or scalar |
+| `write(expression);` | Write a string or scalar |
 | `name = expression;` | Assignment |
 | `record Name { field* }` | Fixed aggregate type |
 | `enum Name { VALUE, ... }` | Named integer values and their type |
@@ -113,7 +114,7 @@ needed.
 ## Expressions
 
 Supported forms are literals, identifiers, grouping, indexing, field access and assignment, calls
-to user functions, `print`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
+to user functions, `write` from `@std/io`, `length`, unary `!` and `-`, and binary `+`, `-`, `*`, `/`, `%`,
 `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`. Compound assignment is available for arithmetic
 operators.
 
@@ -127,7 +128,7 @@ as `unsigned` with a bounds trap; string elements are read-only.
 
 ## Builtins
 
-`length(sequence)` emits the native first extent macro as an unsigned value. `print`
+`length(sequence)` emits the native first extent macro as an unsigned value. `write`
 accepts strings, integers, unsigned integers and booleans, using fixed-stack runtime helpers.
 
 ## Diagnostics

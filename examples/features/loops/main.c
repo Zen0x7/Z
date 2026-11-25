@@ -1,3 +1,9 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_U32
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -63,14 +69,14 @@ int main(void) {
     for (uint32_t zlang_gen_foreach_5 = ZLANG_ZERO; zlang_gen_foreach_5 < 4; ++zlang_gen_foreach_5) {
         uint32_t app_local_index = zlang_gen_foreach_5;
         int32_t app_local_item = app_local_values.data_[zlang_gen_foreach_5];
-        zlang_print_u32(app_local_index);
-        zlang_print(zlang_gen_literal_0);
-        zlang_print_i32(app_local_item);
-        zlang_print(zlang_gen_literal_1);
+        zlang_std_io_write_u32(app_local_index);
+        zlang_std_io_write_string(zlang_gen_literal_0);
+        zlang_std_io_write_i32(app_local_item);
+        zlang_std_io_write_string(zlang_gen_literal_1);
     }
 
-    zlang_print_i32(app_local_total);
-    zlang_print(zlang_gen_literal_2);
+    zlang_std_io_write_i32(app_local_total);
+    zlang_std_io_write_string(zlang_gen_literal_2);
 
     return ZLANG_ZERO;
 }

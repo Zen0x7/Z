@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 import { retries } from "@lib/config";
 import { add_one, zero } from "./lib/math";
 import { left_value } from "./lib/left";
@@ -9,15 +10,15 @@ function main(integer argc, arguments argv): integer {
     point.x = add_one(retries);
     point.y = 1;
     Color color = BLUE;
-    print(point.x);
-    print(" ");
-    print(color);
-    print(" ");
-    print(zero());
-    print(" ");
-    print(left_value());
-    print(" ");
-    print(right_value());
-    print("\n");
+    write(point.x);
+    write(" ");
+    write(to_integer(color));
+    write(" ");
+    write(zero());
+    write(" ");
+    write(left_value());
+    write(" ");
+    write(right_value());
+    write("\n");
     return 0;
 }

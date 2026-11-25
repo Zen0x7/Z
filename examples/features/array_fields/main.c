@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -50,8 +54,8 @@ int main(void) {
     app_record_matrix_t app_local_matrix = { ZLANG_ZERO };
     zlang_gen_array_set_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2, 7);
     int32_t app_local_value = zlang_gen_array_get_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2);
-    zlang_print_i32(app_local_value);
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_local_value);
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 function gcd(clone integer left, clone integer right): integer {
     while (right != 0) {
         integer remainder = left % right;
@@ -7,5 +8,5 @@ function gcd(clone integer left, clone integer right): integer {
     return left;
 }
 
-print(gcd(1071, 462));
-print("\n");
+write(gcd(1071, 462));
+write("\n");

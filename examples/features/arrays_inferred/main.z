@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 array[] integer flat = {1, 2, 3};
 array integer grid = {{1, 2}, {3, 4}};
 
@@ -6,9 +7,9 @@ unsigned grid_length = length(grid);
 
 grid[1][1] = flat[2] + grid[0][1];
 
-print(flat_length);
-print(" ");
-print(grid_length);
-print(" ");
-print(grid[1][1]);
-print("\n");
+write(flat_length);
+write(" ");
+write(grid_length);
+write(" ");
+write(grid[1][1]);
+write("\n");

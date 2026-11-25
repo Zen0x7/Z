@@ -1,8 +1,9 @@
+import { write } from "@std/io";
 import { base } from "@lib/config";
 import { add } from "@lib/math";
 
 function main(): integer {
-    print(add(base));
-    print("\n");
+    write(add(base));
+    write("\n");
     return 0;
 }

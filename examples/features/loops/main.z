@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 integer total = 0;
 
 while (total < 2) {
@@ -24,11 +25,11 @@ foreach (value in values) {
 }
 
 foreach (index, item in values) {
-    print(index);
-    print(":");
-    print(item);
-    print(" ");
+    write(index);
+    write(":");
+    write(item);
+    write(" ");
 }
 
-print(total);
-print("\n");
+write(total);
+write("\n");

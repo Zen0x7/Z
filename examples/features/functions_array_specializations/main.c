@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -67,10 +71,10 @@ int main(void) {
 
     zlang_gen_array_i32_4_t app_local_line = { { 0, 0, 0, 0 } };
     app_local_line.data_[0] = 9;
-    zlang_print_i32(app_fn_first_2_3_i32(app_local_grid));
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(app_fn_first_4_i32(app_local_line));
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_i32(app_fn_first_2_3_i32(app_local_grid));
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(app_fn_first_4_i32(app_local_line));
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

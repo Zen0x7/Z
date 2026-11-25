@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 record Point {
     integer x;
     integer y;
@@ -14,9 +15,9 @@ point.x = 3;
 point.y = 4;
 Color color = BLUE;
 
-print(point.x);
-print(" ");
-print(point.y);
-print(" ");
-print(color);
-print("\n");
+write(point.x);
+write(" ");
+write(point.y);
+write(" ");
+write(to_integer(color));
+write("\n");

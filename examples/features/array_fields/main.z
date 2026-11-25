@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 record Matrix {
     array[2][3] integer cells;
 }
@@ -7,5 +8,5 @@ Matrix matrix;
 matrix.cells[1][2] = 7;
 integer value = matrix.cells[1][2];
 
-print(value);
-print("\n");
+write(value);
+write("\n");

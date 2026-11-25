@@ -1,6 +1,6 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.23. The catalog below is the allowed namespace map; the
+**Status:** implemented in Zlang 0.24. The catalog below is the allowed namespace map; the
 implemented standard functions are the deterministic `random` generators and the
 `@std/program_options` domain.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
@@ -112,7 +112,7 @@ static const zlang_string_t zlang_gen_literal_0 = {
     zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH
 };
 
-zlang_print(zlang_gen_literal_0);
+zlang_write(zlang_gen_literal_0);
 ```
 
 The literal's content belongs to the user's program; the C object is compiler support. A bug in the
@@ -136,6 +136,7 @@ implemented.
 | --- | --- | --- | --- |
 | `algorithms` | Operations over fixed arrays and records | `sort_int32`, `reverse_int32`, `find_int32`, `contains_int32`, `min_int32`, `max_int32`, `sum_int32` | pure, bounded, foldable when inputs are constant |
 | `math` | Scalar numeric operations beyond checked builtins | `abs`, `clamp`, `min`, `max`, `sqrt` | pure, overloads resolved by operand types |
+| `io` | Process output | `write` | bounded, overloads resolved by operand type |
 | `strings` | Bounded string operations | `compare`, `contains`, `starts_with` | pure, non-owning views |
 | `encoding` | Byte-to-text and text-to-byte transforms | `encode_hex`, `decode_hex`, `encode_base64`, `decode_base64`, `utf8_length` | pure, bounded, explicit capacity |
 | `math` | Scalar numeric operations beyond checked builtins | `abs_int32`, `clamp_int32`, `gcd_int32`, `pow_uint32`, `sqrt_uint32` | pure, foldable when operands are constant |

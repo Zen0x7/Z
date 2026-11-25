@@ -27,7 +27,7 @@ An implementation conforms to this specification if and only if it:
 3. emits C that contains no call to `malloc`, `calloc`, `realloc`, `free`, or any equivalent allocation service;
 4. emits native C control flow for all control structures, with no callback indirection;
 5. makes the output of `--emit-c` byte-for-byte identical to the C that is compiled by default;
-6. preserves the observable output order of `print` statements.
+6. preserves the observable output order of `write` calls.
 
 A conforming program is one that satisfies all static rules in clauses 6 through 11.
 
@@ -47,7 +47,7 @@ A minimal program:
 
 ```zlang
 integer var = 10;
-print("Hello");
+write("Hello");
 ```
 
 is translated to:
@@ -56,7 +56,7 @@ is translated to:
 #include <stdint.h>
 
 int32_t var = 10;
-zlang_print((zlang_string_t){ "Hello", 5U });
+zlang_std_io_write((zlang_string_t){ "Hello", 5U });
 ```
 
 There is no `zlang_declare_var("var", ...)` call. Passing a source name as a string would turn a compile-time symbol into runtime data, which Zlang does not permit.
@@ -93,7 +93,7 @@ Keywords are reserved and cannot be used as identifiers:
 
 ```text
 boolean break clone const continue double else enum false float for foreach function if integer
-int64 length print record reference repeat return sequence string true uint64 unsigned while
+int64 length record reference repeat return sequence string true uint64 unsigned while
 ```
 
 The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
@@ -250,7 +250,7 @@ Validate that the iterable is a sequence and that the iteration variable has the
 ### 10.1 Expression statements
 
 An expression followed by `;`. Expression statements include assignment, indexed assignment,
-`print` and calls to user-defined functions.
+`write` from `@std/io` and calls to user-defined functions.
 
 ### 10.2 `if`
 
@@ -385,8 +385,8 @@ Every generated C file begins with:
 | `f(a, b)` | direct C call to the emitted function |
 | `"a" + "b"` | folded string literal |
 | `prefix + suffix` with explicit capacity | `zlang_string_concat(storage, capacity, parts, count)` |
-| `print(s)` | `zlang_print(s)` |
-| `print(i)`, `print(u)`, `print(b)` | bounded scalar print helpers |
+| `write(s)` | `zlang_std_io_write(s)` |
+| `write(i)`, `write(u)`, `write(b)` | bounded scalar write helpers |
 | `values[2]` | bounded typed getter such as `zlang_array_get_i32(values.data_, 2U, values.length_)` |
 | `text[0]` | `zlang_string_byte(text, 0U)` |
 | `values[0] = x` | checked index statement, then direct store to `values.data_[0]` |
@@ -414,7 +414,7 @@ The runtime functions that generated code may call are:
 
 ```c
 void *zlang_array_get(void *data, uint32_t index, uint32_t length, size_t element_size);
-bool zlang_print(zlang_string_t value);
+bool zlang_std_io_write(zlang_string_t value);
 int32_t zlang_add_i32(int32_t left, int32_t right);
 uint32_t zlang_add_u32(uint32_t left, uint32_t right);
 int32_t zlang_sub_i32(int32_t left, int32_t right);
@@ -431,9 +431,9 @@ bool zlang_array_get_bool(const bool *data, uint32_t index, uint32_t length);
 zlang_string_t zlang_array_get_string(const zlang_string_t *data, uint32_t index,
                                       uint32_t length);
 uint32_t zlang_string_byte(zlang_string_t value, uint32_t index);
-bool zlang_print_i32(int32_t value);
-bool zlang_print_u32(uint32_t value);
-bool zlang_print_bool(bool value);
+bool zlang_std_io_write_i32(int32_t value);
+bool zlang_std_io_write_u32(uint32_t value);
+bool zlang_std_io_write_bool(bool value);
 void zlang_array_append(void *data, uint32_t *length, uint32_t capacity,
                         size_t element_size, const void *value);
 zlang_string_t zlang_string_concat(char *storage, uint32_t capacity,
@@ -589,7 +589,6 @@ expression     = literal
                | identifier ( "+=" | "-=" | "*=" | "/=" | "%=" ) expression
                | identifier "[" expression "]" "=" expression
                | identifier "(" ( expression ( "," expression )* )? ")"
-               | "print" "(" expression ")"
                | "length" "(" identifier ")"
                | identifier "[" expression "]"
                | expression "." identifier ;
@@ -611,7 +610,7 @@ integer var = 10;
 array[4] integer values;
 
 foreach (item in values) {
-    print("Hello");
+    write("Hello");
 }
 ```
 
@@ -636,7 +635,7 @@ int main(void) {
     for (uint32_t index = 0U; index < values.length_; ++index) {
         int32_t item = values.data_[index];
         (void)item;
-        zlang_print((zlang_string_t){ "Hello", 5U });
+        zlang_std_io_write((zlang_string_t){ "Hello", 5U });
     }
     return 0;
 }
@@ -689,7 +688,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `expression "+" expression` | `emits_checked_addition` |
 | `expression "==" expression` | `covers_every_annex_a_production` |
 | `identifier "=" expression` | `covers_every_annex_a_production` |
-| `"print" "(" expression ")"` | `emits_a_print_call` |
+| `import { write } from "@std/io"` | `emits_a_write_call` |
 | `identifier "[" expression "]"` | `emits_append_and_checked_index` |
 | `"append" "(" identifier "," expression ")"` | `emits_append_and_checked_index` |
 | integer, string, and boolean literals | `covers_every_annex_a_production` |
@@ -744,12 +743,14 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | standard command line options | `zlang.cli.program_options` |
 | standard imports | `zlang.stdlib.random.generate_int32.basic` |
 | transpile-time optimization | `zlang.cli.tto` |
-| scalar printing | `emits_scalar_print` |
+| standard output | `emits_scalar_write` |
 | wide and floating primitives | `emits_wide_and_floating_primitives` |
 | explicit numeric conversions | `emits_explicit_numeric_conversions` |
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
 | floating modulo rejection | `rejects_float_modulo` |
 | inferred shape index validation | `rejects_index_outside_inferred_shape` |
+| removed `print` keyword | `rejects_print_keyword` |
+| `@std/io.write` overloads | `emits_scalar_write` |
 | mixed numeric arithmetic rejection | `rejects_mixed_numeric_addition` |
 | mixed numeric comparison rejection | `rejects_mixed_numeric_comparison` |
 | string content equality | `compares_strings_by_content` |
@@ -895,6 +896,11 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.24 implementation status
+
+Zlang 0.24 removes the built-in `print` construct. Output is performed by `write` imported from
+`@std/io`, with overloads resolved from argument types. No compatibility spelling is provided.
 
 ## 0.23 implementation status
 

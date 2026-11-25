@@ -1,3 +1,9 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_U32
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -60,12 +66,12 @@ int main(void) {
 
     zlang_gen_array_set_2_i32(app_local_grid.data_, 2, 2, 1, 1, zlang_add_i32(3, zlang_gen_array_get_2_i32(app_local_grid.data_, 2, 2, 0, 1)));
 
-    zlang_print_u32(app_local_flat_length);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_u32(app_local_grid_length);
-    zlang_print(zlang_gen_literal_0);
-    zlang_print_i32(zlang_gen_array_get_2_i32(app_local_grid.data_, 2, 2, 1, 1));
-    zlang_print(zlang_gen_literal_1);
+    zlang_std_io_write_u32(app_local_flat_length);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_u32(app_local_grid_length);
+    zlang_std_io_write_string(zlang_gen_literal_0);
+    zlang_std_io_write_i32(zlang_gen_array_get_2_i32(app_local_grid.data_, 2, 2, 1, 1));
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return ZLANG_ZERO;
 }

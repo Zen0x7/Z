@@ -1,3 +1,4 @@
+import { write } from "@std/io";
 import { generate_int32 } from "@std/random";
 
 function pure_add(clone integer left, clone integer right): integer {
@@ -14,7 +15,7 @@ function rolls_twice(): integer {
 
 integer a = pure_add(1, 2);
 integer b = rolls_twice();
-print(a);
-print(" ");
-print(b);
-print("\n");
+write(a);
+write(" ");
+write(b);
+write("\n");

@@ -1,10 +1,11 @@
+import { write } from "@std/io";
 array[3] integer fixed = {1, 2, 3};
 integer total = 2 + 3 * 4;
 integer first = fixed[0];
 fixed[1] = total;
-print(first);
-print(" ");
-print(total);
-print("\n");
-print(fixed[1]);
-print("\n");
+write(first);
+write(" ");
+write(total);
+write("\n");
+write(fixed[1]);
+write("\n");

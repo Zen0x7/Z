@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -67,8 +71,8 @@ int main(void) {
     zlang_gen_array_set_2_i32(app_local_grid.data_, 2, 3, 0, 1, 5);
 
     zlang_gen_array_i32_2_3_t app_local_stamped = app_fn_stamp_2_3_i32(app_local_grid);
-    zlang_print_i32(zlang_gen_array_get_2_i32(app_local_stamped.data_, 2, 3, 0, 1));
-    zlang_print(zlang_gen_literal_0);
+    zlang_std_io_write_i32(zlang_gen_array_get_2_i32(app_local_stamped.data_, 2, 3, 0, 1));
+    zlang_std_io_write_string(zlang_gen_literal_0);
 
     return ZLANG_ZERO;
 }

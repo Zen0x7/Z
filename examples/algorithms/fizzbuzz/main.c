@@ -1,3 +1,7 @@
+#define ZLANG_STD_IO_WRITE_STRING
+
+#define ZLANG_STD_IO_WRITE_I32
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -25,16 +29,16 @@ static const zlang_string_t zlang_gen_literal_3 = { zlang_gen_literal_3_data, ZL
 int main(void) {
     for (int32_t app_local_value = 1; (app_local_value <= 15); app_local_value = zlang_add_i32(app_local_value, 1)) {
         if (zlang_mod_i32(app_local_value, 15) == 0) {
-            zlang_print(zlang_gen_literal_0);
+            zlang_std_io_write_string(zlang_gen_literal_0);
         } else if (zlang_mod_i32(app_local_value, 3) == 0) {
-            zlang_print(zlang_gen_literal_1);
+            zlang_std_io_write_string(zlang_gen_literal_1);
         } else if (zlang_mod_i32(app_local_value, 5) == 0) {
-            zlang_print(zlang_gen_literal_2);
+            zlang_std_io_write_string(zlang_gen_literal_2);
         } else {
-            zlang_print_i32(app_local_value);
+            zlang_std_io_write_i32(app_local_value);
         }
 
-        zlang_print(zlang_gen_literal_3);
+        zlang_std_io_write_string(zlang_gen_literal_3);
     }
 
     return ZLANG_ZERO;

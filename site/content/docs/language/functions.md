@@ -1,0 +1,50 @@
+---
+title: Functions
+description: Function syntax, parameter modes and main.
+navigation:
+  title: Functions
+---
+
+# Functions
+
+A function has a name, parameters and an optional return type.
+
+```zlang
+function add(clone integer left, clone integer right): integer {
+    return left + right;
+}
+
+function bump(reference integer value) {
+    value += 1;
+}
+```
+
+Every parameter uses `clone` or `reference`. Add `const` before the mode when the function must not change the value.
+
+- `clone` passes a copy.
+- `reference` aliases caller storage.
+- References are parameter-only. They cannot be stored or returned.
+
+A function without a return type emits `void`.
+
+## main
+
+`main` is the program entry point. Its parameters use implicit binding modes, so `clone` and `reference` are not written.
+
+```zlang
+function main(): integer {
+    return 0;
+}
+```
+
+With host arguments:
+
+```zlang
+function main(integer argc, arguments argv): integer {
+    return 0;
+}
+```
+
+## Visibility
+
+Zlang has no mutable globals. Functions receive state through parameters or explicit runtime contexts.

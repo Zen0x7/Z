@@ -74,6 +74,21 @@ static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *pro
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_trait(const zlang_program_t *program,
+                                                     const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_trait_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *program,
                                                     const char *name) {
     if (program == NULL || name == NULL) {
@@ -106,6 +121,60 @@ static const zlang_ast_statement_t *zlang_find_struct_method(const zlang_program
         }
     }
     return NULL;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static const zlang_ast_statement_t *zlang_find_struct_method_any(const zlang_program_t *program,
+                                                                 const char *struct_name,
+                                                                 const char *method_name) {
+    const zlang_ast_statement_t *const _structure_k = zlang_find_struct(program, struct_name);
+    if (_structure_k == NULL || method_name == NULL) {
+        return NULL;
+    }
+    const zlang_ast_statement_t *const _own_k =
+        zlang_find_struct_method(program, struct_name, method_name);
+    if (_own_k != NULL) {
+        return _own_k;
+    }
+    for (size_t _trait = 0U; _trait < _structure_k->uses_count_; ++_trait) {
+        const zlang_ast_statement_t *const _trait_k =
+            zlang_find_trait(program, _structure_k->uses_names_[_trait]);
+        if (_trait_k == NULL) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _method_k =
+            zlang_find_struct_method(program, _trait_k->name_, method_name);
+        if (_method_k != NULL) {
+            return _method_k;
+        }
+    }
+    if (_structure_k->base_name_ != NULL) {
+        return zlang_find_struct_method_any(program, _structure_k->base_name_, method_name);
+    }
+    return NULL;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_type_matches(const char *expected, const char *actual);
+
+static bool zlang_is_ancestor(const zlang_program_t *program, const char *base_name,
+                              const char *derived_name, uint32_t depth) {
+    if (base_name == NULL || derived_name == NULL || depth > 16U) {
+        return false;
+    }
+    if (strcmp(base_name, derived_name) == 0) {
+        return true;
+    }
+    const zlang_ast_statement_t *const _derived_k = zlang_find_struct(program, derived_name);
+    if (_derived_k == NULL || _derived_k->base_name_ == NULL) {
+        return false;
+    }
+    return zlang_is_ancestor(program, base_name, _derived_k->base_name_, depth + 1U);
+}
+
+static bool zlang_type_accepts(const zlang_program_t *program, const char *expected,
+                               const char *actual) {
+    return zlang_type_matches(expected, actual) || zlang_is_ancestor(program, expected, actual, 0U);
 }
 
 static bool zlang_is_user_type(const zlang_program_t *program, const char *name) {
@@ -625,7 +694,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
-        if (!zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
+        if (!zlang_type_accepts(context->program_, _symbol_k->type_name_, _actual_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "assignment value does not match the declared type");
             return NULL;
@@ -848,7 +917,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             _static_k = true;
         }
         const zlang_ast_statement_t *const _method_k =
-            zlang_find_struct_method(context->program_, _struct_name_k, _expression_k->name_);
+            zlang_find_struct_method_any(context->program_, _struct_name_k, _expression_k->name_);
         if (_struct_name_k == NULL || _method_k == NULL || _method_k->is_static_ != _static_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "method is not declared on the struct");
@@ -1097,7 +1166,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         const char *const _actual_k =
             zlang_analyze_expression(context, statement->expression_, statement);
         if (statement->expression_ != ZLANG_NO_EXPRESSION &&
-            !zlang_type_matches(statement->type_name_, _actual_k)) {
+            !zlang_type_accepts(context->program_, statement->type_name_, _actual_k)) {
             _result_k = zlang_report_expression(
                 context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement->expression_, statement,
                 "initializer type does not match the declared type");
@@ -1176,7 +1245,8 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             _result_k = zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
                                                 statement->expression_, statement,
                                                 "a void function cannot return a value");
-        } else if (!zlang_type_matches(context->current_return_type_, _actual_k)) {
+        } else if (!zlang_type_accepts(context->program_, context->current_return_type_,
+                                       _actual_k)) {
             _result_k = zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
                                                 statement->expression_, statement,
                                                 "return type does not match the function type");

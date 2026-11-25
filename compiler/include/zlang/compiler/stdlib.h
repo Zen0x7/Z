@@ -17,6 +17,7 @@ typedef struct zlang_std_function_t {
     const char *c_symbol_;
     const char *activation_macro_;
     const char *parameter_types_[ZLANG_STD_MAX_PARAMETERS];
+    bool parameter_is_reference_[ZLANG_STD_MAX_PARAMETERS];
     size_t parameter_count_;
     bool is_stateful_;
     bool is_opaque_;

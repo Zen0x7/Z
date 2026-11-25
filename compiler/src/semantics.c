@@ -7,6 +7,18 @@
 
 #include <string.h>
 
+static const char *zlang_semantic_std_domain(const char *specifier) {
+    if (specifier == NULL) {
+        return NULL;
+    }
+    const char *const _prefix_k = "@std/";
+    const size_t _prefix_length_k = strlen(_prefix_k);
+    return strncmp(specifier, _prefix_k, _prefix_length_k) == 0 ? specifier + _prefix_length_k
+                                                                : specifier;
+}
+
+#include <string.h>
+
 void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol_t *symbols,
                                  size_t symbol_capacity, zlang_diagnostics_t *diagnostics,
                                  const zlang_program_t *program) {
@@ -85,7 +97,8 @@ static bool zlang_is_user_type(const zlang_program_t *program, const char *name)
 
 static bool zlang_is_builtin_type(const char *name) {
     return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
-                            strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0);
+                            strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0 ||
+                            strcmp(name, "arguments") == 0);
 }
 
 static bool zlang_is_known_type(const zlang_program_t *program, const char *name) {
@@ -681,7 +694,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         if (_function_k->declaration_ != NULL &&
             _function_k->declaration_->kind_ == zlang_statement_import_) {
             const zlang_std_function_t *const _std_k =
-                zlang_std_find(_function_k->declaration_->type_name_, _expression_k->name_);
+                zlang_std_find(zlang_semantic_std_domain(_function_k->declaration_->type_name_),
+                               _expression_k->name_);
             if (_std_k == NULL || _expression_k->argument_count_ != _std_k->parameter_count_) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
                                               statement, "standard call argument count mismatch");
@@ -1116,7 +1130,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             const zlang_parameter_t *const _parameter_k =
                 &context->program_->parameters_[statement->parameter_start_ + _index];
             const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _parameter_k->name_);
-            if (!_parameter_k->is_reference_ || _symbol_k == NULL ||
+            if (statement->is_main_ || !_parameter_k->is_reference_ || _symbol_k == NULL ||
                 !zlang_is_small_value_type(context, _parameter_k->type_name_)) {
                 continue;
             }
@@ -1232,8 +1246,8 @@ static bool zlang_register_imports(const zlang_program_t *program,
             return zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, _statement_k,
                                 "imports are only valid at file scope");
         }
-        const zlang_std_function_t *const _function_k =
-            zlang_std_find(_statement_k->type_name_, _statement_k->name_);
+        const zlang_std_function_t *const _function_k = zlang_std_find(
+            zlang_semantic_std_domain(_statement_k->type_name_), _statement_k->name_);
         if (_function_k == NULL) {
             return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _statement_k,
                                 "standard function is not in the registry");

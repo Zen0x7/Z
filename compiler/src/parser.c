@@ -89,7 +89,8 @@ static bool zlang_parser_is_user_type(const zlang_parser_t *parser, const zlang_
 
 static bool zlang_parser_is_declaration_type(const zlang_parser_t *parser,
                                              const zlang_token_t *token) {
-    return zlang_token_is_type(token) || zlang_parser_is_user_type(parser, token);
+    return zlang_token_is_type(token) || token->kind_ == zlang_token_arguments_ ||
+           zlang_parser_is_user_type(parser, token);
 }
 
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
@@ -1162,11 +1163,13 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
     if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a function name")) {
         return false;
     }
+    const bool _is_main_k = zlang_token_is(_name_k, "main");
     if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after function name")) {
         return false;
     }
 
     const size_t _parameter_start_k = parser->parameter_count_;
+    size_t _main_parameter_k = 0U;
     for (;;) {
         const zlang_token_kind_t _qualifier_kind_k = zlang_parser_current(parser)->kind_;
         if (_qualifier_kind_k != zlang_token_const_ && _qualifier_kind_k != zlang_token_clone_ &&
@@ -1181,17 +1184,30 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
         }
         const zlang_token_t *const _start_k = zlang_parser_current(parser);
         bool _is_const_k = false;
-        if (_qualifier_kind_k == zlang_token_const_) {
-            _is_const_k = true;
+        bool _is_reference_k = false;
+        if (_is_main_k) {
+            if (_qualifier_kind_k == zlang_token_const_ ||
+                _qualifier_kind_k == zlang_token_clone_ ||
+                _qualifier_kind_k == zlang_token_reference_) {
+                zlang_parser_unsupported(parser, "main parameters use implicit binding modes");
+                return false;
+            }
+            _is_reference_k = _main_parameter_k == 1U;
+            ++_main_parameter_k;
+        } else {
+            if (_qualifier_kind_k == zlang_token_const_) {
+                _is_const_k = true;
+                zlang_parser_advance(parser);
+            }
+            const zlang_token_kind_t _mode_kind_k = zlang_parser_current(parser)->kind_;
+            if (_mode_kind_k != zlang_token_clone_ && _mode_kind_k != zlang_token_reference_) {
+                zlang_parser_unsupported(parser,
+                                         "expected 'clone' or 'reference' parameter qualifier");
+                return false;
+            }
+            _is_reference_k = _mode_kind_k == zlang_token_reference_;
             zlang_parser_advance(parser);
         }
-        const zlang_token_kind_t _mode_kind_k = zlang_parser_current(parser)->kind_;
-        if (_mode_kind_k != zlang_token_clone_ && _mode_kind_k != zlang_token_reference_) {
-            zlang_parser_unsupported(parser, "expected 'clone' or 'reference' parameter qualifier");
-            return false;
-        }
-        const bool _is_reference_k = _mode_kind_k == zlang_token_reference_;
-        zlang_parser_advance(parser);
         const zlang_token_t *const _type_k = zlang_parser_current(parser);
         const bool _is_array_type_k = _type_k->kind_ == zlang_token_array_;
         if (!_is_array_type_k && !zlang_parser_is_declaration_type(parser, _type_k)) {
@@ -1227,6 +1243,7 @@ static bool zlang_parse_function(zlang_parser_t *parser) {
     zlang_ast_statement_t *const _statement_ptr_k = &parser->statements_[_statement_k];
     _statement_ptr_k->kind_ = zlang_statement_function_;
     _statement_ptr_k->name_ = _name_k->text_;
+    _statement_ptr_k->is_main_ = _is_main_k;
     _statement_ptr_k->type_name_ = "void";
     _statement_ptr_k->parameter_start_ = _parameter_start_k;
     _statement_ptr_k->parameter_count_ = parser->parameter_count_ - _parameter_start_k;

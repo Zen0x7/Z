@@ -8,6 +8,16 @@
 #include <stdio.h>
 #include <string.h>
 
+static const char *zlang_std_domain(const char *specifier) {
+    if (specifier == NULL) {
+        return NULL;
+    }
+    const char *const _prefix_k = "@std/";
+    const size_t _prefix_length_k = strlen(_prefix_k);
+    return strncmp(specifier, _prefix_k, _prefix_length_k) == 0 ? specifier + _prefix_length_k
+                                                                : specifier;
+}
+
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
                         zlang_diagnostics_t *diagnostics, const zlang_memory_plan_t *plan) {
     emitter->buffer_ = buffer;
@@ -47,6 +57,7 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->active_specialization_ = NULL;
     emitter->uses_stateful_std_ = false;
     emitter->in_function_ = false;
+    emitter->has_explicit_main_ = false;
     for (size_t _index = 0U; _index < ZLANG_EMITTED_CSE_CAPACITY; ++_index) {
         emitter->cse_pointer_base_names_[_index] = NULL;
         emitter->cse_pointer_dependency_names_[_index] = NULL;
@@ -269,6 +280,9 @@ static const char *zlang_c_type(const char *type_name) {
     }
     if (strcmp(type_name, "string") == 0) {
         return "zlang_string_t";
+    }
+    if (strcmp(type_name, "arguments") == 0) {
+        return "zlang_arguments_t";
     }
     return "void";
 }
@@ -999,7 +1013,7 @@ static const char *zlang_generated_type(const zlang_program_t *program,
     if (type_name != NULL &&
         (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0 ||
          strcmp(type_name, "boolean") == 0 || strcmp(type_name, "string") == 0 ||
-         strcmp(type_name, "void") == 0)) {
+         strcmp(type_name, "arguments") == 0 || strcmp(type_name, "void") == 0)) {
         return zlang_c_type(type_name);
     }
     (void)program;
@@ -1782,8 +1796,14 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                 if ((_argument > 0U || _std_k->is_stateful_) && !zlang_append_text(emitter, ", ")) {
                     return false;
                 }
-                if (!zlang_emit_expression(program, _expression_k->argument_indices_[_argument],
-                                           emitter)) {
+                const size_t _argument_index_k = _expression_k->argument_indices_[_argument];
+                const bool _reference_k = _argument < _std_k->parameter_count_ &&
+                                          _std_k->parameter_is_reference_[_argument];
+                const bool _argument_ok_k =
+                    _reference_k
+                        ? zlang_emit_reference_argument(program, _argument_index_k, emitter)
+                        : zlang_emit_expression(program, _argument_index_k, emitter);
+                if (!_argument_ok_k) {
                     return false;
                 }
             }
@@ -2245,6 +2265,9 @@ static bool zlang_statement_mentions_expression(const zlang_program_t *program,
 static bool zlang_collect_stateful_usage(const zlang_program_t *program, zlang_emitter_t *emitter) {
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_function_ && _statement_k->is_main_) {
+            emitter->has_explicit_main_ = true;
+        }
         if (_statement_k->kind_ == zlang_statement_import_) {
             continue;
         }
@@ -4279,7 +4302,7 @@ static bool zlang_emit_prologue(const zlang_program_t *program, zlang_emitter_t 
             continue;
         }
         const zlang_std_function_t *const _function_k =
-            zlang_std_find(_statement_k->type_name_, _statement_k->name_);
+            zlang_std_find(zlang_std_domain(_statement_k->type_name_), _statement_k->name_);
         if (_function_k == NULL) {
             return false;
         }
@@ -4819,6 +4842,38 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
             !zlang_emit_statement(program, _statement_k, emitter, 0U)) {
             return false;
         }
+    }
+
+    if (emitter->has_explicit_main_) {
+        const zlang_emitted_function_t *_main_k = NULL;
+        for (size_t _function = 0U; _function < emitter->emitted_function_count_; ++_function) {
+            const zlang_emitted_function_t *const _entry_k =
+                &emitter->emitted_functions_[_function];
+            if (_entry_k->statement_ != NULL && _entry_k->statement_->is_main_) {
+                _main_k = _entry_k;
+                break;
+            }
+        }
+        if (_main_k == NULL ||
+            !zlang_append_text(emitter,
+                               "int main(int argc, char **argv) {\n"
+                               "    zlang_arguments_t _zlang_arguments = { argc, argv };\n")) {
+            return false;
+        }
+        if (_main_k->needs_state_ &&
+            !zlang_append_text(emitter, "    zlang_std_random_state_t _zlang_std_state = { "
+                                        "0x6D2B79F5U };\n")) {
+            return false;
+        }
+        if (!zlang_append_text(emitter, "    return (int)") ||
+            !zlang_append_text(emitter, _main_k->generated_name_) ||
+            !zlang_append_text(emitter, "(argc, &_zlang_arguments")) {
+            return false;
+        }
+        if (_main_k->needs_state_ && !zlang_append_text(emitter, ", &_zlang_std_state")) {
+            return false;
+        }
+        return zlang_append_text(emitter, ");\n}\n");
     }
 
     if (!zlang_append_text(emitter, "int main(void) {\n")) {

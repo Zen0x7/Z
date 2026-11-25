@@ -23,6 +23,12 @@
 #define ZLANG_TRAP_INVALID_ARGUMENT 4U
 #define ZLANG_TRAP_DIVISION_BY_ZERO 5U
 
+/** Read-only view of host process arguments created by generated main. */
+typedef struct zlang_arguments_t {
+    int argc_;
+    char **argv_;
+} zlang_arguments_t;
+
 /** A non-owning byte string: a pointer and an explicit length. */
 typedef struct zlang_string_t {
     const char *data_;
@@ -408,6 +414,13 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
 
 #if defined(ZLANG_STD_RANDOM_GENERATE_INT32)
 #include "zlang/standard/random/generate_int32.h"
+#endif
+
+#if defined(ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT) ||                                           \
+    defined(ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_AT) ||                                              \
+    defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION) ||                                               \
+    defined(ZLANG_STD_PROGRAM_OPTIONS_OPTION_VALUE) || defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG)
+#include "zlang/standard/program/options.h"
 #endif
 
 #endif /* ZLANG_RUNTIME_RUNTIME_H */

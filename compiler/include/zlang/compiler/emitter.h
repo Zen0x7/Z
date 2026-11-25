@@ -136,6 +136,7 @@ typedef struct zlang_emitter_t {
     const zlang_array_specialization_t *active_specialization_;
     bool uses_stateful_std_;
     bool in_function_;
+    bool has_explicit_main_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

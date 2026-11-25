@@ -29,6 +29,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"print", zlang_token_print_},
                                              {"record", zlang_token_record_},
                                              {"reference", zlang_token_reference_},
+                                             {"arguments", zlang_token_arguments_},
                                              {"array", zlang_token_array_},
                                              {"repeat", zlang_token_repeat_},
                                              {"return", zlang_token_return_},
@@ -355,6 +356,7 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
         const char _character_k = lexer->source_[lexer->position_];
         zlang_token_t _token;
         memset(&_token, 0, sizeof(_token));
+        const size_t _offset_k = lexer->position_;
 
         if (_character_k == '\0') {
             if (!zlang_token_fits(*token_count, token_capacity, diagnostics, lexer->line_,
@@ -366,6 +368,7 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
             _token.length_ = 0U;
             _token.line_ = lexer->line_;
             _token.column_ = lexer->column_;
+            _token.offset_ = _offset_k;
             tokens[(*token_count)++] = _token;
             return true;
         }

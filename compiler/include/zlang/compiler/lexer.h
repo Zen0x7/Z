@@ -38,6 +38,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_return_,
     zlang_token_length_,
     zlang_token_array_,
+    zlang_token_arguments_,
     zlang_token_string_,
     zlang_token_true_,
     zlang_token_unsigned_,
@@ -83,6 +84,7 @@ typedef struct zlang_token_t {
     uint32_t value_length_;
     int32_t integer_value_;
     bool is_unsigned_;
+    size_t offset_;
     uint32_t line_;
     uint32_t column_;
 } zlang_token_t;

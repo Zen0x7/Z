@@ -143,6 +143,7 @@ typedef struct zlang_ast_statement_t {
     uint32_t return_rank_;
     const char *foreach_names_[ZLANG_ARRAY_MAX_RANK];
     uint32_t foreach_rank_;
+    bool is_main_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

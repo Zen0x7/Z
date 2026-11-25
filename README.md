@@ -229,16 +229,11 @@ print(current);
 `zlang-compile example.zlang --emit-c` writes the generated C next to the source; without
 `--emit-c`, the driver also invokes the C compiler and produces a native executable.
 
-The language tour above is intentionally a compact feature map. Executable examples live under
-[`examples/`](examples/), split into `algorithms/` and `features/`. Each example keeps three files:
-the `.zlang` source, the committed generated `.c` golden and the expected stdout in
-`.expected.txt`. CTest compiles every example, compares generated C byte-for-byte against the
-golden, runs the native binary and compares stdout.
-
-| Category | Examples |
-| --- | --- |
-| `algorithms` | `bubble_sort`, `collatz`, `factorial`, `fibonacci`, `fizzbuzz`, `gcd`, `matrix_multiply`, `pi`, `sieve`, `sum_of_squares` |
-| `features` | `arithmetic`, `array_fields`, `arrays_1d`, `arrays_const_copy`, `arrays_inferred`, `arrays_nd`, `comments`, `conditions`, `const_qualifiers`, `functions`, `functions_array_specializations`, `functions_arrays`, `functions_user_types`, `hello`, `loops`, `records_enums`, `scopes`, `strings` |
+The language tour above is intentionally a compact feature map. Executable golden examples live
+under [`examples/`](examples/README.md), split into `algorithms/` and `features/`. Every example
+has its own directory with `main.zlang`, the committed generated `main.c`, `expected.txt` and a
+README explaining what it exercises. CTest compiles each example, compares generated C
+byte-for-byte against the golden, runs the native binary and compares stdout.
 
 Run the whole set with:
 

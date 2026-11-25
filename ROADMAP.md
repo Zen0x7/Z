@@ -555,6 +555,9 @@ written through a dereference, `foreach` iterables count as reads, dynamic `inte
 cast to `uint32_t`, and logical negation of a comparison keeps the comparison grouped.
 
 The `examples/` tree is now a golden suite: every example has committed generated C and expected
-stdout, grouped under `algorithms/` and `features/` and checked by CTest. The multidimensional CLI
-smoke fixture covers rank 3 and rank 4 helper generation. Semantic symbols now copy array rank and
-extents so whole-array copy never reads uninitialized symbol state under valgrind.
+stdout, grouped under `algorithms/` and `features/` and checked by CTest. Each example is a
+self-contained directory with `main.zlang`, generated `main.c`, `expected.txt` and a `README.md`
+explaining the constructs it exercises; `examples/README.md` indexes both categories. The
+multidimensional CLI smoke fixture covers rank 3 and rank 4 helper generation. Semantic symbols now
+copy array rank and extents so whole-array copy never reads uninitialized symbol state under
+valgrind.

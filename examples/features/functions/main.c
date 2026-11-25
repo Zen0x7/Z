@@ -21,6 +21,7 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 
 int32_t app_fn_add(int32_t app_param_left, int32_t app_param_right);
 void app_fn_bump(int32_t *app_param_value);
+int32_t app_fn_main(void);
 
 int32_t app_fn_add(int32_t app_param_left, int32_t app_param_right) {
     return zlang_add_i32(app_param_left, app_param_right);
@@ -30,11 +31,15 @@ void app_fn_bump(int32_t *app_param_value) {
     (*app_param_value) = zlang_add_i32((*app_param_value), 1);
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     int32_t app_local_total = app_fn_add(2, 3);
     app_fn_bump(&app_local_total);
     zlang_std_io_write_i32(app_local_total);
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

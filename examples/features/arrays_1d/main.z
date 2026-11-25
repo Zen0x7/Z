@@ -1,14 +1,19 @@
 import { write } from "@std/io";
-array[5] integer values = {4, 5};
-integer capacity = 5;
 
-values[0] = values[1] + 1;
-values[2] = values[0] * 2;
-values[3] = values[2] - 1;
-values[4] = values[3] + capacity;
+function main(): integer {
+    array[5] integer values = {4, 5};
+    integer capacity = 5;
 
-foreach (value in values) {
-    write(value);
-    write(" ");
+    values[0] = values[1] + 1;
+    values[2] = values[0] * 2;
+    values[3] = values[2] - 1;
+    values[4] = values[3] + capacity;
+
+    foreach (value in values) {
+        write(value);
+        write(" ");
+    }
+    write("\n");
+
+    return 0;
 }
-write("\n");

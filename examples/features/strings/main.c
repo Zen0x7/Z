@@ -36,7 +36,11 @@ static const zlang_string_t zlang_gen_literal_4 = { zlang_gen_literal_4_data, ZL
 static const char zlang_gen_literal_5_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_5 = { zlang_gen_literal_5_data, ZLANG_LITERAL_5_LENGTH };
 
-int main(void) {
+/* generated function prototypes */
+
+int32_t app_fn_main(void);
+
+int32_t app_fn_main(void) {
     zlang_string_t app_local_folded = zlang_gen_literal_0;
     char zlang_gen_bounded_storage_6[ZLANG_BOUNDED_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
     zlang_string_t app_local_bounded = zlang_string_concat(zlang_gen_bounded_storage_6, ZLANG_BOUNDED_CAPACITY, (zlang_string_t[]){ app_local_folded, zlang_gen_literal_1 }, ZLANG_TWO);
@@ -53,5 +57,9 @@ int main(void) {
     zlang_std_io_write_string(app_local_letter);
     zlang_std_io_write_string(zlang_gen_literal_5);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

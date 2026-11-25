@@ -11,10 +11,14 @@ function copy_value(const clone integer value): integer {
     return value;
 }
 
-Point point;
-point.x = 6;
+function main(): integer {
+    Point point;
+    point.x = 6;
 
-write(read(point));
-write(" ");
-write(copy_value(point.x));
-write("\n");
+    write(read(point));
+    write(" ");
+    write(copy_value(point.x));
+    write("\n");
+
+    return 0;
+}

@@ -8,5 +8,9 @@ function gcd(clone integer left, clone integer right): integer {
     return left;
 }
 
-write(gcd(1071, 462));
-write("\n");
+function main(): integer {
+    write(gcd(1071, 462));
+    write("\n");
+
+    return 0;
+}

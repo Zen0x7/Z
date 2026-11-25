@@ -11,5 +11,9 @@ function one(): integer {
     return 1;
 }
 
-write(one());
-write("\n");
+function main(): integer {
+    write(one());
+    write("\n");
+
+    return 0;
+}

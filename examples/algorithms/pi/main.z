@@ -1,20 +1,25 @@
 import { write } from "@std/io";
-integer scale = 100000;
-integer total = 0;
-integer denominator = 1;
-boolean add_term = true;
 
-for (integer index = 0; index < 200000; index += 1) {
-    if (add_term) {
-        total += (4 * scale) / denominator;
-    } else {
-        total -= (4 * scale) / denominator;
+function main(): integer {
+    integer scale = 100000;
+    integer total = 0;
+    integer denominator = 1;
+    boolean add_term = true;
+
+    for (integer index = 0; index < 200000; index += 1) {
+        if (add_term) {
+            total += (4 * scale) / denominator;
+        } else {
+            total -= (4 * scale) / denominator;
+        }
+        denominator += 2;
+        add_term = !add_term;
     }
-    denominator += 2;
-    add_term = !add_term;
-}
 
-write(total / scale);
-write(".");
-write(total % scale);
-write("\n");
+    write(total / scale);
+    write(".");
+    write(total % scale);
+    write("\n");
+
+    return 0;
+}

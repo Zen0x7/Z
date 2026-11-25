@@ -3,10 +3,14 @@ record Matrix {
     array[2][3] integer cells;
 }
 
-Matrix matrix;
+function main(): integer {
+    Matrix matrix;
 
-matrix.cells[1][2] = 7;
-integer value = matrix.cells[1][2];
+    matrix.cells[1][2] = 7;
+    integer value = matrix.cells[1][2];
 
-write(value);
-write("\n");
+    write(value);
+    write("\n");
+
+    return 0;
+}

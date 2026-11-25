@@ -55,6 +55,7 @@ static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZL
 
 int32_t app_fn_first_2_3_i32(zlang_gen_array_i32_2_3_t app_param_source);
 int32_t app_fn_first_4_i32(zlang_gen_array_i32_4_t app_param_source);
+int32_t app_fn_main(void);
 
 int32_t app_fn_first_2_3_i32(zlang_gen_array_i32_2_3_t app_param_source) {
     return zlang_array_get_i32(app_param_source.data_, 0, 2);
@@ -64,7 +65,7 @@ int32_t app_fn_first_4_i32(zlang_gen_array_i32_4_t app_param_source_2) {
     return zlang_array_get_i32(app_param_source_2.data_, 0, 4);
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     zlang_gen_array_i32_2_3_t app_local_grid = { { 0, 0, 0, 0, 0, 0 } };
 
     zlang_gen_array_set_2_i32(app_local_grid.data_, 2, 3, 0, 0, 7);
@@ -76,5 +77,9 @@ int main(void) {
     zlang_std_io_write_i32(app_fn_first_4_i32(app_local_line));
     zlang_std_io_write_string(zlang_gen_literal_1);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

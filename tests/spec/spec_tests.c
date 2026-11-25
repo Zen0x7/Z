@@ -1155,6 +1155,29 @@ static void emits_function_prototypes(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "/* generated function prototypes */") != NULL);
 }
 
+static void emits_io_read_calls(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { read, read_line } from \"@std/io\";\n"
+                                  "string[16] line;\n"
+                                  "integer a = read_line(line);\n"
+                                  "integer b = read(line);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read_line(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read(") != NULL);
+}
+
+static void rejects_read_without_bounded_string(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { read } from \"@std/io\";\n"
+                                  "string view = \"x\";\n"
+                                  "integer n = read(view);";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
 static void rejects_print_keyword(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 

@@ -1,3 +1,8 @@
 import { write } from "@std/io";
-write("Hello from Zlang");
-write("\n");
+
+function main(): integer {
+    write("Hello from Zlang");
+    write("\n");
+
+    return 0;
+}

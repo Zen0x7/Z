@@ -38,7 +38,11 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 static const char zlang_gen_literal_1_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
 
-int main(void) {
+/* generated function prototypes */
+
+int32_t app_fn_main(void);
+
+int32_t app_fn_main(void) {
     const app_array_source_t app_local_source = { { 1, 2, 3 } };
     app_array_target_t app_local_target = { { 0, 0, 0 } };
     memcpy(&app_local_target, &app_local_source, sizeof(app_local_target));
@@ -51,5 +55,9 @@ int main(void) {
 
     zlang_std_io_write_string(zlang_gen_literal_1);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

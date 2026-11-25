@@ -1,21 +1,26 @@
 import { write } from "@std/io";
-integer value = 2;
-boolean ready = true;
 
-if (value == 1) {
-    write("one");
-} else if (value == 2) {
-    write("two");
-} else {
-    write("other");
+function main(): integer {
+    integer value = 2;
+    boolean ready = true;
+
+    if (value == 1) {
+        write("one");
+    } else if (value == 2) {
+        write("two");
+    } else {
+        write("other");
+    }
+
+    write(" ");
+    write(ready && value == 2);
+    write(" ");
+    write(!ready || value == 2);
+    write(" ");
+    write(value < 3 && value >= 2);
+    write(" ");
+    write(value != 2 || !(value > 10));
+    write("\n");
+
+    return 0;
 }
-
-write(" ");
-write(ready && value == 2);
-write(" ");
-write(!ready || value == 2);
-write(" ");
-write(value < 3 && value >= 2);
-write(" ");
-write(value != 2 || !(value > 10));
-write("\n");

@@ -2237,6 +2237,21 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                 if (!_argument_ok_k) {
                     return false;
                 }
+                if ((strcmp(_std_k->name_, "read") == 0 ||
+                     strcmp(_std_k->name_, "read_line") == 0) &&
+                    _argument == 0U) {
+                    const zlang_ast_expression_t *const _destination_k =
+                        &program->expressions_[_argument_index_k];
+                    const zlang_emitted_symbol_t *const _symbol_k =
+                        zlang_find_active_symbol(emitter, _destination_k->name_);
+                    if (_symbol_k == NULL || _symbol_k->storage_name_[0] == '\0' ||
+                        _symbol_k->capacity_ == 0U || !zlang_append_text(emitter, ", ") ||
+                        !zlang_append_text(emitter, _symbol_k->storage_name_) ||
+                        !zlang_append_text(emitter, ", ") ||
+                        !zlang_append_unsigned(emitter, _symbol_k->capacity_)) {
+                        return false;
+                    }
+                }
             }
             return zlang_append_text(emitter, ")");
         }

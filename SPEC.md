@@ -744,6 +744,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | standard imports | `zlang.stdlib.random.generate_int32.basic` |
 | transpile-time optimization | `zlang.cli.tto` |
 | standard output | `emits_scalar_write` |
+| bounded input | `emits_io_read_calls` |
+| bounded input validation | `rejects_read_without_bounded_string` |
 | wide and floating primitives | `emits_wide_and_floating_primitives` |
 | explicit numeric conversions | `emits_explicit_numeric_conversions` |
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
@@ -896,6 +898,13 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.25 implementation status
+
+Zlang 0.25 adds `read` and `read_line` to `@std/io`. Both take a mutable bounded string destination
+and return `integer`: `-1` at EOF, otherwise the number of logical bytes read. Line endings are
+normalized across platforms; CRLF is treated as one logical newline. Overflow traps with
+`ZLANG_TRAP_CAPACITY`.
 
 ## 0.24 implementation status
 

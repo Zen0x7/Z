@@ -1,15 +1,20 @@
 import { write } from "@std/io";
-array[] integer flat = {1, 2, 3};
-array integer grid = {{1, 2}, {3, 4}};
 
-unsigned flat_length = length(flat);
-unsigned grid_length = length(grid);
+function main(): integer {
+    array[] integer flat = {1, 2, 3};
+    array integer grid = {{1, 2}, {3, 4}};
 
-grid[1][1] = flat[2] + grid[0][1];
+    unsigned flat_length = length(flat);
+    unsigned grid_length = length(grid);
 
-write(flat_length);
-write(" ");
-write(grid_length);
-write(" ");
-write(grid[1][1]);
-write("\n");
+    grid[1][1] = flat[2] + grid[0][1];
+
+    write(flat_length);
+    write(" ");
+    write(grid_length);
+    write(" ");
+    write(grid[1][1]);
+    write("\n");
+
+    return 0;
+}

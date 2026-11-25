@@ -793,6 +793,26 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                               "no standard overload matches the argument types");
                 return NULL;
             }
+            if (_std_k->parameter_count_ == 1U && _std_k->parameter_is_reference_[0] &&
+                strcmp(_std_k->domain_, "io") == 0) {
+                const size_t _argument_index_k = _expression_k->argument_indices_[0];
+                const zlang_ast_expression_t *const _argument_expression_k =
+                    _argument_index_k < context->program_->expression_count_
+                        ? &context->program_->expressions_[_argument_index_k]
+                        : NULL;
+                const zlang_symbol_t *const _destination_k =
+                    _argument_expression_k != NULL &&
+                            _argument_expression_k->kind_ == zlang_expression_identifier_
+                        ? zlang_find_symbol(context, _argument_expression_k->name_)
+                        : NULL;
+                if (_destination_k == NULL || !_destination_k->has_explicit_capacity_ ||
+                    _destination_k->is_const_ || _destination_k->capacity_ == 0U) {
+                    (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                                  statement,
+                                                  "read requires a mutable bounded string");
+                    return NULL;
+                }
+            }
             return _std_k->return_type_;
         }
         if (_expression_k->argument_count_ != _function_k->parameter_count_) {

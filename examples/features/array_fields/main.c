@@ -50,12 +50,20 @@ typedef struct app_record_matrix_t {
 static const char zlang_gen_literal_0_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
-int main(void) {
+/* generated function prototypes */
+
+int32_t app_fn_main(void);
+
+int32_t app_fn_main(void) {
     app_record_matrix_t app_local_matrix = { ZLANG_ZERO };
     zlang_gen_array_set_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2, 7);
     int32_t app_local_value = zlang_gen_array_get_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2);
     zlang_std_io_write_i32(app_local_value);
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

@@ -10,14 +10,18 @@ enum Color {
     BLUE
 }
 
-Point point;
-point.x = 3;
-point.y = 4;
-Color color = BLUE;
+function main(): integer {
+    Point point;
+    point.x = 3;
+    point.y = 4;
+    Color color = BLUE;
 
-write(point.x);
-write(" ");
-write(point.y);
-write(" ");
-write(to_integer(color));
-write("\n");
+    write(point.x);
+    write(" ");
+    write(point.y);
+    write(" ");
+    write(to_integer(color));
+    write("\n");
+
+    return 0;
+}

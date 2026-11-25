@@ -7,8 +7,12 @@ function bump(reference integer value) {
     value += 1;
 }
 
-integer total = add(2, 3);
-bump(total);
+function main(): integer {
+    integer total = add(2, 3);
+    bump(total);
 
-write(total);
-write("\n");
+    write(total);
+    write("\n");
+
+    return 0;
+}

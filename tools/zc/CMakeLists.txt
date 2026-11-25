@@ -149,6 +149,18 @@ if(ZLANG_BUILD_TESTS)
         set_tests_properties(zlang.cli.${_case} PROPERTIES LABELS module:cli)
     endforeach()
 
+    add_test(NAME zlang.cli.io_read
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/io_read.z
+                     -DINPUT=${CMAKE_CURRENT_SOURCE_DIR}/tests/io_read.input.txt
+                     -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/tests/io_read.expected.txt
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/io_read
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_io_read.cmake)
+    set_tests_properties(zlang.cli.io_read PROPERTIES LABELS module:cli)
+
     add_test(NAME zlang.cli.legacy_std_import
              COMMAND ${CMAKE_COMMAND}
                      -DZLANG_COMPILE=$<TARGET_FILE:zc>
@@ -184,6 +196,7 @@ if(ZLANG_BUILD_TESTS)
                              zlang.cli.modules_cycle
                              zlang.cli.modules_escape
                              zlang.cli.legacy_std_import
+                             zlang.cli.io_read
                              zlang.cli.program_options
                              PROPERTIES ENVIRONMENT "${ZLANG_SANITIZER_ENV}")
     endif()

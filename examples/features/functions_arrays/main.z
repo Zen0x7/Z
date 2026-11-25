@@ -5,9 +5,13 @@ function stamp(clone array source): array {
     return result;
 }
 
-array[2][3] integer grid;
-grid[0][1] = 5;
-array[2][3] integer stamped = stamp(grid);
+function main(): integer {
+    array[2][3] integer grid;
+    grid[0][1] = 5;
+    array[2][3] integer stamped = stamp(grid);
 
-write(stamped[0][1]);
-write("\n");
+    write(stamped[0][1]);
+    write("\n");
+
+    return 0;
+}

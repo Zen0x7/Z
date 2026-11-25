@@ -26,6 +26,7 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 
 app_record_point_t app_fn_make(void);
 void app_fn_shift(app_record_point_t *app_param_point, int32_t app_param_amount);
+int32_t app_fn_main(void);
 
 app_record_point_t app_fn_make(void) {
     app_record_point_t app_local_result = { ZLANG_ZERO };
@@ -38,11 +39,15 @@ void app_fn_shift(app_record_point_t *app_param_point, int32_t app_param_amount)
     app_param_point->x_ = zlang_add_i32(app_param_point->x_, app_param_amount);
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     app_record_point_t app_local_point = app_fn_make();
     app_fn_shift(&app_local_point, 4);
     zlang_std_io_write_i32(app_local_point.x_);
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

@@ -1,12 +1,17 @@
 import { write } from "@std/io";
-array[10] integer fib = {0, 1};
 
-for (integer index = 2; index < 10; index += 1) {
-    fib[index] = fib[index - 1] + fib[index - 2];
-}
+function main(): integer {
+    array[10] integer fib = {0, 1};
 
-foreach (value in fib) {
-    write(value);
-    write(" ");
+    for (integer index = 2; index < 10; index += 1) {
+        fib[index] = fib[index - 1] + fib[index - 2];
+    }
+
+    foreach (value in fib) {
+        write(value);
+        write(" ");
+    }
+    write("\n");
+
+    return 0;
 }
-write("\n");

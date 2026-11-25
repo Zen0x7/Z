@@ -20,6 +20,7 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 /* generated function prototypes */
 
 int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right);
+int32_t app_fn_main(void);
 
 int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right) {
     while (app_param_right != 0) {
@@ -31,9 +32,13 @@ int32_t app_fn_gcd(int32_t app_param_left, int32_t app_param_right) {
     return app_param_left;
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     zlang_std_io_write_i32(app_fn_gcd(1071, 462));
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

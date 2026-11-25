@@ -1,10 +1,15 @@
 import { write } from "@std/io";
-array[5] integer values = {1, 2, 3, 4, 5};
-integer total = 0;
 
-foreach (value in values) {
-    total += value * value;
+function main(): integer {
+    array[5] integer values = {1, 2, 3, 4, 5};
+    integer total = 0;
+
+    foreach (value in values) {
+        total += value * value;
+    }
+
+    write(total);
+    write("\n");
+
+    return 0;
 }
-
-write(total);
-write("\n");

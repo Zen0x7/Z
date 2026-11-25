@@ -1,6 +1,6 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.24. The catalog below is the allowed namespace map; the
+**Status:** implemented in Zlang 0.25. The catalog below is the allowed namespace map; the
 implemented standard functions are the deterministic `random` generators and the
 `@std/program_options` domain.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
@@ -136,7 +136,7 @@ implemented.
 | --- | --- | --- | --- |
 | `algorithms` | Operations over fixed arrays and records | `sort_int32`, `reverse_int32`, `find_int32`, `contains_int32`, `min_int32`, `max_int32`, `sum_int32` | pure, bounded, foldable when inputs are constant |
 | `math` | Scalar numeric operations beyond checked builtins | `abs`, `clamp`, `min`, `max`, `sqrt` | pure, overloads resolved by operand types |
-| `io` | Process output | `write` | bounded, overloads resolved by operand type |
+| `io` | Process input and output | `write`, `read`, `read_line` | bounded, overloads resolved by operand type |
 | `strings` | Bounded string operations | `compare`, `contains`, `starts_with` | pure, non-owning views |
 | `encoding` | Byte-to-text and text-to-byte transforms | `encode_hex`, `decode_hex`, `encode_base64`, `decode_base64`, `utf8_length` | pure, bounded, explicit capacity |
 | `math` | Scalar numeric operations beyond checked builtins | `abs_int32`, `clamp_int32`, `gcd_int32`, `pow_uint32`, `sqrt_uint32` | pure, foldable when operands are constant |
@@ -155,7 +155,7 @@ implemented.
 
 `generate_float32` and `generate_float64` use the same deterministic PRNG as the integer generators.
 They produce values in `[from, to)` and trap on invalid or non-finite bounds. `cryptography` remains
-deferred until there is a stable security and entropy policy. `@std/strings` is the canonical string domain; `@std/text` is not part of the catalog. Avoid adding
+deferred until there is a stable security and entropy policy. `read` keeps the logical newline in the destination; `read_line` removes it. CRLF is normalized to LF so results are identical on every platform. `@std/strings` is the canonical string domain; `@std/text` is not part of the catalog. Avoid adding
 a domain before its capability has a clear boundary.
 
 ## Classification dimensions

@@ -29,6 +29,7 @@ static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZL
 
 int32_t app_fn_read(const app_record_point_t *app_param_point);
 int32_t app_fn_copy_value(const int32_t app_param_value);
+int32_t app_fn_main(void);
 
 int32_t app_fn_read(const app_record_point_t *app_param_point) {
     return app_param_point->x_;
@@ -38,7 +39,7 @@ int32_t app_fn_copy_value(const int32_t app_param_value) {
     return app_param_value;
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     app_record_point_t app_local_point = { ZLANG_ZERO };
     app_local_point.x_ = 6;
     zlang_std_io_write_i32(app_fn_read(&app_local_point));
@@ -46,5 +47,9 @@ int main(void) {
     zlang_std_io_write_i32(app_fn_copy_value(app_local_point.x_));
     zlang_std_io_write_string(zlang_gen_literal_1);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

@@ -1,13 +1,18 @@
 import { write } from "@std/io";
-for (integer value = 1; value <= 15; value += 1) {
-    if (value % 15 == 0) {
-        write("fizzbuzz");
-    } else if (value % 3 == 0) {
-        write("fizz");
-    } else if (value % 5 == 0) {
-        write("buzz");
-    } else {
-        write(value);
+
+function main(): integer {
+    for (integer value = 1; value <= 15; value += 1) {
+        if (value % 15 == 0) {
+            write("fizzbuzz");
+        } else if (value % 3 == 0) {
+            write("fizz");
+        } else if (value % 5 == 0) {
+            write("buzz");
+        } else {
+            write(value);
+        }
+        write("\n");
     }
-    write("\n");
+
+    return 0;
 }

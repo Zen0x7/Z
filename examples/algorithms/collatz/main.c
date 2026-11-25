@@ -17,7 +17,11 @@
 static const char zlang_gen_literal_0_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
-int main(void) {
+/* generated function prototypes */
+
+int32_t app_fn_main(void);
+
+int32_t app_fn_main(void) {
     int32_t app_local_value = 27;
     int32_t app_local_steps = 0;
 
@@ -34,5 +38,9 @@ int main(void) {
     zlang_std_io_write_i32(app_local_steps);
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

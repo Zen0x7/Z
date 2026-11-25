@@ -1,13 +1,18 @@
 import { write } from "@std/io";
-integer outer = 1;
 
-{
-    integer inner = 2;
+function main(): integer {
+    integer outer = 1;
+
+    {
+        integer inner = 2;
+        write(outer);
+        write(" ");
+        write(inner);
+        write("\n");
+    }
+
     write(outer);
-    write(" ");
-    write(inner);
     write("\n");
-}
 
-write(outer);
-write("\n");
+    return 0;
+}

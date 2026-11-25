@@ -27,6 +27,7 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 /* generated function prototypes */
 
 int32_t app_fn_one(void);
+int32_t app_fn_main(void);
 
 // Function comment.
 int32_t app_fn_one(void) {
@@ -34,9 +35,13 @@ int32_t app_fn_one(void) {
     return 1;
 }
 
-int main(void) {
+int32_t app_fn_main(void) {
     zlang_std_io_write_i32(app_fn_one());
     zlang_std_io_write_string(zlang_gen_literal_0);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

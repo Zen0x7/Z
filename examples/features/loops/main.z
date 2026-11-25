@@ -1,35 +1,40 @@
 import { write } from "@std/io";
-integer total = 0;
 
-while (total < 2) {
-    total += 1;
-}
+function main(): integer {
+    integer total = 0;
 
-repeat (2U) {
-    total += 1;
-}
-
-for (integer index = 0; index < 3; index += 1) {
-    if (index == 1) {
-        continue;
+    while (total < 2) {
+        total += 1;
     }
-    total += index;
-}
 
-array[4] integer values = {1, 2, 3, 4};
-foreach (value in values) {
-    if (value == 3) {
-        break;
+    repeat (2U) {
+        total += 1;
     }
-    total += value;
-}
 
-foreach (index, item in values) {
-    write(index);
-    write(":");
-    write(item);
-    write(" ");
-}
+    for (integer index = 0; index < 3; index += 1) {
+        if (index == 1) {
+            continue;
+        }
+        total += index;
+    }
 
-write(total);
-write("\n");
+    array[4] integer values = {1, 2, 3, 4};
+    foreach (value in values) {
+        if (value == 3) {
+            break;
+        }
+        total += value;
+    }
+
+    foreach (index, item in values) {
+        write(index);
+        write(":");
+        write(item);
+        write(" ");
+    }
+
+    write(total);
+    write("\n");
+
+    return 0;
+}

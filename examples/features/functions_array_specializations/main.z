@@ -3,12 +3,16 @@ function first(clone array source): integer {
     return source[0];
 }
 
-array[2][3] integer grid;
-grid[0][0] = 7;
-array[4] integer line;
-line[0] = 9;
+function main(): integer {
+    array[2][3] integer grid;
+    grid[0][0] = 7;
+    array[4] integer line;
+    line[0] = 9;
 
-write(first(grid));
-write(" ");
-write(first(line));
-write("\n");
+    write(first(grid));
+    write(" ");
+    write(first(line));
+    write("\n");
+
+    return 0;
+}

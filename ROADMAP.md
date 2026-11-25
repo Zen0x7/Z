@@ -921,4 +921,25 @@ domain. Enum values are written through explicit `to_integer(...)`. No compatibi
 `print` exists.
 
 The golden example suite, CLI fixtures, standard-library tests, spec matrix and documentation were
-migrated to `write`. `read` is deliberately deferred until its input contract is specified.
+migrated to `write`. Every golden example now declares its own explicit `main` function and its
+generated C calls `app_fn_main` from the single C `main`. `read` is deliberately deferred until its
+input contract is specified.
+
+## 0.25 — Design note
+
+Status: Locked.
+
+Zlang 0.25 adds bounded input to `@std/io`. Both `read` and `read_line` take one mutable bounded
+string destination and return `integer`: `-1` at EOF, otherwise the number of logical bytes read.
+Line endings are normalized across platforms: CRLF is one logical newline. `read` keeps that newline
+in the destination; `read_line` removes it. If the destination cannot hold the logical line, the
+program traps with `ZLANG_TRAP_CAPACITY`. No buffer grows and no allocation occurs.
+
+## 0.25 — Completion
+
+Zlang 0.25 is implemented at language level 0.25. `@std/io` now exposes `read`, `read_line` and
+`write`. Input destinations are caller-owned bounded strings, EOF is reported as `-1`, line endings
+are normalized across platforms and overflow traps without allocation.
+
+Every golden example now has an explicit Zlang `main`, and all committed C goldens were regenerated
+through `zc --tto`. The CLI suite includes a stdin-driven test for `read` and `read_line`.

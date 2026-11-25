@@ -29,7 +29,11 @@ static const zlang_string_t zlang_gen_literal_3 = { zlang_gen_literal_3_data, ZL
 static const char zlang_gen_literal_4_data[] = "\n";
 static const zlang_string_t zlang_gen_literal_4 = { zlang_gen_literal_4_data, ZLANG_LITERAL_4_LENGTH };
 
-int main(void) {
+/* generated function prototypes */
+
+int32_t app_fn_main(void);
+
+int32_t app_fn_main(void) {
     int32_t app_local_value = 2;
     bool app_local_ready = true;
 
@@ -51,5 +55,9 @@ int main(void) {
     zlang_std_io_write_bool((app_local_value != 2 || (!(app_local_value > 10))));
     zlang_std_io_write_string(zlang_gen_literal_4);
 
-    return ZLANG_ZERO;
+    return 0;
+}
+
+int main(void) {
+    return (int)app_fn_main();
 }

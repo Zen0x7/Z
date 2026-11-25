@@ -819,7 +819,8 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
 #include "zlang/standard/program/options.h"
 #endif
 
-#if defined(ZLANG_STD_IO_WRITE_STRING) || defined(ZLANG_STD_IO_WRITE_BOOL) ||                      \
+#if defined(ZLANG_STD_IO_READ) || defined(ZLANG_STD_IO_READ_LINE) ||                               \
+    defined(ZLANG_STD_IO_WRITE_STRING) || defined(ZLANG_STD_IO_WRITE_BOOL) ||                      \
     defined(ZLANG_STD_IO_WRITE_I32) || defined(ZLANG_STD_IO_WRITE_U32) ||                          \
     defined(ZLANG_STD_IO_WRITE_I64) || defined(ZLANG_STD_IO_WRITE_U64) ||                          \
     defined(ZLANG_STD_IO_WRITE_F32) || defined(ZLANG_STD_IO_WRITE_F64)

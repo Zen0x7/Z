@@ -1,35 +1,40 @@
 import { write } from "@std/io";
-integer left = 10;
-integer right = 3;
-unsigned count = 5U;
 
-integer sum = left + right;
-integer difference = left - right;
-integer product = left * right;
-integer quotient = left / right;
-integer remainder = left % right;
-unsigned grown = count + 2U;
-integer negative = -sum;
+function main(): integer {
+    integer left = 10;
+    integer right = 3;
+    unsigned count = 5U;
 
-left += right;
-left -= right;
-left *= right;
-left /= right;
-left %= right;
+    integer sum = left + right;
+    integer difference = left - right;
+    integer product = left * right;
+    integer quotient = left / right;
+    integer remainder = left % right;
+    unsigned grown = count + 2U;
+    integer negative = -sum;
 
-write(sum);
-write(" ");
-write(difference);
-write(" ");
-write(product);
-write(" ");
-write(quotient);
-write(" ");
-write(remainder);
-write(" ");
-write(grown);
-write(" ");
-write(negative);
-write(" ");
-write(left);
-write("\n");
+    left += right;
+    left -= right;
+    left *= right;
+    left /= right;
+    left %= right;
+
+    write(sum);
+    write(" ");
+    write(difference);
+    write(" ");
+    write(product);
+    write(" ");
+    write(quotient);
+    write(" ");
+    write(remainder);
+    write(" ");
+    write(grown);
+    write(" ");
+    write(negative);
+    write(" ");
+    write(left);
+    write("\n");
+
+    return 0;
+}

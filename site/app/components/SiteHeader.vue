@@ -27,7 +27,7 @@ function isDocsActive(to: string) {
       <div class="hidden items-center gap-2 lg:flex">
         <ThemeToggle />
         <a
-          href="https://z-doxyzen.iantorres.cl"
+          href="https://z-doxygen.iantorres.cl"
           target="_blank"
           rel="noopener noreferrer"
           class="btn-secondary btn--tiny"

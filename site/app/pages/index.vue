@@ -55,7 +55,7 @@ const destinations = [
   },
   {
     label: 'Doxygen API',
-    href: 'https://z-doxyzen.iantorres.cl',
+    href: 'https://z-doxygen.iantorres.cl',
     note: 'Headers and functions generated from source comments.',
   },
   {

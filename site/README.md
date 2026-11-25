@@ -1,6 +1,6 @@
 # Zlang site
 
-Nuxt site for the Z language: landing page and guides. The generated source-level API reference is hosted separately at <https://z-doxyzen.iantorres.cl>.
+Nuxt site for the Z language: landing page and guides. The generated source-level API reference is hosted separately at <https://z-doxygen.iantorres.cl>.
 
 ## Development
 
@@ -35,6 +35,6 @@ Nuxt Content registers the Zlang grammar and theme in `nuxt.config.ts`. `ProsePr
 
 ## Doxygen
 
-Doxygen is a separate deployment at <https://z-doxyzen.iantorres.cl>. Use `scripts/build_site.sh` from the repository root when you need to generate the Doxygen HTML locally. That script now only generates Doxygen; it does not build Nuxt.
+Doxygen is a separate deployment at <https://z-doxygen.iantorres.cl>. Use `scripts/build_site.sh` from the repository root when you need to generate the Doxygen HTML locally. That script now only generates Doxygen; it does not build Nuxt.
 
 Nuxt deployment is managed by Vercel as a standard Nuxt project. There is no `vercel.json` in this repository.

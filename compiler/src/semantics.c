@@ -105,6 +105,39 @@ static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *progr
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_struct_method(const zlang_program_t *program,
+                                                             const char *struct_name,
+                                                             const char *method_name);
+
+static bool zlang_method_signature_matches(const zlang_ast_statement_t *left,
+                                           const zlang_ast_statement_t *right,
+                                           const zlang_program_t *program) {
+    if (left == NULL || right == NULL || left->parameter_count_ != right->parameter_count_ ||
+        strcmp(left->type_name_, right->type_name_) != 0 || left->is_static_ != right->is_static_ ||
+        left->is_constructor_ != right->is_constructor_) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < left->parameter_count_; ++_index) {
+        if (strcmp(program->parameters_[left->parameter_start_ + _index].type_name_,
+                   program->parameters_[right->parameter_start_ + _index].type_name_) != 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool zlang_inherited_method_mismatch(const zlang_program_t *program,
+                                            const zlang_ast_statement_t *structure,
+                                            const zlang_ast_statement_t *method) {
+    if (structure->base_name_ == NULL || method->is_constructor_) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _base_k = zlang_find_struct(program, structure->base_name_);
+    const zlang_ast_statement_t *const _inherited_k =
+        zlang_find_struct_method(program, _base_k != NULL ? _base_k->name_ : NULL, method->name_);
+    return _inherited_k != NULL && !zlang_method_signature_matches(method, _inherited_k, program);
+}
+
 static const zlang_ast_statement_t *zlang_find_owner_method(const zlang_program_t *program,
                                                             const char *owner_name,
                                                             const char *method_name) {
@@ -1177,6 +1210,10 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 if (zlang_find_field(context->program_, statement, _field_k->name_) != NULL) {
                     _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION,
                                              _field_k, "method name conflicts with a field");
+                }
+                if (zlang_inherited_method_mismatch(context->program_, statement, _field_k)) {
+                    _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, _field_k,
+                                             "override signature does not match the base method");
                 }
                 continue;
             }

@@ -1,0 +1,12 @@
+integer outer = 1;
+
+{
+    integer inner = 2;
+    print(outer);
+    print(" ");
+    print(inner);
+    print("\n");
+}
+
+print(outer);
+print("\n");

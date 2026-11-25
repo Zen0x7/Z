@@ -91,6 +91,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
+| `examples/` | Golden examples in `algorithms/` and `features/`: `.zlang`, committed generated `.c`, expected stdout and one CTest per example |
 | `fuzz/` | Clang libFuzzer harnesses for the public API, lexer, parser and emitter |
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
 | `Doxyfile` | Doxygen configuration; writes HTML into `build/docs/html` |

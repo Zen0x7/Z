@@ -490,16 +490,10 @@ static void emits_fixed_multidimensional_arrays(zlang_test_context_t *const cont
     ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_set_2_i32") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
-    ZLANG_CHECK(
-        context,
-        strstr(_session.output_,
-               "_zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, "
-               "1, 2, 7);") != NULL);
-    ZLANG_CHECK(
-        context,
-        strstr(_session.output_,
-               "_zlang_array_get_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, "
-               "1, 2)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "_zlang_array_set_2_i32(_grid.data_, 2, 3, 1, 2, 7);") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "_zlang_array_get_2_i32(_grid.data_, 2, 3, 1, 2)") != NULL);
 }
 
 static void rejects_source_array_helpers(zlang_test_context_t *const context) {
@@ -609,14 +603,10 @@ static void emits_array_record_field_access(zlang_test_context_t *const context)
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_i32_2_3_t cells_;") != NULL);
-    ZLANG_CHECK(context,
-                strstr(_session.output_,
-                       "_zlang_array_set_2_i32(_matrix.cells_.data_, ZLANG_CELLS_EXTENT_0") !=
-                    NULL);
-    ZLANG_CHECK(context,
-                strstr(_session.output_,
-                       "_zlang_array_get_2_i32(_matrix.cells_.data_, ZLANG_CELLS_EXTENT_0") !=
-                    NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "_zlang_array_set_2_i32(_matrix.cells_.data_, 2, 3") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "_zlang_array_get_2_i32(_matrix.cells_.data_, 2, 3") != NULL);
 }
 
 static void emits_multiple_array_specializations(zlang_test_context_t *const context) {
@@ -634,6 +624,41 @@ static void emits_multiple_array_specializations(zlang_test_context_t *const con
     ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_2_3_i32") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_4_i32") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_i32(") == NULL);
+}
+
+static void emits_three_dimensional_arrays(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "array[2][2][2] integer cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};\n"
+        "integer sum = 0;\n"
+        "foreach (i, j, k in cube) {\n"
+        "    sum += cube[i][j][k];\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_offset_3") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _i") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _j") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _k") != NULL);
+}
+
+static void emits_four_dimensional_arrays(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array[2][2][2][2] integer hyper = {\n"
+                                  "    {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},\n"
+                                  "    {{{9, 10}, {11, 12}}, {{13, 14}, {15, 16}}}\n"
+                                  "};\n"
+                                  "integer sum = 0;\n"
+                                  "foreach (a, b, c, d in hyper) {\n"
+                                  "    sum += hyper[a][b][c][d];\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_offset_4") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _a") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _b") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _c") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _d") != NULL);
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
@@ -852,6 +877,7 @@ static void emits_logical_operators(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_AND_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_OR_EXPECTED) != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_GROUP_EXPECTED) != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_LOGICAL_COMPARISON_EXPECTED) != NULL);
 }
 
 static void rejects_non_boolean_logical_operands(zlang_test_context_t *const context) {

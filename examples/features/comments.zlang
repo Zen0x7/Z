@@ -1,0 +1,14 @@
+// File-level traceability comment.
+record Point {
+    // Field comment.
+    integer x;
+}
+
+// Function comment.
+function one(): integer {
+    // Body comment.
+    return 1;
+}
+
+print(one());
+print("\n");

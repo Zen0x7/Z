@@ -1,0 +1,23 @@
+array[30] boolean prime;
+
+for (integer index = 0; index < 30; index += 1) {
+    prime[index] = true;
+}
+prime[0] = false;
+prime[1] = false;
+
+for (integer candidate = 2; candidate < 30; candidate += 1) {
+    if (prime[candidate]) {
+        for (integer multiple = candidate * candidate; multiple < 30; multiple += candidate) {
+            prime[multiple] = false;
+        }
+    }
+}
+
+for (integer index = 0; index < 30; index += 1) {
+    if (prime[index]) {
+        print(index);
+        print(" ");
+    }
+}
+print("\n");

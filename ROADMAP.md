@@ -544,3 +544,17 @@ Acceptance criteria:
 The implementation supports nested array initializers, multidimensional `foreach` in row-major
 order, arrays as record fields with bounds-checked access, `const` arrays, whole-array copy for
 identical shapes, and one generated C function per inferred array shape.
+
+## 0.18.1 — Completion
+
+Patch release after the 0.18 array model. Generated C now derives array extents from the accessed
+symbol instead of the active function specialization, array fields use literal extents in typed
+helper calls, string capacity macros are emitted without arrays, inferred array function calls
+resolve their return type without an emitter symbol, scalar `reference` parameters are read and
+written through a dereference, `foreach` iterables count as reads, dynamic `integer` indices are
+cast to `uint32_t`, and logical negation of a comparison keeps the comparison grouped.
+
+The `examples/` tree is now a golden suite: every example has committed generated C and expected
+stdout, grouped under `algorithms/` and `features/` and checked by CTest. The multidimensional CLI
+smoke fixture covers rank 3 and rank 4 helper generation. Semantic symbols now copy array rank and
+extents so whole-array copy never reads uninitialized symbol state under valgrind.

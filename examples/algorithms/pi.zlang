@@ -1,0 +1,19 @@
+integer scale = 100000;
+integer total = 0;
+integer denominator = 1;
+boolean add_term = true;
+
+for (integer index = 0; index < 200000; index += 1) {
+    if (add_term) {
+        total += (4 * scale) / denominator;
+    } else {
+        total -= (4 * scale) / denominator;
+    }
+    denominator += 2;
+    add_term = !add_term;
+}
+
+print(total / scale);
+print(".");
+print(total % scale);
+print("\n");

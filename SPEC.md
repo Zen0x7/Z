@@ -699,6 +699,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | self concatenation | `accepts_self_concatenation_with_explicit_capacity` |
 | nested statements emitted once | `does_not_duplicate_nested_statements` |
 | generated C compiles | `zlang.cli.compiles_generated_c` |
+| golden examples with committed generated C and expected stdout | `zlang.examples.*` |
 | `-`, unary `-`, `*`, `/`, `%` | `emits_arithmetic_operators` |
 | compound assignment | `emits_compound_assignments` |
 | `length(sequence)` | `emits_length_builtin` |

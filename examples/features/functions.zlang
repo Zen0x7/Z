@@ -1,0 +1,13 @@
+function add(clone integer left, clone integer right): integer {
+    return left + right;
+}
+
+function bump(reference integer value) {
+    value += 1;
+}
+
+integer total = add(2, 3);
+bump(total);
+
+print(total);
+print("\n");

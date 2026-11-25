@@ -1,0 +1,10 @@
+const array[3] integer source = {1, 2, 3};
+array[3] integer target = {0, 0, 0};
+
+target = source;
+
+foreach (value in target) {
+    print(value);
+    print(" ");
+}
+print("\n");

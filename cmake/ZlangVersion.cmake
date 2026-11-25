@@ -1,5 +1,5 @@
 # Single source of truth for the package version and the documented language level.
-set(ZLANG_PROJECT_VERSION 0.18.0)
+set(ZLANG_PROJECT_VERSION 0.18.1)
 set(ZLANG_LANGUAGE_VERSION 0.18)
 
 string(REPLACE "." ";" _zlang_version_parts "${ZLANG_PROJECT_VERSION}")

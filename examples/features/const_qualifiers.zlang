@@ -1,0 +1,19 @@
+record Point {
+    integer x;
+}
+
+function read(const reference Point point): integer {
+    return point.x;
+}
+
+function copy_value(const clone integer value): integer {
+    return value;
+}
+
+Point point;
+point.x = 6;
+
+print(read(point));
+print(" ");
+print(copy_value(point.x));
+print("\n");

@@ -1,0 +1,22 @@
+record Point {
+    integer x;
+    integer y;
+}
+
+enum Color {
+    RED,
+    GREEN,
+    BLUE
+}
+
+Point point;
+point.x = 3;
+point.y = 4;
+Color color = BLUE;
+
+print(point.x);
+print(" ");
+print(point.y);
+print(" ");
+print(color);
+print("\n");

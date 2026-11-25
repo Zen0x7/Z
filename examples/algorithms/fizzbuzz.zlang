@@ -1,0 +1,12 @@
+for (integer value = 1; value <= 15; value += 1) {
+    if (value % 15 == 0) {
+        print("fizzbuzz");
+    } else if (value % 3 == 0) {
+        print("fizz");
+    } else if (value % 5 == 0) {
+        print("buzz");
+    } else {
+        print(value);
+    }
+    print("\n");
+}

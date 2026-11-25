@@ -1,0 +1,34 @@
+integer left = 10;
+integer right = 3;
+unsigned count = 5U;
+
+integer sum = left + right;
+integer difference = left - right;
+integer product = left * right;
+integer quotient = left / right;
+integer remainder = left % right;
+unsigned grown = count + 2U;
+integer negative = -sum;
+
+left += right;
+left -= right;
+left *= right;
+left /= right;
+left %= right;
+
+print(sum);
+print(" ");
+print(difference);
+print(" ");
+print(product);
+print(" ");
+print(quotient);
+print(" ");
+print(remainder);
+print(" ");
+print(grown);
+print(" ");
+print(negative);
+print(" ");
+print(left);
+print("\n");

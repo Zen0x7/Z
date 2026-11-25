@@ -1,0 +1,16 @@
+array[2][2][2] integer cube = {
+    {{1, 2}, {3, 4}},
+    {{5, 6}, {7, 8}}
+};
+integer sum = 0;
+foreach (i, j, k in cube) {
+    sum += cube[i][j][k];
+}
+array[2][2][2][2] integer hyper = {
+    {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
+    {{{9, 10}, {11, 12}}, {{13, 14}, {15, 16}}}
+};
+foreach (a, b, c, d in hyper) {
+    sum += hyper[a][b][c][d];
+}
+print(sum);

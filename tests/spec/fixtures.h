@@ -18,7 +18,7 @@
     "}"
 #define ZLANG_SPEC_FOREACH_SEQUENCE_EXPECTED "zlang_values_t _values = { { 0, 0, 0, 0 } };"
 #define ZLANG_SPEC_FOREACH_LOOP_EXPECTED                                                           \
-    "for (uint32_t _zlang_foreach_1 = ZLANG_ZERO; _zlang_foreach_1 < ZLANG_VALUES_EXTENT_0; "      \
+    "for (uint32_t _zlang_foreach_1 = ZLANG_ZERO; _zlang_foreach_1 < 4; "                          \
     "++_zlang_foreach_1)"
 #define ZLANG_SPEC_FOREACH_ITEM_EXPECTED "int32_t _item = _values.data_[_zlang_foreach_1];"
 #define ZLANG_SPEC_FOREACH_CALLBACK "zlang_for_each"
@@ -102,7 +102,7 @@
 #define ZLANG_SPEC_CONFORMANCE_IF_EXPECTED "if (_ready) {"
 #define ZLANG_SPEC_CONFORMANCE_WHILE_EXPECTED "while (_ready) {"
 #define ZLANG_SPEC_CONFORMANCE_FOREACH_EXPECTED                                                    \
-    "for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < ZLANG_VALUES_EXTENT_0; "      \
+    "for (uint32_t _zlang_foreach_2 = ZLANG_ZERO; _zlang_foreach_2 < 4; "                          \
     "++_zlang_foreach_2)"
 #define ZLANG_SPEC_CONFORMANCE_REPEAT_EXPECTED                                                     \
     "for (uint32_t _zlang_repeat_3 = ZLANG_ZERO; _zlang_repeat_3 < 2U;"
@@ -170,11 +170,14 @@
     "boolean negated = !a;\n"                                                                      \
     "boolean both = a && b;\n"                                                                     \
     "boolean either = a || b;\n"                                                                   \
-    "boolean mixed = !(a && b) || a;"
+    "boolean mixed = !(a && b) || a;\n"                                                            \
+    "integer value = 2;\n"                                                                         \
+    "boolean compared = !(value > 10);"
 #define ZLANG_SPEC_LOGICAL_NOT_EXPECTED "bool _negated = (!_a);"
 #define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool _both = (_a && _b);"
 #define ZLANG_SPEC_LOGICAL_OR_EXPECTED "bool _either = (_a || _b);"
 #define ZLANG_SPEC_LOGICAL_GROUP_EXPECTED "bool _mixed = ((!(_a && _b)) || _a);"
+#define ZLANG_SPEC_LOGICAL_COMPARISON_EXPECTED "bool _compared = (!(_value > 10));"
 
 #define ZLANG_SPEC_LOOP_JUMPS_SOURCE                                                               \
     "array[] integer values = {1, 2, 3};\n"                                                        \
@@ -224,7 +227,7 @@
 #define ZLANG_SPEC_LENGTH_SOURCE                                                                   \
     "array[4] integer values = {1, 2};\n"                                                          \
     "unsigned count = length(values);"
-#define ZLANG_SPEC_LENGTH_EXPECTED "uint32_t _count = ZLANG_VALUES_EXTENT_0;"
+#define ZLANG_SPEC_LENGTH_EXPECTED "uint32_t _count = 4;"
 
 #define ZLANG_SPEC_SCALAR_PRINT_SOURCE                                                             \
     "print(1);\n"                                                                                  \
@@ -249,7 +252,7 @@
     "    print(values[index]);\n"                                                                  \
     "}"
 #define ZLANG_SPEC_FOR_EXPECTED                                                                    \
-    "for (uint32_t _index = 0U; (_index < ZLANG_VALUES_EXTENT_0); _index = "                       \
+    "for (uint32_t _index = 0U; (_index < 3); _index = "                                           \
     "zlang_add_u32(_index, 1U))"
 
 #define ZLANG_SPEC_NESTED_LOOPS_SOURCE                                                             \

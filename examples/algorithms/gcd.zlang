@@ -1,0 +1,11 @@
+function gcd(clone integer left, clone integer right): integer {
+    while (right != 0) {
+        integer remainder = left % right;
+        left = right;
+        right = remainder;
+    }
+    return left;
+}
+
+print(gcd(1071, 462));
+print("\n");

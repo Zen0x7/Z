@@ -111,6 +111,7 @@ typedef struct zlang_emitter_t {
     size_t cse_pointer_count_;
     bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
     bool emit_comments_;
+    bool array_helpers_emitted_;
     bool emitted_array_ranks_[ZLANG_ARRAY_MAX_RANK + 1U];
     zlang_array_specialization_t array_specializations_[ZLANG_MAX_ARRAY_SPECIALIZATIONS];
     size_t array_specialization_count_;

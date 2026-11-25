@@ -1,0 +1,11 @@
+array[10] integer fib = {0, 1};
+
+for (integer index = 2; index < 10; index += 1) {
+    fib[index] = fib[index - 1] + fib[index - 2];
+}
+
+foreach (value in fib) {
+    print(value);
+    print(" ");
+}
+print("\n");

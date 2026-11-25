@@ -1,0 +1,12 @@
+function stamp(clone array source): array {
+    array result;
+    result[0][1] = source[0][1] + 1;
+    return result;
+}
+
+array[2][3] integer grid;
+grid[0][1] = 5;
+array[2][3] integer stamped = stamp(grid);
+
+print(stamped[0][1]);
+print("\n");

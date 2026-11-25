@@ -189,6 +189,11 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
     _symbol_k->type_name_ = statement->type_name_;
     _symbol_k->declaration_ = statement;
     _symbol_k->capacity_ = capacity;
+    _symbol_k->rank_ = statement->rank_;
+    memset(_symbol_k->extents_, 0, sizeof(_symbol_k->extents_));
+    for (uint32_t _axis = 0U; _axis < statement->rank_ && _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+        _symbol_k->extents_[_axis] = statement->extents_[_axis];
+    }
     _symbol_k->scope_depth_ = context->scope_depth_;
     _symbol_k->parameter_start_ = statement->parameter_start_;
     _symbol_k->parameter_count_ = statement->parameter_count_;

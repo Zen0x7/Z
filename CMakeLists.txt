@@ -67,6 +67,7 @@ endif()
 
 add_subdirectory(compiler)
 add_subdirectory(tools/zlang-compile)
+add_subdirectory(examples)
 
 if(ZLANG_BUILD_TESTS)
     add_subdirectory(tests)

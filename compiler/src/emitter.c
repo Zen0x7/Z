@@ -6366,6 +6366,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         (!emitter->collecting_array_helpers_ && !zlang_emit_array_helpers(program, emitter)) ||
         !zlang_emit_generated_declarations(program, emitter) ||
         !zlang_emit_method_prototypes(program, emitter) ||
+        !zlang_emit_vtable_thunk_prototypes(program, emitter) ||
         !zlang_emit_vtable_instances(program, emitter) ||
         !zlang_emit_function_prototypes(program, emitter)) {
         return false;

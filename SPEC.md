@@ -699,6 +699,8 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | self concatenation | `accepts_self_concatenation_with_explicit_capacity` |
 | nested statements emitted once | `does_not_duplicate_nested_statements` |
 | generated C compiles | `zlang.cli.compiles_generated_c` |
+| forward function calls through generated prototypes | `emits_function_prototypes`, `zlang.cli.compiles_forward_calls` |
+| only referenced array helpers are emitted | `emits_only_used_array_helpers` |
 | documented golden examples with committed generated C and expected stdout | `zlang.examples.*` |
 | `-`, unary `-`, `*`, `/`, `%` | `emits_arithmetic_operators` |
 | compound assignment | `emits_compound_assignments` |
@@ -835,6 +837,12 @@ helpers.
 Zlang 0.17 removes `array_get` and `array_set` from source. The generated C still uses internal
 `_zlang_array_get_*` and `_zlang_array_set_*` helpers for bounds-checked multidimensional access,
 but source code only uses `array[i]...`.
+
+
+## 0.19 implementation status
+
+Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
+before their definitions, so functions may call functions defined later in the source.
 
 
 ## 0.18 implementation status

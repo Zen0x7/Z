@@ -8,7 +8,7 @@ This example exercises:
 - nested initializers up to four dimensions;
 - one index name per axis in multidimensional `foreach`;
 - generated offset helpers for ranks 2, 3 and 4;
-- the `_zlang_array_helpers_keep` function required by strict C99 builds.
+- only the array helpers actually referenced by the generated code.
 
 This is the broadest generated-C shape in the example suite.
 

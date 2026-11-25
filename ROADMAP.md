@@ -561,3 +561,16 @@ explaining the constructs it exercises; `examples/README.md` indexes both catego
 multidimensional CLI smoke fixture covers rank 3 and rank 4 helper generation. Semantic symbols now
 copy array rank and extents so whole-array copy never reads uninitialized symbol state under
 valgrind.
+
+## 0.19 — Completion
+
+Zlang 0.19 cleans up emitted C and removes two ordering restrictions. The emitter emits only the
+array helpers actually referenced by the generated program, so `_zlang_array_helpers_keep` and its
+call in `main` are gone. User functions are registered before emission and a generated prototype
+block appears after the declarations, allowing a function body to call a function defined later in
+the source. Inferred array specializations get one prototype per generated C function.
+
+The compiler driver still builds native binaries through the configured C compiler. On Windows it
+launches the compiler directly with `CreateProcessA`, avoiding `cmd.exe` quote loss for paths such
+as `C:/Program Files/...`, and selects MSVC or GNU flags from the compiler frontend so MinGW GCC
+receives `-I` / `-o` instead of `/I` / `/Fe`.

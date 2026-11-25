@@ -104,6 +104,7 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_block_,
     zlang_statement_for_,
     zlang_statement_struct_,
+    zlang_statement_trait_,
     zlang_statement_enum_,
     zlang_statement_break_,
     zlang_statement_continue_
@@ -125,6 +126,7 @@ typedef struct zlang_parameter_t {
 typedef struct zlang_ast_statement_t {
     const char *type_name_;
     const char *name_;
+    const char *base_name_;
     const char *index_name_;
     const char *iterable_name_;
     size_t expression_;
@@ -158,6 +160,11 @@ typedef struct zlang_ast_statement_t {
     bool is_static_;
     bool is_constructor_;
     const char *owner_name_;
+    const char *uses_names_[4];
+    size_t uses_count_;
+    const char *requires_names_[4];
+    const char *requires_type_names_[4];
+    size_t requires_count_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

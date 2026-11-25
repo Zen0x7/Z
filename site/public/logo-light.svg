@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" role="img" aria-labelledby="title">
+  <title id="title">Zlang</title>
+  <rect x="8" y="12" width="96" height="96" fill="#fcfcf8" stroke="#111111" stroke-width="2" />
+  <rect x="13" y="17" width="86" height="86" fill="#111111" />
+  <path d="M32 38h48L32 82h48" fill="none" stroke="#fcfcf8" stroke-width="12"
+        stroke-linecap="butt" stroke-linejoin="miter" />
+  <text x="128" y="80" fill="#111111" font-family="Quicksand, Segoe UI, Helvetica, Arial, sans-serif"
+        font-size="58" font-weight="800" letter-spacing="-2">zlang</text>
+</svg>

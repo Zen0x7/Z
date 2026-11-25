@@ -995,3 +995,20 @@ names and field names share one namespace inside a struct.
 Zlang 0.28 is implemented at language level 0.28. Generated C declares `app_struct_<name>_t` types
 and `app_fn_<struct>_<method>` functions, with `self` supplied only for instance methods and
 constructors. The golden suite includes `features/struct_methods`.
+
+## 0.29 — Design note
+
+Status: Locked.
+
+Zlang 0.29 adds single inheritance, polymorphism and traits. `struct Derived : Base` embeds the base
+as its first C subobject. All instance methods are virtual by default; no `virtual` keyword is
+needed. Each polymorphic hierarchy has an internal vtable and each polymorphic subobject has an
+internal type tag and vtable pointer. Upcasting is implicit by value or by `reference`; downcasting
+is not provided. Arrays store exact element types and do not use inheritance.
+
+A trait is static behavior reuse: `trait Name requires ... { methods }` and `struct S uses Name`.
+Trait methods are compiled into the using struct and do not use vtable dispatch. Trait methods cannot
+override inherited methods.
+
+The performance cost of tags, vtables and indirect calls is accepted by the user. The generated C
+still performs no dynamic allocation.

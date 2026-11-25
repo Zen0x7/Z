@@ -1238,7 +1238,8 @@ static bool zlang_register_imports(const zlang_program_t *program,
             return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _statement_k,
                                 "standard function is not in the registry");
         }
-        zlang_symbol_t *const _symbol_k = zlang_find_mutable_symbol(context, _statement_k->name_);
+        const zlang_symbol_t *const _symbol_k =
+            zlang_find_mutable_symbol(context, _statement_k->name_);
         if (_symbol_k != NULL) {
             if (_symbol_k->is_function_ && _symbol_k->declaration_ != NULL &&
                 _symbol_k->declaration_->kind_ == zlang_statement_import_ &&

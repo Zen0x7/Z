@@ -19,7 +19,7 @@ void zlang_optimizer_context_init(zlang_optimizer_context_t *context) {
     memset(context, 0, sizeof(*context));
 }
 
-static void zlang_optimizer_queue_all(zlang_program_t *program,
+static void zlang_optimizer_queue_all(const zlang_program_t *program,
                                       zlang_optimizer_context_t *context) {
     context->worklist_count_ = 0U;
     context->worklist_front_ = 0U;

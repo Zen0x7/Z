@@ -75,6 +75,18 @@ between standard functions independent of include order. Activation is transitiv
 standard library metadata: importing a function activates its dependencies as well. Circular calls
 are legal because every prototype is visible before any implementation body is compiled.
 
+Each function is registered once through `zlang_std_function(...)` in its domain registry. That
+registration carries the Zlang-facing signature, the C symbol and dependencies. Generation produces
+the activation macros, declaration headers, semantic signature table and documentation entries.
+The standard header contains only the implementation body. This keeps authoring local and makes
+validation mechanical: duplicate names, duplicate C symbols, missing dependencies, missing headers
+and signature drift are configure-time errors.
+
+If a stateful deterministic PRNG is selected, runtime state is explicit. The emitter adds a hidden
+state parameter only to generated C functions that transitively call stateful standard functions.
+Zlang source signatures do not expose this parameter; prototypes, definitions and call sites are
+updated together so the generated C remains consistent.
+
 `--tto` will enable a fixed-point optimizer. It uses a caller-owned context, a worklist and
 generation counters so a rewrite that enables or invalidates another fact can requeue affected AST
 nodes. It stops only at a fixed point or at a capacity limit. Opaque operations such as `random`

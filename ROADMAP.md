@@ -635,9 +635,56 @@ This keeps the base runtime small and gives future domains the same shape:
 `standard/<domain>/<function>.h`, one activation macro, one imported symbol. No mutable globals are
 added to the compiler core.
 
+Registration is declarative. Each domain owns a registry file, and each function is registered once:
+
+```cmake
+zlang_std_function(
+    NAME random
+    DOMAIN algorithms
+    SIGNATURE "function random(clone integer from, clone integer to): integer"
+    C_SYMBOL zlang_std_algorithms_random_i32
+    DEPENDS "")
+```
+
+The registry is the single source of truth for the Zlang signature, the C symbol and the dependency
+list. Configure-time generation writes the activation macros, the declaration headers, the
+semantic signature table used by imports and the documentation index. Maintainers implement only the
+C body in the matching standard header; they do not hand-edit `runtime.h` or a second prototype
+table.
+
+A function that uses another standard function registers that dependency explicitly:
+
+```cmake
+zlang_std_function(
+    NAME lucky
+    DOMAIN algorithms
+    SIGNATURE "function lucky(): integer"
+    C_SYMBOL zlang_std_algorithms_lucky_i32
+    DEPENDS random)
+
+zlang_std_function(
+    NAME lucky_pair
+    DOMAIN algorithms
+    SIGNATURE "function lucky_pair(): integer"
+    C_SYMBOL zlang_std_algorithms_lucky_pair_i32
+    DEPENDS lucky)
+```
+
+Importing `lucky_pair` activates `lucky_pair`, `lucky` and `random` through the transitive closure.
+The declaration phase exposes all three prototypes before any implementation body is compiled, so
+`lucky_pair` may call `lucky`, and `lucky` may call `random`, regardless of include order.
+
+Configure-time validation rejects duplicate `(domain, name)` pairs, duplicate C symbols, missing
+headers, missing dependencies, signatures that disagree with generated declarations and dependency
+cycles in the activation closure. Function-call cycles are allowed once all prototypes are visible;
+activation cycles terminate through a visited set.
+
 The exact PRNG state model is still an open decision. A deterministic PRNG needs explicit state
 passed through generated code; an opaque OS-entropy call avoids hidden state but changes test
-strategy. That decision must be made before implementing `random`.
+strategy. If deterministic state is chosen, the emitter adds a hidden state parameter only to user
+functions that transitively call stateful standard functions. Source signatures remain unchanged;
+prototypes, definitions and call sites receive the hidden parameter together. That decision must be
+made before implementing `random`.
 
 ### Transpile-time optimization
 

@@ -696,15 +696,20 @@ entity identity.
 The entry point is explicit and receives the host arguments:
 
 ```zlang
-function main(reference integer argc, reference arguments argv): integer {
+function main(integer argc, arguments argv): integer {
     return 0;
 }
 ```
 
+`main` is an ABI-shaped declaration, not an ordinary user function. Parameter qualifiers are omitted
+because the binding modes are fixed by the signature: `argc` is an implicitly cloned `integer`
+because it is a trivial scalar, and `argv` is an implicitly referenced, read-only `arguments`
+handle because it aliases caller-owned host state. Writing `clone` or `reference` in this signature
+is rejected so there is exactly one canonical form. The mandatory qualifier rule remains unchanged
+for every other function.
+
 `arguments` is a read-only opaque handle created by the C `main` wrapper from `argc` and `char **argv`.
-Zlang does not expose pointer syntax. `reference` is required because these values are caller-owned
-host state; `clone` would copy values that represent external resources and would imply the wrong
-ownership model. Generated C still uses `int main(int argc, char **argv)`.
+Zlang does not expose pointer syntax, and generated C still uses `int main(int argc, char **argv)`.
 
 Command line parsing belongs to `@std/program_options`, not to the language core. The first version
 provides `argument_count`, `argument_at`, `has_option`, `option_value` and `has_flag`. They return

@@ -62,27 +62,27 @@ multi-architecture builds.
 
 ## Planned 0.20 architecture additions
 
-The standard library will be domain-based rather than a set of keywords. Source code imports a
-function with `import { random_int32 } from "algorithms";`. Function names identify their result
-type so future variants such as `random_bytes`, `random_char` and `random_float` fit the same model.
-The compiler records the import in semantic analysis and the emitter activates the matching runtime
-domain macro before including `<zlang/runtime/runtime.h>`. Domain implementations live under
+The standard library will be domain-based rather than a set of keywords. The catalog, naming rules
+and classification dimensions live in [`standard_library.md`](standard_library.md). Source code
+imports a function with `import { generate_int32 } from "random";`. The compiler records the import
+in semantic analysis and the emitter activates the matching function macro before including
+`<zlang/runtime/runtime.h>`. Domain implementations live under
 `include/zlang/standard/<domain>/<function>.h`, and the base runtime includes them only when their
 activation macro is defined.
 
 Standard headers use two include phases. The declaration phase emits C prototypes for every
 activated function; the implementation phase emits the `static inline` bodies. This makes calls
 between standard functions independent of include order. Activation is transitive and comes from
-standard library metadata: importing a function activates its dependencies as well. Circular calls
-are legal because every prototype is visible before any implementation body is compiled.
+standard library metadata: importing `algorithms.shuffle_int32` activates
+`random.generate_int32` as well. Circular calls are legal because every prototype is visible before
+any implementation body is compiled.
 
 Each function is registered once through `zlang_std_function(...)` in its domain registry. That
-registration carries the Zlang-facing signature, the C symbol, lifecycle status (`DRAFT`,
-`UNSTABLE`, `STABLE`), safety status (`SAFE`, `UNSAFE`) and dependencies. Generation produces the
-activation macros, declaration headers, semantic signature table and documentation entries. The
-standard header contains only the implementation body. This keeps authoring local and makes
-validation mechanical: duplicate names, duplicate C symbols, missing dependencies, missing headers
-and signature drift are configure-time errors.
+registration carries the Zlang-facing signature, the C symbol, lifecycle status, safety status,
+evaluation, determinism, resource model, error model, portability, optimizer contract and
+dependencies. Generation produces the activation macros, declaration headers, semantic signature
+table and documentation entries. The standard header contains only the implementation body. This
+keeps authoring local and makes validation mechanical.
 
 Stateful standard functions never own mutable globals and never hide mutable `static` state in a
 header. If a stateful deterministic PRNG is selected, runtime state is explicit. The emitter adds a
@@ -94,5 +94,5 @@ must expose state through an explicit runtime context type.
 `--tto` will enable a fixed-point optimizer. It uses a caller-owned context, a worklist and
 generation counters so a rewrite that enables or invalidates another fact can requeue affected AST
 nodes. It stops only at a fixed point or at a capacity limit. Opaque operations such as
-`random_int32` remain runtime calls; their arguments may be folded but their result is not folded,
-cached or reordered.
+`random.generate_int32` remain runtime calls; their arguments may be folded but their result is not
+folded, cached or reordered.

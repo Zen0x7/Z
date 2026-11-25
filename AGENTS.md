@@ -96,6 +96,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `scripts/check_headers.sh` | Compiles each public header in isolation with GCC and Clang |
 | `Doxyfile` | Doxygen configuration; writes HTML into `build/docs/html` |
 | `docs/index.md` | API reference landing page |
+| `docs/standard_library.md` | Planned 0.20 standard library domain catalog and import model |
 | `scripts/build_docs.sh` | Reproducible Doxygen build used by CI and Vercel |
 | `vercel.json` | Vercel static build command and output directory for the API reference |
 | `.github/workflows/ci.yml` | Build/test/coverage/sanitizer matrix plus review-gate jobs |

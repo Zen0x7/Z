@@ -579,133 +579,46 @@ receives `-I` / `-o` instead of `/I` / `/Fe`.
 
 Zlang 0.19 exposes no user-callable standard functions: the runtime API is used only by generated
 C. The next language level adds a domain-based standard library and an optional transpile-time
-optimizer. These are design decisions, not implementation claims.
+optimizer. The complete catalog, naming rules and classification dimensions are documented in
+[`docs/standard_library.md`](docs/standard_library.md).
 
-### Standard library model
-
-A program opts into a standard function with an explicit import:
+Imports are intention-first:
 
 ```zlang
-import { random } from "algorithms";
+import { generate_int32, generate_bytes } from "random";
+import { tcp_listener, send_bytes } from "networking";
 ```
 
-The import is a source construct, not a keyword attached to the function name. `random` is a
-function in the `algorithms` domain; it is not a user-space function and not a language keyword.
-Only imported names enter the source symbol table. An unimported name remains undefined.
+Domains are full, expressive capability names: `random`, `algorithms`, `text`, `encoding`, `math`,
+`memory`, `time`, `streams`, `filesystem`, `networking` and `system`. Function names say what they
+do: `generate_int32`, `parse_int32`, `encode_hex`, `sort_int32`, `tcp_listener`. Generic names such
+as `listener`, abbreviations such as `inet`, and catch-all domains such as `util` are rejected.
 
-The emitter activates only the runtime headers that the program uses. For `random`, generated C
-defines an activation macro before including `<zlang/runtime/runtime.h>`; the runtime header then
-includes `zlang/standard/algorithms/random.h`. Domain headers stay isolated from each other. The
-pointer is the C99 model:
+The emitter activates only the runtime headers the program uses. Each activated function has one
+macro, and `runtime.h` includes standard headers in two phases: prototypes first, `static inline`
+bodies second. Dependencies are declared by standard library metadata and activated transitively by
+full registry id, such as `algorithms.shuffle_int32` depending on `random.generate_int32`.
+Function-call cycles are legal because every prototype is visible before any implementation body is
+compiled.
 
-```c
-#define ZLANG_STD_ALGORITHMS_RANDOM
-#include <zlang/runtime/runtime.h>
-```
+Registration is declarative. Each domain owns a registry file, and each function is registered once
+with its signature, C symbol, lifecycle (`DRAFT`, `UNSTABLE`, `STABLE`), safety (`SAFE`, `UNSAFE`),
+evaluation, determinism, resource, error, portability and optimizer classification, plus dependency
+ids. Configure-time generation writes activation macros, declaration headers, the semantic signature
+table and documentation. Maintainers implement only the C body in the matching standard header.
 
-`runtime.h` performs a two-phase include. First it includes every activated header in declaration
-mode; then it includes the same headers in implementation mode:
-
-```c
-#if defined(ZLANG_STD_ALGORITHMS_RANDOM)
-#define ZLANG_STD_DECLARATION_PHASE
-#include "zlang/standard/algorithms/random.h"
-#undef ZLANG_STD_DECLARATION_PHASE
-#endif
-
-#if defined(ZLANG_STD_ALGORITHMS_RANDOM)
-#define ZLANG_STD_IMPLEMENTATION_PHASE
-#include "zlang/standard/algorithms/random.h"
-#undef ZLANG_STD_IMPLEMENTATION_PHASE
-#endif
-```
-
-Each standard header exposes its C prototype during the declaration phase and its `static inline`
-implementation during the implementation phase. This solves calls between standard functions: all
-prototypes are visible before any implementation body is compiled. It is the same ordering rule
-used for user functions in generated C.
-
-Activation is transitive. If `algorithms/shuffle` uses `random`, importing `shuffle` activates both
-`ZLANG_STD_ALGORITHMS_SHUFFLE` and `ZLANG_STD_ALGORITHMS_RANDOM`. Dependencies are declared by the
-standard library metadata, not discovered from source import order. Circular dependencies are
-resolved by the declaration phase, so two standard functions may call each other as long as their
-signatures are known.
-
-This keeps the base runtime small and gives future domains the same shape:
-`standard/<domain>/<function>.h`, one activation macro, one imported symbol. No mutable globals are
-added to the compiler core.
-
-Registration is declarative. Each domain owns a registry file, and each function is registered once:
-
-```cmake
-zlang_std_function(
-    NAME random_int32
-    DOMAIN algorithms
-    SIGNATURE "function random_int32(clone integer from, clone integer to): integer"
-    C_SYMBOL zlang_std_algorithms_random_int32
-    STATUS DRAFT UNSTABLE UNSAFE
-    DEPENDS "")
-```
-
-Standard functions are named for what they return, not with a generic verb. `random_int32` leaves
-room for `random_bytes`, `random_char`, `random_uint32` and `random_float` without renaming the
-first API or guessing its result type.
-
-The `STATUS` field has two independent axes. Lifecycle is `DRAFT`, `UNSTABLE` or `STABLE`. Safety is
-`SAFE` or `UNSAFE`. A draft function is usable now but may change; an unstable function has a
-committed signature but not a committed implementation algorithm; a stable function has both. An
-unsafe function is opaque, stateful or otherwise not eligible for transpile-time evaluation. This
-allows `random_int32` to exist before the final PRNG algorithm is chosen.
-
-The registry is the single source of truth for the Zlang signature, the C symbol, status and the
-dependency list. Configure-time generation writes the activation macros, the declaration headers, the
-semantic signature table used by imports and the documentation index. Maintainers implement only the
-C body in the matching standard header; they do not hand-edit `runtime.h` or a second prototype
-table.
-
-A function that uses another standard function registers that dependency explicitly:
-
-```cmake
-zlang_std_function(
-    NAME lucky
-    DOMAIN algorithms
-    SIGNATURE "function lucky(): integer"
-    C_SYMBOL zlang_std_algorithms_lucky_i32
-    DEPENDS random)
-
-zlang_std_function(
-    NAME lucky_pair
-    DOMAIN algorithms
-    SIGNATURE "function lucky_pair(): integer"
-    C_SYMBOL zlang_std_algorithms_lucky_pair_i32
-    DEPENDS lucky)
-```
-
-Importing `lucky_pair` activates `lucky_pair`, `lucky` and `random_int32` through the transitive
-closure. The declaration phase exposes all three prototypes before any implementation body is
-compiled, so `lucky_pair` may call `lucky`, and `lucky` may call `random_int32`, regardless of
-include order.
-
-Configure-time validation rejects duplicate `(domain, name)` pairs, duplicate C symbols, missing
-headers, missing dependencies, signatures that disagree with generated declarations and dependency
-cycles in the activation closure. Function-call cycles are allowed once all prototypes are visible;
-activation cycles terminate through a visited set.
-
-The exact PRNG state model is still an open decision. A deterministic PRNG needs explicit state
-passed through generated code; an opaque OS-entropy call avoids hidden state but changes test
-strategy. In either case, standard functions do not declare mutable globals and do not use hidden
-`static` state inside their headers. If deterministic state is chosen, the emitter adds a hidden
-state parameter only to generated C functions that transitively call stateful standard functions.
-Source signatures remain unchanged; prototypes, definitions and call sites receive the hidden
-parameter together. A future global-state feature must expose state through an explicit runtime
-context type, not by letting standard headers own mutable globals.
+Standard functions do not declare mutable globals and do not use hidden mutable `static` state. If a
+stateful deterministic PRNG is chosen, runtime state is explicit. The emitter adds a hidden state
+parameter only to generated C functions that transitively call stateful standard functions. Source
+signatures remain unchanged; prototypes, definitions and call sites receive the hidden parameter
+together. A future global-state feature must expose state through an explicit runtime context type.
 
 ### Transpile-time optimization
 
 `--tto` enables transpile-time optimization. Default output remains unoptimized and stable.
 
-The optimizer is not a single pass over the AST. It is a fixed-point rewriter with a caller-owned
-context, a worklist and generation counters:
+The optimizer is a fixed-point rewriter with a caller-owned context, a worklist and generation
+counters:
 
 - a rewrite may expose another rewrite, so changed nodes are reconsidered;
 - any rewrite that invalidates prior analysis restarts or requeues affected nodes;
@@ -723,8 +636,8 @@ Initial rewrite families:
   evaluation order;
 - function evaluation when the function is pure, has constant arguments and contains no opaque
   operation;
-- `random` is opaque: its arguments may be folded, but its result is never folded, cached or
-  reordered.
+- `random.generate_int32` is a barrier: its arguments may be folded, but its result is never folded,
+  cached or reordered.
 
 Additional cleanup in 0.20:
 
@@ -739,8 +652,8 @@ Acceptance criteria:
 - `line[0] = 9` under `--tto` emits a direct store without a bounds `if` for that literal index;
 - a later read of the same unmodified cell may become a constant under `--tto`;
 - any may-write to that array cell invalidates the known value;
-- `random_int32(1, 6)` is never constant-folded;
+- `generate_int32(1, 6)` is never constant-folded under `--tto`;
 - imported and unimported standard functions are distinguished by semantic analysis;
 - a standard function may call another standard function regardless of source import order;
-- transitive dependencies are activated by library metadata, not by user imports;
+- dependencies are activated from metadata, not from user imports;
 - generated C compiles under the strict warning set in both default and `--tto` modes.

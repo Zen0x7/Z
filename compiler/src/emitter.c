@@ -5877,6 +5877,54 @@ static bool zlang_emit_vtable_type_declarations(zlang_emitter_t *emitter) {
     return zlang_append_text(emitter, "\n");
 }
 
+static bool zlang_emit_vtable_definitions(const zlang_program_t *program,
+                                          zlang_emitter_t *emitter) {
+    if (emitter->emitted_vtable_count_ == 0U) {
+        return true;
+    }
+    if (!zlang_append_text(emitter, "/* generated vtable definitions */\n\n")) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < emitter->emitted_vtable_count_; ++_index) {
+        zlang_emitted_vtable_t *const _entry_k = &emitter->emitted_vtables_[_index];
+        if (_entry_k->statement_->base_name_ != NULL ||
+            !zlang_collect_vtable_slots(emitter, program, _entry_k) ||
+            !zlang_append_text(emitter, "struct ") ||
+            !zlang_append_text(emitter, _entry_k->type_name_) ||
+            !zlang_append_text(emitter, " {\n")) {
+            return false;
+        }
+        for (size_t _slot = 0U; _slot < _entry_k->slot_count_; ++_slot) {
+            const zlang_ast_statement_t *const _method_k = _entry_k->slot_methods_[_slot];
+            const char *const _return_k =
+                zlang_generated_type(program, emitter, _method_k->type_name_);
+            if (_return_k == NULL || !zlang_append_text(emitter, "    ") ||
+                !zlang_append_text(emitter, _return_k) || !zlang_append_text(emitter, " (*") ||
+                !zlang_append_text(emitter, _entry_k->slot_names_[_slot]) ||
+                !zlang_append_text(emitter, ")(void *self")) {
+                return false;
+            }
+            for (size_t _param = 0U; _param < _method_k->parameter_count_; ++_param) {
+                const zlang_parameter_t *const _parameter_k =
+                    &program->parameters_[_method_k->parameter_start_ + _param];
+                const char *const _parameter_type_k =
+                    zlang_generated_type(program, emitter, _parameter_k->type_name_);
+                if (_parameter_type_k == NULL || !zlang_append_text(emitter, ", ") ||
+                    !zlang_append_text(emitter, _parameter_type_k)) {
+                    return false;
+                }
+            }
+            if (!zlang_append_text(emitter, ");\n")) {
+                return false;
+            }
+        }
+        if (!zlang_append_text(emitter, "};\n\n")) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool zlang_emit_user_types(const zlang_program_t *program, zlang_emitter_t *emitter) {
     if (emitter->emitted_user_type_count_ == 0U) {
         return true;
@@ -5976,6 +6024,7 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
            zlang_emit_vtable_type_declarations(emitter) &&
            zlang_emit_array_typedefs(emitter, program, true) &&
            zlang_emit_user_types(program, emitter) &&
+           zlang_emit_vtable_definitions(program, emitter) &&
            zlang_emit_array_typedefs(emitter, program, false) &&
            zlang_emit_literal_declarations(emitter, program);
 }

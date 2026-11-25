@@ -88,7 +88,7 @@ downloads the pinned, checksum-verified Doxygen 1.18.0 Linux binary):
 | `include/zlang/standard/` | Header-only standard library domains activated by generated macros |
 | `include/zlang/detail/inline.h` | Private shared helper for `static inline` across compilers |
 | `compiler/` | Compiler core: lexer, parser, inert AST, diagnostics, semantic analyzer, memory planner, and C emitter |
-| `tools/zc/` | Compiler driver: `--emit-c` writes `<stem>.c`; default mode also links a binary |
+| `tools/zc/` | Compiler driver with `z.yaml` module resolution: `--emit-c` writes `<stem>.c`; default mode also links a binary |
 | `tests/<module>/` | One test module: CMake file, X-macro case list, test source |
 | `tests/spec/` | Conformance fixtures and emitter tests derived from `SPEC.md` |
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |

@@ -1,4 +1,4 @@
-add_executable(zc main.c)
+add_executable(zc main.c modules.c)
 set_target_properties(zc PROPERTIES OUTPUT_NAME zc)
 target_link_libraries(zc PRIVATE zlang::compiler_core)
 target_compile_definitions(
@@ -17,6 +17,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/forward_calls.z ${CMAKE_CURRENT_BINARY_DIR}/forward_calls.z COPYONLY)
     configure_file(tests/tto.z ${CMAKE_CURRENT_BINARY_DIR}/tto.z COPYONLY)
     configure_file(tests/stateful_calls.z ${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.z COPYONLY)
+    configure_file(tests/program_options.z ${CMAKE_CURRENT_BINARY_DIR}/program_options.z COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z --emit-c)
@@ -118,6 +119,48 @@ if(ZLANG_BUILD_TESTS)
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_stateful_calls PROPERTIES LABELS module:cli)
 
+    add_test(NAME zlang.cli.modules
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/modules_project/main.z
+                     -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/tests/modules_project/expected.txt
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/modules_project
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_modules.cmake)
+    set_tests_properties(zlang.cli.modules PROPERTIES LABELS module:cli)
+
+    foreach(_case modules_cycle modules_escape)
+        string(REPLACE "_" "." _label "${_case}")
+        if(_case STREQUAL modules_cycle)
+            set(_message "cyclic module import")
+        else()
+            set(_message "cannot resolve module import")
+        endif()
+        add_test(NAME zlang.cli.${_case}
+                 COMMAND ${CMAKE_COMMAND}
+                         -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                         -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/${_case}_project/main.z
+                         -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/${_case}_project
+                         -DC_COMPILER=${CMAKE_C_COMPILER}
+                         -DMESSAGE=${_message}
+                         -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_modules_failure.cmake)
+        set_tests_properties(zlang.cli.${_case} PROPERTIES LABELS module:cli)
+    endforeach()
+
+    add_test(NAME zlang.cli.program_options
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/program_options.z
+                     -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/tests/program_options.expected.txt
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/program_options
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_program_options.cmake)
+    set_tests_properties(zlang.cli.program_options PROPERTIES LABELS module:cli)
+
     if(ZLANG_SANITIZER_ENV)
         set_tests_properties(zlang.cli.emit_c zlang.cli.emit_c.output zlang.cli.diagnostic_format
                              zlang.cli.disable_comments zlang.cli.disable_comments.output
@@ -126,6 +169,10 @@ if(ZLANG_BUILD_TESTS)
                              zlang.cli.compiles_forward_calls
                              zlang.cli.tto
                              zlang.cli.compiles_stateful_calls
+                             zlang.cli.modules
+                             zlang.cli.modules_cycle
+                             zlang.cli.modules_escape
+                             zlang.cli.program_options
                              PROPERTIES ENVIRONMENT "${ZLANG_SANITIZER_ENV}")
     endif()
 endif()

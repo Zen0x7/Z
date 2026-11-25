@@ -1,0 +1,22 @@
+if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT WORK_DIR OR NOT MESSAGE)
+    message(FATAL_ERROR "check_modules_failure.cmake requires ZLANG_COMPILE, SOURCE, WORK_DIR and MESSAGE")
+endif()
+get_filename_component(_stem "${SOURCE}" NAME_WE)
+get_filename_component(_project_dir "${SOURCE}" DIRECTORY)
+set(_executable "${WORK_DIR}/${_stem}${EXECUTABLE_SUFFIX}")
+file(MAKE_DIRECTORY "${WORK_DIR}")
+file(COPY "${_project_dir}/" DESTINATION "${WORK_DIR}")
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env "ZLANG_CC=${C_COMPILER}" "${ZLANG_COMPILE}" "${_stem}.z"
+    WORKING_DIRECTORY "${WORK_DIR}"
+    RESULT_VARIABLE _compile OUTPUT_VARIABLE _compile_output ERROR_VARIABLE _error)
+if(_compile EQUAL 0)
+    message(FATAL_ERROR "zc unexpectedly succeeded")
+endif()
+string(FIND "${_error}${_compile_output}" "${MESSAGE}" _position)
+if(_position LESS 0)
+    message(FATAL_ERROR "expected '${MESSAGE}'\n--- stderr ---\n${_error}\n--- stdout ---\n${_compile_output}")
+endif()
+if(EXISTS "${_executable}")
+    message(FATAL_ERROR "failed compilation produced an executable")
+endif()

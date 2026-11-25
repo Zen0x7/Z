@@ -1,0 +1,5 @@
+integer shared = 10;
+
+function left_value(): integer {
+    return shared;
+}

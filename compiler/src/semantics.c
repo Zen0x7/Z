@@ -17,8 +17,6 @@ static const char *zlang_semantic_std_domain(const char *specifier) {
                                                                 : specifier;
 }
 
-#include <string.h>
-
 void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol_t *symbols,
                                  size_t symbol_capacity, zlang_diagnostics_t *diagnostics,
                                  const zlang_program_t *program) {

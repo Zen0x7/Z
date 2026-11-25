@@ -1,0 +1,9 @@
+record Point {
+    integer x;
+    integer y;
+}
+
+enum Color {
+    RED,
+    BLUE
+}

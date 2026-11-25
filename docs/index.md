@@ -12,7 +12,7 @@ library and `zc` for the command line driver.
 
 - [Compiler architecture](architecture.md) describes the pipeline and ownership rules.
 - [Zlang grammar](grammar.md) lists the current syntax and diagnostics.
-- [Standard library design](standard_library.md) describes the planned domain catalog and import model.
+- [Standard library design](standard_library.md) describes the domain catalog, import model and module aliases.
 - The sections below list the runtime headers, compiler headers and `zc` behavior.
 
 ## Public API

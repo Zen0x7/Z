@@ -305,6 +305,11 @@ static const char *zlang_default_initializer(const char *type_name) {
 
 static bool zlang_is_static(const zlang_emitter_t *emitter,
                             const zlang_ast_statement_t *statement) {
+    if (statement != NULL && statement->name_ != NULL && strncmp(statement->name_, "m_", 2U) == 0 &&
+        (statement->kind_ == zlang_statement_declaration_ ||
+         statement->kind_ == zlang_statement_array_declaration_)) {
+        return true;
+    }
     return emitter->plan_ != NULL &&
            zlang_plan_storage_for(emitter->plan_, statement) == zlang_storage_static_;
 }

@@ -9,6 +9,8 @@
 #include "zlang/compiler/planner.h"
 #include "zlang/compiler/semantics.h"
 
+#include "modules.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -44,26 +46,7 @@
 #endif
 
 static void zlang_cli_usage(void) {
-    (void)fprintf(stderr,
-                  "usage: zc <source.z> [--emit-c] [--disable-comments] [--tto]\n");
-}
-
-static bool zlang_cli_read_source(const char *path, char *buffer, size_t capacity, size_t *length) {
-    FILE *const _stream_k = fopen(path, "rb");
-    if (_stream_k == NULL) {
-        (void)fprintf(stderr, "error: cannot open '%s' for reading\n", path);
-        return false;
-    }
-    const size_t _read_k = fread(buffer, 1U, capacity - 1U, _stream_k);
-    const bool _failed_k = ferror(_stream_k) != 0;
-    (void)fclose(_stream_k);
-    if (_failed_k) {
-        (void)fprintf(stderr, "error: cannot read '%s'\n", path);
-        return false;
-    }
-    buffer[_read_k] = '\0';
-    *length = _read_k;
-    return true;
+    (void)fprintf(stderr, "usage: zc <source.z> [--emit-c] [--disable-comments] [--tto]\n");
 }
 
 static size_t zlang_cli_stem_length(const char *path) {
@@ -298,6 +281,7 @@ int main(int argc, char **argv) {
     static zlang_memory_plan_entry_t _plan_entries[ZLANG_CLI_PLAN_CAPACITY];
     static zlang_diagnostic_t _diagnostics[ZLANG_CLI_DIAGNOSTIC_CAPACITY];
     static zlang_optimizer_context_t _optimizer;
+    static zlang_modules_t _modules;
 
     if (argc < 2 || strcmp(argv[1], "--help") == 0) {
         zlang_cli_usage();
@@ -320,20 +304,19 @@ int main(int argc, char **argv) {
     }
 
     const char *const _source_path_k = argv[1];
-    size_t _source_length_k = 0U;
-    if (!zlang_cli_read_source(_source_path_k, _source, sizeof(_source), &_source_length_k)) {
-        return 2;
-    }
-    (void)_source_length_k;
-
     zlang_diagnostics_t _diagnostic_state;
+    zlang_diagnostics_init(&_diagnostic_state, _diagnostics,
+                           sizeof(_diagnostics) / sizeof(_diagnostics[0]));
+    zlang_modules_init(&_modules);
+    if (!zlang_modules_assemble(&_modules, _source_path_k, &_diagnostic_state, _source,
+                                sizeof(_source))) {
+        return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 3 : 2;
+    }
     zlang_parser_t _parser;
     zlang_parse_result_t _result;
     zlang_semantic_context_t _semantic;
     zlang_memory_plan_t _plan;
     zlang_emitter_t _emitter;
-    zlang_diagnostics_init(&_diagnostic_state, _diagnostics,
-                           sizeof(_diagnostics) / sizeof(_diagnostics[0]));
     zlang_parser_init(&_parser, _tokens, sizeof(_tokens) / sizeof(_tokens[0]), _expressions,
                       sizeof(_expressions) / sizeof(_expressions[0]), _statements,
                       sizeof(_statements) / sizeof(_statements[0]), _parameters,

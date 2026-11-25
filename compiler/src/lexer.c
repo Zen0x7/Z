@@ -357,6 +357,7 @@ bool zlang_lex(zlang_lexer_t *lexer, zlang_token_t *tokens, size_t token_capacit
         zlang_token_t _token;
         memset(&_token, 0, sizeof(_token));
         const size_t _offset_k = lexer->position_;
+        _token.offset_ = _offset_k;
 
         if (_character_k == '\0') {
             if (!zlang_token_fits(*token_count, token_capacity, diagnostics, lexer->line_,

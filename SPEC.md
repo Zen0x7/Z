@@ -705,6 +705,12 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `-`, unary `-`, `*`, `/`, `%` | `emits_arithmetic_operators` |
 | compound assignment | `emits_compound_assignments` |
 | `length(sequence)` | `emits_length_builtin` |
+| user module imports | `zlang.cli.modules` |
+| canonical generated names | `zlang.cli.modules` |
+| cyclic module rejection | `zlang.cli.modules_cycle` |
+| module root escape rejection | `zlang.cli.modules_escape` |
+| explicit `main` with host arguments | `zlang.cli.program_options` |
+| standard command line options | `zlang.cli.program_options` |
 | standard imports | `zlang.stdlib.random.generate_int32.basic` |
 | transpile-time optimization | `zlang.cli.tto` |
 | scalar printing | `emits_scalar_print` |

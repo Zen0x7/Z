@@ -1,0 +1,5 @@
+integer shared = 20;
+
+function right_value(): integer {
+    return shared;
+}

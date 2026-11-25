@@ -1,0 +1,23 @@
+import { retries } from "@lib/config";
+import { add_one, zero } from "./lib/math";
+import { left_value } from "./lib/left";
+import { right_value } from "./lib/right";
+import { Point, Color } from "@lib/types";
+
+function main(integer argc, arguments argv): integer {
+    Point point;
+    point.x = add_one(retries);
+    point.y = 1;
+    Color color = BLUE;
+    print(point.x);
+    print(" ");
+    print(color);
+    print(" ");
+    print(zero());
+    print(" ");
+    print(left_value());
+    print(" ");
+    print(right_value());
+    print("\n");
+    return 0;
+}

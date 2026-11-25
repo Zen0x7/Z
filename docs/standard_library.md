@@ -1,11 +1,8 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.20. The standard library catalog is a roadmap for additional
-domains; only `random.generate_int32` is implemented in this release.
-
-Zlang currently exposes no user-callable standard functions. Generated C uses the internal runtime
-API, but Zlang programs cannot call a standard library function. The 0.20 design adds a small,
-domain-based standard library with explicit imports.
+**Status:** implemented in Zlang 0.21. The catalog below is the allowed namespace map; the
+implemented standard functions are `random.generate_int32` and the `@std/program_options` domain.
+User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
 
 ## Import grammar
 
@@ -129,7 +126,8 @@ user owns.
 ## Domain catalog
 
 The catalog is the allowed set of top-level domains. New domains require a design decision and a
-catalog entry. Function lists below are proposals for 0.20; they are not implemented yet.
+catalog entry. Function lists below define the allowed catalog; only the functions named above are
+implemented.
 
 ### Pure and bounded domains
 

@@ -668,7 +668,7 @@ Acceptance criteria:
   programs;
 - generated C compiles under the strict warning set in both default and `--tto` modes.
 
-## 0.21 — Design note
+## 0.21 — Completion
 
 Zlang 0.21 adds user modules and an explicit program entry point. A compilation still produces one
 C file with one C `main`; modules are assembled into that single translation unit rather than linked
@@ -719,3 +719,11 @@ At this stage a user module has no hidden global runtime state of its own. Modul
 emitted once as module-qualified C objects; they are user-owned module state, not runtime state.
 The module graph is resolved before semantic analysis, with cycle detection and deterministic
 ordering. Generated names come from canonical paths, never from aliases.
+
+The implementation assembles all loaded modules into a single Zlang source before parsing. Each
+module is loaded once; imported names are bound to canonical entity names; module variables are
+emitted once as file-scope objects; and enum items imported through an enum declaration are bound
+automatically. CLI coverage verifies relative imports, aliases from `z.yaml`, `@std` imports from
+dependencies, duplicate local names in separate modules, shared variables, records, enums,
+functions, cyclic import rejection, root escape rejection, canonical generated names and the
+explicit `main` entry point.

@@ -16,11 +16,11 @@ typedef struct zlang_std_function_t {
     const char *return_type_;
     const char *c_symbol_;
     const char *activation_macro_;
-    const char *parameter_types_[ZLANG_STD_MAX_PARAMETERS];
-    bool parameter_is_reference_[ZLANG_STD_MAX_PARAMETERS];
     size_t parameter_count_;
+    const char *parameter_types_[ZLANG_STD_MAX_PARAMETERS];
     bool is_stateful_;
     bool is_opaque_;
+    bool parameter_is_reference_[ZLANG_STD_MAX_PARAMETERS];
 } zlang_std_function_t;
 
 const zlang_std_function_t *zlang_std_find(const char *domain, const char *name);

@@ -1,0 +1,15 @@
+import { argument_count, argument_at, has_option, option_value, has_flag } from "@std/program_options";
+
+function main(integer argc, arguments argv): integer {
+    print(argument_count(argv));
+    print(" ");
+    print(argument_at(argv, 1U));
+    print(" ");
+    print(has_option(argv, "--name"));
+    print(" ");
+    print(option_value(argv, "--name"));
+    print(" ");
+    print(has_flag(argv, "--verbose"));
+    print("\n");
+    return 0;
+}

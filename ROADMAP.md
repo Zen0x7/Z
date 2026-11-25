@@ -490,3 +490,18 @@ Status: Implemented.
 
 Local inferred arrays and inferred array function signatures are resolved before semantic analysis.
 Function signatures use one inferred shape; conflicting specializations are deferred.
+
+## 0.17 — Internal array helpers
+
+Status: Locked.
+
+- Remove `array_get` and `array_set` from Zlang source.
+- Keep generated `_zlang_array_get_*` and `_zlang_array_set_*` helpers private to emitted C.
+- Lower multidimensional source indexing directly to those helpers.
+
+## 0.17 — Completion
+
+Status: Implemented.
+
+The only array access syntax in Zlang is `array[i]...`. Generated C uses shape-typed helpers for
+bounds-checked reads and writes, but users never name them.

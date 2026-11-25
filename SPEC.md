@@ -561,12 +561,8 @@ expression     = literal
                | identifier "(" ( expression ( "," expression )* )? ")"
                | "print" "(" expression ")"
                | "length" "(" identifier ")"
-               | "array_get" "(" identifier "," indexTuple ")"
-               | "array_set" "(" identifier "," indexTuple "," expression ")"
                | identifier "[" expression "]"
                | expression "." identifier ;
-
-indexTuple     = "{" expression ( "," expression )* "}" ;
 
 literal        = integerLiteral | stringLiteral | "true" | "false" ;
 ```
@@ -728,9 +724,9 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | contextual field-pointer CSE | `reuses_field_pointers_contextually` |
 | contextual index-value CSE across branches | `reuses_index_values_across_if_branches` |
 | reserved generated namespace | `rejects_reserved_identifiers` |
-| tuple array access | `emits_array_get_and_set`, `rejects_array_tuple_rank_mismatch` |
 | inferred local array shape | `infers_local_array_shape`, `rejects_unknown_array_extent` |
 | inferred array function shape | `infers_array_function_shape` |
+| source array helper rejection | `rejects_source_array_helpers` |
 | short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
 | parameter qualifiers | `emits_parameter_qualifiers` |
 | missing parameter qualifier rejection | `rejects_missing_parameter_qualifier` |
@@ -813,7 +809,8 @@ and typed get/set helpers. Arrays have no logical length and no append operation
 
 Zlang 0.15 adds source-level `array_get(array, {i, ...})` and `array_set(array, {i, ...}, value)`.
 The tuple rank must match the declared array rank, and both operations lower to the generated typed
-helpers. `array_set` participates in mutation tracking and CSE invalidation.
+helpers. In 0.17 those source helpers were removed again: only source indexing is available, and it
+lowers to the generated typed helpers.
 
 
 ## 0.16 implementation status
@@ -822,7 +819,15 @@ Zlang 0.16 infers array rank and extents before semantic analysis. Declarations 
 `array T name;` use initializer count, constant indices and canonical loop induction ranges as
 evidence. Function parameters and returns written as `array` infer one concrete shape from call
 sites or return assignment. Canonical array typedefs keep locals, parameters and returns type
-compatible in generated C.
+compatible in generated C. Multidimensional indexing now lowers directly to internal `_zlang_*`
+helpers.
+
+
+## 0.17 implementation status
+
+Zlang 0.17 removes `array_get` and `array_set` from source. The generated C still uses internal
+`_zlang_array_get_*` and `_zlang_array_set_*` helpers for bounds-checked multidimensional access,
+but source code only uses `array[i]...`.
 
 
 ## Emitted comments

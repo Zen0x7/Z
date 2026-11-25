@@ -490,33 +490,26 @@ static void emits_fixed_multidimensional_arrays(zlang_test_context_t *const cont
     ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_set_2_i32") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_,
-                                "_grid.data_[_zlang_array_offset_2(ZLANG_GRID_EXTENT_0") != NULL);
+    ZLANG_CHECK(
+        context,
+        strstr(_session.output_,
+               "_zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, "
+               "1, 2, 7);") != NULL);
+    ZLANG_CHECK(
+        context,
+        strstr(_session.output_,
+               "_zlang_array_get_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, "
+               "1, 2)") != NULL);
 }
 
-static void emits_array_get_and_set(zlang_test_context_t *const context) {
+static void rejects_source_array_helpers(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "array[2][3] integer grid;\n"
-                                  "array_set(grid, {1, 2}, 7);\n"
-                                  "integer value = array_get(grid, {1, 2});";
-
-    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
-    ZLANG_CHECK(context,
-                strstr(_session.output_, "_zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, "
-                                         "ZLANG_GRID_EXTENT_1, 1, 2, 7);") != NULL);
-    ZLANG_CHECK(context,
-                strstr(_session.output_, "_zlang_array_get_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, "
-                                         "ZLANG_GRID_EXTENT_1, 1, 2)") != NULL);
-}
-
-static void rejects_array_tuple_rank_mismatch(zlang_test_context_t *const context) {
-    zlang_spec_session_t _session;
-    const char *const _source_k = "array[2][3] integer grid;\n"
-                                  "integer value = array_get(grid, {1});";
+                                  "array_set(grid, {1, 2}, 7);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
-    ZLANG_CHECK(context,
-                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+    ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
+                                                    ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
 }
 
 static void infers_local_array_shape(zlang_test_context_t *const context) {
@@ -531,7 +524,7 @@ static void infers_local_array_shape(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
-    ZLANG_CHECK(context, strstr(_session.output_, "_grid.data_[_zlang_array_offset_2") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_zlang_array_set_2_i32(_grid.data_") != NULL);
 }
 
 static void infers_array_function_shape(zlang_test_context_t *const context) {

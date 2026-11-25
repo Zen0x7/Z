@@ -779,43 +779,6 @@ static bool zlang_append_array_extent(zlang_emitter_t *emitter,
 
 static bool
 // NOLINTNEXTLINE(misc-no-recursion)
-zlang_emit_array_offset_call(const zlang_program_t *program, zlang_emitter_t *emitter,
-                             const zlang_emitted_symbol_t *symbol,
-                             const zlang_ast_expression_t *expression) {
-    if (symbol == NULL || expression == NULL || expression->argument_count_ < 2U) {
-        return false;
-    }
-    const zlang_ast_statement_t *const _statement_k =
-        zlang_find_sequence(emitter, symbol->source_name_);
-    const zlang_emitted_sequence_t *const _entry_k =
-        _statement_k != NULL ? zlang_find_sequence_entry(NULL, emitter, _statement_k)
-                             : zlang_find_shape_entry(emitter, symbol->type_name_,
-                                                      symbol->array_rank_, symbol->array_extents_);
-    if (_entry_k == NULL || symbol->array_rank_ != expression->argument_count_) {
-        return false;
-    }
-    if (!zlang_append_text(emitter, "_zlang_array_offset_") ||
-        !zlang_append_unsigned(emitter, (uint32_t)symbol->array_rank_) ||
-        !zlang_append_text(emitter, "(")) {
-        return false;
-    }
-    for (uint32_t _axis = 0U; _axis < symbol->array_rank_; ++_axis) {
-        if ((_axis > 0U && !zlang_append_text(emitter, ", ")) ||
-            !zlang_append_text(emitter, _entry_k->extent_macros_[_axis])) {
-            return false;
-        }
-    }
-    for (size_t _axis = 0U; _axis < expression->argument_count_; ++_axis) {
-        if (!zlang_append_text(emitter, ", ") ||
-            !zlang_emit_expression(program, expression->argument_indices_[_axis], emitter)) {
-            return false;
-        }
-    }
-    return zlang_append_text(emitter, ")");
-}
-
-static bool
-// NOLINTNEXTLINE(misc-no-recursion)
 zlang_emit_array_typed_call(const zlang_program_t *program, zlang_emitter_t *emitter,
                             const zlang_emitted_symbol_t *symbol,
                             const zlang_ast_expression_t *tuple, bool is_set,
@@ -1163,15 +1126,6 @@ static const char *zlang_expression_type(const zlang_program_t *program,
             zlang_find_active_symbol(emitter, _expression_k->name_);
         return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
     }
-    case zlang_expression_index_tuple_:
-        return NULL;
-    case zlang_expression_array_get_: {
-        const zlang_emitted_symbol_t *const _symbol_k =
-            zlang_find_active_symbol(emitter, _expression_k->name_);
-        return _symbol_k != NULL ? _symbol_k->type_name_ : NULL;
-    }
-    case zlang_expression_array_set_:
-        return "void";
     default:
         return NULL;
     }
@@ -1555,9 +1509,8 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             return false;
         }
         if (_expression_k->argument_count_ > 1U) {
-            return zlang_append_array_data(emitter, _symbol_k) && zlang_append_text(emitter, "[") &&
-                   zlang_emit_array_offset_call(program, emitter, _symbol_k, _expression_k) &&
-                   zlang_append_text(emitter, "]");
+            return zlang_emit_array_typed_call(program, emitter, _symbol_k, _expression_k, false,
+                                               ZLANG_NO_EXPRESSION);
         }
         if (!_symbol_k->is_sequence_ && strcmp(_symbol_k->type_name_, "string") == 0) {
             return zlang_append_text(emitter, "zlang_string_byte(") &&
@@ -1622,19 +1575,6 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
         }
         return zlang_append_text(emitter, ")");
-    }
-    case zlang_expression_index_tuple_:
-        return false;
-    case zlang_expression_array_get_:
-    case zlang_expression_array_set_: {
-        const zlang_emitted_symbol_t *const _symbol_k =
-            zlang_find_active_symbol(emitter, _expression_k->name_);
-        if (_symbol_k == NULL || _expression_k->left_ >= program->expression_count_) {
-            return false;
-        }
-        return zlang_emit_array_typed_call(
-            program, emitter, _symbol_k, &program->expressions_[_expression_k->left_],
-            _expression_k->kind_ == zlang_expression_array_set_, _expression_k->right_);
     }
     default:
         return false;
@@ -2237,10 +2177,8 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
         if (_rank_k != _target_k->argument_count_) {
             return false;
         }
-        return zlang_append_array_data(emitter, _symbol_k) && zlang_append_text(emitter, "[") &&
-               zlang_emit_array_offset_call(program, emitter, _symbol_k, _target_k) &&
-               zlang_append_text(emitter, "] = ") &&
-               zlang_emit_expression(program, expression->right_, emitter) &&
+        return zlang_emit_array_typed_call(program, emitter, _symbol_k, _target_k, true,
+                                           expression->right_) &&
                zlang_append_text(emitter, ";\n");
     }
     const bool _string_element_k = _sequence_k != NULL && _sequence_k->has_element_capacity_ &&

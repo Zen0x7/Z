@@ -10,7 +10,7 @@ made by the compiler.
 ## Lexical rules
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
-Keywords are `array_get`, `array_set`, `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
+Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
 `foreach`, `function`, `if`, `in`, `integer`, `length`, `print`, `record`, `reference`, `repeat`,
 `return`, `array`, `string`, `true`, `unsigned` and `while`.
 
@@ -76,8 +76,6 @@ needed.
 | `type name = expression;` | Scalar declaration |
 | `array[N] type name;` | Fixed-shape array with explicit extents |
 | `array type name;` | Array with inferred rank and extents |
-| `array_get(name, {i, ...})` | Read through a checked typed helper |
-| `array_set(name, {i, ...}, value)` | Write through a checked typed helper |
 | `array[] type name = {...};` | Array with inferred extent |
 | `if (expression) {...} else if (expression) {...} else {...}` | Conditional chain |
 | `while (expression) {...}` | Pre-tested loop |

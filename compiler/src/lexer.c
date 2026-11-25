@@ -11,9 +11,7 @@ typedef struct zlang_keyword_t {
     zlang_token_kind_t kind_;
 } zlang_keyword_t;
 
-static const zlang_keyword_t keywords_k[] = {{"array_get", zlang_token_array_get_},
-                                             {"array_set", zlang_token_array_set_},
-                                             {"boolean", zlang_token_boolean_},
+static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"clone", zlang_token_clone_},
                                              {"const", zlang_token_const_},
                                              {"else", zlang_token_else_},

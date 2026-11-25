@@ -17,8 +17,6 @@ typedef enum zlang_token_kind_t {
     zlang_token_identifier_,
     zlang_token_integer_literal_,
     zlang_token_string_literal_,
-    zlang_token_array_get_,
-    zlang_token_array_set_,
     zlang_token_boolean_,
     zlang_token_clone_,
     zlang_token_const_,

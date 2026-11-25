@@ -229,8 +229,8 @@ static void attaches_comments_to_source_constructs(zlang_test_context_t *const c
                                   "    // second body note\n"
                                   "    return 1;\n"
                                   "}\n"
-                                  "// record note\n"
-                                  "record A {\n"
+                                  "// struct note\n"
+                                  "struct A {\n"
                                   "    // field note\n"
                                   "    integer x;\n"
                                   "    /* field block\n"
@@ -250,7 +250,7 @@ static void attaches_comments_to_source_constructs(zlang_test_context_t *const c
                 strstr(_session.output_,
                        "    // body note\n    // second body note\n    return 1;") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_,
-                                "// record note\ntypedef struct app_record_a_t {") != NULL);
+                                "// struct note\ntypedef struct app_struct_a_t {") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "    // field note\n    int32_t x_;") != NULL);
     ZLANG_CHECK(context,
                 strstr(_session.output_,
@@ -335,7 +335,7 @@ static void emits_functions_with_user_defined_types(zlang_test_context_t *const 
 static void passes_complex_function_arguments(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "record Point { integer x; integer y; }\n"
+        "struct Point { integer x; integer y; }\n"
         "const integer base = 2;\n"
         "array[2] Point points;\n"
         "function add(clone integer left, clone integer right): integer { return left + right; }\n"
@@ -350,7 +350,7 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
 
 static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "record Point { integer x; }\n"
+    const char *const _source_k = "struct Point { integer x; }\n"
                                   "array[4] integer values;\n"
                                   "values[0] = 1;\n"
                                   "array[2] Point points;\n"
@@ -360,14 +360,14 @@ static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *con
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "\n    uint32_t zlang_gen_index_") != NULL);
     ZLANG_CHECK(context,
-                strstr(_session.output_, "\n    app_record_point_t *zlang_gen_field_ptr_") != NULL);
+                strstr(_session.output_, "\n    app_struct_point_t *zlang_gen_field_ptr_") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "\n    {\n") == NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "\n        {\n") == NULL);
 }
 
 static void reuses_field_pointers_contextually(zlang_test_context_t *const context) {
     zlang_spec_session_t _reuse;
-    const char *const _reuse_source_k = "record Point { integer x; integer y; }\n"
+    const char *const _reuse_source_k = "struct Point { integer x; integer y; }\n"
                                         "array[2] Point points;\n"
                                         "Point origin;\n"
                                         "points[0].x = 9;\n"
@@ -375,12 +375,12 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_reuse, _reuse_source_k));
     ZLANG_CHECK(context, zlang_spec_count_occurrences(
-                             _reuse.output_, "app_record_point_t *zlang_gen_field_ptr_") == 1U);
+                             _reuse.output_, "app_struct_point_t *zlang_gen_field_ptr_") == 1U);
     ZLANG_CHECK(context, strstr(_reuse.output_, "->x_ = 9;") != NULL);
     ZLANG_CHECK(context, strstr(_reuse.output_, "->y_ = 3;") != NULL);
 
     zlang_spec_session_t _invalidate;
-    const char *const _invalidate_source_k = "record Point { integer x; }\n"
+    const char *const _invalidate_source_k = "struct Point { integer x; }\n"
                                              "array[2] Point points;\n"
                                              "Point origin;\n"
                                              "unsigned index = 0U;\n"
@@ -391,7 +391,7 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
     ZLANG_CHECK(context, zlang_spec_transpile(&_invalidate, _invalidate_source_k));
     ZLANG_CHECK(context,
                 zlang_spec_count_occurrences(_invalidate.output_,
-                                             "app_record_point_t *zlang_gen_field_ptr_") == 2U);
+                                             "app_struct_point_t *zlang_gen_field_ptr_") == 2U);
 }
 
 static void reuses_index_values_across_if_branches(zlang_test_context_t *const context) {
@@ -429,7 +429,7 @@ static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const c
 static void emits_parameter_qualifiers(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "record Point { integer x; }\n"
+        "struct Point { integer x; }\n"
         "function bump(reference Point point, clone integer amount) {\n"
         "    point.x = point.x + amount;\n"
         "}\n"
@@ -444,7 +444,7 @@ static void emits_parameter_qualifiers(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_,
-                                "void app_fn_bump(app_record_point_t *app_param_point, ") != NULL);
+                                "void app_fn_bump(app_struct_point_t *app_param_point, ") != NULL);
     ZLANG_CHECK(
         context,
         strstr(_session.output_,
@@ -467,7 +467,7 @@ static void rejects_missing_parameter_qualifier(zlang_test_context_t *const cont
 
 static void rejects_mutation_of_const_parameter(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "record Point { integer x; }\n"
+    const char *const _source_k = "struct Point { integer x; }\n"
                                   "function bad(const reference Point point) { point.x = 1; }";
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -629,7 +629,7 @@ static void emits_multidimensional_foreach(zlang_test_context_t *const context) 
 
 static void emits_array_record_field_access(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "record Matrix { array[2][3] integer cells; }\n"
+    const char *const _source_k = "struct Matrix { array[2][3] integer cells; }\n"
                                   "Matrix matrix;\n"
                                   "matrix.cells[1][2] = 7;\n"
                                   "integer value = matrix.cells[1][2];";
@@ -1136,7 +1136,7 @@ static void deduplicates_string_literals(zlang_test_context_t *const context) {
                              _session.output_, "static const char zlang_gen_literal_") == 1U);
 }
 
-static void emits_records_and_enums(zlang_test_context_t *const context) {
+static void emits_structs_and_enums(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, ZLANG_SPEC_RECORD_ENUM_SOURCE));
@@ -1233,6 +1233,48 @@ static void keeps_unproven_bounds_traps(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile_tto(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_trap(ZLANG_TRAP_BOUNDS)") != NULL);
+}
+
+static void emits_struct_constructor_and_methods(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "struct Counter {\n"
+        "    integer value;\n"
+        "    constructor(clone integer initial) { value = initial; }\n"
+        "    function increment(): integer { value += 1; return value; }\n"
+        "}\n"
+        "Counter counter = Counter(1);\n"
+        "integer result = counter.increment();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_construct") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_increment") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "self->value_") != NULL);
+}
+
+static void emits_static_struct_method(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Counter {\n"
+                                  "    integer value;\n"
+                                  "    constructor(clone integer initial) { value = initial; }\n"
+                                  "    static function zero(): Counter { return Counter(0); }\n"
+                                  "}\n"
+                                  "Counter counter = Counter.zero();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_zero(void)") != NULL);
+}
+
+static void rejects_method_field_name_conflict(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Counter {\n"
+                                  "    integer value;\n"
+                                  "    function value(): integer { return 1; }\n"
+                                  "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_find_diagnostic(
+                             &_session, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) != NULL);
 }
 
 static void rejects_print_keyword(zlang_test_context_t *const context) {

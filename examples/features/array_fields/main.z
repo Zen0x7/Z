@@ -1,5 +1,5 @@
 import { write } from "@std/io";
-record Matrix {
+struct Matrix {
     array[2][3] integer cells;
 }
 

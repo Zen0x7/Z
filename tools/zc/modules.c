@@ -295,7 +295,7 @@ static bool zlang_modules_identifier_kind(zlang_token_kind_t kind) {
     return kind == zlang_token_integer_ || kind == zlang_token_unsigned_ ||
            kind == zlang_token_boolean_ || kind == zlang_token_string_ ||
            kind == zlang_token_array_ || kind == zlang_token_const_ ||
-           kind == zlang_token_function_ || kind == zlang_token_record_ ||
+           kind == zlang_token_function_ || kind == zlang_token_struct_ ||
            kind == zlang_token_enum_;
 }
 
@@ -395,7 +395,7 @@ static bool zlang_modules_scan(zlang_module_t *module, zlang_diagnostics_t *diag
             }
             continue;
         }
-        if (_token_k->kind_ == zlang_token_function_ || _token_k->kind_ == zlang_token_record_ ||
+        if (_token_k->kind_ == zlang_token_function_ || _token_k->kind_ == zlang_token_struct_ ||
             _token_k->kind_ == zlang_token_enum_) {
             const bool _enum_k = _token_k->kind_ == zlang_token_enum_;
             if (_index + 1U < module->token_count_ &&

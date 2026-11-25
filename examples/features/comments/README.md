@@ -1,6 +1,6 @@
 # Comments
 
-Adds `//` comments at file scope, on a record field, on a function and inside a body.
+Adds `//` comments at file scope, on a struct field, on a function and inside a body.
 
 This example exercises:
 

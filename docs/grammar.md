@@ -12,7 +12,7 @@ made by the compiler.
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
 `double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `int64`, `length`,
-`record`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `unsigned`
+`struct`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `unsigned`
 and `while`.
 
 Integer literals are decimal and may carry `u`, `i64` or `u64` suffixes. Binary arithmetic and
@@ -57,12 +57,12 @@ declaration, it sets the capacity of each string element.
 
 A `const` declaration requires an initializer and cannot be assigned to.
 
-A `record` declares a fixed aggregate with named fields. An `enum` declares named integer values
+A `struct` declares a fixed aggregate with named fields. An `enum` declares named integer values
 and a user type. Both can be used as declaration types, array element types, function parameter
 types and function return types:
 
 ```zlang
-record Point {
+struct Point {
     integer x;
     integer y;
 }
@@ -106,7 +106,7 @@ needed.
 | `return expression;` / `return;` | Return from a function |
 | `write(expression);` | Write a string or scalar |
 | `name = expression;` | Assignment |
-| `record Name { field* }` | Fixed aggregate type |
+| `struct Name { field* }` | Fixed aggregate type |
 | `enum Name { VALUE, ... }` | Named integer values and their type |
 | `value.field` | Field read |
 | `value.field = expression;` | Field assignment; checked for array elements |

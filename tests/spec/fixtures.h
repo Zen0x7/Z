@@ -57,7 +57,7 @@
 #define ZLANG_SPEC_FUNCTION_RETURN_EXPECTED "return zlang_add_i32(app_param_left, app_param_right);"
 
 #define ZLANG_SPEC_FUNCTION_USER_TYPES_SOURCE                                                      \
-    "record Point { integer x; integer y; }\n"                                                     \
+    "struct Point { integer x; integer y; }\n"                                                     \
     "enum Color { RED, BLUE }\n"                                                                   \
     "function make(): Point {\n"                                                                   \
     "    Point result;\n"                                                                          \
@@ -71,12 +71,12 @@
     "Point made = make();\n"                                                                       \
     "Color chosen = BLUE;\n"                                                                       \
     "Point painted = paint(made, chosen);"
-#define ZLANG_SPEC_FUNCTION_USER_TYPE_RETURN_EXPECTED "app_record_point_t app_fn_make(void) {"
+#define ZLANG_SPEC_FUNCTION_USER_TYPE_RETURN_EXPECTED "app_struct_point_t app_fn_make(void) {"
 #define ZLANG_SPEC_FUNCTION_USER_TYPE_PARAMETERS_EXPECTED                                          \
-    "app_record_point_t app_fn_paint(app_record_point_t app_param_value, app_enum_color_t "        \
+    "app_struct_point_t app_fn_paint(app_struct_point_t app_param_value, app_enum_color_t "        \
     "app_param_color) {"
 #define ZLANG_SPEC_FUNCTION_USER_TYPE_CALL_EXPECTED                                                \
-    "app_record_point_t app_local_painted = app_fn_paint(app_local_made, app_local_chosen);"
+    "app_struct_point_t app_local_painted = app_fn_paint(app_local_made, app_local_chosen);"
 
 #define ZLANG_SPEC_APPEND_INDEX_SOURCE                                                             \
     "array[4] integer values;\n"                                                                   \
@@ -305,7 +305,7 @@
 #define ZLANG_SPEC_LITERAL_DEDUPE_SOURCE "write(\"a\");\nwrite(\"a\");"
 
 #define ZLANG_SPEC_RECORD_ENUM_SOURCE                                                              \
-    "record Point {\n"                                                                             \
+    "struct Point {\n"                                                                             \
     "    integer x;\n"                                                                             \
     "    integer y;\n"                                                                             \
     "}\n"                                                                                          \
@@ -321,7 +321,7 @@
     "write(points[0].y);\n"                                                                        \
     "Color current = GREEN;\n"                                                                     \
     "write(to_integer(current));"
-#define ZLANG_SPEC_RECORD_TYPE_EXPECTED "typedef struct app_record_point_t"
+#define ZLANG_SPEC_RECORD_TYPE_EXPECTED "typedef struct app_struct_point_t"
 #define ZLANG_SPEC_ENUM_TYPE_EXPECTED "typedef enum app_enum_color_t"
 #define ZLANG_SPEC_ENUM_VALUE_EXPECTED "ZLANG_COLOR_GREEN"
 #define ZLANG_SPEC_FIELD_ASSIGN_EXPECTED "app_local_point.x_ = 1;"

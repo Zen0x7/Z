@@ -93,7 +93,7 @@ Keywords are reserved and cannot be used as identifiers:
 
 ```text
 boolean break clone const continue double else enum false float for foreach function if integer
-int64 length record reference repeat return sequence string true uint64 unsigned while
+int64 length struct reference repeat return sequence string true uint64 unsigned while
 ```
 
 The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
@@ -109,7 +109,7 @@ with the `f` suffix it has type `float`. A literal outside the range of its type
 
 ## 7. Values and types
 
-Zlang has eight numeric and scalar primitive types, plus user-defined record and enum types.
+Zlang has eight numeric and scalar primitive types, plus user-defined struct and enum types.
 
 ### 7.1 `integer`
 
@@ -173,7 +173,7 @@ on non-finite input. Floating arithmetic follows IEEE-754, so division by zero p
 or NaN instead of a Zlang trap. `%` is valid only for integral types. Unary negation of `integer`
 and `int64` traps on the signed minimum value. String `==` and `!=` compare content through the
 runtime helper; string ordering is rejected. A string can only be used where a `string` is
-expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
+expected. Array types with different extents are different types. A struct or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
 
 ---
 
@@ -194,7 +194,7 @@ string greeting = "Hello";
 array[4] integer values;
 ```
 
-A declaration introduces a compile-time symbol. The name is never emitted as a string. Generated C uses the same source identifier when it is available; otherwise the compiler appends a numeric suffix and records the mapping internally. Sibling scopes may reuse the same source name without colliding in generated C.
+A declaration introduces a compile-time symbol. The name is never emitted as a string. Generated C uses the same source identifier when it is available; otherwise the compiler appends a numeric suffix and structs the mapping internally. Sibling scopes may reuse the same source name without colliding in generated C.
 
 ### 8.2 Initialization rules
 
@@ -320,8 +320,8 @@ function <name>(<parameter-list>): <return-type> {
 ```
 
 A parameter is `<const?> <mode> <type> <name>`, where `<mode>` is `clone` or `reference`, and
-`<type>` is a scalar or a previously declared record or enum name. The return type uses the same set
-of types, without a mode. Record parameters and return values lower to generated C typedefs.
+`<type>` is a scalar or a previously declared struct or enum name. The return type uses the same set
+of types, without a mode. Struct parameters and return values lower to generated C typedefs.
 Functions have no access to mutable globals, because Zlang has no global variables.
 
 ```zlang
@@ -399,7 +399,7 @@ Every generated C file begins with:
 Generated C is laid out in this order: includes, generated value constants (`ZLANG_ZERO`,
 `ZLANG_ONE`, `ZLANG_TWO`), named capacity and initial-length macros, generated sequence typedefs,
 named string literal constants, user functions and `main`. Local source symbols are emitted with a
-leading `_`, function parameters keep their source names, record members use a trailing `_`, and
+leading `_`, function parameters keep their source names, struct members use a trailing `_`, and
 user functions use `_u_`. Compiler-generated temporaries use `_zlang_`, generated macros use
 `ZLANG_`, generated types use `zlang_` and runtime calls use `zlang_`. Only source blocks emit extra
 braces; compiler temporaries are declared in the enclosing C block. A reference to a sequence
@@ -543,7 +543,7 @@ declaration    = "const"? arrayModifier? typeName typeModifier? identifier
 typeName       = builtinType | identifier ;
 builtinType    = "integer" | "unsigned" | "boolean" | "string" ;
 
-recordDeclaration = "record" identifier "{" declaration* "}" ;
+recordDeclaration = "struct" identifier "{" declaration* "}" ;
 
 enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
 
@@ -749,6 +749,9 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | range-proven index folding | `folds_proven_loop_indices` |
 | unproven bounds preservation | `keeps_unproven_bounds_traps` |
 | nested read materialization | `materializes_proven_nested_reads` |
+| struct methods | `emits_struct_constructor_and_methods` |
+| static struct methods | `emits_static_struct_method` |
+| method/field collision | `rejects_method_field_name_conflict` |
 | wide and floating primitives | `emits_wide_and_floating_primitives` |
 | explicit numeric conversions | `emits_explicit_numeric_conversions` |
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
@@ -777,7 +780,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | string literal deduplication | `deduplicates_string_literals` |
 | bounded index getters | `checked_index_reads_return_values`, `uses_readable_emitted_layout` |
 | named generated value constants | `uses_readable_emitted_layout` |
-| records and enums | `emits_records_and_enums` |
+| structs and enums | `emits_structs_and_enums` |
 | repeated index read reuse | `reuses_repeated_index_reads` |
 | emitted C symbol naming | `emits_functions_with_user_defined_types`, `uses_readable_emitted_layout` |
 | generated temporaries without synthetic blocks | `emits_temporaries_without_synthetic_blocks` |
@@ -791,7 +794,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | const array write rejection | `rejects_const_array_write` |
 | whole-array copy | `emits_whole_array_copy` |
 | multidimensional foreach | `emits_multidimensional_foreach` |
-| array record field access | `emits_array_record_field_access` |
+| array struct field access | `emits_array_record_field_access` |
 | multiple array specializations | `emits_multiple_array_specializations` |
 | short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
 | parameter qualifiers | `emits_parameter_qualifiers` |
@@ -803,14 +806,14 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 
 ## 0.6 implementation status
 
-Zlang 0.6 adds record and enum declarations, user-defined declaration types, field reads and field
-assignments, and arrays of records. Record fields are scalar or enum types. Enums emit named C
-constants, and records emit named C typedefs.
+Zlang 0.6 adds struct and enum declarations, user-defined declaration types, field reads and field
+assignments, and arrays of structs. Struct fields are scalar or enum types. Enums emit named C
+constants, and structs emit named C typedefs.
 
 
 ## 0.7 implementation status
 
-Zlang 0.7 allows record and enum names in function parameters and return values, allows record
+Zlang 0.7 allows struct and enum names in function parameters and return values, allows struct
 variables to be initialized from same-type values, and emits `(void)` for zero-argument functions.
 Source comments attach to the construct they document in the generated C, with `--disable-comments`
 available when the comments are not wanted.
@@ -819,7 +822,7 @@ available when the comments are not wanted.
 ## 0.8 implementation status
 
 Zlang 0.8 separates emitted C names by role: local source symbols start with `_`, function
-parameters keep their source names, record members end with `_`, and user functions keep `_u_`.
+parameters keep their source names, struct members end with `_`, and user functions keep `_u_`.
 Compiler temporaries, generated macros, generated types and runtime calls keep their established
 prefixes.
 
@@ -861,7 +864,7 @@ returned, and reference arguments must be lvalues.
 Zlang 0.13 warns with `ZLANG3004` when a `reference` parameter of a small value type has no
 mutational purpose. `const reference` to a scalar, string or enum is always warned about; a mutable
 `reference` is warned about only when the function body never mutates it. Mutated reference
-parameters and references to records are accepted without this warning.
+parameters and references to structs are accepted without this warning.
 
 
 ## 0.14 implementation status
@@ -901,6 +904,14 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.28 implementation status
+
+Zlang 0.28 replaces `record` with `struct` and adds struct members. A struct can declare fields,
+one constructor, instance methods and `static function` methods. Inside instance methods and
+constructors, fields are referenced without an explicit receiver; the emitter supplies `self` in the
+generated C. Instance calls use `value.method()` and static calls use `Struct.method()`. Method names
+cannot collide with field names. Inheritance is not part of this release.
 
 ## 0.27 implementation status
 
@@ -955,7 +966,7 @@ for language constants.
 ## 0.18 implementation status
 
 Zlang 0.18 completes arrays. Initializers may be nested, `foreach` accepts one index name per axis,
-records may contain fixed array fields, `const array` declarations reject writes, whole-array copy
+structs may contain fixed array fields, `const array` declarations reject writes, whole-array copy
 requires identical shape, and a generic inferred-array function is monomorphized once per called
 shape.
 
@@ -964,7 +975,7 @@ shape.
 
 Zlang comments are lexed but never become parser tokens. The emitter writes them back into the
 generated C next to the source construct they document: a comment before a declaration is emitted
-before that declaration, a comment inside a record is emitted before the matching field, and a
+before that declaration, a comment inside a struct is emitted before the matching field, and a
 comment inside an enum is emitted before the matching enumerator. Consecutive `//` lines stay
 together as one block, and block comments keep their internal line breaks. Comments that do not
 document a specific construct are emitted at the start of `main`. They are documentation only and

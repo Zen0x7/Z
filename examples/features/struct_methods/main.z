@@ -1,0 +1,30 @@
+import { write } from "@std/io";
+
+struct Counter {
+    integer value;
+
+    constructor(clone integer initial) {
+        value = initial;
+    }
+
+    function increment(): integer {
+        value += 1;
+        return value;
+    }
+
+    static function zero(): Counter {
+        return Counter(0);
+    }
+}
+
+function main(): integer {
+    Counter counter = Counter(1);
+    write(counter.increment());
+    write(" ");
+    write(counter.increment());
+    write("\n");
+    Counter empty = Counter.zero();
+    write(empty.value);
+    write("\n");
+    return 0;
+}

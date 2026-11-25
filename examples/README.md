@@ -44,7 +44,7 @@ Small programs focused on one construct or a tight group of related constructs.
 | Example | Exercises |
 | --- | --- |
 | [arithmetic](features/arithmetic/) | signed and unsigned arithmetic, compound assignment |
-| [array_fields](features/array_fields/) | arrays embedded in records |
+| [array_fields](features/array_fields/) | arrays embedded in structs |
 | [arrays_1d](features/arrays_1d/) | fixed 1D arrays, indexed writes, `foreach` |
 | [arrays_const_copy](features/arrays_const_copy/) | `const` arrays, whole-array copy |
 | [arrays_inferred](features/arrays_inferred/) | inferred array shapes, `length`, mixed ranks |
@@ -55,13 +55,14 @@ Small programs focused on one construct or a tight group of related constructs.
 | [functions](features/functions/) | function calls, returns and `reference` mutation |
 | [functions_array_specializations](features/functions_array_specializations/) | one inferred array function called with two shapes |
 | [functions_arrays](features/functions_arrays/) | inferred array parameters and returns |
-| [functions_user_types](features/functions_user_types/) | records in signatures and by-reference mutation |
+| [functions_user_types](features/functions_user_types/) | structs in signatures and by-reference mutation |
 | [hello](features/hello/) | strings and newline escapes |
 | [loops](features/loops/) | `while`, `repeat`, `for`, `break`, `continue`, `foreach` |
 | [modules](features/modules/) | `z.yaml` aliases, relative project modules, explicit `main` |
-| [records_enums](features/records_enums/) | records, fields and enums |
+| [structs_enums](features/structs_enums/) | structs, fields and enums |
 | [scopes](features/scopes/) | user-authored blocks and non-shadowing scope access |
 | [strings](features/strings/) | folding, bounded strings and string indexing |
+| [struct_methods](features/struct_methods/) | structs, constructors, implicit receiver and static methods |
 
 ## Regenerating a golden
 

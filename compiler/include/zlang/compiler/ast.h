@@ -55,7 +55,9 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_field_,
     zlang_expression_field_assignment_,
     zlang_expression_direct_index_assignment_,
-    zlang_expression_conversion_
+    zlang_expression_conversion_,
+    zlang_expression_construct_,
+    zlang_expression_method_call_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -101,7 +103,7 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_return_,
     zlang_statement_block_,
     zlang_statement_for_,
-    zlang_statement_record_,
+    zlang_statement_struct_,
     zlang_statement_enum_,
     zlang_statement_break_,
     zlang_statement_continue_
@@ -153,6 +155,9 @@ typedef struct zlang_ast_statement_t {
     const char *foreach_names_[ZLANG_ARRAY_MAX_RANK];
     uint32_t foreach_rank_;
     bool is_main_;
+    bool is_static_;
+    bool is_constructor_;
+    const char *owner_name_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

@@ -1,6 +1,6 @@
 import { write } from "@std/io";
 // File-level traceability comment.
-record Point {
+struct Point {
     // Field comment.
     integer x;
 }

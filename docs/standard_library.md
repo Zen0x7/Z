@@ -92,7 +92,7 @@ decoration. The 0.20 naming map is:
 | `app_fn_` | user source | C translation of a user-defined function | `app_fn_add` |
 | `app_local_` | user source | C translation of a user local variable | `app_local_total` |
 | `app_param_` | user source | C translation of a user parameter | `app_param_left` |
-| `app_record_`, `app_enum_`, `app_array_` | user source | C type generated from a user declaration | `app_record_point_t` |
+| `app_struct_`, `app_enum_`, `app_array_` | user source | C type generated from a user declaration | `app_struct_point_t` |
 | `zlang_gen_` | compiler | Support derived from user source; not user-editable | `zlang_gen_literal_0` |
 | `zlang_std_` | standard library | Registered standard function | `zlang_std_random_generate_int32` |
 | `zlang_` | runtime | Public runtime API used by generated C | `zlang_print_i32` |
@@ -134,7 +134,7 @@ implemented.
 
 | Domain | Meaning | Proposed functions | Evaluation |
 | --- | --- | --- | --- |
-| `algorithms` | Operations over fixed arrays and records | `sort_int32`, `reverse_int32`, `find_int32`, `contains_int32`, `min_int32`, `max_int32`, `sum_int32` | pure, bounded, foldable when inputs are constant |
+| `algorithms` | Operations over fixed arrays and structs | `sort_int32`, `reverse_int32`, `find_int32`, `contains_int32`, `min_int32`, `max_int32`, `sum_int32` | pure, bounded, foldable when inputs are constant |
 | `math` | Scalar numeric operations beyond checked builtins | `abs`, `clamp`, `min`, `max`, `sqrt` | pure, overloads resolved by operand types |
 | `io` | Process input and output | `write`, `read`, `read_line` | bounded, overloads resolved by operand type |
 | `strings` | Bounded string operations | `compare`, `contains`, `starts_with` | pure, non-owning views |

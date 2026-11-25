@@ -1,11 +1,11 @@
 # Functions with user-defined types
 
-Returns a record from one function and mutates it through a reference parameter in another.
+Returns a struct from one function and mutates it through a reference parameter in another.
 
 This example exercises:
 
-- records in parameter and return signatures;
-- a record returned by value;
+- structs in parameter and return signatures;
+- a struct returned by value;
 - `reference Point` lowered to a C pointer;
 - `clone integer` lowered to a scalar value;
 - field reads and field assignment through generated names.

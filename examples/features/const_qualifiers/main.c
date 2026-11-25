@@ -13,9 +13,9 @@
 #define ZLANG_TWO 2U
 
 /* generated user types */
-typedef struct app_record_point_t {
+typedef struct app_struct_point_t {
     int32_t x_;
-} app_record_point_t;
+} app_struct_point_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
@@ -27,11 +27,11 @@ static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZL
 
 /* generated function prototypes */
 
-int32_t app_fn_read(const app_record_point_t *app_param_point);
+int32_t app_fn_read(const app_struct_point_t *app_param_point);
 int32_t app_fn_copy_value(const int32_t app_param_value);
 int32_t app_fn_main(void);
 
-int32_t app_fn_read(const app_record_point_t *app_param_point) {
+int32_t app_fn_read(const app_struct_point_t *app_param_point) {
     return app_param_point->x_;
 }
 
@@ -40,7 +40,7 @@ int32_t app_fn_copy_value(const int32_t app_param_value) {
 }
 
 int32_t app_fn_main(void) {
-    app_record_point_t app_local_point = { ZLANG_ZERO };
+    app_struct_point_t app_local_point = { ZLANG_ZERO };
     app_local_point.x_ = 6;
     zlang_std_io_write_i32(app_fn_read(&app_local_point));
     zlang_std_io_write_string(zlang_gen_literal_0);

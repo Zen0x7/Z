@@ -41,9 +41,9 @@ typedef struct zlang_gen_array_i32_2_3_t {
 } zlang_gen_array_i32_2_3_t;
 
 /* generated user types */
-typedef struct app_record_matrix_t {
+typedef struct app_struct_matrix_t {
     zlang_gen_array_i32_2_3_t cells_;
-} app_record_matrix_t;
+} app_struct_matrix_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U
@@ -55,7 +55,7 @@ static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZL
 int32_t app_fn_main(void);
 
 int32_t app_fn_main(void) {
-    app_record_matrix_t app_local_matrix = { ZLANG_ZERO };
+    app_struct_matrix_t app_local_matrix = { ZLANG_ZERO };
     zlang_gen_array_set_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2, 7);
     int32_t app_local_value = zlang_gen_array_get_2_i32(app_local_matrix.cells_.data_, 2, 3, 1, 2);
     zlang_std_io_write_i32(app_local_value);

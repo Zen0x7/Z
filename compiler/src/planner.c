@@ -14,14 +14,14 @@ void zlang_memory_plan_init(zlang_memory_plan_t *plan, zlang_memory_plan_entry_t
     plan->stack_limit_ = stack_limit;
 }
 
-static const zlang_ast_statement_t *zlang_find_record(const zlang_program_t *program,
+static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *program,
                                                       const char *name) {
     if (name == NULL) {
         return NULL;
     }
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (_statement_k->kind_ == zlang_statement_record_ && _statement_k->name_ != NULL &&
+        if (_statement_k->kind_ == zlang_statement_struct_ && _statement_k->name_ != NULL &&
             strcmp(_statement_k->name_, name) == 0) {
             return _statement_k;
         }
@@ -42,6 +42,23 @@ static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *progr
         }
     }
     return NULL;
+}
+
+static bool zlang_statement_in_method(const zlang_program_t *program,
+                                      const zlang_ast_statement_t *structure, size_t index) {
+    const size_t _end_k = structure->body_start_ + structure->body_count_;
+    for (size_t _member = structure->body_start_;
+         _member < _end_k && _member < program->statement_count_; ++_member) {
+        const zlang_ast_statement_t *const _member_k = &program->statements_[_member];
+        if (_member_k->kind_ != zlang_statement_function_ || _member_k->body_count_ == 0U) {
+            continue;
+        }
+        const size_t _method_end_k = _member_k->body_start_ + _member_k->body_count_;
+        if (index >= _member_k->body_start_ && index < _method_end_k) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -73,7 +90,7 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
         *size = 4U;
         return true;
     }
-    const zlang_ast_statement_t *const _record_k = zlang_find_record(program, type_name);
+    const zlang_ast_statement_t *const _record_k = zlang_find_struct(program, type_name);
     if (_record_k == NULL) {
         return false;
     }
@@ -82,6 +99,10 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
     for (size_t _index = _record_k->body_start_;
          _index < _end_k && _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _field_k = &program->statements_[_index];
+        if (_field_k->kind_ == zlang_statement_function_ ||
+            zlang_statement_in_method(program, _record_k, _index)) {
+            continue;
+        }
         uint32_t _field_size_k = 0U;
         if (!zlang_element_size(program, _field_k->type_name_, depth + 1U, &_field_size_k)) {
             return false;

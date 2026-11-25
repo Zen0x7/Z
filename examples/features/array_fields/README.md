@@ -1,10 +1,10 @@
 # Array fields
 
-Embeds a fixed `2 x 3` integer array inside a record and accesses one of its cells.
+Embeds a fixed `2 x 3` integer array inside a struct and accesses one of its cells.
 
 This example exercises:
 
-- a record declaration with an array field;
+- a struct declaration with an array field;
 - generation of the named C typedef for the embedded array;
 - rank-2 field indexing for both read and write;
 - literal extents passed to the generated typed helpers.

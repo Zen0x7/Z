@@ -14,10 +14,10 @@
 
 /* generated user types */
 // File-level traceability comment.
-typedef struct app_record_point_t {
+typedef struct app_struct_point_t {
     // Field comment.
     int32_t x_;
-} app_record_point_t;
+} app_struct_point_t;
 
 /* generated string literals */
 #define ZLANG_LITERAL_0_LENGTH 1U

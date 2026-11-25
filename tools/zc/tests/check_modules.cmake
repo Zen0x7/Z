@@ -32,7 +32,7 @@ foreach(_name
         app_fn_m_lib_left_z_left_value
         app_local_m_lib_right_z_shared
         app_fn_m_lib_right_z_right_value
-        app_record_m_lib_types_z_point_t
+        app_struct_m_lib_types_z_point_t
         app_enum_m_lib_types_z_color_t)
     string(FIND "${_generated}" "${_name}" _position)
     if(_position LESS 0)

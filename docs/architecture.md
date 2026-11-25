@@ -25,7 +25,7 @@ see every byte that crosses a stage boundary.
 - `zlang_lexer_t` reads source text and writes tokens plus copied token text into a scratch buffer.
 - `zlang_parser_t` writes statements and expressions into flat arrays.
 - `zlang_semantic_context_t` writes diagnostics and uses a flat symbol table.
-- `zlang_memory_plan_t` records storage decisions for declarations.
+- `zlang_memory_plan_t` structs storage decisions for declarations.
 - `zlang_emitter_t` appends C text into a caller-provided output buffer.
 
 ## Memory model

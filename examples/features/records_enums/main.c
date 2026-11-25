@@ -13,10 +13,10 @@
 #define ZLANG_TWO 2U
 
 /* generated user types */
-typedef struct app_record_point_t {
+typedef struct app_struct_point_t {
     int32_t x_;
     int32_t y_;
-} app_record_point_t;
+} app_struct_point_t;
 
 typedef enum app_enum_color_t {
     ZLANG_COLOR_RED = 0U,
@@ -37,7 +37,7 @@ static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZL
 int32_t app_fn_main(void);
 
 int32_t app_fn_main(void) {
-    app_record_point_t app_local_point = { ZLANG_ZERO };
+    app_struct_point_t app_local_point = { ZLANG_ZERO };
     app_local_point.x_ = 3;
     app_local_point.y_ = 4;
     app_enum_color_t app_local_color = ZLANG_COLOR_BLUE;

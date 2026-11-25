@@ -273,12 +273,12 @@ literals keep the values written by the programmer.
 
 Status: Locked.
 
-- Add `record Name { field* }` with scalar or enum fields.
+- Add `struct Name { field* }` with scalar or enum fields.
 - Add `enum Name { VALUE, ... }` with automatically assigned values.
-- Allow record and enum names as declaration types and sequence element types.
+- Allow struct and enum names as declaration types and sequence element types.
 - Add field reads and field assignments, including checked assignment to fields of sequence
   elements.
-- Emit named C typedefs for records and enums and named C constants for enumerators.
+- Emit named C typedefs for structs and enums and named C constants for enumerators.
 - Keep modules, imports, classes, inheritance and dynamic dispatch out of scope.
 
 ## 0.6 — Completion
@@ -286,7 +286,7 @@ Status: Locked.
 Status: Implemented.
 
 Records, enums, field reads and field assignments are implemented and covered by conformance
-tests. Record and enum declarations emit named C typedefs, enumerators emit named C constants, and
+tests. Struct and enum declarations emit named C typedefs, enumerators emit named C constants, and
 field assignment to sequence elements uses a checked runtime getter with a direct store. Repeated
 index reads inside `if / else if` chains are emitted once into a local temporary.
 
@@ -296,7 +296,7 @@ Status: Implemented.
 
 Line and block comments are preserved in generated C for source traceability. They remain outside
 parsing and do not affect semantics, symbol binding or code generation decisions. A comment is
-emitted next to the source construct it documents: declarations, functions, record fields and enum
+emitted next to the source construct it documents: declarations, functions, struct fields and enum
 items. Consecutive `//` lines stay together as a block, block comments keep their internal line
 breaks, and `--disable-comments` omits all source comments from generated C.
 
@@ -304,9 +304,9 @@ breaks, and `--disable-comments` omits all source comments from generated C.
 
 Status: Locked.
 
-- Allow record and enum names as function parameter and return types.
+- Allow struct and enum names as function parameter and return types.
 - Emit generated C typedefs for those parameter and return types.
-- Allow record declarations initialized from a function call or another record value of the same
+- Allow struct declarations initialized from a function call or another struct value of the same
   type.
 - Attach generated comments to the source construct they document instead of hoisting them into
   `main`.
@@ -316,9 +316,9 @@ Status: Locked.
 
 Status: Implemented.
 
-Functions may now take and return user-defined types, and record variables may be initialized from
-values of the same record type. Zero-argument functions emit `(void)`, and unused parameters emit
-`(void)` guards. Source comments attach to declarations, functions, record fields and enum items,
+Functions may now take and return user-defined types, and struct variables may be initialized from
+values of the same struct type. Zero-argument functions emit `(void)`, and unused parameters emit
+`(void)` guards. Source comments attach to declarations, functions, struct fields and enum items,
 with consecutive `//` lines emitted as one block.
 
 ## 0.8 — Emitted C symbol roles
@@ -327,7 +327,7 @@ Status: Locked.
 
 - Emit local source symbols with a leading `_`.
 - Emit function parameters with their source names and no prefix.
-- Emit record members with a trailing `_`.
+- Emit struct members with a trailing `_`.
 - Keep user functions with `_u_`, compiler temporaries with `_zlang_`, generated types with
   `zlang_` and macros with `ZLANG_`.
 
@@ -336,7 +336,7 @@ Status: Locked.
 Status: Implemented.
 
 Emitted C now makes the role of each source-derived name visible: `_x` is a local, `x` is a
-parameter, `x_` is a record member, `_u_f` is a user function and `_zlang_*` is a compiler
+parameter, `x_` is a struct member, `_u_f` is a user function and `_zlang_*` is a compiler
 temporary. The README language tour and its generated C output were regenerated with this naming.
 Call arguments are stored by explicit expression indices, so nested field and index expressions no
 longer shift later arguments.
@@ -400,7 +400,7 @@ Status: Locked.
 - Lower `clone` to a C value parameter and `reference` to a C pointer parameter.
 - Keep pointer syntax out of Zlang source; field access stays `.` at source level.
 - Reject missing qualifiers, const mutation and non-lvalue reference arguments.
-- Keep references parameter-only: no storage in records or sequences and no returns.
+- Keep references parameter-only: no storage in structs or sequences and no returns.
 
 ## 0.12 — Completion
 
@@ -416,7 +416,7 @@ Status: Locked.
 
 - Warn when `const reference` is used for a small value type.
 - Warn when a mutable `reference` to a small value type is never mutated.
-- Do not warn for mutated references or references to records.
+- Do not warn for mutated references or references to structs.
 - Add diagnostic `ZLANG3004`.
 
 ## 0.13 — Completion
@@ -524,7 +524,7 @@ Status: Implemented.
 - Define multidimensional iteration. `foreach (row, col in grid)` visits every index tuple in
   row-major order; the index variables are unsigned and bounds are compile-time known from the array
   shape.
-- Allow array fields in records. A record field may be `array[A][B] T`, emitted as an embedded
+- Allow array fields in structs. A struct field may be `array[A][B] T`, emitted as an embedded
   canonical array typedef with its own bounds checks.
 - Allow `const array[A][B] T` declarations and reject indexed writes to them.
 - Allow whole-array assignment and copy for compatible shapes:
@@ -538,11 +538,11 @@ Acceptance criteria:
 - A generic inferred-array function can be called with two shapes in one program.
 - Nested initializers infer the same extents as explicit declarations.
 - `foreach` over a 2D array visits all cells exactly once.
-- Arrays work as record fields without losing bounds checks.
+- Arrays work as struct fields without losing bounds checks.
 - `const` arrays reject writes and whole-array copies require identical shape.
 
 The implementation supports nested array initializers, multidimensional `foreach` in row-major
-order, arrays as record fields with bounds-checked access, `const` arrays, whole-array copy for
+order, arrays as struct fields with bounds-checked access, `const` arrays, whole-array copy for
 identical shapes, and one generated C function per inferred array shape.
 
 ## 0.18.1 — Completion
@@ -675,7 +675,7 @@ C file with one C `main`; modules are assembled into that single translation uni
 as separate programs.
 
 Every top-level declaration in a module is public. No `export` keyword is needed. Importing a
-declaration binds a reference to the canonical entity: functions, variables, records and enums are
+declaration binds a reference to the canonical entity: functions, variables, structs and enums are
 emitted once and shared by every module that imports them. Two files importing the same variable
 refer to the same generated object. Two modules may define the same local name because generated
 names are derived from canonical module paths.
@@ -724,7 +724,7 @@ The implementation assembles all loaded modules into a single Zlang source befor
 module is loaded once; imported names are bound to canonical entity names; module variables are
 emitted once as file-scope objects; and enum items imported through an enum declaration are bound
 automatically. CLI coverage verifies relative imports, aliases from `z.yaml`, `@std` imports from
-dependencies, duplicate local names in separate modules, shared variables, records, enums,
+dependencies, duplicate local names in separate modules, shared variables, structs, enums,
 functions, cyclic import rejection, root escape rejection, canonical generated names and the
 explicit `main` entry point.
 
@@ -797,7 +797,7 @@ unique shape, or when the function body is invalid for one of its inferred shape
 ### Acceptance criteria
 
 - `float`, `double`, `int64` and `uint64` work in declarations, parameters, returns, arrays,
-  records and arithmetic;
+  structs and arithmetic;
 - explicit conversions are required and reject implicit numeric coercion;
 - floating-point division by zero follows IEEE-754 and does not trap;
 - standard random functions remain deterministic, stateful and opaque to `--tto`;
@@ -977,3 +977,21 @@ long generated line with short sequential lines while preserving the semantics o
 Zlang 0.27 is implemented at language level 0.27. The `fibonacci` golden now emits two
 `zlang_gen_read_*` temporaries followed by a short `zlang_add_i32` store. Unproven accesses keep
 their bounds checks. Golden C files were regenerated through `zc --tto`.
+
+## 0.28 — Design note
+
+Status: Locked.
+
+Zlang 0.28 replaces `record` with `struct` and adds struct members without introducing classes.
+There is no inheritance, no dynamic dispatch, no heap allocation and no `new`. A struct declares
+fields, at most one constructor, instance methods and `static function` methods. The source never
+writes a receiver: inside instance methods and constructors, fields are referenced directly and the
+emitter materializes the generated `self` parameter or local. Instance calls use
+`value.method(...)`; static calls use `Struct.method(...)`; construction uses `Struct(...)`. Method
+names and field names share one namespace inside a struct.
+
+## 0.28 — Completion
+
+Zlang 0.28 is implemented at language level 0.28. Generated C declares `app_struct_<name>_t` types
+and `app_fn_<struct>_<method>` functions, with `self` supplied only for instance methods and
+constructors. The golden suite includes `features/struct_methods`.

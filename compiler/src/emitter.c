@@ -37,6 +37,10 @@ static bool zlang_vtable_wrapper_name(const char *struct_name, const char *metho
                                       char *output, size_t capacity);
 static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
                                        zlang_emitted_vtable_t *vtable);
+static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool is_reference);
+static bool zlang_emit_expression_as(const zlang_program_t *program, size_t index,
+                                     zlang_emitter_t *emitter, const char *expected_type,
+                                     bool is_reference);
 
 static const char *zlang_std_domain(const char *specifier) {
     if (specifier == NULL) {
@@ -109,6 +113,8 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     (void)zlang_method_is_virtual;
     (void)zlang_vtable_wrapper_name;
     (void)zlang_collect_vtable_slots;
+    (void)zlang_emit_base_chain;
+    (void)zlang_emit_expression_as;
     for (size_t _index = 0U; _index < ZLANG_EMITTED_CSE_CAPACITY; ++_index) {
         emitter->cse_pointer_base_names_[_index] = NULL;
         emitter->cse_pointer_dependency_names_[_index] = NULL;
@@ -2277,6 +2283,57 @@ static const zlang_std_function_t *zlang_std_call(const zlang_program_t *program
                                  (const char *const[]){"unsigned"}, 1U);
     }
     return NULL;
+}
+
+static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool is_reference) {
+    for (uint32_t _index = 0U; _index < depth; ++_index) {
+        if (!zlang_append_text(emitter,
+                               _index == 0U && is_reference ? "->zlang_base_" : ".zlang_base_")) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool zlang_emit_expression_as(const zlang_program_t *program, size_t index,
+                                     zlang_emitter_t *emitter, const char *expected_type,
+                                     bool is_reference) {
+    const char *const _actual_k = zlang_call_argument_type(program, emitter, index);
+    if (expected_type == NULL || !zlang_is_struct_ancestor(program, expected_type, _actual_k)) {
+        return is_reference ? zlang_emit_reference_argument(program, index, emitter)
+                            : zlang_emit_expression(program, index, emitter);
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    const zlang_emitted_symbol_t *const _symbol_k =
+        _expression_k->kind_ == zlang_expression_identifier_
+            ? zlang_find_active_symbol(emitter, _expression_k->name_)
+            : NULL;
+    const char *const _type_k = zlang_generated_type(program, emitter, expected_type);
+    const uint32_t _depth_k = zlang_struct_depth(program, expected_type, _actual_k);
+    if (_type_k == NULL) {
+        return false;
+    }
+    if (is_reference) {
+        if (_symbol_k != NULL && _symbol_k->is_reference_) {
+            return zlang_append_text(emitter, "(") || zlang_append_text(emitter, _type_k) ||
+                   zlang_append_text(emitter, " *)") ||
+                   zlang_append_text(emitter, _symbol_k->generated_name_);
+        }
+        if (_symbol_k != NULL) {
+            return zlang_append_text(emitter, "&") ||
+                   zlang_append_text(emitter, _symbol_k->generated_name_) ||
+                   zlang_emit_base_chain(emitter, _depth_k, false);
+        }
+        return false;
+    }
+    if (_symbol_k != NULL && !_symbol_k->is_reference_) {
+        return zlang_append_text(emitter, _symbol_k->generated_name_) &&
+               zlang_emit_base_chain(emitter, _depth_k, false);
+    }
+    if (!zlang_emit_expression(program, index, emitter)) {
+        return false;
+    }
+    return _depth_k == 0U || zlang_emit_base_chain(emitter, _depth_k, false);
 }
 
 /* Expression trees are bounded by the caller-owned expression array. */
@@ -5855,6 +5912,26 @@ static bool zlang_emit_user_types(const zlang_program_t *program, zlang_emitter_
                 }
             }
         } else {
+            const zlang_emitted_vtable_t *const _vtable_k =
+                zlang_find_vtable(emitter, _statement_k->name_);
+            const zlang_emitted_user_type_t *const _base_type_k =
+                _statement_k->base_name_ != NULL
+                    ? zlang_find_user_type(emitter, _statement_k->base_name_)
+                    : NULL;
+            if (_statement_k->base_name_ != NULL && _base_type_k == NULL) {
+                return false;
+            }
+            if (_vtable_k != NULL && (!zlang_append_text(emitter, "    const ") ||
+                                      !zlang_append_text(emitter, _vtable_k->type_name_) ||
+                                      !zlang_append_text(emitter, " *zlang_vtable_;\n") ||
+                                      !zlang_append_text(emitter, "    uint32_t zlang_type_;\n"))) {
+                return false;
+            }
+            if (_base_type_k != NULL && (!zlang_append_text(emitter, "    ") ||
+                                         !zlang_append_text(emitter, _base_type_k->type_name_) ||
+                                         !zlang_append_text(emitter, " zlang_base_;\n"))) {
+                return false;
+            }
             const size_t _end_k = _statement_k->body_start_ + _statement_k->body_count_;
             for (size_t _field = _statement_k->body_start_;
                  _field < _end_k && _field < program->statement_count_; ++_field) {

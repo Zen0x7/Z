@@ -3,3 +3,6 @@
 .output
 node_modules
 *.log
+
+# Nuxt generated symlink
+dist

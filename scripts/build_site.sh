@@ -6,6 +6,12 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 printf 'Building Doxygen reference...\n'
 "${root}/scripts/build_docs.sh"
 
+printf 'Clearing Nuxt caches...\n'
+rm -rf "${root}/site/.nuxt" \
+       "${root}/site/.data" \
+       "${root}/site/.output" \
+       "${root}/site/node_modules/.cache"
+
 printf 'Generating Nuxt site...\n'
 cd "${root}/site"
 yarn generate

@@ -1,5 +1,32 @@
+import { readdirSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { zlangLanguage } from './shiki/zlang'
 import { zlangTheme } from './shiki/zlang-theme'
+
+const contentRoot = fileURLToPath(new URL('./content/docs', import.meta.url))
+
+function collectContentRoutes(directory: string, base = '/docs'): string[] {
+  const routes: string[] = []
+
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      routes.push(...collectContentRoutes(join(directory, entry.name), `${base}/${entry.name}`))
+      continue
+    }
+
+    if (!entry.name.endsWith('.md')) continue
+
+    const stem = entry.name.replace(/\.md$/, '')
+    if (stem === 'index') routes.push(base)
+    else routes.push(`${base}/${stem}`)
+  }
+
+  return routes
+}
+
+const prerenderRoutes = ['/', '/doxygen', ...new Set(collectContentRoutes(contentRoot))]
 
 export default defineNuxtConfig({
   modules: [
@@ -13,7 +40,8 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      crawlLinks: true,
+      crawlLinks: false,
+      routes: prerenderRoutes,
       ignore: ['/doxygen/**'],
     },
   },

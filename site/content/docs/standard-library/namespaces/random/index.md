@@ -12,7 +12,7 @@ navigation:
 
 `@std/random` generates numeric values inside caller-specified bounds. Each generator takes two values of one numeric type and returns one value of that type.
 
-The registry marks every generator as stateful and opaque. Calls advance one runtime context shared by the generated program. The compiler passes that context explicitly; Zlang source never names it and no Zlang import seeds or resets it. Do not rely on a specific value or sequence. No security guarantee is part of this API.
+The registry marks every generator as stateful and opaque. Calls advance one runtime context shared by the generated program. The compiler passes that context explicitly. Generated `main` initializes it from a constant; Zlang source never names the context, and no import seeds or resets it. The helpers do not read an OS entropy source. Do not rely on a specific value or sequence. No security guarantee is part of this API.
 
 ## Import
 

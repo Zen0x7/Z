@@ -13,9 +13,9 @@ The planner computes each declaration's byte size before emitting C.
 - Larger values become file-scope `static` objects with internal linkage.
 - Neither kind uses the heap.
 
-`ZLANG_STACK_LIMIT` sets the automatic-storage budget. The default is `4096` bytes. A compiler that uses a different limit must document it.
+`ZLANG_DEFAULT_STACK_LIMIT` sets the automatic-storage budget. The default is `4096` bytes. A compiler that uses a different limit must document it.
 
-An array with no capacity never reaches the planner. Semantic analysis stops it with `ZLANG3001`.
+The compiler rejects an array with no capacity with `ZLANG3001` before planning.
 
 ## Why it matters
 

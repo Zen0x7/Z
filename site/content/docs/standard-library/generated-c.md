@@ -1,26 +1,28 @@
 ---
 title: Generated C
-description: How imports become activation macros and runtime calls.
+description: How imports become activation macros and C calls.
 kind: generated-c
 status: implemented
 ---
 
 # Generated C
 
-An import activates one macro per resolved function before the runtime include:
+An import emits activation macros before the runtime include:
 
 ```c
 #define ZLANG_STD_IO_WRITE_STRING
 #include <zlang/runtime/runtime.h>
 ```
 
-`runtime.h` includes standard headers in two phases. The declaration phase exposes prototypes. The implementation phase emits `static inline` bodies. Calls between standard functions do not depend on include order.
+`runtime.h` includes the runtime primitives first. It then includes each standard header whose activation macro is defined. Standard functions are emitted as `static inline` wrappers. There is no separate declaration and implementation phase for standard functions.
 
-## Activation
+## Activation today
 
-Activation is transitive and comes from registry metadata, not import order. If an imported function depends on another, both macros appear.
+The emitter activates the first registered overload for an imported name. At each call it also activates the resolved overload.
 
-No macro is emitted for a function that was not imported or reached through a dependency.
+That means an import can activate more than the exact macro needed by the call. It also means the emitter does not activate transitive dependencies: the registry has no dependency field. If a standard header calls a helper guarded by another macro, the source must import that helper too. The `program_options` reference records the current gap.
+
+No macro is emitted for a name that was never imported and never called.
 
 ## Provenance
 

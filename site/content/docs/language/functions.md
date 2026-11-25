@@ -19,7 +19,7 @@ function bump(reference integer value) {
 }
 ```
 
-Every parameter uses `clone` or `reference`. Add `const` before the mode when the function must not change the value.
+Except in `main`, every parameter uses `clone` or `reference`. Add `const` before the mode when the function must not change the value.
 
 - `clone` passes a copy.
 - `reference` aliases caller storage.
@@ -47,4 +47,4 @@ function main(integer argc, arguments argv): integer {
 
 ## Visibility
 
-Zlang has no mutable globals. Functions receive state through parameters or explicit runtime contexts.
+Zlang has no mutable globals. Functions receive state through parameters. Stateful standard functions add a hidden context parameter in generated C; Zlang source does not declare it.

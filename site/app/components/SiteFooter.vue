@@ -36,6 +36,6 @@ const year = new Date().getFullYear()
       <GitHubIcon />
       <span>Source on GitHub</span>
     </a>
-    <span class="foot__ver num">Versión {{ version }}</span>
+    <span class="foot__ver num">Version {{ version }}</span>
   </footer>
 </template>

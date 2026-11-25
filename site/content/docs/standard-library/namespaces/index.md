@@ -1,7 +1,7 @@
 ---
 title: Overview
 description: Domain namespaces available in the standard library.
-kind: overview
+kind: domain-overview
 status: implemented
 navigation:
   title: Overview
@@ -21,7 +21,7 @@ A namespace is a standard library domain. Each one groups functions and types un
 | [Strings](/docs/standard-library/namespaces/strings) | `@std/strings` | Bounded string comparison and search. |
 | [Program options](/docs/standard-library/namespaces/program_options) | `@std/program_options` | Explicit access to host arguments and flags. |
 
-More namespaces will appear here as their function references are written. A catalog entry alone does not mean the domain is implemented.
+Only implemented domains appear here. Proposed domains have no reference pages.
 
 ## Reading a namespace
 

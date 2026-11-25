@@ -46,7 +46,7 @@ User modules use relative paths or `z.yaml` aliases. They are a different mechan
 Domains are full lowercase nouns. Function names start with a verb and do not repeat the domain.
 
 ```zlang
-import { starts_with } from "text";
+import { starts_with } from "@std/strings";
 ```
 
 Avoid abbreviations such as `inet`, `rng` or `str`. Avoid catch-all domains such as `util`, `common` and `core`.

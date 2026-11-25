@@ -22,7 +22,7 @@ There is no VM, no bytecode and no runtime allocator hidden behind the source.
 ## What stays fixed
 
 - Arrays cannot grow.
-- Strings cannot exceed their capacity.
+- Mutable strings cannot exceed their capacity. A plain `string` is a non-owning view over bytes.
 - Numeric operations follow the rules of their declared type.
 - Names are resolved during compilation.
 

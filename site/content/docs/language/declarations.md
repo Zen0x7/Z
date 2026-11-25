@@ -1,6 +1,6 @@
 ---
 title: Declarations
-description: Variables, constants, arrays, records and enums.
+description: Variables, constants, arrays, structs and enums.
 navigation:
   title: Declarations
 ---
@@ -17,7 +17,7 @@ string label = "z" + "lang";
 string[32] bounded = label + " value";
 ```
 
-A `const` declaration needs an initializer and cannot be assigned to.
+A `const` declaration cannot be assigned to. An uninitialized `const` scalar starts at zero.
 
 ## Arrays
 
@@ -30,12 +30,12 @@ array[2] string[8] names = {"a", "b"};
 
 `array[N]` sets the capacity. `array[]` infers it from the initializer. An explicit capacity may be combined with a shorter initializer.
 
-An array with no declared capacity is rejected with `ZLANG3001`. An initializer longer than the capacity is rejected with `ZLANG3003`.
+An array without an explicit capacity needs a non-empty initializer. Without either, the compiler reports `ZLANG3001`. An initializer longer than the capacity is reported as `ZLANG3003`.
 
-## Records and enums
+## Structs and enums
 
 ```zlang
-record Point {
+struct Point {
     integer x;
     integer y;
 }
@@ -50,6 +50,4 @@ array[4] Point points;
 Color current = GREEN;
 ```
 
-Records and enums declare user types. They can be used as variables, array elements, parameters and return values.
-
-Inheritance, traits and polymorphism are not part of the language.
+Structs and enums declare user types. They can be used as variables, array elements, parameters and return values.

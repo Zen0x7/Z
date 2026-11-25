@@ -18,7 +18,6 @@ defineProps<{
       :href="`#${link.id}`"
       class="docs-toc__link"
       :class="activeId === link.id && 'docs-toc__link--on'"
-      :style="{ paddingLeft: `${(link.depth - 2) * 10}px` }"
     >
       {{ link.text }}
     </a>

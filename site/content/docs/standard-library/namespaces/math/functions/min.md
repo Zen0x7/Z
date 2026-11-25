@@ -74,7 +74,7 @@ No overload traps. The floating helpers accept NaN and infinities without a vali
 
 ## State and concurrency
 
-The registry marks `min` as not stateful and opaque. The emitter passes both arguments directly and adds no hidden context parameter. The standard headers own no mutable globals, so repeated and concurrent calls share no mutable state.
+The registry marks `min` as not stateful and opaque. The emitter passes both arguments directly and adds no hidden context parameter. The standard headers own no mutable globals. The same two arguments always produce the same result, and repeated and concurrent calls share no mutable state.
 
 ## Generated C
 

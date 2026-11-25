@@ -20,7 +20,7 @@ With `--emit-c`, `zc` stops after the C emitter. Without it, the driver calls `$
 Errors use one form:
 
 ```console
-input.z:12:5: error[ZLANG3001]: sequence 'names' has no declared capacity
+main.z:3:9: error[ZLANG3001]: unbounded array 'values' requires an explicit capacity.
 ```
 
 The file, line and column point to the source construct. The code is stable and can be matched by scripts.

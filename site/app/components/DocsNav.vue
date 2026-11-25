@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  firstPagePath,
   hasIndexPage,
   useDocsNavigation,
   type NavItem,

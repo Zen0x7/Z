@@ -63,7 +63,7 @@ The helper traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code `4`) when `value < 0` 
 
 ## State and concurrency
 
-The registry marks `sqrt` as not stateful and opaque. The emitter passes the argument directly and adds no hidden context parameter. The standard headers own no mutable globals, so repeated and concurrent calls share no mutable state.
+The registry marks `sqrt` as not stateful and opaque. The emitter passes the argument directly and adds no hidden context parameter. The standard headers own no mutable globals. The same argument always produces the same result, and repeated and concurrent calls share no mutable state.
 
 ## Generated C
 

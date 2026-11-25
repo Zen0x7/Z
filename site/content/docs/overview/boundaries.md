@@ -7,13 +7,13 @@ navigation:
 
 # Boundaries
 
-Zlang has a narrow scope on purpose.
+Zlang has a narrow scope.
 
 ## Included
 
 - fixed-size arrays and bounded strings;
 - checked arithmetic;
-- records and enums;
+- structs and enums;
 - functions with `clone` and `reference` parameters;
 - native loops;
 - explicit `main`;

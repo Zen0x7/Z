@@ -7,7 +7,7 @@ navigation:
 
 # Types
 
-Zlang has eight numeric and scalar primitives, plus records and enums.
+Zlang has eight numeric and scalar primitives, plus structs and enums.
 
 | Zlang | Meaning | Emitted C |
 | --- | --- | --- |

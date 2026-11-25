@@ -55,7 +55,7 @@ Both bounds are values. No caller-owned storage is read or written, and the runt
 
 ## State and concurrency
 
-The registry marks `generate_int32` as stateful and opaque. Each call advances one shared runtime context; two calls with the same bounds are legal and advance that context in order. The emitter passes the context as a hidden argument to generated functions that call the generator, including a Zlang-declared `main`. No mutable global holds the state. The API gives no thread-safety guarantee for sharing one context.
+The registry marks `generate_int32` as stateful and opaque. Each call advances one shared runtime context; two calls with the same bounds are legal and advance that context in order. The helper advances the injected pseudo-random state; it does not read an OS entropy source. The emitter passes the context as a hidden argument to generated functions that call the generator, including a Zlang-declared `main`. No mutable global holds the state. The API gives no thread-safety guarantee for sharing one context.
 
 ## Generated C
 
@@ -66,13 +66,23 @@ The import activates the macro before the runtime include:
 #include <zlang/runtime/runtime.h>
 ```
 
-`runtime.h` then includes the shared random state header and `<zlang/standard/random/generate_int32.h>`. The emitter calls `zlang_std_random_generate_int32` with the context first. The checked-in golden C for a top-level call is:
+`runtime.h` then includes the shared random state header and `<zlang/standard/random/generate_int32.h>`. The C helper takes the context first:
+
+```c
+int32_t zlang_std_random_generate_int32(zlang_runtime_context_t *context, int32_t from, int32_t to);
+```
+
+Inside the example's generated `app_fn_main`, the call is:
+
+```c
+int32_t app_local_value = zlang_std_random_generate_int32(zlang_context, 1, 6);
+```
+
+At a top-level call site the emitter passes `&_zlang_context`. The checked-in fixture uses bounds `1, 1`:
 
 ```c
 int32_t app_local_value = zlang_std_random_generate_int32(&_zlang_context, 1, 1);
 ```
-
-Inside a generated function, including a Zlang-declared `main`, the call uses `zlang_context` instead of `&_zlang_context`.
 
 ## Example
 
@@ -90,6 +100,8 @@ function main(): integer {
 
 ## See also
 
+- [generate_uint32](/docs/standard-library/namespaces/random/functions/generate_uint32)
+- [generate_int64](/docs/standard-library/namespaces/random/functions/generate_int64)
 - [Functions](/docs/standard-library/namespaces/random/functions)
 - [Randomness overview](/docs/standard-library/namespaces/random)
 - [Generated C](/docs/standard-library/generated-c)

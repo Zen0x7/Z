@@ -61,7 +61,7 @@ Each view is valid when its data pointer is non-null or its declared length is z
 
 ## State and concurrency
 
-The registry marks `compare` as not stateful and opaque. The wrapper is `static inline` and reads no mutable global. Repeated calls with the same valid views return the same result. The emitted call remains in generated C with `--tto`.
+The registry marks `compare` as not stateful and opaque. The wrapper is `static inline` and reads no mutable global. Repeated calls with the same valid views return the same result.
 
 ## Generated C
 
@@ -86,7 +86,7 @@ For `compare("abc", "abd")`, the emitted call is:
 zlang_std_io_write_i32(zlang_std_strings_compare(zlang_gen_literal_0, zlang_gen_literal_1));
 ```
 
-The registry symbol and macro match the emitted call.
+The registry symbol and macro match the emitted call. The call remains in generated C when the compiler runs with `--tto`.
 
 ## Example
 

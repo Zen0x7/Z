@@ -7,7 +7,7 @@ navigation:
 
 # Language
 
-Zlang gives every value a known shape. You declare the capacity of arrays and strings. The compiler checks those numbers before it writes C.
+Zlang gives every value a known shape. Array capacities are explicit or inferred from an initializer. Mutable strings declare a capacity. The compiler checks those numbers before it writes C.
 
 ```zlang
 import { write } from "@std/io";
@@ -30,7 +30,7 @@ The array holds four integers. `foreach` walks those four elements. Nothing grow
 
 ## Pages at this level
 
-- [Overview](/docs/language) — this page.
+- [Language](/docs/language) — this page.
 - [Lexical rules](/docs/language/lexical)
 - [Types](/docs/language/types)
 - [Declarations](/docs/language/declarations)

@@ -1,7 +1,7 @@
 ---
 title: Standard library
 description: The canonical reference for domains, imports, functions, types and generated C activation.
-kind: overview
+kind: domain-overview
 status: implemented
 navigation:
   title: Overview
@@ -25,7 +25,7 @@ Start with [conventions](/docs/standard-library/conventions) if you are new to i
 | Strings | `@std/strings` | implemented |
 | Program options | `@std/program_options` | implemented |
 
-Other domains such as `text`, `encoding`, `algorithms`, `memory`, `time`, `streams`, `filesystem`, `networking` and `system` belong to the catalog. Do not treat them as available until a function page says so.
+Other domains are proposed. They have no implemented functions and no reference pages in this section.
 
 ## How to read this section
 

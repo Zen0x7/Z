@@ -7,7 +7,7 @@ status: implemented
 
 # Classification
 
-Every registered standard function carries eight values. They describe what the compiler and runtime are allowed to assume.
+The reference uses eight axes to describe a standard function. The current registry records only state, opacity and parameter modes; the remaining values are documentation metadata and are being moved into the registry.
 
 | Axis | Meaning | Values |
 | --- | --- | --- |
@@ -30,4 +30,4 @@ The registry currently records state, opacity and parameter modes. Full lifecycl
 
 `random.generate_int32` is stateful and opaque. The compiler may fold its constant arguments, but it must not fold, cache or reorder the result.
 
-`io.write` is effectful and deterministic for a given value. It writes to an external stream and returns nothing to the caller.
+`io.write` is effectful and deterministic for a given value. It writes to an external stream. The registry gives each overload the argument's return type while the generated C wrappers return `bool`; the [write reference](/docs/standard-library/namespaces/io/functions/write) records that mismatch.

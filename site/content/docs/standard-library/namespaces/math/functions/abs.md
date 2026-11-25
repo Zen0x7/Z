@@ -55,7 +55,7 @@ function abs(clone integer value): integer
 | --- | --- | --- | --- |
 | `value` | one of `integer`, `unsigned`, `int64`, `uint64`, `float`, `double` | clone | Value whose magnitude is returned |
 
-All arguments of one call have the same type. No capacity is required.
+`abs` takes one scalar argument. No capacity is required.
 
 ## Result
 
@@ -73,7 +73,7 @@ The unsigned, `float` and `double` helpers contain no trap. Floating-point helpe
 
 ## State and concurrency
 
-The registry marks `abs` as not stateful and opaque. The emitter passes the argument directly and adds no hidden context parameter. The standard headers own no mutable globals, so concurrent calls share no mutable state.
+The registry marks `abs` as not stateful and opaque. The emitter passes the argument directly and adds no hidden context parameter. The standard headers own no mutable globals. The same argument always produces the same result, and concurrent calls share no mutable state.
 
 ## Generated C
 

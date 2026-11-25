@@ -75,7 +75,7 @@ Every overload traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code `4`) when `low > h
 
 ## State and concurrency
 
-The registry marks `clamp` as not stateful and opaque. The emitter passes the three arguments directly and adds no hidden context parameter. The standard headers own no mutable globals, so concurrent calls share no mutable state.
+The registry marks `clamp` as not stateful and opaque. The emitter passes the three arguments directly and adds no hidden context parameter. The standard headers own no mutable globals. The same three arguments always produce the same result, and concurrent calls share no mutable state.
 
 ## Generated C
 

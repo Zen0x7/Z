@@ -9,7 +9,7 @@ navigation:
 
 Identifiers start with a letter or underscore. They continue with letters, digits or underscores.
 
-Keywords include `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `length`, `record`, `reference`, `repeat`, `return`, `array`, `string`, `true`, `unsigned`, `int64`, `uint64`, `float`, `double` and `while`.
+Keywords include `boolean`, `break`, `clone`, `const`, `constructor`, `continue`, `else`, `enum`, `false`, `for`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `length`, `struct`, `static`, `reference`, `repeat`, `return`, `array`, `string`, `true`, `arguments`, `unsigned`, `int64`, `uint64`, `float`, `double` and `while`.
 
 Output is a standard library function, not a keyword:
 
@@ -19,11 +19,13 @@ import { write } from "@std/io";
 
 ## Literals
 
-Integers are decimal. Unsigned literals end in `u`. Floating literals use decimal notation and `f` for `float`.
+Integers are decimal. Unsigned literals end in `u` or `U`. 64-bit literals end in `i64` or `u64`. Floating literals use a decimal point or an exponent, and `f` marks a `float`.
 
 ```zlang
 integer count = 10;
 unsigned limit = 3U;
+int64 big = 9000000000i64;
+uint64 wide = 18000000000000000000u64;
 double ratio = 0.5;
 float measure = 1.5f;
 ```

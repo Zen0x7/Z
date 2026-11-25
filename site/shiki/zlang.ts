@@ -73,7 +73,7 @@ export const zlangLanguage: LanguageRegistration = {
           },
         },
         {
-          match: String.raw`\b(record|enum)\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(struct|enum)\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'storage.type.zlang' },
             2: { name: 'entity.name.type.zlang' },
@@ -129,7 +129,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'storage.type.zlang',
-          match: String.raw`\b(boolean|integer|unsigned|string|array|record|enum|function)\b`,
+          match: String.raw`\b(boolean|integer|unsigned|string|array|struct|enum|function|arguments)\b`,
         },
       ],
     },
@@ -149,7 +149,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'support.function.builtin.zlang',
-          match: String.raw`\b(print|length|write)\b(?=\s*\()`,
+          match: String.raw`\b(length|write)\b(?=\s*\()`,
         },
       ],
     },

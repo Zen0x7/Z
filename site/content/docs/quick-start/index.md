@@ -7,15 +7,14 @@ navigation:
 
 # Quick start
 
-Build the compiler, write a small program, and run it.
+You need `zc` and a C compiler. Build the compiler once, write a `.z` file, then run the binary that `zc` produces.
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang
 cmake --build build -j
-ctest --test-dir build --output-on-failure -j
 ```
 
-Then write `hello.z` with an explicit `main`:
+Write `hello.z`:
 
 ```zlang
 import { write } from "@std/io";
@@ -34,10 +33,18 @@ Compile and run:
 ./hello
 ```
 
+```console
+Hello from Zlang
+```
+
+`zc` writes `hello.c` and calls your C compiler. The binary uses the generated C and the header-only runtime.
+
+For sanitizers, coverage, tests and header checks, see [Build](/docs/quick-start/build).
+
 ## Pages at this level
 
 - [Overview](/docs/quick-start) — the short path.
-- [Build](/docs/quick-start/build) — build options and tests.
+- [Build](/docs/quick-start/build) — build options and verification.
 - [First program](/docs/quick-start/first-program) — the program above, line by line.
-- [Command line](/docs/quick-start/command-line) — every `zc` form.
+- [Command line](/docs/quick-start/command-line) — common `zc` forms.
 - [Examples](/docs/quick-start/examples) — golden fixtures in the repository.

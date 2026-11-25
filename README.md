@@ -1,4 +1,12 @@
-<p align="center"><a href="https://github.com/Zen0x7/Z" target="_blank"><img src="docs/logo.svg" width="400" alt="Zlang"></a></p>
+<p align="center">
+  <a href="https://github.com/Zen0x7/Z" target="_blank">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="site/public/logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="site/public/logo-light.svg">
+      <img src="site/public/logo-light.svg" width="400" alt="Zlang">
+    </picture>
+  </a>
+</p>
 
 <p align="center">
 <a href="https://codecov.io/gh/Zen0x7/Z"><img src="https://codecov.io/gh/Zen0x7/Z/branch/master/graph/badge.svg?token=8TUYTBYEBJ" alt="Coverage"></a>

@@ -38,8 +38,13 @@ string[32] full = prefix + " value";
 
 ## Builtins
 
-`length(sequence)` returns the first extent of a sequence as `unsigned`. Output is a standard library function:
+`length(values)` returns the first extent of a declared array as `unsigned`. Output comes from `@std/io`:
 
 ```zlang
 import { write } from "@std/io";
+
+function main(): integer {
+    write("Hello");
+    return 0;
+}
 ```

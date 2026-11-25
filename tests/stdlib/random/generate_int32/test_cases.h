@@ -1,2 +1,3 @@
 ZLANG_TEST_CASE(generate_int32_stays_in_range)
 ZLANG_TEST_CASE(generate_int32_rejects_inverted_range)
+ZLANG_TEST_CASE(generate_int32_extreme_ranges)

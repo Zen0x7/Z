@@ -13,6 +13,19 @@ static void generate_int32_stays_in_range(zlang_test_context_t *const context) {
     }
 }
 
+static void generate_int32_extreme_ranges(zlang_test_context_t *const context) {
+    zlang_std_random_state_t _state;
+    zlang_std_random_seed(&_state, 7U);
+    for (int32_t _iteration = 0; _iteration < 100; ++_iteration) {
+        const int32_t _value_k = zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MAX);
+        ZLANG_CHECK(context, _value_k >= INT32_MIN && _value_k <= INT32_MAX);
+        ZLANG_CHECK(context,
+                    zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MIN) == INT32_MIN);
+        ZLANG_CHECK(context,
+                    zlang_std_random_generate_int32(&_state, INT32_MAX, INT32_MAX) == INT32_MAX);
+    }
+}
+
 static void generate_int32_rejects_inverted_range(zlang_test_context_t *const context) {
     zlang_std_random_state_t _state;
     zlang_std_random_seed(&_state, 1U);

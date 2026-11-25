@@ -574,3 +574,90 @@ The compiler driver still builds native binaries through the configured C compil
 launches the compiler directly with `CreateProcessA`, avoiding `cmd.exe` quote loss for paths such
 as `C:/Program Files/...`, and selects MSVC or GNU flags from the compiler frontend so MinGW GCC
 receives `-I` / `-o` instead of `/I` / `/Fe`.
+
+## 0.20 — Design note
+
+Zlang 0.19 exposes no user-callable standard functions: the runtime API is used only by generated
+C. The next language level adds a domain-based standard library and an optional transpile-time
+optimizer. These are design decisions, not implementation claims.
+
+### Standard library model
+
+A program opts into a standard function with an explicit import:
+
+```zlang
+import { random } from "algorithms";
+```
+
+The import is a source construct, not a keyword attached to the function name. `random` is a
+function in the `algorithms` domain; it is not a user-space function and not a language keyword.
+Only imported names enter the source symbol table. An unimported name remains undefined.
+
+The emitter activates only the runtime headers that the program uses. For `random`, generated C
+defines an activation macro before including `<zlang/runtime/runtime.h>`; the runtime header then
+includes `zlang/standard/algorithms/random.h`. Domain headers stay isolated from each other. The
+pointer is the C99 model:
+
+```c
+#define ZLANG_STD_ALGORITHMS_RANDOM
+#include <zlang/runtime/runtime.h>
+```
+
+`runtime.h` conditionally includes:
+
+```c
+#if defined(ZLANG_STD_ALGORITHMS_RANDOM)
+#include "zlang/standard/algorithms/random.h"
+#endif
+```
+
+This keeps the base runtime small and gives future domains the same shape:
+`standard/<domain>/<function>.h`, one activation macro, one imported symbol. No mutable globals are
+added to the compiler core.
+
+The exact PRNG state model is still an open decision. A deterministic PRNG needs explicit state
+passed through generated code; an opaque OS-entropy call avoids hidden state but changes test
+strategy. That decision must be made before implementing `random`.
+
+### Transpile-time optimization
+
+`--tto` enables transpile-time optimization. Default output remains unoptimized and stable.
+
+The optimizer is not a single pass over the AST. It is a fixed-point rewriter with a caller-owned
+context, a worklist and generation counters:
+
+- a rewrite may expose another rewrite, so changed nodes are reconsidered;
+- any rewrite that invalidates prior analysis restarts or requeues affected nodes;
+- termination requires a finite lattice, monotonic facts and a fixed capacity;
+- the optimizer never changes program meaning.
+
+Initial rewrite families:
+
+- constant expression evaluation for literals, arithmetic, comparisons, logical operators and
+  `length` when extents are known;
+- literal array index folding into direct reads and writes when the index is proven in range;
+- out-of-range literal indices keep the declared trap semantics;
+- control-flow folding for conditions that are constant after earlier rewrites;
+- nested call and nested expression materialization into explicit sequential temporaries, preserving
+  evaluation order;
+- function evaluation when the function is pure, has constant arguments and contains no opaque
+  operation;
+- `random` is opaque: its arguments may be folded, but its result is never folded, cached or
+  reordered.
+
+Additional cleanup in 0.20:
+
+- emit value constants only when referenced;
+- remove legacy `ZLANG_*_LENGTH` aliases from array output;
+- keep parameter names local to their function scope, so separate functions and specializations can
+  reuse the same parameter name;
+- reduce long generated lines through materialization and multiline signatures.
+
+Acceptance criteria:
+
+- `line[0] = 9` under `--tto` emits a direct store without a bounds `if` for that literal index;
+- a later read of the same unmodified cell may become a constant under `--tto`;
+- any may-write to that array cell invalidates the known value;
+- `random(1, 6)` is never constant-folded;
+- imported and unimported standard functions are distinguished by semantic analysis;
+- generated C compiles under the strict warning set in both default and `--tto` modes.

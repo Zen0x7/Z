@@ -58,3 +58,19 @@ CLI prints `file:line:column: error[ZLANGxxxx]: message` and exits with a stage-
 The test suite covers the public headers, runtime helpers, lexer, parser, semantic rules, planner,
 emitter, CLI and exported CMake package. CI adds sanitizers, Valgrind, static analysis, coverage and
 multi-architecture builds.
+
+
+## Planned 0.20 architecture additions
+
+The standard library will be domain-based rather than a set of keywords. Source code imports a
+function with `import { random } from "algorithms";`. The compiler records the import in semantic
+analysis and the emitter activates the matching runtime domain macro before including
+`<zlang/runtime/runtime.h>`. Domain implementations live under
+`include/zlang/standard/<domain>/<function>.h`, and the base runtime includes them only when their
+activation macro is defined.
+
+`--tto` will enable a fixed-point optimizer. It uses a caller-owned context, a worklist and
+generation counters so a rewrite that enables or invalidates another fact can requeue affected AST
+nodes. It stops only at a fixed point or at a capacity limit. Opaque operations such as `random`
+remain runtime calls; their arguments may be folded but their result is not folded, cached or
+reordered.

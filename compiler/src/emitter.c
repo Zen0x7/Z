@@ -1757,11 +1757,13 @@ static const char *zlang_expression_type(const zlang_program_t *program,
         const char *const _record_name_k = zlang_field_record_type(program, emitter, _expression_k);
         const zlang_ast_statement_t *const _record_k =
             zlang_find_struct_statement(program, _record_name_k);
+        uint32_t _field_depth_k = 0U;
         const zlang_ast_statement_t *const _field_k =
-            zlang_find_field_statement(program, _record_k,
-                                       _expression_k->kind_ == zlang_expression_field_
-                                           ? _expression_k->name_
-                                           : program->expressions_[_expression_k->left_].name_);
+            zlang_find_field_owner(program, _record_k,
+                                   _expression_k->kind_ == zlang_expression_field_
+                                       ? _expression_k->name_
+                                       : program->expressions_[_expression_k->left_].name_,
+                                   &_field_depth_k, 0U);
         return _field_k != NULL ? _field_k->type_name_ : NULL;
     }
     case zlang_expression_add_:
@@ -2470,8 +2472,15 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         const zlang_ast_statement_t *_field_k = NULL;
         if (zlang_current_field(program, emitter, _expression_k->name_, &_field_k) &&
             emitter->current_self_name_ != NULL) {
+            uint32_t _depth_k = 0U;
+            const zlang_ast_statement_t *const _owner_k = zlang_find_field_owner(
+                program, emitter->current_struct_, _expression_k->name_, &_depth_k, 0U);
+            if (_owner_k == NULL) {
+                return false;
+            }
             return zlang_append_text(emitter, emitter->current_self_name_) &&
                    zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
+                   zlang_emit_base_chain(emitter, _depth_k, false) &&
                    zlang_append_field_name(emitter, _field_k->name_);
         }
         const char *const _enum_k = zlang_generated_enum_item(emitter, _expression_k->name_);
@@ -2706,9 +2715,9 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
             const zlang_ast_statement_t *const _record_k =
                 zlang_find_struct_statement(program, _symbol_k->type_name_);
+            uint32_t _field_depth_k = 0U;
             const zlang_ast_statement_t *const _field_statement_k =
-                _record_k != NULL ? zlang_find_field_statement(program, _record_k, _field_k->name_)
-                                  : NULL;
+                zlang_find_field_owner(program, _record_k, _field_k->name_, &_field_depth_k, 0U);
             if (_field_statement_k != NULL &&
                 _field_statement_k->kind_ == zlang_statement_array_declaration_ &&
                 _field_k->argument_count_ > 0U) {
@@ -2736,6 +2745,12 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
             if (_field_k->right_ == ZLANG_NO_EXPRESSION && _symbol_k->is_reference_) {
                 _separator_k = "->";
+            }
+            if (_field_k->right_ == ZLANG_NO_EXPRESSION && _field_depth_k > 0U) {
+                if (!zlang_emit_base_chain(emitter, _field_depth_k, _symbol_k->is_reference_)) {
+                    return false;
+                }
+                _separator_k = ".";
             }
         } else if (!zlang_emit_expression(program, _field_k->left_, emitter)) {
             return false;
@@ -3012,9 +3027,17 @@ zlang_emit_reference_argument(const zlang_program_t *program, size_t index,
             if (_symbol_k == NULL) {
                 return false;
             }
+            uint32_t _depth_k = 0U;
+            const zlang_ast_statement_t *const _owner_k = zlang_find_field_owner(
+                program, zlang_find_struct_statement(program, _symbol_k->type_name_),
+                _field_k->name_, &_depth_k, 0U);
+            if (_owner_k == NULL) {
+                return false;
+            }
             return zlang_append_text(emitter, "&") &&
                    zlang_append_text(emitter, _symbol_k->generated_name_) &&
                    zlang_append_text(emitter, _symbol_k->is_reference_ ? "->" : ".") &&
+                   zlang_emit_base_chain(emitter, _depth_k, false) &&
                    zlang_append_field_name(emitter, _field_k->name_);
         }
         return zlang_append_text(emitter, "&") && zlang_emit_expression(program, index, emitter);

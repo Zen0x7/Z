@@ -18,6 +18,7 @@
 #define ZLANG_EMITTED_LITERAL_CAPACITY 64U
 #define ZLANG_EMITTED_USER_TYPE_CAPACITY 32U
 #define ZLANG_EMITTED_VTABLE_CAPACITY 32U
+#define ZLANG_EMITTED_VTABLE_SLOT_CAPACITY 32U
 #define ZLANG_EMITTED_TYPE_TAG_CAPACITY 32U
 #define ZLANG_EMITTED_ENUM_ITEM_CAPACITY 128U
 #define ZLANG_EMITTED_COMMENT_CAPACITY 128U
@@ -75,6 +76,9 @@ typedef struct zlang_emitted_vtable_t {
     const zlang_ast_statement_t *statement_;
     char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
     char instance_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    const zlang_ast_statement_t *slot_methods_[ZLANG_EMITTED_VTABLE_SLOT_CAPACITY];
+    char slot_names_[ZLANG_EMITTED_VTABLE_SLOT_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];
+    size_t slot_count_;
 } zlang_emitted_vtable_t;
 
 typedef struct zlang_emitted_type_tag_t {

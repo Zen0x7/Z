@@ -10,6 +10,8 @@
 
 static const zlang_ast_statement_t *zlang_find_trait_statement(const zlang_program_t *program,
                                                                const char *name);
+static bool zlang_statement_in_method(const zlang_program_t *program,
+                                      const zlang_ast_statement_t *structure, size_t index);
 static const zlang_emitted_vtable_t *zlang_find_vtable(const zlang_emitter_t *emitter,
                                                        const char *name);
 static const zlang_emitted_type_tag_t *zlang_find_type_tag(const zlang_emitter_t *emitter,
@@ -31,6 +33,10 @@ static const zlang_ast_statement_t *zlang_struct_root_name(const zlang_program_t
                                                            const char *name);
 static bool zlang_method_is_virtual(const zlang_program_t *program, const char *struct_name,
                                     const char *name);
+static bool zlang_vtable_wrapper_name(const char *struct_name, const char *method_name,
+                                      char *output, size_t capacity);
+static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
+                                       zlang_emitted_vtable_t *vtable);
 
 static const char *zlang_std_domain(const char *specifier) {
     if (specifier == NULL) {
@@ -101,6 +107,8 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     (void)zlang_find_field_owner;
     (void)zlang_find_method;
     (void)zlang_method_is_virtual;
+    (void)zlang_vtable_wrapper_name;
+    (void)zlang_collect_vtable_slots;
     for (size_t _index = 0U; _index < ZLANG_EMITTED_CSE_CAPACITY; ++_index) {
         emitter->cse_pointer_base_names_[_index] = NULL;
         emitter->cse_pointer_dependency_names_[_index] = NULL;
@@ -1477,6 +1485,97 @@ static bool zlang_method_is_virtual(const zlang_program_t *program, const char *
         zlang_find_method(program, struct_name, name, &_owner_k, &_is_trait_k);
     return !_is_trait_k && _method_k != NULL && !_method_k->is_static_ &&
            !_method_k->is_constructor_ && zlang_struct_is_polymorphic(program, struct_name);
+}
+
+static bool zlang_slot_name(const char *method_name, char *output, size_t capacity) {
+    char _lower_k[ZLANG_EMITTED_NAME_CAPACITY];
+    return zlang_lower_name(method_name, _lower_k, sizeof(_lower_k)) &&
+           zlang_assemble_name("zlang_slot_", _lower_k, "_", output, capacity);
+}
+
+static bool zlang_vtable_wrapper_name(const char *struct_name, const char *method_name,
+                                      char *output, size_t capacity) {
+    char _lower_struct_k[ZLANG_EMITTED_NAME_CAPACITY];
+    char _lower_method_k[ZLANG_EMITTED_NAME_CAPACITY];
+    char _base_k[ZLANG_EMITTED_NAME_CAPACITY];
+    if (!zlang_lower_name(struct_name, _lower_struct_k, sizeof(_lower_struct_k)) ||
+        !zlang_lower_name(method_name, _lower_method_k, sizeof(_lower_method_k)) ||
+        !zlang_assemble_name("zlang_vtable_", _lower_struct_k, "_", _base_k, sizeof(_base_k)) ||
+        strlen(_base_k) + strlen(_lower_method_k) >= capacity) {
+        return false;
+    }
+    memcpy(output, _base_k, strlen(_base_k));
+    memcpy(output + strlen(_base_k), _lower_method_k, strlen(_lower_method_k) + 1U);
+    return true;
+}
+
+static bool zlang_add_vtable_slot(zlang_emitted_vtable_t *vtable,
+                                  const zlang_ast_statement_t *method) {
+    if (vtable == NULL || method == NULL || method->name_ == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < vtable->slot_count_; ++_index) {
+        if (strcmp(vtable->slot_methods_[_index]->name_, method->name_) == 0) {
+            return true;
+        }
+    }
+    if (vtable->slot_count_ >= ZLANG_EMITTED_VTABLE_SLOT_CAPACITY) {
+        return false;
+    }
+    char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
+    if (!zlang_slot_name(method->name_, _name_k, sizeof(_name_k))) {
+        return false;
+    }
+    zlang_copy_name(_name_k, vtable->slot_names_[vtable->slot_count_],
+                    sizeof(vtable->slot_names_[0]));
+    vtable->slot_methods_[vtable->slot_count_] = method;
+    ++vtable->slot_count_;
+    return true;
+}
+
+static bool zlang_collect_struct_vtable_slots(const zlang_program_t *program,
+                                              zlang_emitted_vtable_t *vtable,
+                                              const char *struct_name, uint32_t depth) {
+    if (struct_name == NULL || depth > 16U) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _structure_k =
+        zlang_find_struct_statement(program, struct_name);
+    if (_structure_k == NULL) {
+        return false;
+    }
+    const size_t _end_k = _structure_k->body_start_ + _structure_k->body_count_;
+    for (size_t _index = _structure_k->body_start_;
+         _index < _end_k && _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _method_k = &program->statements_[_index];
+        if (_method_k->kind_ != zlang_statement_function_ || _method_k->owner_name_ == NULL ||
+            _method_k->is_static_ || _method_k->is_constructor_ ||
+            zlang_statement_in_method(program, _structure_k, _index)) {
+            continue;
+        }
+        if (!zlang_add_vtable_slot(vtable, _method_k)) {
+            return false;
+        }
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _candidate_k = &program->statements_[_index];
+        if (_candidate_k->kind_ == zlang_statement_struct_ && _candidate_k->base_name_ != NULL &&
+            strcmp(_candidate_k->base_name_, struct_name) == 0 &&
+            !zlang_collect_struct_vtable_slots(program, vtable, _candidate_k->name_, depth + 1U)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
+                                       zlang_emitted_vtable_t *vtable) {
+    (void)emitter;
+    if (vtable == NULL || vtable->statement_ == NULL || vtable->statement_->base_name_ != NULL) {
+        return true;
+    }
+    vtable->slot_count_ = 0U;
+    return zlang_collect_struct_vtable_slots(program, vtable, vtable->statement_->name_, 0U);
 }
 
 static const zlang_ast_statement_t *zlang_find_function_statement(const zlang_program_t *program,

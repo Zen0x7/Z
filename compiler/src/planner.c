@@ -77,8 +77,16 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
          _index < _end_k && _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _field_k = &program->statements_[_index];
         uint32_t _field_size_k = 0U;
-        if (!zlang_element_size(program, _field_k->type_name_, depth + 1U, &_field_size_k) ||
-            _total_k > UINT32_MAX - _field_size_k) {
+        if (!zlang_element_size(program, _field_k->type_name_, depth + 1U, &_field_size_k)) {
+            return false;
+        }
+        if (_field_k->kind_ == zlang_statement_array_declaration_) {
+            if (_field_size_k == 0U || _field_k->capacity_ > UINT32_MAX / _field_size_k) {
+                return false;
+            }
+            _field_size_k *= _field_k->capacity_;
+        }
+        if (_total_k > UINT32_MAX - _field_size_k) {
             return false;
         }
         _total_k += _field_size_k;

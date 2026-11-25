@@ -75,6 +75,7 @@ needed.
 | --- | --- |
 | `type name = expression;` | Scalar declaration |
 | `array[N] type name;` | Fixed-shape array with explicit extents |
+| `array type name = {{...}, {...}};` | Nested initializer with inferred shape |
 | `array type name;` | Array with inferred rank and extents |
 | `array[] type name = {...};` | Array with inferred extent |
 | `if (expression) {...} else if (expression) {...} else {...}` | Conditional chain |
@@ -82,6 +83,7 @@ needed.
 | `for (init; condition; update) {...}` | Native C-style loop |
 | `foreach (item in sequence) {...}` | Native indexed loop |
 | `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
+| `foreach (row, col in grid) {...}` | Multidimensional index loop in row-major order |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
 | `function name(const? clone array name, ...): array {...}` | Function with inferred array parameters and return |

@@ -520,7 +520,7 @@ enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
 arrayModifier = "array" ( "[" integerLiteral "]" )* ;
 typeModifier     = "[" integerLiteral "]" ;
 
-arrayInitializer = "{" ( expression ( "," expression )* )? "}" ;
+arrayInitializer = "{" ( expression | arrayInitializer ) ( "," ( expression | arrayInitializer ) )* "}" ;
 
 type           = typeName ;
 
@@ -532,7 +532,7 @@ whileStatement = "while" "(" expression ")" block ;
 forStatement   = "for" "(" ( declaration | expression? ) ";"
                  expression ";" expression ")" block ;
 
-foreachStatement = "foreach" "(" identifier ( "," identifier )? "in"
+foreachStatement = "foreach" "(" identifier ( "," identifier )* "in"
                    identifier ")" block ;
 
 repeatStatement  = "repeat" "(" expression ")" block ;
@@ -727,6 +727,12 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | inferred local array shape | `infers_local_array_shape`, `rejects_unknown_array_extent` |
 | inferred array function shape | `infers_array_function_shape` |
 | source array helper rejection | `rejects_source_array_helpers` |
+| nested array initializer | `emits_nested_array_initializer` |
+| const array write rejection | `rejects_const_array_write` |
+| whole-array copy | `emits_whole_array_copy` |
+| multidimensional foreach | `emits_multidimensional_foreach` |
+| array record field access | `emits_array_record_field_access` |
+| multiple array specializations | `emits_multiple_array_specializations` |
 | short-circuit index reads stay inline | `keeps_short_circuit_index_reads_inline` |
 | parameter qualifiers | `emits_parameter_qualifiers` |
 | missing parameter qualifier rejection | `rejects_missing_parameter_qualifier` |
@@ -828,6 +834,14 @@ helpers.
 Zlang 0.17 removes `array_get` and `array_set` from source. The generated C still uses internal
 `_zlang_array_get_*` and `_zlang_array_set_*` helpers for bounds-checked multidimensional access,
 but source code only uses `array[i]...`.
+
+
+## 0.18 implementation status
+
+Zlang 0.18 completes arrays. Initializers may be nested, `foreach` accepts one index name per axis,
+records may contain fixed array fields, `const array` declarations reject writes, whole-array copy
+requires identical shape, and a generic inferred-array function is monomorphized once per called
+shape.
 
 
 ## Emitted comments

@@ -108,6 +108,7 @@ typedef struct zlang_parameter_t {
     bool is_array_;
 } zlang_parameter_t;
 
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 typedef struct zlang_ast_statement_t {
     const char *type_name_;
     const char *name_;
@@ -128,6 +129,7 @@ typedef struct zlang_ast_statement_t {
     uint32_t capacity_;
     uint32_t element_capacity_;
     uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t initializer_extents_[ZLANG_ARRAY_MAX_RANK];
     uint32_t rank_;
     bool has_explicit_capacity_;
     bool has_element_capacity_;
@@ -137,6 +139,8 @@ typedef struct zlang_ast_statement_t {
     bool is_array_return_;
     uint32_t return_extents_[ZLANG_ARRAY_MAX_RANK];
     uint32_t return_rank_;
+    const char *foreach_names_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t foreach_rank_;
     uint32_t line_;
     uint32_t column_;
 } zlang_ast_statement_t;

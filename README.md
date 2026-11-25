@@ -58,12 +58,13 @@ when traceability is not needed.
 ## Language tour
 
 This program exercises the language end to end: comments attached to their source constructs,
-`const`, records, enums, all four scalar types, explicit and inferred array declarations, bounded string
+`const`, records, enums, all four scalar types, explicit and inferred array declarations, nested
+array initializers, `const array`, whole-array copy, bounded string
 elements, functions with `clone` and `reference` parameters, inferred array parameters and returns,
 `return`, user-defined function parameter and return types, scopes,
 assignments, indexed access and assignment, field access and assignment, arithmetic,
 compound assignment, comparisons, logical operators, `length`, string indexing, scalar and string
-printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed `foreach`, nested loops,
+printing, `if`/`else if`/`else`, `while`, `repeat`, native `for`, indexed and multidimensional `foreach`, nested loops,
 `break` and `continue`.
 
 Every parameter states its qualifier: `clone` is a mutable local copy, `const clone` is a read-only
@@ -75,7 +76,8 @@ such as `_zlang_array_get_2_i32`; those helpers are implementation details and a
 Zlang source. The compiler warns with `ZLANG3004` when a reference to a small value type has no
 mutational purpose.
 
-The emitted C is organized before `main`: generated value constants, user types, capacity macros,
+Records may embed fixed array fields, and inferred array functions generate one C specialization per
+called shape. The emitted C is organized before `main`: generated value constants, user types, capacity macros,
 array typedefs, named string literals and user functions. Source comments are preserved in the
 generated C next to the construct they document, or omitted with `--disable-comments`.
 Local source symbols use a leading `_`, function parameters are emitted exactly as written, record
@@ -253,26 +255,6 @@ static inline void _zlang_array_set_2_i32(int32_t *data_, uint32_t extent_0, uin
     data_[_zlang_array_offset_2(extent_0, extent_1, index_0, index_1)] = value_;
 }
 
-/* generated user types */
-// A fixed point type.
-typedef struct zlang_point_t {
-    // Horizontal coordinate.
-    int32_t x_;
-    /* Vertical coordinate
-       in the same record. */
-    int32_t y_;
-} zlang_point_t;
-
-// A named color set.
-typedef enum zlang_color_t {
-    // First color.
-    ZLANG_COLOR_RED = 0U,
-    // Primary colors
-    // in order.
-    ZLANG_COLOR_GREEN = 1U,
-    ZLANG_COLOR_BLUE = 2U,
-} zlang_color_t;
-
 /* generated capacities */
 #define ZLANG_VALUES_CAPACITY 4U
 #define ZLANG_VALUES_LENGTH ZLANG_VALUES_EXTENT_0
@@ -300,6 +282,27 @@ typedef enum zlang_color_t {
 #define ZLANG_STAMPED_EXTENT_0 2U
 #define ZLANG_STAMPED_EXTENT_1 3U
 #define ZLANG_LABEL_CAPACITY 32U
+
+/* generated user types */
+// A fixed point type.
+typedef struct zlang_point_t {
+    // Horizontal coordinate.
+    int32_t x_;
+    /* Vertical coordinate
+       in the same record. */
+    int32_t y_;
+} zlang_point_t;
+
+// A named color set.
+typedef enum zlang_color_t {
+    // First color.
+    ZLANG_COLOR_RED = 0U,
+    // Primary colors
+    // in order.
+    ZLANG_COLOR_GREEN = 1U,
+    ZLANG_COLOR_BLUE = 2U,
+} zlang_color_t;
+
 
 /* generated sequence types */
 typedef struct zlang_values_t {
@@ -375,7 +378,7 @@ void _u_shift(zlang_point_t *point, int32_t amount) {
 }
 
 // Copies an array through an inferred array parameter and return type.
-zlang_array_i32_2_3_t _u_stamp(zlang_array_i32_2_3_t source) {
+zlang_array_i32_2_3_t _u_stamp_2_3_i32(zlang_array_i32_2_3_t source) {
     zlang_array_i32_2_3_t _result = { { 0, 0, 0, 0, 0, 0 } };
 
     _zlang_array_set_2_i32(_result.data_, ZLANG_RESULT_EXTENT_0, ZLANG_RESULT_EXTENT_1, 0, 1, zlang_add_i32(_zlang_array_get_2_i32(source.data_, ZLANG_RESULT_EXTENT_0, ZLANG_RESULT_EXTENT_1, 0, 1), 1));
@@ -405,7 +408,7 @@ int main(void) {
 
     _zlang_array_set_2_i32(_grid.data_, ZLANG_GRID_EXTENT_0, ZLANG_GRID_EXTENT_1, 0, 1, 5);
 
-    zlang_array_i32_2_3_t _stamped = _u_stamp(_grid);
+    zlang_array_i32_2_3_t _stamped = _u_stamp_2_3_i32(_grid);
 
     uint32_t _zlang_index_11 = 0;
     if (_zlang_index_11 < ZLANG_FIXED_EXTENT_0) {

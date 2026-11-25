@@ -462,6 +462,27 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           "assignment value does not match the declared type");
             return NULL;
         }
+        if (_symbol_k->is_sequence_) {
+            const zlang_symbol_t *const _value_symbol_k =
+                _value_k != NULL && _value_k->kind_ == zlang_expression_identifier_
+                    ? zlang_find_symbol(context, _value_k->name_)
+                    : NULL;
+            if (_value_symbol_k == NULL || !_value_symbol_k->is_sequence_ ||
+                _value_symbol_k->rank_ != _symbol_k->rank_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement,
+                                              "whole-array copy requires the same array shape");
+                return NULL;
+            }
+            for (uint32_t _axis = 0U; _axis < _symbol_k->rank_; ++_axis) {
+                if (_symbol_k->extents_[_axis] != _value_symbol_k->extents_[_axis]) {
+                    (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                                  statement,
+                                                  "whole-array copy requires the same array shape");
+                    return NULL;
+                }
+            }
+        }
         zlang_mark_mutated(context, _symbol_k->name_);
         return _actual_k;
     }
@@ -478,6 +499,11 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement,
                                           "index assignment target is not a declared array");
+            return NULL;
+        }
+        if (_symbol_k->is_const_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "cannot assign to a const array");
             return NULL;
         }
         (void)zlang_analyze_expression(context, _target_k->right_, statement);
@@ -540,6 +566,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           statement, "field is not declared on the record");
             return NULL;
         }
+        if (_field_k->kind_ == zlang_statement_array_declaration_ &&
+            _expression_k->argument_count_ > 0U) {
+            if (_expression_k->argument_count_ != _field_k->rank_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement, "array field index rank mismatch");
+                return NULL;
+            }
+            for (size_t _axis = 0U; _axis < _expression_k->argument_count_; ++_axis) {
+                (void)zlang_analyze_expression(context, _expression_k->argument_indices_[_axis],
+                                               statement);
+            }
+        }
         return _field_k->type_name_;
     }
     case zlang_expression_field_assignment_: {
@@ -568,6 +606,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "field is not declared on the record");
             return NULL;
+        }
+        if (_field_k->kind_ == zlang_statement_array_declaration_ &&
+            _target_k->argument_count_ > 0U) {
+            if (_target_k->argument_count_ != _field_k->rank_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement, "array field index rank mismatch");
+                return NULL;
+            }
+            for (size_t _axis = 0U; _axis < _target_k->argument_count_; ++_axis) {
+                (void)zlang_analyze_expression(context, _target_k->argument_indices_[_axis],
+                                               statement);
+            }
         }
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
@@ -702,10 +752,22 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         for (size_t _index = statement->body_start_;
              _index < _end_k && _index < context->program_->statement_count_; ++_index) {
             const zlang_ast_statement_t *const _field_k = &context->program_->statements_[_index];
-            if (_field_k->kind_ != zlang_statement_declaration_ ||
+            const bool _is_array_field_k = _field_k->kind_ == zlang_statement_array_declaration_;
+            if ((!_is_array_field_k && _field_k->kind_ != zlang_statement_declaration_) ||
                 !zlang_is_known_type(context->program_, _field_k->type_name_)) {
                 _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _field_k,
                                          "record field has an unknown type");
+                continue;
+            }
+            if (_is_array_field_k) {
+                if (_field_k->rank_ == 0U || _field_k->capacity_ == 0U ||
+                    strcmp(_field_k->type_name_, "string") == 0 ||
+                    _field_k->expression_ != ZLANG_NO_EXPRESSION ||
+                    _field_k->initializer_count_ != 0U) {
+                    _result_k = zlang_report(
+                        context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, _field_k,
+                        "array fields need fixed non-string extents and no initializer");
+                }
                 continue;
             }
             if (strcmp(_field_k->type_name_, "string") == 0 ||
@@ -783,11 +845,6 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             statement->initializer_count_ > 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
                                      "record arrays do not support initializer lists");
-            break;
-        }
-        if (statement->is_const_) {
-            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
-                                     "const arrays are not supported");
             break;
         }
         if (statement->capacity_ == 0U ||
@@ -930,7 +987,23 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         const size_t _scope_start_k = context->symbol_count_;
         ++context->scope_depth_;
-        if (statement->index_name_ != NULL) {
+        if (statement->foreach_rank_ > 1U) {
+            for (uint32_t _axis = 0U;
+                 _axis < statement->foreach_rank_ && _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                const zlang_ast_statement_t _coordinate_k = {
+                    .kind_ = zlang_statement_declaration_,
+                    .type_name_ = "unsigned",
+                    .name_ = statement->foreach_names_[_axis],
+                    .line_ = statement->line_,
+                    .column_ = statement->column_,
+                };
+                if (!zlang_add_symbol(context, &_coordinate_k, 0U, false, false)) {
+                    context->symbol_count_ = _scope_start_k;
+                    --context->scope_depth_;
+                    return false;
+                }
+            }
+        } else if (statement->index_name_ != NULL) {
             const zlang_ast_statement_t _index_k = {
                 .kind_ = zlang_statement_declaration_,
                 .type_name_ = "unsigned",
@@ -944,17 +1017,19 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                 return false;
             }
         }
-        const zlang_ast_statement_t _item_k = {
-            .kind_ = zlang_statement_declaration_,
-            .type_name_ = statement->type_name_,
-            .name_ = statement->name_,
-            .line_ = statement->line_,
-            .column_ = statement->column_,
-        };
-        if (!zlang_add_symbol(context, &_item_k, 0U, false, false)) {
-            context->symbol_count_ = _scope_start_k;
-            --context->scope_depth_;
-            return false;
+        if (statement->foreach_rank_ <= 1U) {
+            const zlang_ast_statement_t _item_k = {
+                .kind_ = zlang_statement_declaration_,
+                .type_name_ = statement->type_name_,
+                .name_ = statement->name_,
+                .line_ = statement->line_,
+                .column_ = statement->column_,
+            };
+            if (!zlang_add_symbol(context, &_item_k, 0U, false, false)) {
+                context->symbol_count_ = _scope_start_k;
+                --context->scope_depth_;
+                return false;
+            }
         }
         ++context->loop_depth_;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);

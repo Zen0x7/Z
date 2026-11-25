@@ -20,6 +20,8 @@ typedef struct zlang_symbol_t {
     size_t parameter_start_;
     size_t parameter_count_;
     uint32_t capacity_;
+    uint32_t extents_[ZLANG_ARRAY_MAX_RANK];
+    uint32_t rank_;
     bool is_sequence_;
     bool is_function_;
     bool has_explicit_capacity_;

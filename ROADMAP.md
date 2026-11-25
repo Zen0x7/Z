@@ -508,7 +508,7 @@ bounds-checked reads and writes, but users never name them.
 
 ## 0.18 — Complete arrays
 
-Status: Locked.
+Status: Implemented.
 
 - Support multiple monomorphizations per inferred array function. A function written with `array`
   parameters or return types may be called with different shapes; each shape gets its own generated
@@ -540,3 +540,7 @@ Acceptance criteria:
 - `foreach` over a 2D array visits all cells exactly once.
 - Arrays work as record fields without losing bounds checks.
 - `const` arrays reject writes and whole-array copies require identical shape.
+
+The implementation supports nested array initializers, multidimensional `foreach` in row-major
+order, arrays as record fields with bounds-checked access, `const` arrays, whole-array copy for
+identical shapes, and one generated C function per inferred array shape.

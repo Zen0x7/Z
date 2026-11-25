@@ -539,9 +539,10 @@ static void infers_array_function_shape(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
                 strstr(_session.output_,
-                       "zlang_array_i32_2_3_t _u_abc(zlang_array_i32_2_3_t value)") != NULL);
-    ZLANG_CHECK(context,
-                strstr(_session.output_, "zlang_array_i32_2_3_t _copied = _u_abc(_grid);") != NULL);
+                       "zlang_array_i32_2_3_t _u_abc_2_3_i32(zlang_array_i32_2_3_t value)") !=
+                    NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "zlang_array_i32_2_3_t _copied = _u_abc_2_3_i32(_grid);") != NULL);
 }
 
 static void rejects_unknown_array_extent(zlang_test_context_t *const context) {
@@ -553,6 +554,86 @@ static void rejects_unknown_array_extent(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
+}
+
+static void emits_nested_array_initializer(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array integer grid = {{1, 2, 3}, {4, 5, 6}};";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_1 3U") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "{ { 1, 2, 3, 4, 5, 6 } }") != NULL);
+}
+
+static void rejects_const_array_write(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "const array[3] integer values = {1, 2, 3};\n"
+                                  "values[1] = 9;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
+}
+
+static void emits_whole_array_copy(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array[3] integer source = {1, 2, 3};\n"
+                                  "array[3] integer target = {0, 0, 0};\n"
+                                  "target = source;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "memcpy(&_target, &_source") != NULL);
+}
+
+static void emits_multidimensional_foreach(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "array[2][3] integer grid = {{1, 2, 3}, {4, 5, 6}};\n"
+                                  "integer total = 0;\n"
+                                  "foreach (row, col in grid) {\n"
+                                  "    total += grid[row][col];\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _row") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "for (uint32_t _col") != NULL);
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "for (uint32_t _") == 2U);
+}
+
+static void emits_array_record_field_access(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "record Matrix { array[2][3] integer cells; }\n"
+                                  "Matrix matrix;\n"
+                                  "matrix.cells[1][2] = 7;\n"
+                                  "integer value = matrix.cells[1][2];";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_array_i32_2_3_t cells_;") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "_zlang_array_set_2_i32(_matrix.cells_.data_, ZLANG_CELLS_EXTENT_0") !=
+                    NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "_zlang_array_get_2_i32(_matrix.cells_.data_, ZLANG_CELLS_EXTENT_0") !=
+                    NULL);
+}
+
+static void emits_multiple_array_specializations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function stamp(clone array source): array {\n"
+                                  "    array result;\n"
+                                  "    return result;\n"
+                                  "}\n"
+                                  "array[2][3] integer grid;\n"
+                                  "array[2][3] integer copied = stamp(grid);\n"
+                                  "array[4] integer line;\n"
+                                  "array[4] integer copied2 = stamp(line);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_2_3_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_4_i32") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "_u_stamp_i32(") == NULL);
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {

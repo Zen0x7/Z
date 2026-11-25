@@ -379,6 +379,25 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                 }
                 _base_ptr_k->line_ = _dot_k->line_;
                 _base_ptr_k->column_ = _dot_k->column_;
+                while (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
+                    zlang_parser_advance(parser);
+                    size_t _index_k = ZLANG_NO_EXPRESSION;
+                    if (!zlang_parse_expression(parser, &_index_k)) {
+                        return false;
+                    }
+                    if (!zlang_parser_expect(parser, zlang_token_right_bracket_,
+                                             "expected ']' after field index")) {
+                        return false;
+                    }
+                    if (_base_ptr_k->argument_count_ >= ZLANG_ARRAY_MAX_RANK) {
+                        zlang_parser_unsupported(parser, "array field index exceeds rank limit");
+                        return false;
+                    }
+                    if (_base_ptr_k->argument_count_ == 0U) {
+                        _base_ptr_k->right_ = _index_k;
+                    }
+                    _base_ptr_k->argument_indices_[_base_ptr_k->argument_count_++] = _index_k;
+                }
                 continue;
             }
             const size_t _base_k = _expression_k;
@@ -660,6 +679,58 @@ zlang_parse_expression(zlang_parser_t *parser,
     return true;
 }
 
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
+zlang_parse_array_initializer(zlang_parser_t *parser, zlang_ast_statement_t *statement,
+                              uint32_t depth,
+                              uint32_t extents[ZLANG_ARRAY_MAX_RANK]) { // NOLINT(misc-no-recursion)
+    if (zlang_parser_current(parser)->kind_ != zlang_token_left_brace_) {
+        size_t _value_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_expression(parser, &_value_k)) {
+            return false;
+        }
+        ++statement->initializer_count_;
+        return true;
+    }
+    if (depth >= ZLANG_ARRAY_MAX_RANK) {
+        zlang_parser_unsupported(parser, "array initializer exceeds the rank limit");
+        return false;
+    }
+    zlang_parser_advance(parser);
+    size_t _count_k = 0U;
+    bool _first_child_k = true;
+    while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_) {
+        uint32_t _child_extents_k[ZLANG_ARRAY_MAX_RANK] = {0};
+        if (!zlang_parse_array_initializer(parser, statement, depth + 1U, _child_extents_k)) {
+            return false;
+        }
+        if (_first_child_k) {
+            _first_child_k = false;
+            for (uint32_t _axis = depth + 1U; _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                extents[_axis] = _child_extents_k[_axis];
+            }
+        } else {
+            for (uint32_t _axis = depth + 1U; _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                if (extents[_axis] != _child_extents_k[_axis]) {
+                    zlang_parser_unsupported(parser, "array initializer rows have different sizes");
+                    return false;
+                }
+            }
+        }
+        ++_count_k;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    if (!zlang_parser_expect(parser, zlang_token_right_brace_,
+                             "expected '}' after array initializer")) {
+        return false;
+    }
+    extents[depth] = (uint32_t)_count_k;
+    return true;
+}
+
 static bool zlang_parse_declaration(zlang_parser_t *parser) {
     const zlang_token_t *const _start_k = zlang_parser_current(parser);
     bool _is_const_k = false;
@@ -782,28 +853,38 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     if (zlang_parser_current(parser)->kind_ == zlang_token_equal_) {
         zlang_parser_advance(parser);
         if (_is_array_k && zlang_parser_current(parser)->kind_ == zlang_token_left_brace_) {
-            zlang_parser_advance(parser);
             _statement_ptr_k->initializer_start_ = parser->expression_count_;
-            if (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_) {
-                for (;;) {
-                    size_t _initializer_k = ZLANG_NO_EXPRESSION;
-                    if (!zlang_parse_expression(parser, &_initializer_k)) {
-                        return false;
-                    }
-                    ++_statement_ptr_k->initializer_count_;
-                    if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
-                        break;
-                    }
-                    zlang_parser_advance(parser);
-                }
-            }
-            if (!zlang_parser_expect(parser, zlang_token_right_brace_,
-                                     "expected '}' after sequence initializer")) {
+            uint32_t _initializer_extents_k[ZLANG_ARRAY_MAX_RANK] = {0};
+            if (!zlang_parse_array_initializer(parser, _statement_ptr_k, 0U,
+                                               _initializer_extents_k)) {
                 return false;
             }
+            for (uint32_t _axis = 0U; _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                _statement_ptr_k->initializer_extents_[_axis] = _initializer_extents_k[_axis];
+            }
+            _statement_ptr_k->initializer_count_ =
+                parser->expression_count_ - _statement_ptr_k->initializer_start_;
             if (!_statement_ptr_k->has_explicit_capacity_) {
-                _statement_ptr_k->extents_[0] = (uint32_t)_statement_ptr_k->initializer_count_;
-                _statement_ptr_k->capacity_ = (uint32_t)_statement_ptr_k->initializer_count_;
+                uint32_t _inferred_rank_k = 0U;
+                uint64_t _inferred_capacity_k = 1U;
+                for (uint32_t _axis = 0U; _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                    if (_initializer_extents_k[_axis] == 0U) {
+                        break;
+                    }
+                    _inferred_rank_k = _axis + 1U;
+                    _inferred_capacity_k *= _initializer_extents_k[_axis];
+                }
+                if (_inferred_rank_k == 0U) {
+                    (void)zlang_diagnostics_add(
+                        parser->diagnostics_, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, _start_k->line_,
+                        _start_k->column_, "array initializer cannot be empty");
+                    return false;
+                }
+                _statement_ptr_k->rank_ = _inferred_rank_k;
+                for (uint32_t _axis = 0U; _axis < _inferred_rank_k; ++_axis) {
+                    _statement_ptr_k->extents_[_axis] = _initializer_extents_k[_axis];
+                }
+                _statement_ptr_k->capacity_ = (uint32_t)_inferred_capacity_k;
             }
         } else if (!zlang_parse_expression(parser, &_statement_ptr_k->expression_)) {
             return false;
@@ -839,6 +920,11 @@ static bool zlang_parse_record(zlang_parser_t *parser) {
     }
     parser->statements_[_statement_k].body_start_ = _field_start_k;
     parser->statements_[_statement_k].body_count_ = parser->statement_count_ - _field_start_k;
+    for (size_t _field = _field_start_k; _field < parser->statement_count_; ++_field) {
+        if (parser->statements_[_field].kind_ == zlang_statement_array_declaration_) {
+            parser->statements_[_field].use_canonical_type_ = true;
+        }
+    }
     return zlang_parser_expect(parser, zlang_token_right_brace_,
                                "expected '}' after record fields");
 }
@@ -969,15 +1055,27 @@ static bool zlang_parse_simple_block_statement(zlang_parser_t *parser,
     return true;
 }
 
-static const char *zlang_parser_sequence_type(const zlang_parser_t *parser, const char *name) {
+static const zlang_ast_statement_t *zlang_parser_find_array(const zlang_parser_t *parser,
+                                                            const char *name) {
     for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
         if (_statement_k->kind_ == zlang_statement_array_declaration_ &&
             _statement_k->name_ != NULL && strcmp(_statement_k->name_, name) == 0) {
-            return _statement_k->type_name_;
+            return _statement_k;
         }
     }
-    return "integer";
+    return NULL;
+}
+
+static const char *zlang_parser_sequence_type(const zlang_parser_t *parser, const char *name) {
+    const zlang_ast_statement_t *const _statement_k = zlang_parser_find_array(parser, name);
+    return _statement_k != NULL && _statement_k->type_name_ != NULL ? _statement_k->type_name_
+                                                                    : "integer";
+}
+
+static uint32_t zlang_parser_array_rank(const zlang_parser_t *parser, const char *name) {
+    const zlang_ast_statement_t *const _statement_k = zlang_parser_find_array(parser, name);
+    return _statement_k != NULL ? _statement_k->rank_ : 0U;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -986,32 +1084,42 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after foreach")) {
         return false;
     }
-    const zlang_token_t *const _first_k = zlang_parser_current(parser);
-    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an iteration name")) {
-        return false;
-    }
-    const zlang_token_t *const _index_k =
-        zlang_parser_current(parser)->kind_ == zlang_token_comma_ ? _first_k : NULL;
-    const zlang_token_t *_item_k = _first_k;
-    if (_index_k != NULL) {
-        zlang_parser_advance(parser);
-        _item_k = zlang_parser_current(parser);
-        if (!zlang_parser_expect(parser, zlang_token_identifier_,
-                                 "expected an item name after ','")) {
+    const zlang_token_t *_names_k[ZLANG_ARRAY_MAX_RANK] = {0};
+    size_t _name_count_k = 0U;
+    for (;;) {
+        if (_name_count_k >= ZLANG_ARRAY_MAX_RANK) {
+            zlang_parser_unsupported(parser, "too many foreach names");
             return false;
         }
+        _names_k[_name_count_k++] = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an iteration name")) {
+            return false;
+        }
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
     }
     if (!zlang_parser_expect(parser, zlang_token_in_, "expected 'in' in foreach")) {
         return false;
     }
     const zlang_token_t *const _iterable_k = zlang_parser_current(parser);
-    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a sequence name")) {
+    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an array name")) {
         return false;
     }
     if (!zlang_parser_expect(parser, zlang_token_right_paren_, "expected ')' in foreach")) {
         return false;
     }
-    if (_first_k == NULL || _item_k == NULL || _iterable_k == NULL) {
+
+    const uint32_t _array_rank_k = zlang_parser_array_rank(parser, _iterable_k->text_);
+    const bool _coordinates_k = _array_rank_k > 1U && _name_count_k == _array_rank_k;
+    if (_array_rank_k > 1U && !_coordinates_k) {
+        zlang_parser_unsupported(parser,
+                                 "foreach over a multidimensional array needs one name per axis");
+        return false;
+    }
+    if (!_coordinates_k && _name_count_k > 2U) {
+        zlang_parser_unsupported(parser, "foreach expects index and item, or one item name");
         return false;
     }
 
@@ -1019,21 +1127,30 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     if (_statement_k == (size_t)-1) {
         return false;
     }
-    parser->statements_[_statement_k].kind_ = zlang_statement_foreach_;
-    parser->statements_[_statement_k].type_name_ =
-        zlang_parser_sequence_type(parser, _iterable_k->text_);
-    parser->statements_[_statement_k].name_ = _item_k->text_;
-    parser->statements_[_statement_k].index_name_ = _index_k != NULL ? _index_k->text_ : NULL;
-    parser->statements_[_statement_k].iterable_name_ = _iterable_k->text_;
-    parser->statements_[_statement_k].line_ = _first_k->line_;
-    parser->statements_[_statement_k].column_ = _first_k->column_;
+    zlang_ast_statement_t *const _statement_k_ptr_k = &parser->statements_[_statement_k];
+    _statement_k_ptr_k->kind_ = zlang_statement_foreach_;
+    _statement_k_ptr_k->type_name_ = zlang_parser_sequence_type(parser, _iterable_k->text_);
+    _statement_k_ptr_k->iterable_name_ = _iterable_k->text_;
+    _statement_k_ptr_k->line_ = _names_k[0]->line_;
+    _statement_k_ptr_k->column_ = _names_k[0]->column_;
+    if (_coordinates_k) {
+        _statement_k_ptr_k->foreach_rank_ = (uint32_t)_name_count_k;
+        for (size_t _name = 0U; _name < _name_count_k; ++_name) {
+            _statement_k_ptr_k->foreach_names_[_name] = _names_k[_name]->text_;
+        }
+    } else {
+        _statement_k_ptr_k->name_ = _names_k[_name_count_k - 1U]->text_;
+        if (_name_count_k == 2U) {
+            _statement_k_ptr_k->index_name_ = _names_k[0]->text_;
+        }
+    }
 
     const size_t _body_start_k = parser->statement_count_;
     if (!zlang_parse_block(parser, _statement_k)) { // NOLINT(misc-no-recursion)
         return false;
     }
-    parser->statements_[_statement_k].body_start_ = _body_start_k;
-    parser->statements_[_statement_k].body_count_ = parser->statement_count_ - _body_start_k;
+    _statement_k_ptr_k->body_start_ = _body_start_k;
+    _statement_k_ptr_k->body_count_ = parser->statement_count_ - _body_start_k;
     return true;
 }
 
@@ -1499,6 +1616,24 @@ static bool zlang_infer_array_shapes(zlang_program_t *program, zlang_diagnostics
         }
         uint32_t _rank_k = _array_k->rank_;
         uint32_t _extents_k[ZLANG_ARRAY_MAX_RANK] = {0};
+        if (_array_k->initializer_extents_[0] != 0U) {
+            uint32_t _initializer_rank_k = 0U;
+            uint32_t _initializer_capacity_k = 1U;
+            for (uint32_t _axis = 0U; _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+                if (_array_k->initializer_extents_[_axis] == 0U) {
+                    break;
+                }
+                ++_initializer_rank_k;
+                _initializer_capacity_k *= _array_k->initializer_extents_[_axis];
+            }
+            _array_k->rank_ = _initializer_rank_k;
+            for (uint32_t _axis = 0U; _axis < _initializer_rank_k; ++_axis) {
+                _array_k->extents_[_axis] = _array_k->initializer_extents_[_axis];
+            }
+            _array_k->capacity_ = _initializer_capacity_k;
+            _array_k->has_explicit_capacity_ = true;
+            continue;
+        }
         if (_array_k->initializer_count_ > 0U && _rank_k == 0U) {
             _rank_k = 1U;
             _extents_k[0] = (uint32_t)_array_k->initializer_count_;
@@ -1570,6 +1705,33 @@ static bool zlang_parameter_has_array(const zlang_program_t *program,
         }
     }
     return false;
+}
+
+static bool zlang_infer_foreach_shapes(zlang_program_t *program, zlang_diagnostics_t *diagnostics) {
+    for (size_t _statement = 0U; _statement < program->statement_count_; ++_statement) {
+        zlang_ast_statement_t *const _foreach_k = &program->statements_[_statement];
+        if (_foreach_k->kind_ != zlang_statement_foreach_ || _foreach_k->foreach_rank_ != 0U) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _array_k =
+            zlang_find_array_statement(program, _foreach_k->iterable_name_);
+        if (_array_k == NULL || _array_k->rank_ <= 1U) {
+            continue;
+        }
+        if (_foreach_k->index_name_ != NULL && _foreach_k->name_ != NULL && _array_k->rank_ == 2U) {
+            _foreach_k->foreach_rank_ = 2U;
+            _foreach_k->foreach_names_[0] = _foreach_k->index_name_;
+            _foreach_k->foreach_names_[1] = _foreach_k->name_;
+            _foreach_k->index_name_ = NULL;
+            _foreach_k->name_ = NULL;
+        } else {
+            (void)zlang_diagnostics_add(
+                diagnostics, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, _foreach_k->line_, _foreach_k->column_,
+                "foreach over a multidimensional array needs one name per axis");
+            return false;
+        }
+    }
+    return true;
 }
 
 static bool zlang_infer_function_array_shapes(zlang_program_t *program,
@@ -1677,6 +1839,7 @@ static bool zlang_infer_function_array_shapes(zlang_program_t *program,
             }
             _local_k->capacity_ = _shape_k->capacity_;
             _local_k->has_explicit_capacity_ = true;
+            _local_k->is_inferred_ = true;
             _local_k->use_canonical_type_ = true;
         }
     }
@@ -1791,6 +1954,7 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     result->program_.parameters_ = parser->parameters_;
     result->program_.parameter_count_ = parser->parameter_count_;
     if (!zlang_infer_array_shapes(&result->program_, parser->diagnostics_) ||
+        !zlang_infer_foreach_shapes(&result->program_, parser->diagnostics_) ||
         !zlang_infer_function_array_shapes(&result->program_, parser->diagnostics_)) {
         return false;
     }

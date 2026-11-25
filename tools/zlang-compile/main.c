@@ -15,6 +15,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 #define ZLANG_CLI_SOURCE_CAPACITY 65536U
 #define ZLANG_CLI_OUTPUT_CAPACITY 262144U
 #define ZLANG_CLI_PATH_CAPACITY 4096U
@@ -144,6 +148,42 @@ static bool zlang_cli_quote(const char *path, char *buffer, size_t capacity) {
     return true;
 }
 
+#if defined(_WIN32)
+static int zlang_cli_run_compiler(char *command) {
+    STARTUPINFOA _startup_info;
+    PROCESS_INFORMATION _process_info;
+    memset(&_startup_info, 0, sizeof(_startup_info));
+    memset(&_process_info, 0, sizeof(_process_info));
+    _startup_info.cb = (DWORD)sizeof(_startup_info);
+    if (!CreateProcessA(NULL, command, NULL, NULL, FALSE, 0U, NULL, NULL, &_startup_info,
+                        &_process_info)) {
+        (void)fprintf(stderr, "error: cannot start C compiler (%lu)\n",
+                      (unsigned long)GetLastError());
+        return -1;
+    }
+    if (WaitForSingleObject(_process_info.hProcess, INFINITE) != WAIT_OBJECT_0) {
+        (void)CloseHandle(_process_info.hThread);
+        (void)CloseHandle(_process_info.hProcess);
+        (void)fprintf(stderr, "error: cannot wait for C compiler (%lu)\n",
+                      (unsigned long)GetLastError());
+        return -1;
+    }
+    DWORD _exit_code_k = 0U;
+    const bool _exit_read_k = GetExitCodeProcess(_process_info.hProcess, &_exit_code_k) != FALSE;
+    (void)CloseHandle(_process_info.hThread);
+    (void)CloseHandle(_process_info.hProcess);
+    if (!_exit_read_k) {
+        (void)fprintf(stderr, "error: cannot read C compiler status (%lu)\n",
+                      (unsigned long)GetLastError());
+        return -1;
+    }
+    return _exit_code_k == 0U ? 0 : 1;
+}
+#else
+// cppcheck-suppress constParameterPointer
+static int zlang_cli_run_compiler(char *command) { return system(command); }
+#endif
+
 static bool zlang_cli_compile_c(const char *c_path, const char *executable_path) {
     const char *_compiler_k = getenv("ZLANG_CC");
     if (_compiler_k == NULL || _compiler_k[0] == '\0') {
@@ -190,7 +230,7 @@ static bool zlang_cli_compile_c(const char *c_path, const char *executable_path)
         (void)fprintf(stderr, "error: compile command is too long\n");
         return false;
     }
-    const int _status_k = system(_command);
+    const int _status_k = zlang_cli_run_compiler(_command);
     if (_status_k != 0) {
         (void)fprintf(stderr, "error: C compiler failed with status %d\n", _status_k);
         return false;

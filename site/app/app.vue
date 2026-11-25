@@ -11,5 +11,6 @@
       <NuxtPage />
     </main>
     <SiteFooter />
+    <SearchPalette />
   </div>
 </template>

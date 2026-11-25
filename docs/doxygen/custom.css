@@ -1,0 +1,647 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Quicksand:wght@400;600;700;800&display=swap');
+
+:root {
+  --paper: #fcfcf8;
+  --paper-2: #ffffff;
+  --wash: #f3f3ef;
+  --ink: #111111;
+  --ink-2: #555555;
+  --ink-3: #888888;
+  --ink-4: #bbbbbb;
+  --line: #e8e8e3;
+  --line-2: #dddddd;
+  --edge: #555555;
+  --code-bg: #111111;
+  --code-fg: #e8e8e3;
+  --code-border: #777777;
+  --code-accent: #ffcb6b;
+}
+
+html.dark-mode {
+  --paper: #111111;
+  --paper-2: #191919;
+  --wash: #232323;
+  --ink: #fcfcf8;
+  --ink-2: #d4d4ce;
+  --ink-3: #9a9a94;
+  --ink-4: #6f6f6a;
+  --line: #333333;
+  --line-2: #444444;
+  --edge: #777777;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light-mode) {
+    --paper: #111111;
+    --paper-2: #191919;
+    --wash: #232323;
+    --ink: #fcfcf8;
+    --ink-2: #d4d4ce;
+    --ink-3: #9a9a94;
+    --ink-4: #6f6f6a;
+    --line: #333333;
+    --line-2: #444444;
+    --edge: #777777;
+  }
+}
+
+html {
+  --page-background-color: var(--paper) !important;
+  --page-foreground-color: var(--ink) !important;
+  --page-link-color: var(--ink) !important;
+  --page-visited-link-color: var(--ink-2) !important;
+  --page-external-link-color: var(--ink) !important;
+  --header-background-color: var(--paper-2) !important;
+  --header-separator-color: var(--line-2) !important;
+  --group-header-separator-color: var(--line) !important;
+  --group-header-color: var(--ink) !important;
+  --footer-foreground-color: var(--ink-3) !important;
+  --citation-label-color: var(--ink-2) !important;
+  --title-background-color: var(--paper-2) !important;
+  --title-separator-color: var(--edge) !important;
+  --blockquote-background-color: var(--wash) !important;
+  --blockquote-border-color: var(--edge) !important;
+  --scrollbar-thumb-color: var(--line-2) !important;
+  --scrollbar-background-color: var(--paper) !important;
+  --index-odd-item-bg-color: var(--wash) !important;
+  --index-even-item-bg-color: var(--paper-2) !important;
+  --index-header-color: var(--ink) !important;
+  --index-separator-color: var(--line-2) !important;
+  --icon-background-color: var(--ink-3) !important;
+  --icon-foreground-color: var(--paper) !important;
+  --icon-folder-open-fill-color: var(--line-2) !important;
+  --icon-folder-fill-color: var(--line) !important;
+  --icon-folder-border-color: var(--edge) !important;
+  --icon-doc-fill-color: var(--line) !important;
+  --icon-doc-border-color: var(--edge) !important;
+  --memdecl-background-color: var(--wash) !important;
+  --memdecl-foreground-color: var(--ink-2) !important;
+  --memdecl-template-color: var(--ink-3) !important;
+  --memdecl-border-color: var(--line-2) !important;
+  --memdef-border-color: var(--line-2) !important;
+  --memdef-title-background-color: var(--wash) !important;
+  --memdef-proto-background-color: var(--paper-2) !important;
+  --memdef-proto-text-color: var(--ink) !important;
+  --memdef-param-name-color: var(--ink-2) !important;
+  --memdef-template-color: var(--ink-3) !important;
+  --table-cell-border-color: var(--line-2) !important;
+  --table-header-background-color: var(--ink) !important;
+  --table-header-foreground-color: var(--paper) !important;
+  --label-background-color: var(--ink) !important;
+  --label-left-top-border-color: var(--edge) !important;
+  --label-right-bottom-border-color: var(--line-2) !important;
+  --label-foreground-color: var(--paper) !important;
+  --nav-background-color: var(--paper-2) !important;
+  --nav-foreground-color: var(--ink-2) !important;
+  --nav-border-color: var(--line-2) !important;
+  --nav-breadcrumb-separator-color: var(--line-2) !important;
+  --nav-breadcrumb-active-bg: var(--wash) !important;
+  --nav-breadcrumb-color: var(--ink-2) !important;
+  --font-family-normal: 'Quicksand', ui-sans-serif, system-ui, sans-serif !important;
+  --font-family-title: 'Quicksand', ui-sans-serif, system-ui, sans-serif !important;
+  --font-family-monospace: 'Fira Code', ui-monospace, monospace !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box !important;
+  border-radius: 0 !important;
+}
+
+html,
+body {
+  margin: 0 !important;
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  font-family: 'Quicksand', ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}
+
+body table,
+body div,
+body p,
+body dl,
+body li,
+body td,
+body th {
+  font-family: 'Quicksand', ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+a {
+  color: var(--ink) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--ink-4) !important;
+  text-underline-offset: 3px !important;
+}
+
+a:hover {
+  color: var(--ink) !important;
+  text-decoration-color: var(--ink) !important;
+}
+
+/* Hide Doxygen chrome that screams "generated" */
+.tabs,
+.tabs2,
+.tablist,
+#nav-sync,
+.ui-resizable-handle {
+  display: none !important;
+}
+
+/* Top area as a real header */
+#top {
+  background: var(--paper) !important;
+}
+
+#titlearea {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  padding: 18px 40px !important;
+  margin: 0 !important;
+  background: var(--paper-2) !important;
+  border-bottom: 2px solid var(--edge) !important;
+}
+
+#titlearea table {
+  display: contents !important;
+}
+
+.zlang-doc-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+.zlang-doc-brand img {
+  display: block !important;
+  width: 180px !important;
+  height: auto !important;
+}
+
+.zlang-doc-nav {
+  display: flex !important;
+  gap: 18px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.zlang-doc-project {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  gap: 4px 18px !important;
+}
+
+#projectname {
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+#projectnumber {
+  color: var(--ink-3) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+}
+
+#projectbrief {
+  color: var(--ink-2) !important;
+  font-size: 0.75rem !important;
+}
+
+#MSearchBox {
+  background: var(--paper-2) !important;
+  border: 1.5px solid var(--line-2) !important;
+}
+
+#MSearchField {
+  color: var(--ink) !important;
+  font-family: 'Quicksand', sans-serif !important;
+}
+
+/* Sidebar as documentation sections */
+#side-nav {
+  width: 240px !important;
+  background: var(--paper-2) !important;
+  border-right: 1px solid var(--line) !important;
+}
+
+#nav-tree {
+  background: var(--paper-2) !important;
+  padding: 16px 8px !important;
+}
+
+#nav-tree a,
+#nav-tree li,
+#nav-tree div {
+  background-image: none !important;
+  color: var(--ink-2) !important;
+  font-family: 'Quicksand', sans-serif !important;
+}
+
+#nav-tree a {
+  display: block !important;
+  padding: 8px 10px !important;
+  border-left: 2px solid transparent !important;
+  text-decoration: none !important;
+}
+
+#nav-tree a:hover,
+#nav-tree .selected a {
+  background: var(--wash) !important;
+  border-left-color: var(--ink) !important;
+  color: var(--ink) !important;
+}
+
+/* Document body */
+#container,
+#doc-content {
+  background: var(--paper) !important;
+}
+
+#doc-content {
+  padding: 32px 40px !important;
+}
+
+.contents,
+.textblock,
+.header {
+  max-width: 1100px !important;
+  color: var(--ink-2) !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+.groupheader {
+  color: var(--ink) !important;
+  letter-spacing: -0.02em !important;
+}
+
+h1.groupheader,
+h2.groupheader {
+  border-bottom: 1px solid var(--line) !important;
+  padding-bottom: 8px !important;
+}
+
+/* Tables */
+table.doxtable,
+table.markdownTable {
+  width: 100% !important;
+  border: 2px solid var(--edge) !important;
+  border-collapse: collapse !important;
+  background: var(--paper-2) !important;
+}
+
+th,
+.markdownTableHead,
+.markdownTableHeadNone {
+  background: var(--wash) !important;
+  color: var(--ink) !important;
+  border-color: var(--line) !important;
+  font-weight: 700 !important;
+}
+
+td,
+.markdownTableBodyNone {
+  background: var(--paper-2) !important;
+  color: var(--ink-2) !important;
+  border-color: var(--line) !important;
+}
+
+/* Member cards */
+.memitem {
+  background: var(--paper-2) !important;
+  border: 1px solid var(--line-2) !important;
+  padding: 12px 14px !important;
+}
+
+.memproto,
+.memtitle {
+  background: var(--wash) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+  padding: 8px 10px !important;
+}
+
+.memdoc {
+  background: var(--paper-2) !important;
+  color: var(--ink-2) !important;
+}
+
+/* Code */
+div.fragment,
+pre.fragment,
+pre,
+code,
+.tt,
+span.tt,
+span.preprocessor,
+span.keyword,
+span.keywordtype,
+span.keywordflow,
+span.comment,
+span.stringliteral,
+span.charliteral {
+  font-family: 'Fira Code', ui-monospace, monospace !important;
+}
+
+div.fragment,
+pre.fragment {
+  background: var(--code-bg) !important;
+  color: var(--code-fg) !important;
+  border: 2px solid var(--code-border) !important;
+  padding: 14px 16px !important;
+  overflow-x: auto !important;
+  font-size: 0.8rem !important;
+  line-height: 1.6 !important;
+}
+
+div.fragment .line,
+div.fragment span {
+  color: var(--code-fg) !important;
+  background: transparent !important;
+}
+
+div.fragment span.preprocessor,
+div.fragment span.keyword,
+div.fragment span.keywordtype,
+div.fragment span.keywordflow {
+  color: var(--code-accent) !important;
+}
+
+div.fragment span.comment {
+  color: var(--ink-4) !important;
+  font-style: italic !important;
+}
+
+div.fragment a,
+div.fragment a.code,
+div.fragment .tt a,
+div.fragment span.preprocessor a {
+  color: var(--code-fg) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--code-border) !important;
+  text-underline-offset: 3px !important;
+}
+
+div.fragment a:hover,
+div.fragment a.code:hover {
+  color: var(--code-accent) !important;
+  text-decoration-color: var(--code-accent) !important;
+}
+
+a.code,
+.tt a {
+  color: var(--ink) !important;
+  text-decoration-color: var(--ink-4) !important;
+}
+
+/* Breadcrumbs + footer */
+.navpath,
+.navpath ul,
+.navpath li,
+address.footer,
+li.footer {
+  background: var(--paper-2) !important;
+  color: var(--ink-2) !important;
+  border-color: var(--line) !important;
+}
+
+.footer img.footer {
+  display: none !important;
+}
+
+address.footer,
+li.footer {
+  padding: 18px 40px !important;
+}
+
+@media (max-width: 768px) {
+  #titlearea {
+    padding: 16px !important;
+  }
+
+  .zlang-doc-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .zlang-doc-brand img {
+    width: 144px !important;
+  }
+
+  #doc-content {
+    padding: 20px 16px !important;
+  }
+}
+
+/* Doxygen dynamic menu is not the old .tabs markup */
+#main-nav,
+#main-nav-mobile {
+  display: none !important;
+}
+
+/* Nav tree: remove default sprite arrows and make it read as sections */
+#nav-tree .plus,
+#nav-tree img,
+#nav-tree .arrow {
+  display: none !important;
+}
+
+#nav-tree ul,
+#nav-tree li,
+#nav-tree .children_ul {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+#nav-tree .children_ul {
+  margin-left: 10px !important;
+  border-left: 1px solid var(--line) !important;
+}
+
+#nav-tree a {
+  display: block !important;
+  width: 100% !important;
+  padding: 7px 10px !important;
+  border-left: 2px solid transparent !important;
+  background: transparent !important;
+  color: var(--ink-2) !important;
+  font-family: 'Quicksand', sans-serif !important;
+  font-size: 0.8rem !important;
+  text-decoration: none !important;
+}
+
+#nav-tree a:hover,
+#nav-tree .selected a {
+  background: var(--wash) !important;
+  border-left-color: var(--ink) !important;
+  color: var(--ink) !important;
+}
+
+/* Footer is a li.footer in Doxygen 1.18 */
+#nav-path {
+  margin-top: 40px !important;
+  border-top: 1px solid var(--line) !important;
+  background: var(--paper-2) !important;
+}
+
+#nav-path li.footer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 16px 40px 28px !important;
+  list-style: none !important;
+  color: var(--ink-3) !important;
+  background: var(--paper-2) !important;
+}
+
+/* Search icons: replace Doxygen sprite with CSS-drawn icons */
+#MSearchBox .left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.search-icon,
+.search-icon-dropdown,
+.close-icon {
+  display: inline-block !important;
+  position: relative !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+.search-icon {
+  width: 13px !important;
+  height: 13px !important;
+  border: 1.5px solid var(--ink-3) !important;
+  border-radius: 50% !important;
+}
+
+.search-icon::after {
+  content: '' !important;
+  position: absolute !important;
+  right: -4px;
+  bottom: -3px;
+  width: 6px;
+  height: 1.5px;
+  background: var(--ink-3) !important;
+  transform: rotate(45deg) !important;
+}
+
+.search-icon-dropdown {
+  display: none !important;
+}
+
+.close-icon {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.close-icon::before,
+.close-icon::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 5px;
+  top: 0;
+  width: 1.5px;
+  height: 12px;
+  background: var(--ink-3) !important;
+}
+
+.close-icon::before { transform: rotate(45deg) !important; }
+.close-icon::after { transform: rotate(-45deg) !important; }
+
+/* Clean search field: no Doxygen sprites or dropdown */
+#MSearchSelect,
+.search-icon,
+.search-icon-dropdown,
+#MSearchClose,
+.close-icon {
+  display: none !important;
+}
+
+#MSearchBox {
+  width: 220px !important;
+  padding: 0 !important;
+  background: var(--paper-2) !important;
+  border: 1.5px solid var(--line-2) !important;
+}
+
+#MSearchBox .left,
+#MSearchBox .right {
+  display: block !important;
+  width: 100% !important;
+}
+
+#MSearchField {
+  display: block !important;
+  width: 100% !important;
+  padding: 7px 10px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font-family: 'Quicksand', sans-serif !important;
+  font-size: 0.8rem !important;
+}
+
+/* Footer as a plain Zlang footer */
+#nav-path {
+  position: static !important;
+  margin-top: 48px !important;
+  padding: 0 !important;
+  border-top: 2px solid var(--edge) !important;
+  background: var(--paper) !important;
+}
+
+#nav-path ul {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px 18px !important;
+  margin: 0 !important;
+  padding: 16px 40px 32px !important;
+  list-style: none !important;
+}
+
+#nav-path li,
+#nav-path li.footer {
+  display: inline-flex !important;
+  align-items: center !important;
+  float: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--ink-3) !important;
+  font-family: 'Quicksand', sans-serif !important;
+  font-size: 0.72rem !important;
+}
+
+#nav-path li.navelem a {
+  background: var(--wash) !important;
+  border: 1px solid var(--line-2) !important;
+  padding: 4px 8px !important;
+}
+
+/* Keep generated code on one line with horizontal scroll */
+div.fragment div.line {
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}

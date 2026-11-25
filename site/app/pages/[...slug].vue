@@ -34,9 +34,10 @@ useSeoMeta({
 <template>
   <div
     v-if="page"
-    class="site-container py-12 lg:py-16"
+    class="docs-page site-container py-12 lg:py-16"
     :class="isDocsPage ? 'grid gap-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-14 xl:grid-cols-[15rem_minmax(0,1fr)_12rem]' : ''"
   >
+    <DocsBackdrop v-if="isDocsPage" />
     <DocsNav v-if="isDocsPage" />
     <div class="docs-main min-w-0">
       <nav v-if="isDocsPage && breadcrumbs.length" class="docs-breadcrumbs" aria-label="Breadcrumb">

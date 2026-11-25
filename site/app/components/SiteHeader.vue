@@ -3,6 +3,7 @@ import { docsNavigation, projectLinks } from '../config/navigation'
 
 const route = useRoute()
 const menuOpen = ref(false)
+const { open: openSearch } = useSearchPalette()
 
 watch(
   () => route.fullPath,
@@ -24,7 +25,11 @@ function isDocsActive(to: string) {
         <span class="brand__tag">source → C99</span>
       </NuxtLink>
 
-      <div class="hidden items-center gap-2 lg:flex">
+      <div class="topbar__actions hidden items-center gap-2 lg:flex">
+        <button type="button" class="btn-secondary btn--tiny" @click="openSearch">
+          Search
+          <kbd class="search-key">⌘K</kbd>
+        </button>
         <ThemeToggle />
         <a
           href="https://z-doxygen.iantorres.cl"
@@ -45,7 +50,15 @@ function isDocsActive(to: string) {
         </a>
       </div>
 
-      <div class="flex items-center gap-2 lg:hidden">
+      <div class="topbar__actions flex items-center gap-2 lg:hidden">
+        <button
+          type="button"
+          class="btn-secondary btn--tiny"
+          aria-label="Search documentation"
+          @click="openSearch"
+        >
+          Search
+        </button>
         <ThemeToggle />
         <button
           type="button"

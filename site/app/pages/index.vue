@@ -30,36 +30,43 @@ onUnmounted(() => {
 const destinations = [
   {
     label: 'Quick start',
+    icon: 'quick',
     to: '/docs/quick-start',
     note: 'Rebuild the environment and run one program.',
   },
   {
     label: 'Language guide',
+    icon: 'language',
     to: '/docs/language',
     note: 'Syntax, declarations, loops, functions and errors.',
   },
   {
     label: 'Full specification',
+    icon: 'spec',
     href: 'https://github.com/Zen0x7/Z/blob/master/SPEC.md',
     note: 'The normative contract for emitted C.',
   },
   {
     label: 'Standard library',
+    icon: 'stdlib',
     to: '/docs/standard-library',
     note: 'Domains, imports and naming rules.',
   },
   {
     label: 'Compiler',
+    icon: 'compiler',
     to: '/docs/compiler',
     note: 'Storage plan, pipeline and diagnostics.',
   },
   {
     label: 'Doxygen API',
+    icon: 'doxygen',
     href: 'https://z-doxygen.iantorres.cl',
     note: 'Headers and functions generated from source comments.',
   },
   {
     label: 'Get the source',
+    icon: 'source',
     href: 'https://github.com/Zen0x7/Z',
     note: 'Clone the repository and build from source.',
   },
@@ -72,7 +79,8 @@ useSeoMeta({
 </script>
 
 <template>
-  <div>
+  <div class="home-page">
+    <HomeBackdrop />
     <PresentationDeck v-if="deckOpen" :key="deckRun" @done="finishDeck" />
 
     <section class="site-container py-16 lg:py-24">
@@ -80,7 +88,7 @@ useSeoMeta({
         <div class="max-w-2xl">
           <p class="eyebrow">Workspace</p>
           <h1 class="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-            Back to Zlang.
+            Welcome back.
           </h1>
           <p class="mt-5 text-lg leading-8 text-slate-600">
             You already saw the presentation. Pick the thing you came for.
@@ -96,13 +104,14 @@ useSeoMeta({
           <NuxtLink
             v-if="'to' in item"
             :to="item.to"
-            class="surface-card group flex flex-col justify-between p-6 transition-colors hover:border-ink"
+            class="workspace-card surface-card group relative flex flex-col justify-between overflow-hidden p-6 transition-colors hover:border-ink"
           >
-            <div>
+            <WorkspaceIcon :name="item.icon" class="workspace-card__bg" />
+            <div class="workspace-card__content">
               <h2 class="text-base font-semibold text-ink">{{ item.label }}</h2>
               <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.note }}</p>
             </div>
-            <span class="mt-6 text-sm font-semibold text-ink transition group-hover:translate-x-1">
+            <span class="workspace-card__content mt-6 text-sm font-semibold text-ink transition group-hover:translate-x-1">
               Open →
             </span>
           </NuxtLink>
@@ -111,13 +120,14 @@ useSeoMeta({
             :href="item.href"
             target="_blank"
             rel="noopener noreferrer"
-            class="surface-card group flex flex-col justify-between p-6 transition-colors hover:border-ink"
+            class="workspace-card surface-card group relative flex flex-col justify-between overflow-hidden p-6 transition-colors hover:border-ink"
           >
-            <div>
+            <WorkspaceIcon :name="item.icon" class="workspace-card__bg" />
+            <div class="workspace-card__content">
               <h2 class="text-base font-semibold text-ink">{{ item.label }}</h2>
               <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.note }}</p>
             </div>
-            <span class="mt-6 text-sm font-semibold text-ink transition group-hover:translate-x-1">
+            <span class="workspace-card__content mt-6 text-sm font-semibold text-ink transition group-hover:translate-x-1">
               Open ↗
             </span>
           </a>

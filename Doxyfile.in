@@ -25,6 +25,10 @@ WARN_AS_ERROR          = YES
 
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
+HTML_HEADER            = docs/doxygen/header.html
+HTML_FOOTER            = docs/doxygen/footer.html
+HTML_EXTRA_STYLESHEET  = docs/doxygen/custom.css
+HTML_EXTRA_FILES       = docs/doxygen/zlang-logo-light.svg docs/doxygen/zlang-logo-dark.svg docs/doxygen/zlang-favicon.svg
 GENERATE_TREEVIEW      = YES
 GENERATE_LATEX         = NO
 GENERATE_MAN           = NO

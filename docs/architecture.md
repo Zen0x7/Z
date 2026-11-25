@@ -69,6 +69,12 @@ analysis and the emitter activates the matching runtime domain macro before incl
 `include/zlang/standard/<domain>/<function>.h`, and the base runtime includes them only when their
 activation macro is defined.
 
+Standard headers use two include phases. The declaration phase emits C prototypes for every
+activated function; the implementation phase emits the `static inline` bodies. This makes calls
+between standard functions independent of include order. Activation is transitive and comes from
+standard library metadata: importing a function activates its dependencies as well. Circular calls
+are legal because every prototype is visible before any implementation body is compiled.
+
 `--tto` will enable a fixed-point optimizer. It uses a caller-owned context, a worklist and
 generation counters so a rewrite that enables or invalidates another fact can requeue affected AST
 nodes. It stops only at a fixed point or at a capacity limit. Opaque operations such as `random`

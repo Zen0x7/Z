@@ -603,13 +603,33 @@ pointer is the C99 model:
 #include <zlang/runtime/runtime.h>
 ```
 
-`runtime.h` conditionally includes:
+`runtime.h` performs a two-phase include. First it includes every activated header in declaration
+mode; then it includes the same headers in implementation mode:
 
 ```c
 #if defined(ZLANG_STD_ALGORITHMS_RANDOM)
+#define ZLANG_STD_DECLARATION_PHASE
 #include "zlang/standard/algorithms/random.h"
+#undef ZLANG_STD_DECLARATION_PHASE
+#endif
+
+#if defined(ZLANG_STD_ALGORITHMS_RANDOM)
+#define ZLANG_STD_IMPLEMENTATION_PHASE
+#include "zlang/standard/algorithms/random.h"
+#undef ZLANG_STD_IMPLEMENTATION_PHASE
 #endif
 ```
+
+Each standard header exposes its C prototype during the declaration phase and its `static inline`
+implementation during the implementation phase. This solves calls between standard functions: all
+prototypes are visible before any implementation body is compiled. It is the same ordering rule
+used for user functions in generated C.
+
+Activation is transitive. If `algorithms/shuffle` uses `random`, importing `shuffle` activates both
+`ZLANG_STD_ALGORITHMS_SHUFFLE` and `ZLANG_STD_ALGORITHMS_RANDOM`. Dependencies are declared by the
+standard library metadata, not discovered from source import order. Circular dependencies are
+resolved by the declaration phase, so two standard functions may call each other as long as their
+signatures are known.
 
 This keeps the base runtime small and gives future domains the same shape:
 `standard/<domain>/<function>.h`, one activation macro, one imported symbol. No mutable globals are
@@ -660,4 +680,6 @@ Acceptance criteria:
 - any may-write to that array cell invalidates the known value;
 - `random(1, 6)` is never constant-folded;
 - imported and unimported standard functions are distinguished by semantic analysis;
+- a standard function may call another standard function regardless of source import order;
+- transitive dependencies are activated by library metadata, not by user imports;
 - generated C compiles under the strict warning set in both default and `--tto` modes.

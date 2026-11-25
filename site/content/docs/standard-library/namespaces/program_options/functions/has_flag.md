@@ -1,0 +1,99 @@
+---
+title: has_flag
+description: Report whether host arguments contain an exact flag string.
+domain: program_options
+kind: function
+status: implemented
+stateful: false
+opaque: true
+canonical_symbols:
+  - zlang_std_program_options_has_flag
+activation_macros:
+  - ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG
+---
+
+# has_flag
+
+## Summary
+
+`has_flag` reports whether the host arguments contain an exact byte match for a flag string.
+
+## Import
+
+```zlang
+import { argument_count, has_flag } from "@std/program_options";
+```
+
+`argument_count` is in the import line because the generated header needs the count helper for this call. See Generated C.
+
+## Signature
+
+```zlang
+function has_flag(reference arguments argv, clone string flag): boolean
+```
+
+The registry records an `arguments` parameter in reference mode and a `string` parameter in clone mode.
+
+## Parameters
+
+| Name | Type | Mode | Meaning |
+| --- | --- | --- | --- |
+| `argv` | `arguments` | reference | Host argument view built by generated `main`. |
+| `flag` | `string` | clone | Bounded string compared byte for byte with each host argument. |
+
+The scan starts at index `1`, so the program path is not compared. The flag must match a whole host argument; there is no prefix or `=` parsing.
+
+## Result
+
+Returns `boolean`. The result is `true` when an argument after the program path equals `flag` byte for byte, and `false` otherwise.
+
+## Bounds and ownership
+
+- The flag must be a valid bounded string; the header reads its bytes with `memcmp`.
+- The host view and the flag string stay owned by their callers.
+- No storage is allocated and no argument bytes are changed.
+
+## Errors and traps
+
+`has_flag` has no trap path. No match returns `false`.
+
+## State and concurrency
+
+The registry marks `has_flag` as not stateful and opaque. The function reads only its arguments and owns no mutable globals. Repeated calls with the same view and flag return the same boolean.
+
+## Generated C
+
+Importing `argument_count` and `has_flag` activates both macros:
+
+```c
+#define ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT
+#define ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG
+#include <zlang/runtime/runtime.h>
+```
+
+`<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_flag` calls the shared `zlang_std_program_options_has` helper, which is also used by `has_option`. The helper calls `zlang_std_program_options_argument_count`, which is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_flag` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG`, and the generated C does not compile.
+
+In the five-function fixture, the generated call is:
+
+```c
+zlang_std_io_write_bool(zlang_std_program_options_has_flag(app_param_argv, zlang_gen_literal_2));
+```
+
+## Example
+
+```zlang
+import { write } from "@std/io";
+import { argument_count, has_flag } from "@std/program_options";
+
+function main(integer argc, arguments argv): integer {
+    write(has_flag(argv, "--verbose"));
+    write("\n");
+    return 0;
+}
+```
+
+## See also
+
+- [has_option](/docs/standard-library/namespaces/program_options/functions/has_option)
+- [option_value](/docs/standard-library/namespaces/program_options/functions/option_value)
+- [Functions catalog](/docs/standard-library/namespaces/program_options/functions)

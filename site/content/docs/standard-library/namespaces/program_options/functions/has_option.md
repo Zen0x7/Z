@@ -1,0 +1,99 @@
+---
+title: has_option
+description: Report whether host arguments contain an exact option string.
+domain: program_options
+kind: function
+status: implemented
+stateful: false
+opaque: true
+canonical_symbols:
+  - zlang_std_program_options_has_option
+activation_macros:
+  - ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION
+---
+
+# has_option
+
+## Summary
+
+`has_option` reports whether the host arguments contain an exact byte match for an option string.
+
+## Import
+
+```zlang
+import { argument_count, has_option } from "@std/program_options";
+```
+
+`argument_count` is in the import line because the generated header needs the count helper for this call. See Generated C.
+
+## Signature
+
+```zlang
+function has_option(reference arguments argv, clone string option): boolean
+```
+
+The registry records an `arguments` parameter in reference mode and a `string` parameter in clone mode.
+
+## Parameters
+
+| Name | Type | Mode | Meaning |
+| --- | --- | --- | --- |
+| `argv` | `arguments` | reference | Host argument view built by generated `main`. |
+| `option` | `string` | clone | Bounded string compared byte for byte with each host argument. |
+
+The scan starts at index `1`, so the program path is not compared. `--name=value` is one host argument and does not match the option `"--name"`.
+
+## Result
+
+Returns `boolean`. The result is `true` when an argument after the program path equals `option` byte for byte, and `false` otherwise.
+
+## Bounds and ownership
+
+- The option must be a valid bounded string; the header reads its bytes with `memcmp`.
+- The host view and the option string stay owned by their callers.
+- No storage is allocated and no argument bytes are changed.
+
+## Errors and traps
+
+`has_option` has no trap path. No match returns `false`.
+
+## State and concurrency
+
+The registry marks `has_option` as not stateful and opaque. The function reads only its arguments and owns no mutable globals. Repeated calls with the same view and option return the same boolean.
+
+## Generated C
+
+Importing `argument_count` and `has_option` activates both macros:
+
+```c
+#define ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT
+#define ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION
+#include <zlang/runtime/runtime.h>
+```
+
+`<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_option` calls the shared `zlang_std_program_options_has` helper, which calls `zlang_std_program_options_argument_count`. The count helper is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_option` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION`, and the generated C does not compile.
+
+In the five-function fixture, the generated call is:
+
+```c
+zlang_std_io_write_bool(zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_1));
+```
+
+## Example
+
+```zlang
+import { write } from "@std/io";
+import { argument_count, has_option } from "@std/program_options";
+
+function main(integer argc, arguments argv): integer {
+    write(has_option(argv, "--verbose"));
+    write("\n");
+    return 0;
+}
+```
+
+## See also
+
+- [has_flag](/docs/standard-library/namespaces/program_options/functions/has_flag)
+- [option_value](/docs/standard-library/namespaces/program_options/functions/option_value)
+- [Functions catalog](/docs/standard-library/namespaces/program_options/functions)

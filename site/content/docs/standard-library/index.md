@@ -21,9 +21,11 @@ Start with [conventions](/docs/standard-library/conventions) if you are new to i
 | --- | --- | --- |
 | Inputs and Outputs | `@std/io` | implemented |
 | Randomness | `@std/random` | implemented |
+| Math | `@std/math` | implemented |
+| Strings | `@std/strings` | implemented |
 | Program options | `@std/program_options` | implemented |
 
-Other domains such as `text`, `math`, `encoding`, `algorithms`, `memory`, `time`, `streams`, `filesystem`, `networking` and `system` belong to the catalog. Do not treat them as available until a function page says so.
+Other domains such as `text`, `encoding`, `algorithms`, `memory`, `time`, `streams`, `filesystem`, `networking` and `system` belong to the catalog. Do not treat them as available until a function page says so.
 
 ## How to read this section
 
@@ -41,4 +43,4 @@ Function pages follow the same template: import, signature, parameters, result, 
 - [Conventions](/docs/standard-library/conventions)
 - [Classification](/docs/standard-library/classification)
 - [Generated C](/docs/standard-library/generated-c)
-- [Inputs and Outputs](/docs/standard-library/namespaces/io)
+- [Namespaces](/docs/standard-library/namespaces)

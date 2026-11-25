@@ -1,0 +1,101 @@
+---
+title: starts_with
+description: Test whether one bounded string view begins with another bounded byte sequence.
+domain: strings
+kind: function
+status: implemented
+stateful: false
+opaque: true
+canonical_symbols:
+  - zlang_std_strings_starts_with
+activation_macros:
+  - ZLANG_STD_STRINGS_STARTS_WITH
+navigation:
+  title: starts_with
+---
+
+# starts_with
+
+## Summary
+
+`starts_with` reports whether one bounded byte sequence is the prefix of another.
+
+## Import
+
+```zlang
+import { starts_with } from "@std/strings";
+```
+
+## Signature
+
+```zlang
+function starts_with(clone string value, clone string prefix): boolean
+```
+
+Both parameters are passed by clone. Each argument is a view of bytes, not an owned buffer.
+
+## Parameters
+
+| Name | Meaning | Ownership |
+| --- | --- | --- |
+| `value` | Bounded string to inspect | clone |
+| `prefix` | Bounded byte sequence to match at the start | clone |
+
+Each view is valid when its data pointer is non-null or its declared length is zero.
+
+## Result
+
+`starts_with` returns `boolean`. It returns `true` when the first `prefix.length_` bytes of `value` match every byte of `prefix`. An empty `prefix` returns `true`. A `prefix` longer than `value` returns `false`.
+
+## Bounds and ownership
+
+The wrapper compares bytes from index zero up to `prefix.length_`. Every read stays inside both declared byte lengths.
+
+`starts_with` copies no bytes. It allocates no buffer and takes ownership of neither input. Both views remain valid after the call.
+
+## Errors and traps
+
+`ZLANG_TRAP_INVALID_ARGUMENT` fires when either view has a null data pointer and a nonzero declared length. `starts_with` returns no status value and raises no other trap.
+
+## State and concurrency
+
+The registry marks `starts_with` as not stateful and opaque. The wrapper is `static inline` and reads no mutable global. Repeated calls with the same valid views return the same result.
+
+## Generated C
+
+The import activates one macro:
+
+```c
+#define ZLANG_STD_STRINGS_STARTS_WITH
+#include <zlang/runtime/runtime.h>
+```
+
+`runtime.h` then includes `zlang/standard/strings/strings.h`. For `starts_with("abc", "ab")`, the emitted call is:
+
+```c
+zlang_std_io_write_bool(zlang_std_strings_starts_with(zlang_gen_literal_0, zlang_gen_literal_1));
+```
+
+The registry symbol and macro match the emitted call.
+
+## Example
+
+```zlang
+import { starts_with } from "@std/strings";
+import { write } from "@std/io";
+
+function main(): integer {
+    write(starts_with("abc", "ab"));
+    write("\n");
+    write(starts_with("abc", "bc"));
+    write("\n");
+    return 0;
+}
+```
+
+## See also
+
+- [compare](/docs/standard-library/namespaces/strings/functions/compare)
+- [contains](/docs/standard-library/namespaces/strings/functions/contains)
+- [Functions catalog](/docs/standard-library/namespaces/strings/functions)
+- [Generated C](/docs/standard-library/generated-c)

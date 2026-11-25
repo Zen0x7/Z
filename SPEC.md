@@ -748,6 +748,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | bounded input validation | `rejects_read_without_bounded_string` |
 | range-proven index folding | `folds_proven_loop_indices` |
 | unproven bounds preservation | `keeps_unproven_bounds_traps` |
+| nested read materialization | `materializes_proven_nested_reads` |
 | wide and floating primitives | `emits_wide_and_floating_primitives` |
 | explicit numeric conversions | `emits_explicit_numeric_conversions` |
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
@@ -900,6 +901,12 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.27 implementation status
+
+With `--tto`, nested proven reads used by a single arithmetic assignment are emitted as sequential
+typed temporaries before the final short assignment. This keeps generated C readable without
+changing evaluation order or bounds semantics.
 
 ## 0.26 implementation status
 

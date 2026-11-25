@@ -71,7 +71,9 @@ int32_t app_fn_main(void) {
     zlang_gen_array_set_2_i32(app_local_grid.data_, 2, 3, 0, 0, 7);
 
     zlang_gen_array_i32_4_t app_local_line = { { 0, 0, 0, 0 } };
+
     app_local_line.data_[0] = 9;
+
     zlang_std_io_write_i32(app_fn_first_2_3_i32(app_local_grid));
     zlang_std_io_write_string(zlang_gen_literal_0);
     zlang_std_io_write_i32(app_fn_first_4_i32(app_local_line));

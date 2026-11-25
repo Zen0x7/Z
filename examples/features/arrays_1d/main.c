@@ -38,9 +38,13 @@ int32_t app_fn_main(void);
 int32_t app_fn_main(void) {
     app_array_values_t app_local_values = { { 4, 5, 0, 0, 0 } };
     int32_t app_local_capacity = 5;
+
     app_local_values.data_[0] = 6;
+
     app_local_values.data_[2] = zlang_mul_i32(zlang_array_get_i32(app_local_values.data_, 0, 5), 2);
+
     app_local_values.data_[3] = zlang_sub_i32(zlang_array_get_i32(app_local_values.data_, 2, 5), 1);
+
     app_local_values.data_[4] = zlang_add_i32(zlang_array_get_i32(app_local_values.data_, 3, 5), app_local_capacity);
 
     for (uint32_t zlang_gen_foreach_2 = ZLANG_ZERO; zlang_gen_foreach_2 < 5; ++zlang_gen_foreach_2) {

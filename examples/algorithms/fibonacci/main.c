@@ -39,11 +39,13 @@ int32_t app_fn_main(void) {
     app_array_fib_t app_local_fib = { { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
     for (int32_t app_local_index = 2; (app_local_index < 10); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        app_local_fib.data_[(uint32_t)app_local_index] = zlang_add_i32(app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 1)], app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 2)]);
+        int32_t zlang_gen_read_3 = app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 1)];
+        int32_t zlang_gen_read_4 = app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 2)];
+        app_local_fib.data_[(uint32_t)app_local_index] = zlang_add_i32(zlang_gen_read_3, zlang_gen_read_4);
     }
 
-    for (uint32_t zlang_gen_foreach_3 = ZLANG_ZERO; zlang_gen_foreach_3 < 10; ++zlang_gen_foreach_3) {
-        int32_t app_local_value = app_local_fib.data_[zlang_gen_foreach_3];
+    for (uint32_t zlang_gen_foreach_5 = ZLANG_ZERO; zlang_gen_foreach_5 < 10; ++zlang_gen_foreach_5) {
+        int32_t app_local_value = app_local_fib.data_[zlang_gen_foreach_5];
         zlang_std_io_write_i32(app_local_value);
         zlang_std_io_write_string(zlang_gen_literal_0);
     }

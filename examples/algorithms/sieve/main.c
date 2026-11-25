@@ -39,10 +39,11 @@ int32_t app_fn_main(void) {
     app_array_prime_t app_local_prime = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
     for (int32_t app_local_index = 0; (app_local_index < 30); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        app_local_prime.data_[(uint32_t)app_local_index] = true;
+                app_local_prime.data_[(uint32_t)app_local_index] = true;
     }
 
     app_local_prime.data_[0] = false;
+
     app_local_prime.data_[1] = false;
 
     for (int32_t app_local_candidate = 2; (app_local_candidate < 30); app_local_candidate = zlang_add_i32(app_local_candidate, 1)) {

@@ -962,3 +962,18 @@ constant bounds and `+= 1` updates prove induction-variable ranges. Safe one-dim
 writes become direct C `data_[]` accesses; the `fibonacci` golden now contains no
 `ZLANG_TRAP_BOUNDS` and no checked `zlang_array_get_i32` calls. Unproven indices keep their original
 bounds checks. Golden C files were regenerated through `zc --tto`.
+
+## 0.27 — Design note
+
+Status: Locked.
+
+Zlang 0.27 restores readable unwinding for range-proven index folding. When a proven direct store
+uses an arithmetic expression over nested proven reads, the emitter declares one typed temporary per
+nested read in evaluation order and emits the final store from those temporaries. This replaces one
+long generated line with short sequential lines while preserving the semantics of 0.26.
+
+## 0.27 — Completion
+
+Zlang 0.27 is implemented at language level 0.27. The `fibonacci` golden now emits two
+`zlang_gen_read_*` temporaries followed by a short `zlang_add_i32` store. Unproven accesses keep
+their bounds checks. Golden C files were regenerated through `zc --tto`.

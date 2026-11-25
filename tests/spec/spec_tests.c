@@ -1208,6 +1208,20 @@ static void folds_proven_loop_indices(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, ".data_[(uint32_t)app_local_index]") != NULL);
 }
 
+static void materializes_proven_nested_reads(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { write } from \"@std/io\";\n"
+                                  "array[10] integer values;\n"
+                                  "for (integer index = 2; index < 10; index += 1) {\n"
+                                  "    values[index] = values[index - 1] + values[index - 2];\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile_tto(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_count_occurrences(_session.output_, "int32_t zlang_gen_read_") == 2U);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_add_i32(zlang_gen_read_") != NULL);
+}
+
 static void keeps_unproven_bounds_traps(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"

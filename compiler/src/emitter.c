@@ -3400,6 +3400,40 @@ static bool zlang_emit_string_concat_call(const zlang_program_t *program, size_t
            zlang_append_part_count(emitter, _count_k) && zlang_append_text(emitter, ")");
 }
 
+static bool zlang_materialize_proven_read(const zlang_program_t *program, size_t index,
+                                          zlang_emitter_t *emitter, uint32_t depth,
+                                          bool needs_newline, char *name, size_t capacity) {
+    if (index >= program->expression_count_) {
+        return false;
+    }
+    const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    if (_expression_k->kind_ != zlang_expression_index_ || !_expression_k->is_proven_) {
+        return false;
+    }
+    const char *const _cached_k = zlang_find_cse(emitter, index);
+    if (_cached_k != NULL) {
+        return zlang_copy_name(_cached_k, name, capacity);
+    }
+    const char *const _type_k = zlang_expression_type(program, emitter, index);
+    const char *const _c_type_k = zlang_generated_type(program, emitter, _type_k);
+    const int _written_k =
+        snprintf(name, capacity, "zlang_gen_read_%lu", (unsigned long)emitter->next_index_++);
+    if (_c_type_k == NULL || _written_k < 0 || (size_t)_written_k >= capacity ||
+        emitter->cse_count_ >= ZLANG_EMITTED_CSE_CAPACITY) {
+        return false;
+    }
+    if ((needs_newline && !zlang_append_indent(emitter, depth)) ||
+        !zlang_append_text(emitter, _c_type_k) || !zlang_append_text(emitter, " ") ||
+        !zlang_append_text(emitter, name) || !zlang_append_text(emitter, " = ") ||
+        !zlang_emit_expression(program, index, emitter) || !zlang_append_text(emitter, ";\n")) {
+        return false;
+    }
+    emitter->cse_expression_indices_[emitter->cse_count_] = index;
+    snprintf(emitter->cse_names_[emitter->cse_count_], sizeof(emitter->cse_names_[0]), "%s", name);
+    ++emitter->cse_count_;
+    return true;
+}
+
 static bool zlang_emit_index_assignment(const zlang_program_t *program,
                                         const zlang_ast_expression_t *expression,
                                         zlang_emitter_t *emitter, uint32_t depth) {
@@ -3418,11 +3452,32 @@ static bool zlang_emit_index_assignment(const zlang_program_t *program,
     const bool _string_element_k = _sequence_k != NULL && _sequence_k->has_element_capacity_ &&
                                    strcmp(_sequence_k->type_name_, "string") == 0;
     if (_target_k->is_proven_ && !_string_element_k) {
-        return zlang_append_text(emitter, _generated_k) && zlang_append_text(emitter, ".data_[") &&
-               zlang_emit_index_expression(program, _target_k->right_, emitter) &&
-               zlang_append_text(emitter, "] = ") &&
-               zlang_emit_expression(program, expression->right_, emitter) &&
-               zlang_append_text(emitter, ";\n");
+        const size_t _saved_cse_k = emitter->cse_count_;
+        const zlang_ast_expression_t *const _value_k = &program->expressions_[expression->right_];
+        char _left_name[ZLANG_EMITTED_NAME_CAPACITY];
+        char _right_name[ZLANG_EMITTED_NAME_CAPACITY];
+        const bool _materialized_k =
+            _value_k->kind_ != zlang_expression_add_ ||
+            (zlang_materialize_proven_read(program, _value_k->left_, emitter, depth, false,
+                                           _left_name, sizeof(_left_name)) &&
+             zlang_materialize_proven_read(program, _value_k->right_, emitter, depth, true,
+                                           _right_name, sizeof(_right_name)));
+        if (!_materialized_k || !zlang_append_indent(emitter, depth) ||
+            !zlang_append_text(emitter, _generated_k) || !zlang_append_text(emitter, ".data_[") ||
+            !zlang_emit_index_expression(program, _target_k->right_, emitter) ||
+            !zlang_append_text(emitter, "] = ")) {
+            emitter->cse_count_ = _saved_cse_k;
+            return false;
+        }
+        const bool _result_k =
+            (_value_k->kind_ == zlang_expression_add_
+                 ? zlang_append_text(emitter, "zlang_add_i32(") &&
+                       zlang_append_text(emitter, _left_name) && zlang_append_text(emitter, ", ") &&
+                       zlang_append_text(emitter, _right_name) && zlang_append_text(emitter, ")")
+                 : zlang_emit_expression(program, expression->right_, emitter)) &&
+            zlang_append_text(emitter, ";\n");
+        emitter->cse_count_ = _saved_cse_k;
+        return _result_k;
     }
     if (_target_k->argument_count_ > 1U) {
         uint32_t _rank_k = 0U;
@@ -3568,8 +3623,10 @@ static bool zlang_is_grouped_statement(const zlang_program_t *program,
     }
     return statement->kind_ == zlang_statement_expression_ &&
            statement->expression_ < program->expression_count_ &&
-           program->expressions_[statement->expression_].kind_ ==
-               zlang_expression_index_assignment_;
+           (program->expressions_[statement->expression_].kind_ ==
+                zlang_expression_index_assignment_ ||
+            program->expressions_[statement->expression_].kind_ ==
+                zlang_expression_direct_index_assignment_);
 }
 
 static bool zlang_should_insert_blank_line(bool has_previous, bool previous_grouped,

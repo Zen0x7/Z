@@ -2472,15 +2472,9 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         const zlang_ast_statement_t *_field_k = NULL;
         if (zlang_current_field(program, emitter, _expression_k->name_, &_field_k) &&
             emitter->current_self_name_ != NULL) {
-            uint32_t _depth_k = 0U;
-            const zlang_ast_statement_t *const _owner_k = zlang_find_field_owner(
-                program, emitter->current_struct_, _expression_k->name_, &_depth_k, 0U);
-            if (_owner_k == NULL) {
-                return false;
-            }
+            const char *_separator_k = emitter->current_self_is_pointer_ ? "->" : ".";
             return zlang_append_text(emitter, emitter->current_self_name_) &&
-                   zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
-                   zlang_emit_base_chain(emitter, _depth_k, false) &&
+                   zlang_append_text(emitter, _separator_k) &&
                    zlang_append_field_name(emitter, _field_k->name_);
         }
         const char *const _enum_k = zlang_generated_enum_item(emitter, _expression_k->name_);

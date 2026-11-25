@@ -98,6 +98,16 @@ static void arithmetic_helpers_compute(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_mod_u32(13U, 4U) == 1U);
 }
 
+static void string_equality_helpers_compare_content(zlang_test_context_t *const context) {
+    const zlang_string_t _left_k = {"abc", 3U};
+    const zlang_string_t _right_k = {"abd", 3U};
+
+    ZLANG_CHECK(context, zlang_string_equal(_left_k, _left_k));
+    ZLANG_CHECK(context, !zlang_string_equal(_left_k, _right_k));
+    ZLANG_CHECK(context, zlang_string_equal_compare(_left_k, _right_k) == -1);
+    ZLANG_CHECK(context, zlang_string_equal_compare(_right_k, (zlang_string_t){"abc", 3U}) == 1);
+}
+
 static void numeric_helpers_compute(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_add_i64(9000000000LL, 1LL) == 9000000001LL);
     ZLANG_CHECK(context, zlang_add_u64(10ULL, 20ULL) == 30ULL);

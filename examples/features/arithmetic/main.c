@@ -26,7 +26,7 @@ int main(void) {
     int32_t app_local_quotient = zlang_div_i32(app_local_left, app_local_right);
     int32_t app_local_remainder = zlang_mod_i32(app_local_left, app_local_right);
     uint32_t app_local_grown = zlang_add_u32(app_local_count, 2U);
-    int32_t app_local_negative = (-app_local_sum);
+    int32_t app_local_negative = zlang_neg_i32(app_local_sum);
     app_local_left = zlang_add_i32(app_local_left, app_local_right);
     app_local_left = zlang_sub_i32(app_local_left, app_local_right);
     app_local_left = zlang_mul_i32(app_local_left, app_local_right);

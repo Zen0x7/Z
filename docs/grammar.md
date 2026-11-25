@@ -12,10 +12,11 @@ made by the compiler.
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
 `double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `int64`, `length`, `print`,
-`record`, `reference`, `repeat`, `return`, `array`, `string`, `true`, `uint64`, `unsigned`, `float`
+`record`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `unsigned`
 and `while`.
 
-Integer literals are decimal and may carry `u`, `i64` or `u64` suffixes. Floating literals use a
+Integer literals are decimal and may carry `u`, `i64` or `u64` suffixes. Binary arithmetic and
+comparisons require matching operand types. Floating literals use a
 decimal point or exponent and may carry `f` to select `float`; without `f` they are `double`. String literals are double-quoted and
 support escaped quotes, backslashes, newlines and tabs. Line comments `// ...` and block comments
 `/* ... */` do not affect parsing, but the emitter preserves them in the generated C next to the construct they document. Use `--disable-comments` to omit them.

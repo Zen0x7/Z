@@ -222,7 +222,7 @@
 #define ZLANG_SPEC_MUL_EXPECTED "zlang_mul_i32(app_local_total, 3)"
 #define ZLANG_SPEC_DIV_EXPECTED "zlang_div_i32(app_local_product, 2)"
 #define ZLANG_SPEC_MOD_EXPECTED "zlang_mod_i32(app_local_product, 5)"
-#define ZLANG_SPEC_NEGATIVE_EXPECTED "int32_t app_local_negative = (-app_local_total);"
+#define ZLANG_SPEC_NEGATIVE_EXPECTED "int32_t app_local_negative = zlang_neg_i32(app_local_total);"
 
 #define ZLANG_SPEC_COMPOUND_SOURCE                                                                 \
     "integer total = 1;\n"                                                                         \

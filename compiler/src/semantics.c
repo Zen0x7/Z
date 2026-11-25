@@ -191,6 +191,19 @@ static bool zlang_report_expression(zlang_semantic_context_t *context, uint16_t 
     return false;
 }
 
+static bool zlang_statement_in_program(const zlang_program_t *program,
+                                       const zlang_ast_statement_t *statement) {
+    if (program == NULL || statement == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        if (&program->statements_[_index] == statement) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool zlang_add_symbol(zlang_semantic_context_t *context,
                              const zlang_ast_statement_t *statement, uint32_t capacity,
                              bool is_array, bool is_function) {
@@ -212,7 +225,8 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
     zlang_symbol_t *const _symbol_k = &context->symbols_[context->symbol_count_++];
     _symbol_k->name_ = statement->name_;
     _symbol_k->type_name_ = statement->type_name_;
-    _symbol_k->declaration_ = statement;
+    _symbol_k->declaration_ =
+        zlang_statement_in_program(context->program_, statement) ? statement : NULL;
     _symbol_k->capacity_ = capacity;
     _symbol_k->rank_ = statement->rank_;
     memset(_symbol_k->extents_, 0, sizeof(_symbol_k->extents_));
@@ -342,6 +356,10 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_identifier_: {
         const zlang_symbol_t *const _symbol_k = zlang_find_symbol(context, _expression_k->name_);
         if (_symbol_k != NULL) {
+            if (_symbol_k->declaration_ != NULL &&
+                _symbol_k->declaration_->kind_ == zlang_statement_import_) {
+                return NULL;
+            }
             return _symbol_k->type_name_;
         }
         const zlang_ast_statement_t *const _enum_k =
@@ -356,7 +374,13 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_add_: {
         const char *const _left_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
-        (void)zlang_analyze_expression(context, _expression_k->right_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_is_numeric_type(_left_k) || !zlang_type_matches(_left_k, _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "arithmetic requires two matching numeric operands");
+            return NULL;
+        }
         return _left_k;
     }
     case zlang_expression_negative_: {
@@ -444,10 +468,28 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     case zlang_expression_greater_:
     case zlang_expression_less_equal_:
     case zlang_expression_greater_equal_:
-    case zlang_expression_not_equal_:
-        (void)zlang_analyze_expression(context, _expression_k->left_, statement);
-        (void)zlang_analyze_expression(context, _expression_k->right_, statement);
+    case zlang_expression_not_equal_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches(_left_k, _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "comparison requires two operands of the same type");
+            return NULL;
+        }
+        const bool _ordering_k = _expression_k->kind_ != zlang_expression_equal_ &&
+                                 _expression_k->kind_ != zlang_expression_not_equal_;
+        const bool _comparable_k =
+            zlang_is_numeric_type(_left_k) || zlang_type_matches("boolean", _left_k) ||
+            zlang_type_matches("string", _left_k) || zlang_is_enum_type(context->program_, _left_k);
+        if (!_comparable_k || (_ordering_k && zlang_type_matches("string", _left_k))) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "unsupported comparison operand type");
+            return NULL;
+        }
         return "boolean";
+    }
     case zlang_expression_not_: {
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
@@ -725,31 +767,32 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         return _is_string_k ? "unsigned" : _target_k->type_name_;
     }
     case zlang_expression_call_: {
-        const zlang_symbol_t *const _function_k = zlang_find_symbol(context, _expression_k->name_);
-        if (_function_k == NULL || !_function_k->is_function_) {
+        const zlang_symbol_t *_function_k = zlang_find_symbol(context, _expression_k->name_);
+        const bool _imported_k = _function_k != NULL && _function_k->declaration_ != NULL &&
+                                 _function_k->declaration_->kind_ == zlang_statement_import_;
+        if (!_imported_k && (_function_k == NULL || !_function_k->is_function_)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "call target is not a declared function");
             return NULL;
         }
-        if (_function_k->declaration_ != NULL &&
-            _function_k->declaration_->kind_ == zlang_statement_import_) {
-            const zlang_std_function_t *const _std_k =
-                zlang_std_find(zlang_semantic_std_domain(_function_k->declaration_->type_name_),
-                               _expression_k->name_);
-            if (_std_k == NULL || _expression_k->argument_count_ != _std_k->parameter_count_) {
-                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
-                                              statement, "standard call argument count mismatch");
-                return NULL;
-            }
-            for (size_t _argument = 0U; _argument < _std_k->parameter_count_; ++_argument) {
+        if (_imported_k) {
+            const char *_argument_types_k[ZLANG_STD_MAX_PARAMETERS] = {NULL};
+            const size_t _argument_count_k =
+                _expression_k->argument_count_ < ZLANG_STD_MAX_PARAMETERS
+                    ? _expression_k->argument_count_
+                    : ZLANG_STD_MAX_PARAMETERS;
+            for (size_t _argument = 0U; _argument < _argument_count_k; ++_argument) {
                 const size_t _argument_index_k = _expression_k->argument_indices_[_argument];
-                const char *const _actual_k =
+                _argument_types_k[_argument] =
                     zlang_analyze_expression(context, _argument_index_k, statement);
-                if (!zlang_type_matches(_std_k->parameter_types_[_argument], _actual_k)) {
-                    (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
-                                                  _argument_index_k, statement,
-                                                  "standard call argument type mismatch");
-                }
+            }
+            const zlang_std_function_t *const _std_k = zlang_std_resolve_by_name(
+                _expression_k->name_, _argument_types_k, _argument_count_k);
+            if (_std_k == NULL) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
+                                              statement,
+                                              "no standard overload matches the argument types");
+                return NULL;
             }
             return _std_k->return_type_;
         }
@@ -1133,14 +1176,13 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             }
             const zlang_parameter_t *const _parameter_k =
                 &context->program_->parameters_[statement->parameter_start_ + _index];
-            const zlang_ast_statement_t _parameter_statement_k = {
-                .kind_ = zlang_statement_declaration_,
-                .type_name_ = _parameter_k->type_name_,
-                .name_ = _parameter_k->name_,
-                .line_ = _parameter_k->line_,
-                .column_ = _parameter_k->column_,
-                .is_const_ = _parameter_k->is_const_,
-            };
+            zlang_ast_statement_t _parameter_statement_k = {0};
+            _parameter_statement_k.kind_ = zlang_statement_declaration_;
+            _parameter_statement_k.type_name_ = _parameter_k->type_name_;
+            _parameter_statement_k.name_ = _parameter_k->name_;
+            _parameter_statement_k.line_ = _parameter_k->line_;
+            _parameter_statement_k.column_ = _parameter_k->column_;
+            _parameter_statement_k.is_const_ = _parameter_k->is_const_;
             if (!zlang_add_symbol(context, &_parameter_statement_k, 0U, false, false)) {
                 context->symbol_count_ = _scope_start_k;
                 --context->scope_depth_;
@@ -1149,6 +1191,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             zlang_symbol_t *const _parameter_symbol_k =
                 zlang_find_mutable_symbol(context, _parameter_k->name_);
             if (_parameter_symbol_k != NULL) {
+                _parameter_symbol_k->declaration_ = NULL;
                 _parameter_symbol_k->is_reference_ = _parameter_k->is_reference_;
                 if (_parameter_k->is_array_) {
                     uint32_t _capacity_k = 1U;

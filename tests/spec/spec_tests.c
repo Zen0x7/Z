@@ -1137,6 +1137,76 @@ static void emits_function_prototypes(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "/* generated function prototypes */") != NULL);
 }
 
+static void rejects_mixed_numeric_addition(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer value = 1 + 2U;"));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void rejects_mixed_numeric_comparison(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "boolean value = 1.5 == 1;"));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void compares_strings_by_content(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, "boolean value = \"a\" == \"a\";"));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_string_equal(") != NULL);
+}
+
+static void rejects_string_ordering(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "boolean value = \"a\" < \"b\";"));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void emits_checked_unary_negation(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, "integer counter = 3;\n"
+                                                         "integer value = -counter;"));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_neg_i32(app_local_counter)") != NULL);
+}
+
+static void emits_math_overloads(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { abs, clamp, min, max, sqrt } from \"@std/math\";\n"
+                                  "integer a = abs(3);\n"
+                                  "double b = sqrt(9.0);\n"
+                                  "integer c = clamp(7, 1, 5);\n"
+                                  "integer d = min(2, 3);\n"
+                                  "integer e = max(2, 3);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_abs_i32(3)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_sqrt_f64(9.0)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_clamp_i32(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_min_i32(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_max_i32(") != NULL);
+}
+
+static void emits_strings_api(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "import { compare, contains, starts_with } from \"@std/strings\";\n"
+        "integer a = compare(\"a\", \"b\");\n"
+        "boolean b = contains(\"abc\", \"b\");\n"
+        "boolean c = starts_with(\"abc\", \"a\");";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_strings_compare(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_strings_contains(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_strings_starts_with(") != NULL);
+}
+
 static void emits_wide_and_floating_primitives(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "int64 big = 9000000000i64 + 1i64;\n"

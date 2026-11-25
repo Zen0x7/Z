@@ -25,5 +25,9 @@ typedef struct zlang_std_function_t {
 
 const zlang_std_function_t *zlang_std_find(const char *domain, const char *name);
 const zlang_std_function_t *zlang_std_find_by_name(const char *name);
+const zlang_std_function_t *zlang_std_resolve(const char *domain, const char *name,
+                                              const char *const *argument_types, size_t count);
+const zlang_std_function_t *
+zlang_std_resolve_by_name(const char *name, const char *const *argument_types, size_t count);
 
 #endif /* ZLANG_COMPILER_STDLIB_H */

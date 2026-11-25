@@ -153,6 +153,26 @@ ZLANG_STATIC_INLINE bool zlang_print_bool(bool value) {
 }
 
 /**
+ * @brief Negate a signed 32-bit integer, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_neg_i32(int32_t value) {
+    if (value == INT32_MIN) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return -value;
+}
+
+/**
+ * @brief Negate a signed 64-bit integer, trapping on overflow.
+ */
+ZLANG_STATIC_INLINE int64_t zlang_neg_i64(int64_t value) {
+    if (value == INT64_MIN) {
+        zlang_trap(ZLANG_TRAP_OVERFLOW);
+    }
+    return -value;
+}
+
+/**
  * @brief Subtract two signed integers, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int32_t zlang_sub_i32(int32_t left, int32_t right) {
@@ -566,6 +586,42 @@ ZLANG_STATIC_INLINE int64_t zlang_to_i64_f64(double value) {
 }
 
 /**
+ * @brief Compare two string views by content.
+ * @return -1 when left is byte-wise smaller, 0 when equal, 1 when greater.
+ */
+ZLANG_STATIC_INLINE int32_t zlang_string_equal_compare(zlang_string_t left, zlang_string_t right) {
+    if ((left.data_ == NULL && left.length_ != 0U) ||
+        (right.data_ == NULL && right.length_ != 0U)) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    const uint32_t _length_k = left.length_ < right.length_ ? left.length_ : right.length_;
+    for (uint32_t _index = 0U; _index < _length_k; ++_index) {
+        const uint8_t _left_k = (uint8_t)left.data_[_index];
+        const uint8_t _right_k = (uint8_t)right.data_[_index];
+        if (_left_k < _right_k) {
+            return -1;
+        }
+        if (_left_k > _right_k) {
+            return 1;
+        }
+    }
+    if (left.length_ < right.length_) {
+        return -1;
+    }
+    if (left.length_ > right.length_) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * @brief Test two string views for content equality.
+ */
+ZLANG_STATIC_INLINE bool zlang_string_equal(zlang_string_t left, zlang_string_t right) {
+    return zlang_string_equal_compare(left, right) == 0;
+}
+
+/**
  * @brief Concatenate string views into caller-owned storage.
  * @param storage Destination buffer with room for `capacity + 1` bytes.
  * @param capacity Maximum number of content bytes, excluding the terminator.
@@ -761,6 +817,27 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
     defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION) ||                                               \
     defined(ZLANG_STD_PROGRAM_OPTIONS_OPTION_VALUE) || defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG)
 #include "zlang/standard/program/options.h"
+#endif
+
+#if defined(ZLANG_STD_MATH_ABS_I32) || defined(ZLANG_STD_MATH_ABS_U32) ||                          \
+    defined(ZLANG_STD_MATH_ABS_I64) || defined(ZLANG_STD_MATH_ABS_U64) ||                          \
+    defined(ZLANG_STD_MATH_ABS_F32) || defined(ZLANG_STD_MATH_ABS_F64) ||                          \
+    defined(ZLANG_STD_MATH_CLAMP_I32) || defined(ZLANG_STD_MATH_CLAMP_U32) ||                      \
+    defined(ZLANG_STD_MATH_CLAMP_I64) || defined(ZLANG_STD_MATH_CLAMP_U64) ||                      \
+    defined(ZLANG_STD_MATH_CLAMP_F32) || defined(ZLANG_STD_MATH_CLAMP_F64) ||                      \
+    defined(ZLANG_STD_MATH_MIN_I32) || defined(ZLANG_STD_MATH_MIN_U32) ||                          \
+    defined(ZLANG_STD_MATH_MIN_I64) || defined(ZLANG_STD_MATH_MIN_U64) ||                          \
+    defined(ZLANG_STD_MATH_MIN_F32) || defined(ZLANG_STD_MATH_MIN_F64) ||                          \
+    defined(ZLANG_STD_MATH_MAX_I32) || defined(ZLANG_STD_MATH_MAX_U32) ||                          \
+    defined(ZLANG_STD_MATH_MAX_I64) || defined(ZLANG_STD_MATH_MAX_U64) ||                          \
+    defined(ZLANG_STD_MATH_MAX_F32) || defined(ZLANG_STD_MATH_MAX_F64) ||                          \
+    defined(ZLANG_STD_MATH_SQRT_F32) || defined(ZLANG_STD_MATH_SQRT_F64)
+#include "zlang/standard/math/math.h"
+#endif
+
+#if defined(ZLANG_STD_STRINGS_COMPARE) || defined(ZLANG_STD_STRINGS_CONTAINS) ||                   \
+    defined(ZLANG_STD_STRINGS_STARTS_WITH)
+#include "zlang/standard/strings/strings.h"
 #endif
 
 #endif /* ZLANG_RUNTIME_RUNTIME_H */

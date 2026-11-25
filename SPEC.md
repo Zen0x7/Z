@@ -165,12 +165,15 @@ An array has no logical length. Every extent is fixed at compile time and every 
 ### 7.10 Type compatibility
 
 There is no implicit conversion between numeric types, or between numeric types and `boolean`.
-Explicit conversion calls are `to_integer`, `to_unsigned`, `to_int64`, `to_uint64`, `to_float` and
+Binary arithmetic and comparisons require both operands to have exactly the same type. Explicit
+conversion calls are `to_integer`, `to_unsigned`, `to_int64`, `to_uint64`, `to_float` and
 `to_double`; they take exactly one numeric operand. Conversion to an integer type traps when the
 value is out of range, and conversion from a floating-point value truncates toward zero and traps
 on non-finite input. Floating arithmetic follows IEEE-754, so division by zero produces an infinity
-or NaN instead of a Zlang trap. `%` is valid only for integral types. A string can only be used
-where a `string` is expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
+or NaN instead of a Zlang trap. `%` is valid only for integral types. Unary negation of `integer`
+and `int64` traps on the signed minimum value. String `==` and `!=` compare content through the
+runtime helper; string ordering is rejected. A string can only be used where a `string` is
+expected. Array types with different extents are different types. A record or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
 
 ---
 
@@ -375,7 +378,8 @@ Every generated C file begins with:
 | `-a`, `a - b`, `a * b`, `a / b`, `a % b` | checked arithmetic helpers |
 | `a += b` and other compound assignments | checked operation followed by assignment |
 | `length(values)` | native `values.length_` as `uint32_t` |
-| `a == b` | `a == b` |
+| `a == b` for scalars | `a == b` |
+| `a == b` for strings | `zlang_string_equal(a, b)` |
 | `a < b`, `a > b`, `a <= b`, `a >= b`, `a != b` | native C comparison |
 | `!a`, `a && b`, `a || b` | native C logical operators with short-circuit behavior |
 | `f(a, b)` | direct C call to the emitted function |
@@ -746,6 +750,13 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | implicit conversion rejection | `rejects_implicit_numeric_conversion` |
 | floating modulo rejection | `rejects_float_modulo` |
 | inferred shape index validation | `rejects_index_outside_inferred_shape` |
+| mixed numeric arithmetic rejection | `rejects_mixed_numeric_addition` |
+| mixed numeric comparison rejection | `rejects_mixed_numeric_comparison` |
+| string content equality | `compares_strings_by_content` |
+| string ordering rejection | `rejects_string_ordering` |
+| checked unary negation | `emits_checked_unary_negation` |
+| standard math overloads | `emits_math_overloads` |
+| standard strings API | `emits_strings_api` |
 | string array elements | `emits_string_sequence_operations` |
 | legacy sequence syntax rejection | `rejects_legacy_sequence_syntax` |
 | sibling scope identifier generation | `renames_sibling_scope_declarations` |
@@ -884,6 +895,13 @@ but source code only uses `array[i]...`.
 Zlang 0.19 emits only the array helpers referenced by generated code and declares user functions
 before their definitions, so functions may call functions defined later in the source.
 
+
+## 0.23 implementation status
+
+Zlang 0.23 enforces exact operand types in arithmetic and comparisons, compares strings by content,
+rejects string ordering and checks signed unary negation. `@std/math` exposes `abs`, `clamp`, `min`,
+`max` and `sqrt` with overload resolution by argument type. `@std/strings` exposes `compare`,
+`contains` and `starts_with`.
 
 ## 0.22 implementation status
 

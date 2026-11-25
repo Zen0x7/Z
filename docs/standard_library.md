@@ -1,6 +1,6 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.22. The catalog below is the allowed namespace map; the
+**Status:** implemented in Zlang 0.23. The catalog below is the allowed namespace map; the
 implemented standard functions are the deterministic `random` generators and the
 `@std/program_options` domain.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
@@ -135,7 +135,8 @@ implemented.
 | Domain | Meaning | Proposed functions | Evaluation |
 | --- | --- | --- | --- |
 | `algorithms` | Operations over fixed arrays and records | `sort_int32`, `reverse_int32`, `find_int32`, `contains_int32`, `min_int32`, `max_int32`, `sum_int32` | pure, bounded, foldable when inputs are constant |
-| `text` | Bounded string operations | `compare`, `contains`, `starts_with`, `ends_with`, `to_upper`, `to_lower`, `parse_int32`, `format_int32` | pure, caller-owned destination buffers |
+| `math` | Scalar numeric operations beyond checked builtins | `abs`, `clamp`, `min`, `max`, `sqrt` | pure, overloads resolved by operand types |
+| `strings` | Bounded string operations | `compare`, `contains`, `starts_with` | pure, non-owning views |
 | `encoding` | Byte-to-text and text-to-byte transforms | `encode_hex`, `decode_hex`, `encode_base64`, `decode_base64`, `utf8_length` | pure, bounded, explicit capacity |
 | `math` | Scalar numeric operations beyond checked builtins | `abs_int32`, `clamp_int32`, `gcd_int32`, `pow_uint32`, `sqrt_uint32` | pure, foldable when operands are constant |
 | `memory` | Direct bounded byte operations | `copy_bytes`, `fill_bytes`, `compare_bytes`, `zero_bytes` | pure, bounded, caller-owned buffers |
@@ -153,8 +154,8 @@ implemented.
 
 `generate_float32` and `generate_float64` use the same deterministic PRNG as the integer generators.
 They produce values in `[from, to)` and trap on invalid or non-finite bounds. `cryptography` remains
-deferred until there is a stable security and entropy policy. Avoid adding a domain before its capability has a
-clear boundary.
+deferred until there is a stable security and entropy policy. `@std/strings` is the canonical string domain; `@std/text` is not part of the catalog. Avoid adding
+a domain before its capability has a clear boundary.
 
 ## Classification dimensions
 

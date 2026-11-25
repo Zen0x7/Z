@@ -1,0 +1,1 @@
+zlang_add_test_module(stdlib_math)

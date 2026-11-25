@@ -137,6 +137,8 @@ typedef struct zlang_emitter_t {
     bool uses_stateful_std_;
     bool in_function_;
     bool has_explicit_main_;
+    char activated_macros_[ZLANG_EMITTED_SYMBOL_CAPACITY][ZLANG_EMITTED_NAME_CAPACITY];
+    size_t activated_macro_count_;
 } zlang_emitter_t;
 
 void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,

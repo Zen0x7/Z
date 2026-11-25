@@ -830,3 +830,59 @@ right specialization at each call site. A call whose shape cannot be proved is s
 
 The legacy `from "random"` spelling was removed in the previous change. All current sources use
 `@std/random`, and the golden example suite includes a real multi-module project.
+
+## 0.23 — Design note
+
+Status: Locked.
+
+Zlang 0.23 closes the type-discipline gaps exposed by 0.22 and adds the first scalar and string
+standard APIs. No new primitive type is introduced.
+
+### Numeric discipline
+
+Every binary arithmetic operator requires two operands of exactly the same numeric type. There are
+no hidden promotions in arithmetic or comparisons. `to_*` remains the only conversion form.
+Unary negation is checked for `integer` and `int64`, trapping when the operand is the minimum value
+of its type; `float` and `double` keep IEEE negation.
+
+### String discipline
+
+String equality and inequality compare content through a bounded runtime helper. Ordering
+operators are rejected for strings because a byte-wise order is not a Zlang string contract.
+Mixed string/numeric comparisons are rejected.
+
+### Standard APIs
+
+`@std/math` exposes `abs`, `clamp`, `min`, `max` and `sqrt`. The first four are overloaded by
+argument type across `integer`, `unsigned`, `int64`, `uint64`, `float` and `double`; `sqrt` is
+provided for `float` and `double`. Overload resolution uses the argument types recorded by semantic
+analysis, and each concrete overload has one activation macro and one generated C symbol.
+
+`@std/strings` exposes `compare`, `contains` and `starts_with`. They are pure, bounded, non-owning
+and allocation-free. The catalog uses `@std/strings`; `@std/text` is not a standard domain.
+
+### Acceptance criteria
+
+- mixed numeric arithmetic and comparisons are rejected;
+- string equality works by content and string ordering is rejected;
+- unary negation of signed minimum values traps;
+- all `@std/math` overloads resolve by argument type and generate one C implementation each;
+- all `@std/strings` functions work with bounded string views;
+- the full CI matrix, sanitizers, coverage, fuzzers, docs and package checks stay green.
+
+## 0.23 — Completion
+
+Zlang 0.23 is implemented at language level 0.23. Binary arithmetic and comparisons reject mixed
+operand types, string equality compares content through `zlang_string_equal`, string ordering is a
+type diagnostic and unary negation of signed integers traps on the minimum value.
+
+`@std/math` exposes `abs`, `clamp`, `min`, `max` and `sqrt`. Overloads are resolved from semantic
+argument types; the emitter activates one macro and emits one C symbol per used overload. Generated
+math uses only fixed C operations and bounded iteration, with no `libm` dependency.
+
+`@std/strings` exposes `compare`, `contains` and `starts_with`. The domain is named `strings`; there
+is no `@std/text` domain. All three functions operate on bounded non-owning string views.
+
+The golden suite includes the arithmetic golden regenerated for checked unary negation. New spec,
+runtime and standard-library modules cover numeric discipline, string equality, string ordering
+rejection, checked negation and the new standard APIs.

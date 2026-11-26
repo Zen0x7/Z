@@ -5031,6 +5031,52 @@ static bool zlang_emit_for_initializer(const zlang_program_t *program,
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_emit_struct_initializer(const zlang_program_t *program, zlang_emitter_t *emitter,
+                                          const char *struct_name) {
+    const zlang_ast_statement_t *const _structure_k =
+        zlang_find_struct_statement(program, struct_name);
+    if (_structure_k == NULL) {
+        return false;
+    }
+    const zlang_emitted_vtable_t *const _vtable_k = zlang_find_vtable(emitter, _structure_k->name_);
+    const zlang_emitted_type_tag_t *const _tag_k =
+        zlang_find_type_tag(emitter, _structure_k->name_);
+    if (!zlang_append_text(emitter, "{")) {
+        return false;
+    }
+    bool _first_k = true;
+    if (_structure_k->base_name_ != NULL) {
+        if (!zlang_emit_struct_initializer(program, emitter, _structure_k->base_name_)) {
+            return false;
+        }
+        _first_k = false;
+    } else if (_vtable_k != NULL && _tag_k != NULL) {
+        if (!zlang_append_text(emitter, "&") ||
+            !zlang_append_text(emitter, _vtable_k->instance_name_) ||
+            !zlang_append_text(emitter, ", ") || !zlang_append_text(emitter, _tag_k->macro_)) {
+            return false;
+        }
+        _first_k = false;
+    }
+    const size_t _end_k = _structure_k->body_start_ + _structure_k->body_count_;
+    for (size_t _field = _structure_k->body_start_;
+         _field < _end_k && _field < program->statement_count_; ++_field) {
+        const zlang_ast_statement_t *const _field_k = &program->statements_[_field];
+        if (_field_k->kind_ == zlang_statement_function_ ||
+            zlang_statement_in_method(program, _structure_k, _field)) {
+            continue;
+        }
+        if (!zlang_append_text(emitter, _first_k ? " " : ", ") ||
+            !zlang_append_text(emitter, _field_k->kind_ == zlang_statement_array_declaration_
+                                            ? "{ ZLANG_ZERO }"
+                                            : "ZLANG_ZERO")) {
+            return false;
+        }
+        _first_k = false;
+    }
+    return zlang_append_text(emitter, "}");
+}
+
 static bool zlang_emit_statement(const zlang_program_t *program,
                                  const zlang_ast_statement_t *statement, zlang_emitter_t *emitter,
                                  uint32_t depth) { // NOLINT(misc-no-recursion)
@@ -5116,6 +5162,11 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             }
         } else if (statement->expression_ != ZLANG_NO_EXPRESSION) {
             if (!zlang_emit_expression(program, statement->expression_, emitter)) {
+                return false;
+            }
+        } else if (zlang_find_struct_statement(program, statement->type_name_) != NULL &&
+                   zlang_find_vtable(emitter, statement->type_name_) != NULL) {
+            if (!zlang_emit_struct_initializer(program, emitter, statement->type_name_)) {
                 return false;
             }
         } else if (zlang_find_struct_statement(program, statement->type_name_) != NULL) {
@@ -6504,7 +6555,7 @@ static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_em
         if (!zlang_collect_vtable_slots(emitter, program, _entry_k)) {
             return false;
         }
-        if (!zlang_append_text(emitter, "static const ") ||
+        if (!zlang_append_text(emitter, "const ") ||
             !zlang_append_text(emitter, _entry_k->type_name_) || !zlang_append_text(emitter, " ") ||
             !zlang_append_text(emitter, _entry_k->instance_name_) ||
             !zlang_append_text(emitter, _entry_k->slot_count_ == 0U ? " = { 0" : " = {")) {

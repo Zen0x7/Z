@@ -47,6 +47,11 @@ program's fixed memory plan.
 - Sequence access uses explicit bounds checks; append checks capacity.
 - `foreach` becomes a native C `for` loop, not a callback.
 - Errors use fixed numeric codes; generated code never formats an error string at runtime.
+- A polymorphic hierarchy emits one `zlang_vtable_<root>_t` type, one vtable instance per concrete
+  struct and one internal type tag plus vtable pointer in the root subobject. Instance calls through
+  a base receiver use an indirect vtable slot; calls on a known concrete receiver may be direct.
+- Trait methods are compiled into each using struct as `app_fn_<struct>_<method>` and are called
+  directly. They do not use a vtable.
 
 ## Diagnostics
 

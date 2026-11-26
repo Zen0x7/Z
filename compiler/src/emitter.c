@@ -3003,8 +3003,11 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                         return false;
                     }
                 } else {
+                    const uint32_t _depth_k =
+                        zlang_struct_depth(program, _owner_k, _receiver_symbol_k->type_name_);
                     if (!zlang_append_text(emitter, "&") ||
-                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
+                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_) ||
+                        !zlang_emit_base_chain(emitter, _depth_k, false)) {
                         return false;
                     }
                 }

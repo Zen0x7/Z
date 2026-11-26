@@ -48,7 +48,7 @@ import { write } from "@std/io";
 
 ## Signatures
 
-Convenience overloads use `stdout` implicitly:
+These declarations are overloads of one function. The one-value forms use implicit `STDOUT`:
 
 ```zlang
 function write(clone string value): result_type<int32, status_code>
@@ -61,7 +61,7 @@ function write(clone float value): result_type<int32, status_code>
 function write(clone double value): result_type<int32, status_code>
 ```
 
-Explicit stream overloads accept `STDIN`, `STDOUT`, `STDERR` or a future stream handle:
+The two-argument forms take a `clone stream` destination (`STDIN`, `STDOUT`, `STDERR` or another handle that implements the same contract):
 
 ```zlang
 function write(clone stream target, clone string value): result_type<int32, status_code>
@@ -71,18 +71,18 @@ function write(clone stream target, clone int32 value): result_type<int32, statu
 
 The remaining scalar overloads follow the same pattern.
 
-A `string` parameter clones the view descriptor only. Buffer bytes are never copied. A `stream` is also a trivially copyable borrowed handle.
+A `clone string` copies the bounded view descriptor only; buffer bytes are never copied. A `clone stream` copies a borrowed descriptor, not the device or its state.
 
 ## Result
 
-`value` is the transferred byte count. `code` is `STATUS_SUCCESS` on a complete write and `STATUS_IO_ERROR` when the stream fails. `message` is a bounded read-only view of the fixed status message.
+`value` is the transferred byte count, `code` is a `status_code` (`STATUS_SUCCESS` on a complete write, `STATUS_IO_ERROR` when the stream fails), and `what` is a bounded read-only view of the fixed status message. The `message()` accessor reads `what`.
 
 ```zlang
 result_type<int32, status_code> response = write(STDOUT, 7);
 if (response.is_ok()) {
     write(response.value);
 } else {
-    write(response.message);
+    write(response.message());
 }
 ```
 

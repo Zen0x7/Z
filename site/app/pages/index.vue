@@ -140,18 +140,5 @@ useSeoMeta({
         </template>
       </div>
     </section>
-
-    <section class="site-container pb-16 lg:pb-24">
-      <div class="border-t border-[color:var(--line)] pt-10">
-        <p class="eyebrow">Playground</p>
-        <h2 class="mt-3 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          Run Zlang here
-        </h2>
-        <p class="mt-3 max-w-2xl leading-7 text-slate-600">
-          Write a program, compile it to C, link it to WebAssembly and run it without leaving the page.
-        </p>
-        <PlaygroundPanel />
-      </div>
-    </section>
   </div>
 </template>

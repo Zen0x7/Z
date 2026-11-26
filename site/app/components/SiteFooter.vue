@@ -1,6 +1,7 @@
 <script setup lang="ts">
-// Mirrors cmake/ZlangVersion.cmake.
-const version = '0.21.0'
+// Version comes from cmake/ZlangVersion.cmake through Nuxt runtime config.
+const config = useRuntimeConfig()
+const version = config.public.zlangVersion as string
 const year = new Date().getFullYear()
 </script>
 

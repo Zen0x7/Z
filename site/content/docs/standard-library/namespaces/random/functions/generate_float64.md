@@ -16,7 +16,7 @@ activation_macros:
 
 ## Summary
 
-`generate_float64` returns one 64-bit floating-point value from a caller-specified range.
+`generate_float64` reports one 64-bit floating-point value from a caller-specified range in `result_type<double, status_code>`.
 
 ## Import
 
@@ -27,7 +27,7 @@ import { generate_float64 } from "@std/random";
 ## Signature
 
 ```zlang
-function generate_float64(clone double from, clone double to): double
+function generate_float64(clone double from, clone double to): result_type<double, status_code>
 ```
 
 Both parameters are passed by value.
@@ -43,7 +43,7 @@ Both parameters are passed by value.
 
 ## Result
 
-Returns one `double` from the range `[from, to)` before floating-point rounding. The implementation takes one runtime draw as a fraction below 1 and computes `from + (to - from) * fraction`. Do not expect a specific value or sequence.
+`value`/`get()` holds one `double` from the range `[from, to)` before floating-point rounding. `code` is a `status_code` set to `STATUS_SUCCESS` for valid bounds, and `what` is a bounded read-only view of the fixed status message. The C helper returns `zlang_std_result_f64_status_t`, not a bare `double`. The implementation takes one runtime draw as a fraction below 1 and computes `from + (to - from) * fraction`. Do not expect a specific value or sequence.
 
 ## Bounds and ownership
 
@@ -51,7 +51,7 @@ Both bounds are values. The generator changes the injected runtime context and d
 
 ## Errors and traps
 
-`from > to` or a non-finite bound traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4). A non-finite computed range traps with the same code. No status value reaches Zlang, and generated C terminates through the runtime trap sink.
+`from > to` or a non-finite bound traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4). A non-finite computed range traps with the same code. Generated C terminates through the runtime trap sink, and a trapped call returns no result. There is no recoverable error status: every returned `code` is `STATUS_SUCCESS`.
 
 ## State and concurrency
 
@@ -65,16 +65,17 @@ The registry marks `generate_float64` as stateful and opaque. Each call advances
 #define ZLANG_STD_RANDOM_GENERATE_FLOAT64
 ```
 
-The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_float64.h`. The header defines `zlang_std_random_generate_float64(zlang_runtime_context_t *context, double from, double to)` as a `ZLANG_STATIC_INLINE` wrapper; the injected context comes first.
+The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_float64.h`. The header defines `zlang_std_random_generate_float64(zlang_runtime_context_t *context, double from, double to)` as a `ZLANG_STATIC_INLINE` wrapper returning `zlang_std_result_f64_status_t`; the injected context comes first.
 
 Inside the emitted `app_fn_main`, this excerpt shows the local declaration and the call:
 
 ```c
 int32_t app_fn_main(zlang_runtime_context_t *zlang_context) {
-    double app_local_value = zlang_std_random_generate_float64(zlang_context, 0.0, 1.0);
+    zlang_std_result_f64_status_t app_local_result =
+        zlang_std_random_generate_float64(zlang_context, 0.0, 1.0);
 ```
 
-`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_value` is the emitted name for the Zlang local `value`. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
+`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_result` is the emitted name for the Zlang local `result`; its `value_` field holds the generated value, `code_` holds the status, and `what_` is the fixed message view. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
 
 ```c
 int main(void) {
@@ -93,8 +94,8 @@ import { write } from "@std/io";
 import { generate_float64 } from "@std/random";
 
 function main(): int32 {
-    double value = generate_float64(0.0, 1.0);
-    write(value);
+    result_type<double, status_code> result = generate_float64(0.0, 1.0);
+    write(result.get());
     write("\n");
     return 0;
 }

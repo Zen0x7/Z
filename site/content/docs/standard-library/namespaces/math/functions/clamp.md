@@ -26,7 +26,7 @@ activation_macros:
 
 ## Summary
 
-`clamp` returns a value confined to an inclusive range.
+`clamp` returns a numeric value confined to an inclusive range in `result_type<T, status_code>`, with `T` matching the argument type.
 
 ## Import
 
@@ -37,17 +37,17 @@ import { clamp } from "@std/math";
 ## Signature
 
 ```zlang
-function clamp(clone int32 value, clone int32 low, clone int32 high): int32
+function clamp(clone int32 value, clone int32 low, clone int32 high): result_type<int32, status_code>
 ```
 
 | Registry signature | C symbol | Activation macro |
 | --- | --- | --- |
-| `function clamp(clone int32 value, clone int32 low, clone int32 high): int32` | `zlang_std_math_clamp_i32` | `ZLANG_STD_MATH_CLAMP_I32` |
-| `function clamp(clone uint32 value, clone uint32 low, clone uint32 high): uint32` | `zlang_std_math_clamp_u32` | `ZLANG_STD_MATH_CLAMP_U32` |
-| `function clamp(clone int64 value, clone int64 low, clone int64 high): int64` | `zlang_std_math_clamp_i64` | `ZLANG_STD_MATH_CLAMP_I64` |
-| `function clamp(clone uint64 value, clone uint64 low, clone uint64 high): uint64` | `zlang_std_math_clamp_u64` | `ZLANG_STD_MATH_CLAMP_U64` |
-| `function clamp(clone float value, clone float low, clone float high): float` | `zlang_std_math_clamp_f32` | `ZLANG_STD_MATH_CLAMP_F32` |
-| `function clamp(clone double value, clone double low, clone double high): double` | `zlang_std_math_clamp_f64` | `ZLANG_STD_MATH_CLAMP_F64` |
+| `function clamp(clone int32 value, clone int32 low, clone int32 high): result_type<int32, status_code>` | `zlang_std_math_clamp_i32` | `ZLANG_STD_MATH_CLAMP_I32` |
+| `function clamp(clone uint32 value, clone uint32 low, clone uint32 high): result_type<uint32, status_code>` | `zlang_std_math_clamp_u32` | `ZLANG_STD_MATH_CLAMP_U32` |
+| `function clamp(clone int64 value, clone int64 low, clone int64 high): result_type<int64, status_code>` | `zlang_std_math_clamp_i64` | `ZLANG_STD_MATH_CLAMP_I64` |
+| `function clamp(clone uint64 value, clone uint64 low, clone uint64 high): result_type<uint64, status_code>` | `zlang_std_math_clamp_u64` | `ZLANG_STD_MATH_CLAMP_U64` |
+| `function clamp(clone float value, clone float low, clone float high): result_type<float, status_code>` | `zlang_std_math_clamp_f32` | `ZLANG_STD_MATH_CLAMP_F32` |
+| `function clamp(clone double value, clone double low, clone double high): result_type<double, status_code>` | `zlang_std_math_clamp_f64` | `ZLANG_STD_MATH_CLAMP_F64` |
 
 ## Parameters
 
@@ -61,9 +61,9 @@ All three arguments must have the same type. No capacity is required.
 
 ## Result
 
-Returns `value` when it lies between `low` and `high`. Returns `low` when `value` is smaller, and `high` when `value` is larger. The return type matches the argument type and the registry return type.
+`value`/`get()` holds `value` when it lies between `low` and `high`, `low` when `value` is smaller, and `high` when `value` is larger. The result type is `result_type<T, status_code>` with `T` matching the argument type. `code` is a `status_code` set to `STATUS_SUCCESS` for valid input, and `message` is a bounded read-only view of the fixed status message. The C helper returns the canonical `zlang_std_result_*_status_t` struct for the selected overload.
 
-For the `float` and `double` overloads, the bounds are finite and ordered. Ordered comparisons decide the result; signed zeros compare equal.
+For the `float` and `double` overloads, the bounds are finite and ordered. Ordered comparisons decide the result value; signed zeros compare equal.
 
 ## Bounds and ownership
 
@@ -71,7 +71,7 @@ For the `float` and `double` overloads, the bounds are finite and ordered. Order
 
 ## Errors and traps
 
-Every overload traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code `4`) when `low > high`. The `float` and `double` overloads also trap with the same code when any of the three arguments is non-finite, including NaN and either infinity. The `int32` overloads have no other trap.
+Every overload traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code `4`) when `low > high`. The `float` and `double` overloads also trap with the same code when any of the three arguments is non-finite, including NaN and either infinity. The integer overloads have no other trap. These conditions are traps, not recoverable statuses; `code` is `STATUS_SUCCESS` only when the helper completes.
 
 ## State and concurrency
 
@@ -84,9 +84,10 @@ Importing `clamp` activates `ZLANG_STD_MATH_CLAMP_I32` from the first registry e
 ```c
 #define ZLANG_STD_MATH_CLAMP_I32
 ...
-zlang_std_math_clamp_i32(7, 1, 5);
+zlang_std_result_i32_status_t app_local_result = zlang_std_math_clamp_i32(7, 1, 5);
 ```
 
+`zlang_std_result_i32_status_t` is the C layout for the `result_type<int32, status_code>` selected by `clamp(7, 1, 5)`.
 
 ## Example
 
@@ -95,7 +96,8 @@ import { write } from "@std/io";
 import { clamp } from "@std/math";
 
 function main(): int32 {
-    write(clamp(7, 1, 5));
+    result_type<int32, status_code> result = clamp(7, 1, 5);
+    write(result.get());
     write("\n");
     return 0;
 }

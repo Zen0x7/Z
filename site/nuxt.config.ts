@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -6,6 +6,12 @@ import { zlangLanguage } from './shiki/zlang'
 import { zlangTheme } from './shiki/zlang-theme'
 
 const contentRoot = fileURLToPath(new URL('./content/docs', import.meta.url))
+const versionFile = fileURLToPath(new URL('../cmake/ZlangVersion.cmake', import.meta.url))
+
+function readZlangVersion(): string {
+  const source = readFileSync(versionFile, 'utf8')
+  return source.match(/set\(ZLANG_PROJECT_VERSION\s+([^\s)]+)\)/)?.[1] ?? '0.0.0'
+}
 
 function collectContentRoutes(directory: string, base = '/docs'): string[] {
   const routes: string[] = []
@@ -37,6 +43,12 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
+
+  runtimeConfig: {
+    public: {
+      zlangVersion: readZlangVersion(),
+    },
+  },
 
   nitro: {
     prerender: {

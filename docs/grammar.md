@@ -209,7 +209,7 @@ monomorphizes each application into a concrete C99 type or function. Generic str
 use traits or declare methods. Generic functions must be top-level and have flat bodies. Up to four
 type parameters and four arguments per application are supported.
 
-## Native results (0.31)
+## Native results (0.31–0.37)
 
 `result_type<T, status_code>` is a closed native generic family. Supported applications such as
 `result_type<void, status_code>` and `result_type<int32, status_code>` map to canonical C layouts in
@@ -223,3 +223,18 @@ Convenience overloads use implicit stdout or stdin. Explicit overloads accept `S
 `read` takes a bounded destination view, an offset and a maximum byte count. String and stream
 parameters are borrowed views; no buffer bytes are copied. Passing a `string` by `clone` copies only
 the descriptor.
+
+Zlang 0.37 extends this to every registered standard function: all functions in `io`, `math`,
+`program_options`, `random` and `strings` return `result_type<T, status_code>`. `T` is the ideal
+value of the operation, `code` is a `status_code`, and `what` is a bounded read-only message view.
+Pure and total functions report `STATUS_SUCCESS` for valid input; programmer and resource errors
+remain traps and do not return.
+
+`read` and `read_line` each have two overloads. The convenience overload reads from implicit `STDIN`
+at offset `0` into a declared-capacity destination; the explicit overload takes a borrowed stream
+and a bounded offset/count window. Both return `result_type<int32, status_code>` with the transferred
+byte count in `value`. `read` copies raw bytes and keeps a newline when it fits the window;
+`read_line` stops at a newline and drops the delimiter. `clone` copies scalars or trivial
+descriptors: a cloned `string` copies its descriptor, not its bytes, and a cloned `stream` copies a
+borrowed handle. `reference` is a mutable caller-owned destination; `const reference` is a borrowed
+view.

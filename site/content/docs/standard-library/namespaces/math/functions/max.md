@@ -26,7 +26,7 @@ activation_macros:
 
 ## Summary
 
-`max` selects the greater of two scalar values.
+`max` selects the greater of two scalar values and reports it in `result_type<T, status_code>`, with `T` matching the argument type.
 
 ## Import
 
@@ -37,17 +37,17 @@ import { max } from "@std/math";
 ## Signature
 
 ```zlang
-function max(clone int32 left, clone int32 right): int32
+function max(clone int32 left, clone int32 right): result_type<int32, status_code>
 ```
 
 | Registry signature | C symbol | Activation macro |
 | --- | --- | --- |
-| `function max(clone int32 left, clone int32 right): int32` | `zlang_std_math_max_i32` | `ZLANG_STD_MATH_MAX_I32` |
-| `function max(clone uint32 left, clone uint32 right): uint32` | `zlang_std_math_max_u32` | `ZLANG_STD_MATH_MAX_U32` |
-| `function max(clone int64 left, clone int64 right): int64` | `zlang_std_math_max_i64` | `ZLANG_STD_MATH_MAX_I64` |
-| `function max(clone uint64 left, clone uint64 right): uint64` | `zlang_std_math_max_u64` | `ZLANG_STD_MATH_MAX_U64` |
-| `function max(clone float left, clone float right): float` | `zlang_std_math_max_f32` | `ZLANG_STD_MATH_MAX_F32` |
-| `function max(clone double left, clone double right): double` | `zlang_std_math_max_f64` | `ZLANG_STD_MATH_MAX_F64` |
+| `function max(clone int32 left, clone int32 right): result_type<int32, status_code>` | `zlang_std_math_max_i32` | `ZLANG_STD_MATH_MAX_I32` |
+| `function max(clone uint32 left, clone uint32 right): result_type<uint32, status_code>` | `zlang_std_math_max_u32` | `ZLANG_STD_MATH_MAX_U32` |
+| `function max(clone int64 left, clone int64 right): result_type<int64, status_code>` | `zlang_std_math_max_i64` | `ZLANG_STD_MATH_MAX_I64` |
+| `function max(clone uint64 left, clone uint64 right): result_type<uint64, status_code>` | `zlang_std_math_max_u64` | `ZLANG_STD_MATH_MAX_U64` |
+| `function max(clone float left, clone float right): result_type<float, status_code>` | `zlang_std_math_max_f32` | `ZLANG_STD_MATH_MAX_F32` |
+| `function max(clone double left, clone double right): result_type<double, status_code>` | `zlang_std_math_max_f64` | `ZLANG_STD_MATH_MAX_F64` |
 
 ## Parameters
 
@@ -60,9 +60,9 @@ Both arguments must have the same type. No capacity is required.
 
 ## Result
 
-Returns `left` when `left > right`, otherwise `right`. The return type matches the argument type and the registry return type.
+`value`/`get()` holds `left` when `left > right`, otherwise `right`. The result type is `result_type<T, status_code>` with `T` matching the argument type. `code` is a `status_code` that is always `STATUS_SUCCESS` because no overload traps, and `message` is a bounded read-only view of the fixed status message. The C helper returns the canonical `zlang_std_result_*_status_t` struct for the selected overload.
 
-For `float` and `double`, the helper uses an ordered comparison. When `left` is NaN, the comparison is false and `right` is returned. When `right` is NaN, the comparison is false and the NaN is returned. Signed zeros compare equal, so the second argument is returned.
+For `float` and `double`, the helper uses an ordered comparison. When `left` is NaN, the comparison is false and the result value is `right`. When `right` is NaN, the comparison is false and the NaN becomes the result value. Signed zeros compare equal, so the second argument becomes the result value.
 
 ## Bounds and ownership
 
@@ -70,7 +70,7 @@ For `float` and `double`, the helper uses an ordered comparison. When `left` is 
 
 ## Errors and traps
 
-No overload traps. The floating helpers accept NaN and infinities without a validity check, and IEEE-754 ordering decides the result.
+No overload traps, so no recoverable error status exists. The floating helpers accept NaN and infinities without a validity check, and IEEE-754 ordering decides the result value.
 
 ## State and concurrency
 
@@ -83,9 +83,10 @@ Importing `max` activates `ZLANG_STD_MATH_MAX_I32` from the first registry entry
 ```c
 #define ZLANG_STD_MATH_MAX_I32
 ...
-zlang_std_math_max_i32(2, 3);
+zlang_std_result_i32_status_t app_local_result = zlang_std_math_max_i32(2, 3);
 ```
 
+`zlang_std_result_i32_status_t` is the C layout for the `result_type<int32, status_code>` selected by `max(2, 3)`.
 
 ## Example
 
@@ -94,7 +95,8 @@ import { write } from "@std/io";
 import { max } from "@std/math";
 
 function main(): int32 {
-    write(max(2, 3));
+    result_type<int32, status_code> result = max(2, 3);
+    write(result.get());
     write("\n");
     return 0;
 }

@@ -1,8 +1,8 @@
 # Standard library design
 
-**Status:** implemented in Zlang 0.25. The catalog below is the allowed namespace map; the
-implemented standard functions are the deterministic `random` generators and the
-`@std/program_options` domain.
+**Status:** implemented in Zlang 0.25; since Zlang 0.37 every registered standard function returns
+`result_type<T, status_code>`. The catalog below is the allowed namespace map; the registered
+functions live in `io`, `math`, `program_options`, `random` and `strings`.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
 
 The following domains are **planned only** and are not registered or importable yet:
@@ -87,6 +87,32 @@ import { tcp_listener, tcp_connect, send_bytes } from "networking";
 import { parse_int32, starts_with, to_upper } from "text";
 ```
 
+## Uniform result contract (0.37)
+
+Every registered standard function in `io`, `math`, `program_options`, `random` and `strings`
+returns `result_type<T, status_code>`. `T` is the function's obvious ideal value, `code` is a
+`status_code`, and `what` is a bounded read-only message view. The payloads follow the function
+names: numeric results for `math` and the numeric `random` generators, the transferred `int32` byte
+count for `io`, the `uint32` argument count or a bounded `string`/`boolean` value for
+`program_options`, and a `string` or `boolean` value for `strings`. An emitter, header or
+registration entry that gives a stdlib function a bare scalar return is out of conformance.
+
+A pure or total function returns `STATUS_SUCCESS` for valid input. Programmer and resource errors
+such as null storage, zero capacity, invalid offsets and capacity overflow remain traps; a trapped
+function does not return a result. Recoverable outcomes are reported through `code` and `what`.
+
+`read` and `read_line` have two overload shapes. The convenience overload reads from implicit
+`STDIN` at offset `0` into a caller-owned destination with its declared capacity. The explicit
+overload takes a borrowed stream and a bounded offset/count window. Both return
+`result_type<int32, status_code>` with the number of transferred bytes in `value`. `read` copies
+raw bytes into the destination and keeps a newline when it fits the window; `read_line` stops at a
+newline and drops the delimiter. Neither overload copies buffer bytes into new storage.
+
+Parameter modes are unchanged. `clone` copies a scalar or a trivial descriptor: cloning a `string`
+copies only the `zlang_string_t` descriptor, not its bytes, and cloning a `stream` copies a borrowed
+handle. `reference` is a mutable caller-owned destination; `const reference` is a borrowed view that
+is not mutated.
+
 ## Generated C provenance
 
 Generated C should tell the reader where each name comes from. Prefixes are ownership clues, not
@@ -160,8 +186,10 @@ implemented.
 
 `generate_float32` and `generate_float64` use the same deterministic PRNG as the int32 generators.
 They produce values in `[from, to)` and trap on invalid or non-finite bounds. `cryptography` remains
-deferred until there is a stable security and entropy policy. `read` keeps the logical newline in the destination; `read_line` removes it. CRLF is normalized to LF so results are identical on every platform. `@std/strings` is the canonical string domain; `@std/text` is not part of the catalog. Avoid adding
-a domain before its capability has a clear boundary.
+deferred until there is a stable security and entropy policy. `read` keeps the logical newline in the
+destination when it fits the window; `read_line` drops the delimiter. Bytes are copied as-is, with
+no CRLF normalization. `@std/strings` is the canonical string domain; `@std/text` is not part of
+the catalog. Avoid adding a domain before its capability has a clear boundary.
 
 ## Classification dimensions
 
@@ -204,6 +232,10 @@ axis is missing.
 - `STATUS` — returns an explicit status value.
 - `TOTAL` — valid for every argument allowed by the type system.
 
+Since 0.37 every registered function also carries a `status_code` in its result. `TRAP` covers
+programmer and resource errors that do not return; `STATUS` covers recoverable outcomes reported in
+`result.code`. A pure or total path reports `STATUS_SUCCESS`.
+
 ### Portability
 
 - `PORTABLE` — works the same on every supported target.
@@ -215,8 +247,9 @@ axis is missing.
 - `BARRIER` — `--tto` may fold arguments but never the call result.
 - `NO_CSE` — repeated calls must not share a cached result.
 
-`random.generate_int32` is `DRAFT`, `UNSAFE`, `OPAQUE`, `ENTROPY`, `VALUE`, `TRAP`, `PORTABLE` and
-`BARRIER` until the PRNG decision is made.
+`random.generate_int32` is `DRAFT`, `UNSAFE`, `OPAQUE`, `ENTROPY`, `VALUE`, `TRAP STATUS`, `PORTABLE`
+and `BARRIER` until the PRNG decision is made. It returns `result_type<int32, status_code>`:
+invalid bounds trap, and a valid draw reports `STATUS_SUCCESS`.
 
 ## Registration
 
@@ -226,14 +259,14 @@ Each domain owns a registry file. Functions are registered declaratively:
 zlang_std_function(
     DOMAIN random
     NAME generate_int32
-    SIGNATURE "function generate_int32(clone int32 from, clone int32 to): int32"
+    SIGNATURE "function generate_int32(clone int32 from, clone int32 to): result_type<int32, status_code>"
     C_SYMBOL zlang_std_random_generate_int32
     LIFECYCLE DRAFT
     SAFETY UNSAFE
     EVALUATION OPAQUE
     DETERMINISM ENTROPY
     RESOURCE VALUE
-    ERROR TRAP
+    ERROR TRAP STATUS
     PORTABILITY PORTABLE
     OPTIMIZER BARRIER
     DEPENDS "")
@@ -245,14 +278,14 @@ A function that uses another standard function names the dependency by full regi
 zlang_std_function(
     DOMAIN algorithms
     NAME shuffle_int32
-    SIGNATURE "function shuffle_int32(clone array values): array"
+    SIGNATURE "function shuffle_int32(clone array values): result_type<array, status_code>"
     C_SYMBOL zlang_std_algorithms_shuffle_int32
     LIFECYCLE DRAFT
     SAFETY UNSAFE
     EVALUATION OPAQUE
     DETERMINISM ENTROPY
     RESOURCE VALUE
-    ERROR TRAP
+    ERROR TRAP STATUS
     PORTABILITY PORTABLE
     OPTIMIZER BARRIER
     DEPENDS "random.generate_int32")

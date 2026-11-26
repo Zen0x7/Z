@@ -83,6 +83,7 @@ function isDocsActive(to: string) {
           class="nav__item"
           :class="isDocsActive(link.to) && 'nav__item--on'"
         >
+          <LabIcon v-if="link.label === 'Playground'" />
           {{ link.label }}
         </NuxtLink>
       </nav>
@@ -97,6 +98,7 @@ function isDocsActive(to: string) {
           class="nav__item"
           :class="isDocsActive(link.to) && 'nav__item--on'"
         >
+          <LabIcon v-if="link.label === 'Playground'" />
           {{ link.label }}
         </NuxtLink>
         <template v-for="link in projectLinks" :key="link.label">

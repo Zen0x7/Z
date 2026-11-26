@@ -89,4 +89,4 @@ A declaration may list up to four type parameters. An application may pass up to
 | `STATUS_INVALID_ARGUMENT` | invalid argument |
 | `STATUS_CAPACITY` | capacity exceeded |
 
-The compiler maps canonical applications to the layouts in `<zlang/standard/result/result.h>`. `what` is a read-only view of a fixed literal message. No runtime formatting or allocation is performed. Standard library functions keep their existing signatures; none returns a native result.
+The compiler maps canonical applications to the layouts in `<zlang/standard/result/result.h>`. `what` is a read-only view of a fixed literal message. No runtime formatting or allocation is performed. Since Zlang 0.37 every registered standard library function returns `result_type<T, status_code>`; `T` is its obvious ideal value, pure and total functions report `STATUS_SUCCESS` for valid input, and programmer and resource errors remain traps.

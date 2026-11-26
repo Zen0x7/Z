@@ -33,15 +33,15 @@ function read_line(clone stream source, reference string destination,
                    uint32 offset, uint32 count): result_type<int32, status_code>
 ```
 
-The first overload reads from `stdin` at offset `0` for the declared capacity.
+The two declarations are overloads of one function. The convenience overload takes a `reference string` destination (caller-owned mutable bounded storage) and reads implicit `STDIN` from offset `0` for the declared capacity. The explicit overload takes a `clone stream` source, a borrowed descriptor rather than a copy of the device, and reads into a bounded `offset`/`count` window. Both overloads stop at the newline and drop the delimiter.
 
 ## Result
 
-`value` is the number of content bytes written. `code` is `STATUS_SUCCESS`, `STATUS_END_OF_INPUT` when no bytes were read at EOF, or `STATUS_IO_ERROR` on stream failure. A trailing `\r` remains in the view on hosts that do not translate CRLF in text mode.
+`value` is the number of content bytes written, `code` is `STATUS_SUCCESS`, `STATUS_END_OF_INPUT` when no bytes were read at EOF, or `STATUS_IO_ERROR` on stream failure, and `what` is a bounded read-only view of the fixed status message. A trailing `\r` remains in the view on hosts that do not translate CRLF in text mode. The C helper returns `zlang_std_result_i32_status_t`, not a bare `int32_t`.
 
 ## Bounds and ownership
 
-The destination remains owned by the caller. Invalid offsets, null storage and capacity overflow trap. No allocation occurs.
+The destination remains owned by the caller. `offset + count` must fit in the declared capacity. Invalid offsets, null storage and capacity overflow trap. No allocation occurs.
 
 ## Generated C
 

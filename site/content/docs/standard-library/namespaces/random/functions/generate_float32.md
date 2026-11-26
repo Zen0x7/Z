@@ -16,7 +16,7 @@ activation_macros:
 
 ## Summary
 
-`generate_float32` returns one 32-bit floating-point value from a caller-specified range.
+`generate_float32` reports one 32-bit floating-point value from a caller-specified range in `result_type<float, status_code>`.
 
 ## Import
 
@@ -27,7 +27,7 @@ import { generate_float32 } from "@std/random";
 ## Signature
 
 ```zlang
-function generate_float32(clone float from, clone float to): float
+function generate_float32(clone float from, clone float to): result_type<float, status_code>
 ```
 
 Both parameters are passed by value.
@@ -43,7 +43,7 @@ Both parameters are passed by value.
 
 ## Result
 
-Returns one `float` from the range `[from, to)` before floating-point rounding. The implementation takes one runtime draw as a fraction below 1, computes the range in C `double`, and converts the result to `float`. Do not expect a specific value or sequence.
+`value`/`get()` holds one `float` from the range `[from, to)` before floating-point rounding. `code` is a `status_code` set to `STATUS_SUCCESS` for valid bounds, and `what` is a bounded read-only view of the fixed status message. The C helper returns `zlang_std_result_f32_status_t`, not a bare `float`. The implementation takes one runtime draw as a fraction below 1, computes the range in C `double`, and converts the value to `float`. Do not expect a specific value or sequence.
 
 ## Bounds and ownership
 
@@ -51,7 +51,7 @@ Both bounds are values. The generator changes the injected runtime context and d
 
 ## Errors and traps
 
-`from > to` or a non-finite bound traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4). A non-finite computed range traps with the same code. No status value reaches Zlang, and generated C terminates through the runtime trap sink.
+`from > to` or a non-finite bound traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4). A non-finite computed range traps with the same code. Generated C terminates through the runtime trap sink, and a trapped call returns no result. There is no recoverable error status: every returned `code` is `STATUS_SUCCESS`.
 
 ## State and concurrency
 
@@ -65,16 +65,17 @@ The registry marks `generate_float32` as stateful and opaque. Each call advances
 #define ZLANG_STD_RANDOM_GENERATE_FLOAT32
 ```
 
-The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_float32.h`. The header defines `zlang_std_random_generate_float32(zlang_runtime_context_t *context, float from, float to)` as a `ZLANG_STATIC_INLINE` wrapper; the injected context comes first.
+The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_float32.h`. The header defines `zlang_std_random_generate_float32(zlang_runtime_context_t *context, float from, float to)` as a `ZLANG_STATIC_INLINE` wrapper returning `zlang_std_result_f32_status_t`; the injected context comes first.
 
 Inside the emitted `app_fn_main`, this excerpt shows the local declaration and the call:
 
 ```c
 int32_t app_fn_main(zlang_runtime_context_t *zlang_context) {
-    float app_local_value = zlang_std_random_generate_float32(zlang_context, 0.0f, 1.0f);
+    zlang_std_result_f32_status_t app_local_result =
+        zlang_std_random_generate_float32(zlang_context, 0.0f, 1.0f);
 ```
 
-`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_value` is the emitted name for the Zlang local `value`. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
+`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_result` is the emitted name for the Zlang local `result`; its `value_` field holds the generated value, `code_` holds the status, and `what_` is the fixed message view. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
 
 ```c
 int main(void) {
@@ -93,8 +94,8 @@ import { write } from "@std/io";
 import { generate_float32 } from "@std/random";
 
 function main(): int32 {
-    float value = generate_float32(0.0f, 1.0f);
-    write(value);
+    result_type<float, status_code> result = generate_float32(0.0f, 1.0f);
+    write(result.get());
     write("\n");
     return 0;
 }

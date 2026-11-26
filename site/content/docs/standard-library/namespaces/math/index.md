@@ -10,7 +10,7 @@ navigation:
 
 # Mathematics
 
-`@std/math` computes scalar numeric results from scalar inputs. Every overload takes its arguments by clone and returns a value of the same numeric type. The functions do not allocate, buffer, or write into caller-owned storage.
+`@std/math` computes scalar numeric results from scalar inputs. Every overload takes its arguments by clone and returns `result_type<T, status_code>`, where `T` is the same numeric type as the computed value. Read the numeric result through `value`/`get()`; `code` is a `status_code` that is `STATUS_SUCCESS` for valid input, and `message` is a bounded read-only view of the fixed status message. The functions do not allocate, buffer, or write into caller-owned storage.
 
 ## Import
 
@@ -25,7 +25,7 @@ Import the names you call. The compiler resolves each call to an overload from t
 - `abs` returns the magnitude of one value.
 - `clamp` confines a value to an inclusive range.
 - `min` and `max` select one of two values.
-- `sqrt` applies the square-root helper to finite, non-negative input. It returns values up to one unchanged; see the function page for the exact range behavior.
+- `sqrt` applies the square-root helper to finite, non-negative input. Its result value is unchanged for inputs up to one; see the function page for the exact range behavior.
 
 Each name has overloads for `int32`, `uint32`, `int64` and `uint64`. `abs`, `clamp`, `min` and `max` also have `float` and `double` overloads. `sqrt` has `float` and `double` overloads only. Zlang has no implicit conversion between numeric types, so all arguments of a call must match the selected overload.
 
@@ -33,13 +33,13 @@ Integer literals without a suffix have type `int32`. A `u` suffix selects `uint3
 
 ## Types
 
-`@std/math` introduces no dedicated type. It operates on the six numeric primitives. `float` is IEEE-754 binary32 and `double` is IEEE-754 binary64.
+`@std/math` introduces no dedicated type. It operates on the six numeric primitives, and every overload wraps its numeric result in `result_type<T, status_code>`. `float` is IEEE-754 binary32 and `double` is IEEE-754 binary64.
 
-Signed `abs` traps on the minimum value of its type. `clamp` traps when its lower bound exceeds its upper bound. The `float` and `double` overloads of `clamp` and `sqrt` also trap on non-finite input. Each trap uses a fixed runtime code and emits no message.
+Valid inputs yield `STATUS_SUCCESS`. Signed `abs` traps on the minimum value of its type. `clamp` traps when its lower bound exceeds its upper bound. The `float` and `double` overloads of `clamp` and `sqrt` also trap on non-finite input. Each trap uses a fixed runtime code and emits no message; no additional recoverable status is defined.
 
 ## State and activation
 
-The registry marks every math entry as not stateful and opaque. The emitted calls pass values directly; no hidden context argument is added. The standard headers own no mutable globals, so repeated calls are independent.
+The registry marks every math entry as not stateful and opaque. The emitted calls pass values directly and return canonical result structs; no hidden context argument is added. The standard headers own no mutable globals, so repeated calls are independent.
 
 The registry records one activation macro per overload. The emitter also activates the first overload registered under an imported name at the import statement. The `sqrt` and `abs` pages describe the resulting macro behavior.
 

@@ -133,3 +133,20 @@ borrows a bounded view. Neither operation copies buffer bytes.
 `zlang_std_status_is_ok`. Methods declared in generic structs are copied into each specialization
 with substituted type names and emitted as ordinary C functions. No vtable or runtime dispatch is
 introduced.
+
+## Uniform stdlib results (0.37)
+
+Every registered function in `io`, `math`, `program_options`, `random` and `strings` has the
+registry return kind `result_type<T, status_code>`. `T` is the obvious ideal value of the operation,
+`code` carries the `status_code`, and `what` is a bounded read-only message view. Pure and total
+functions report `STATUS_SUCCESS` on valid input; programmer and resource errors remain traps and a
+trapped function does not return. The registry, public header and documentation must agree on the
+payload and status for each overload.
+
+The two `read`/`read_line` overload pairs share this shape. The convenience form uses implicit
+`STDIN` at offset `0` with the destination's declared capacity; the explicit form uses a borrowed
+stream plus a bounded offset/count window. Each returns an `int32` transferred-byte count in `value`.
+`read` copies raw bytes and keeps a newline when it fits; `read_line` stops at a newline and drops
+the delimiter. Parameter modes remain `clone` for scalars and trivial descriptors, `reference` for
+mutable caller-owned destinations and `const reference` for borrowed views; a cloned `string`
+copies only its descriptor, and a cloned `stream` copies only its borrowed handle.

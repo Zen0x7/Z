@@ -79,15 +79,18 @@ static bool zlang_parser_store_generic_name(zlang_parser_t *parser, const char *
     }
     char *const _stored_k = parser->lexer_.scratch_ + parser->lexer_.scratch_length_;
     const size_t _length_k = strlen(_name_k) + 1U;
-    if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_ ||
-        !zlang_parser_record_generic_application(
+    if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_) {
+        zlang_parser_unsupported(parser, "generic application capacity exceeded");
+        return false;
+    }
+    memcpy(_stored_k, _name_k, _length_k);
+    if (!zlang_parser_record_generic_application(
             parser, _stored_k, base_name, arguments, argument_count,
             zlang_parser_current(parser)->line_, zlang_parser_current(parser)->column_,
             is_function)) {
         zlang_parser_unsupported(parser, "generic application capacity exceeded");
         return false;
     }
-    memcpy(_stored_k, _name_k, _length_k);
     parser->lexer_.scratch_length_ += _length_k;
     *output = _stored_k;
     return true;

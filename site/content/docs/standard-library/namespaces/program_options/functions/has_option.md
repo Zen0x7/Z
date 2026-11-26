@@ -1,6 +1,6 @@
 ---
 title: has_option
-description: Report whether host arguments contain an exact option string.
+description: Report whether host arguments contain an exact option string in result_type<boolean, status_code>.
 domain: program_options
 kind: function
 status: implemented
@@ -16,7 +16,7 @@ activation_macros:
 
 ## Summary
 
-`has_option` reports whether the host arguments contain an exact byte match for an option string.
+`has_option` reports whether the host arguments contain an exact byte match for an option string in `result_type<boolean, status_code>`.
 
 ## Import
 
@@ -29,10 +29,10 @@ import { argument_count, has_option } from "@std/program_options";
 ## Signature
 
 ```zlang
-function has_option(reference arguments argv, clone string option): boolean
+function has_option(reference arguments argv, clone string option): result_type<boolean, status_code>
 ```
 
-The registry records an `arguments` parameter in reference mode and a `string` parameter in clone mode.
+The registry records an `arguments` parameter in reference mode and a `string` parameter in clone mode. Cloning the option string copies only its bounded descriptor, not its bytes.
 
 ## Parameters
 
@@ -45,21 +45,21 @@ The scan starts at index `1`, so the program path is not compared. `--name=value
 
 ## Result
 
-Returns `boolean`. The result is `true` when an argument after the program path equals `option` byte for byte, and `false` otherwise.
+`value`/`get()` holds `true` when an argument after the program path equals `option` byte for byte, and `false` otherwise. `code` is a `status_code` set to `STATUS_SUCCESS` on every completed call, and `what` is a bounded read-only view of the fixed status message. The C helper returns `zlang_std_result_bool_status_t`, not a bare `bool`.
 
 ## Bounds and ownership
 
 - The option must be a valid bounded string; the header reads its bytes with `memcmp`.
-- The host view and the option string stay owned by their callers.
+- The host view and the option string stay owned by their callers; cloning the option copies only its descriptor.
 - No storage is allocated and no argument bytes are changed.
 
-## Errors and traps
+## Errors and statuses
 
-`has_option` has no trap path. No match returns `false`.
+No match returns `false` in `value`/`get()` with `STATUS_SUCCESS`. The current `zlang_std_program_options_has_option` wrapper does not construct a `STATUS_INVALID_ARGUMENT` result and has no trap path. `STATUS_INVALID_ARGUMENT` is one of the `status_code` values carried by the canonical result type, but this helper does not return it: a caller must pass a valid bounded option view. Unlike `argument_at` and `option_value`, there is no unreachable status fallback here.
 
 ## State and concurrency
 
-The registry marks `has_option` as not stateful and opaque. The function reads only its arguments and owns no mutable globals. Repeated calls with the same view and option return the same boolean.
+The registry marks `has_option` as not stateful and opaque. The function reads only its arguments and owns no mutable globals. Repeated calls with the same view and option return the same boolean value and the same `STATUS_SUCCESS` code.
 
 ## Generated C
 
@@ -71,18 +71,31 @@ Importing `argument_count` and `has_option` activates both macros:
 #include <zlang/runtime/runtime.h>
 ```
 
-`<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_option` calls the shared `zlang_std_program_options_has` helper, which calls `zlang_std_program_options_argument_count`. The count helper is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_option` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION`, and the generated C does not compile.
-
-The generated function for source `main` names the `arguments` parameter `app_param_argv`. The emitter interns each distinct source string literal in first-use order; `zlang_gen_literal_1` is the generated view for `"--name"` in `tools/zc/tests/program_options.z`. This excerpt shows its declaration and the call:
+`<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_option` calls the shared `zlang_std_program_options_has_bool` helper, which calls `zlang_std_program_options_argument_count`. Both wrappers return canonical result structs:
 
 ```c
-#define ZLANG_LITERAL_1_LENGTH 6U
-static const char zlang_gen_literal_1_data[] = "--name";
-static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+ZLANG_STATIC_INLINE bool zlang_std_program_options_has_bool(const zlang_arguments_t *arguments,
+                                                            zlang_string_t option);
+
+ZLANG_STATIC_INLINE zlang_std_result_bool_status_t
+zlang_std_program_options_has_option(const zlang_arguments_t *arguments, zlang_string_t option) {
+    return zlang_std_result_bool(zlang_std_status_success_,
+                                 zlang_std_program_options_has_bool(arguments, option));
+}
+```
+
+The count helper is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_option` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION`, and the generated C does not compile.
+
+The generated function for source `main` names the `arguments` parameter `app_param_argv`. The emitter interns each distinct source string literal in first-use order; the current fixture makes `zlang_gen_literal_0` the generated view for `"--name"` in `tools/zc/tests/program_options.z`. This excerpt shows its declaration and the call:
+
+```c
+#define ZLANG_LITERAL_0_LENGTH 6U
+static const char zlang_gen_literal_0_data[] = "--name";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
 
 int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
 ...
-zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_1);
+zlang_std_result_bool_status_t app_local__has = zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_0);
 ```
 
 
@@ -93,7 +106,8 @@ import { write } from "@std/io";
 import { argument_count, has_option } from "@std/program_options";
 
 function main(int32 argc, arguments argv): int32 {
-    write(has_option(argv, "--verbose"));
+    result_type<boolean, status_code> found = has_option(argv, "--verbose");
+    write(found.get());
     write("\n");
     return 0;
 }

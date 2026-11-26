@@ -16,7 +16,7 @@ activation_macros:
 
 ## Summary
 
-`generate_uint32` returns one unsigned 32-bit value between two inclusive bounds.
+`generate_uint32` reports one unsigned 32-bit value between two inclusive bounds in `result_type<uint32, status_code>`.
 
 ## Import
 
@@ -27,7 +27,7 @@ import { generate_uint32 } from "@std/random";
 ## Signature
 
 ```zlang
-function generate_uint32(clone uint32 from, clone uint32 to): uint32
+function generate_uint32(clone uint32 from, clone uint32 to): result_type<uint32, status_code>
 ```
 
 Both parameters are passed by value.
@@ -43,7 +43,7 @@ Both parameters are passed by value.
 
 ## Result
 
-Returns one `uint32` in `[from, to]`. Both bounds are reachable. Do not expect a specific value or sequence.
+`value`/`get()` holds one `uint32` in `[from, to]`. Both bounds are reachable. `code` is a `status_code` set to `STATUS_SUCCESS` for valid bounds, and `what` is a bounded read-only view of the fixed status message. The C helper returns `zlang_std_result_u32_status_t`, not a bare `uint32_t`. Do not expect a specific value or sequence.
 
 ## Bounds and ownership
 
@@ -51,7 +51,7 @@ Both bounds are values. The generator changes the injected runtime context and d
 
 ## Errors and traps
 
-`from > to` traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4). No status value reaches Zlang, and generated C terminates through the runtime trap sink.
+`from > to` traps with `ZLANG_TRAP_INVALID_ARGUMENT` (code 4), and generated C terminates through the runtime trap sink. A trapped call returns no result. There is no recoverable error status: every returned `code` is `STATUS_SUCCESS`.
 
 ## State and concurrency
 
@@ -65,16 +65,17 @@ The registry marks `generate_uint32` as stateful and opaque. Each call advances 
 #define ZLANG_STD_RANDOM_GENERATE_UINT32
 ```
 
-The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_uint32.h`. The header defines `zlang_std_random_generate_uint32(zlang_runtime_context_t *context, uint32_t from, uint32_t to)` as a `ZLANG_STATIC_INLINE` wrapper; the injected context comes first.
+The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_uint32.h`. The header defines `zlang_std_random_generate_uint32(zlang_runtime_context_t *context, uint32_t from, uint32_t to)` as a `ZLANG_STATIC_INLINE` wrapper returning `zlang_std_result_u32_status_t`; the injected context comes first.
 
 Inside the emitted `app_fn_main`, this excerpt shows the local declaration and the call:
 
 ```c
 int32_t app_fn_main(zlang_runtime_context_t *zlang_context) {
-    uint32_t app_local_value = zlang_std_random_generate_uint32(zlang_context, 1U, 6U);
+    zlang_std_result_u32_status_t app_local_result =
+        zlang_std_random_generate_uint32(zlang_context, 1U, 6U);
 ```
 
-`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_value` is the emitted name for the Zlang local `value`. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
+`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_result` is the emitted name for the Zlang local `result`; its `value_` field holds the generated value, `code_` holds the status, and `what_` is the fixed message view. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
 
 ```c
 int main(void) {
@@ -93,8 +94,8 @@ import { write } from "@std/io";
 import { generate_uint32 } from "@std/random";
 
 function main(): int32 {
-    uint32 value = generate_uint32(1u, 6u);
-    write(value);
+    result_type<uint32, status_code> result = generate_uint32(1u, 6u);
+    write(result.get());
     write("\n");
     return 0;
 }

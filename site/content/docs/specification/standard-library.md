@@ -27,10 +27,14 @@ User modules use relative paths or `@alias/...` paths declared in `z.yaml`. Cycl
 | `@std/strings` | bounded string views |
 | `@std/program_options` | host argument views |
 
-Output uses `write` from `@std/io`. There is no built-in `print`. `read` and `read_line` take a mutable bounded string and report byte counts. Standard stateful functions share one internal runtime context; Zlang source never exposes it.
+Output uses `write` from `@std/io`. There is no built-in `print`. `read` and `read_line` take a mutable bounded string and report transferred byte counts in a result. Standard stateful functions share one internal runtime context; Zlang source never exposes it.
 
 ## Native result parity
 
 `result_type<T, status_code>` applications map to canonical C layouts in `<zlang/standard/result/result.h>`. The compiler registry, the public header and the documentation must agree for every native function. A change to one of the three requires a review of the other two.
 
-Native results introduce no allocation, formatting or reflection. Existing standard functions keep their current signatures; none returns a native result.
+Native results introduce no allocation, formatting or reflection. In Zlang 0.37 every registered function in `@std/io`, `@std/math`, `@std/program_options`, `@std/random` and `@std/strings` returns `result_type<T, status_code>`. `T` is the function's obvious ideal value, `code` carries the `status_code`, and `what` is a bounded read-only message view. Pure and total functions return `STATUS_SUCCESS` on valid input. Programmer and resource errors remain traps; a trapped function does not return.
+
+`read` and `read_line` have two overloads. The convenience overload reads from implicit `STDIN` at offset `0` into a caller-owned destination with its declared capacity. The explicit overload takes a borrowed stream and a bounded offset/count window. Both return `result_type<int32, status_code>` whose `value` is the number of bytes transferred. `read` copies raw bytes and keeps a newline when it fits the window; `read_line` stops at a newline and drops the delimiter. Neither overload copies buffer bytes into new storage.
+
+Parameter modes are unchanged: `clone` copies scalars or trivial descriptors (a cloned `string` copies its descriptor, not its bytes, and a cloned `stream` copies a borrowed handle), `reference` is a mutable caller-owned destination, and `const reference` is a borrowed view that is not mutated.

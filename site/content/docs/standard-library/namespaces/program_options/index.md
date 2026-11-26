@@ -10,9 +10,9 @@ navigation:
 
 # Program Options
 
-`@std/program_options` reads host process arguments through the `arguments` value bound to `main`. It counts arguments, reads an argument by index, matches option strings and reads the value after an option.
+`@std/program_options` reads host process arguments through the `arguments` value bound to `main`. It counts arguments, reads an argument by index, matches option strings and reads the value after an option. Every function returns `result_type<T, status_code>`: the ideal value is in `value`/`get()`, `code` is a `status_code`, and `what` is a bounded read-only view of the fixed status message.
 
-Generated C builds a `zlang_arguments_t` view from `argc` and `argv`. Every function in this domain reads that view through a pointer. Returned strings point into host-owned `argv` memory.
+Generated C builds a `zlang_arguments_t` view from `argc` and `argv`. Every function in this domain reads that view through a pointer. Returned string values are views into host-owned `argv` memory; no bytes are copied and cloning a string argument copies only its descriptor.
 
 ## Import
 
@@ -22,12 +22,12 @@ import { argument_count, argument_at, has_option, option_value, has_flag } from 
 
 ## What it does
 
-- `argument_count` returns the number of host arguments, including the program path.
-- `argument_at` returns a bounded string for a zero-based argument index.
-- `has_option` and `has_flag` report an exact byte match after the program path.
-- `option_value` returns the host argument immediately after an exact option match.
+- `argument_count` returns `result_type<uint32, status_code>` with the number of host arguments, including the program path.
+- `argument_at` returns `result_type<string, status_code>` with a bounded string view for a zero-based argument index.
+- `has_option` and `has_flag` return `result_type<boolean, status_code>` reporting an exact byte match after the program path.
+- `option_value` returns `result_type<string, status_code>` with the host argument immediately after an exact option match.
 
-No function in this domain parses `--name=value` syntax or allocates storage.
+No function in this domain parses `--name=value` syntax or allocates storage. Successful calls report `STATUS_SUCCESS`; the out-of-range and missing-value paths are described on the individual pages.
 
 ## Host arguments
 
@@ -46,6 +46,8 @@ Index `0` is the program path when the host supplies one. `argument_at(argv, 1U)
 ## Generated C activation
 
 The compiler defines one macro for each imported name. The generated C includes `<zlang/runtime/runtime.h>`, which includes `zlang/standard/program/options.h` when any program-options macro is set. The options header defines the count helper only when `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT` is defined, while `argument_at`, `has_option`, `option_value` and `has_flag` call that helper. Import `argument_count` with any of those four names. The emitted program does not compile when one of the four is imported without `argument_count`.
+
+Each helper returns its canonical `zlang_std_result_*_status_t` struct, and emitted calls assign that struct to a local before reading its `value_` field for `write`.
 
 Generated C wraps the host arguments for `main`. This excerpt comes from `tools/zc/tests/program_options.z`:
 

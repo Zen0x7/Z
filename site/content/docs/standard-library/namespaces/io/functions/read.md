@@ -33,11 +33,11 @@ function read(clone stream source, reference string destination,
               uint32 offset, uint32 count): result_type<int32, status_code>
 ```
 
-The first overload reads from `stdin` at offset `0` for the declared capacity. The explicit overload reads from any stream into a bounded window.
+The two declarations are overloads of one function. The convenience overload takes a `reference string` destination (caller-owned mutable bounded storage) and reads implicit `STDIN` from offset `0` for the declared capacity. The explicit overload takes a `clone stream` source, a borrowed descriptor rather than a copy of the device, and reads into a bounded `offset`/`count` window of the destination.
 
 ## Result
 
-`value` is the number of bytes read. `code` is `STATUS_SUCCESS`, `STATUS_END_OF_INPUT` when no bytes were read at EOF, or `STATUS_IO_ERROR` on stream failure.
+`value` is the number of bytes read, `code` is `STATUS_SUCCESS`, `STATUS_END_OF_INPUT` when no bytes were read at EOF, or `STATUS_IO_ERROR` on stream failure, and `what` is a bounded read-only view of the fixed status message. The C helper returns `zlang_std_result_i32_status_t`, not a bare `int32_t`.
 
 ## Bounds and ownership
 

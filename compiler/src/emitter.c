@@ -6529,6 +6529,41 @@ static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_em
     return zlang_append_text(emitter, "\n");
 }
 
+static bool zlang_emit_trait_method_prototypes(const zlang_program_t *program,
+                                               zlang_emitter_t *emitter) {
+    for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
+        const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
+        if (_structure_k->kind_ != zlang_statement_struct_) {
+            continue;
+        }
+        for (size_t _trait = 0U; _trait < _structure_k->uses_count_; ++_trait) {
+            const zlang_ast_statement_t *const _trait_k =
+                zlang_find_trait_statement(program, _structure_k->uses_names_[_trait]);
+            if (_trait_k == NULL) {
+                continue;
+            }
+            const size_t _end_k = _trait_k->body_start_ + _trait_k->body_count_;
+            for (size_t _member = _trait_k->body_start_;
+                 _member < _end_k && _member < program->statement_count_; ++_member) {
+                const zlang_ast_statement_t *const _method_k = &program->statements_[_member];
+                if (_method_k->kind_ != zlang_statement_function_ ||
+                    zlang_statement_in_method(program, _trait_k, _member)) {
+                    continue;
+                }
+                char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
+                if (!zlang_method_generated_name(_structure_k->name_, _method_k->name_, false,
+                                                 _name_k, sizeof(_name_k)) ||
+                    !zlang_emit_method_signature(program, emitter, _method_k, _structure_k->name_,
+                                                 _name_k) ||
+                    !zlang_append_text(emitter, ";\n")) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 static bool zlang_emit_method_prototypes(const zlang_program_t *program, zlang_emitter_t *emitter) {
     bool _header_k = false;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
@@ -6562,6 +6597,68 @@ static bool zlang_emit_method_prototypes(const zlang_program_t *program, zlang_e
         }
     }
     return !_header_k || zlang_append_text(emitter, "\n");
+}
+
+static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
+                                                zlang_emitter_t *emitter) {
+    for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
+        const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
+        if (_structure_k->kind_ != zlang_statement_struct_) {
+            continue;
+        }
+        for (size_t _trait = 0U; _trait < _structure_k->uses_count_; ++_trait) {
+            const zlang_ast_statement_t *const _trait_k =
+                zlang_find_trait_statement(program, _structure_k->uses_names_[_trait]);
+            if (_trait_k == NULL) {
+                continue;
+            }
+            const size_t _end_k = _trait_k->body_start_ + _trait_k->body_count_;
+            for (size_t _member = _trait_k->body_start_;
+                 _member < _end_k && _member < program->statement_count_; ++_member) {
+                const zlang_ast_statement_t *const _method_k = &program->statements_[_member];
+                if (_method_k->kind_ != zlang_statement_function_ ||
+                    zlang_statement_in_method(program, _trait_k, _member)) {
+                    continue;
+                }
+                char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
+                if (!zlang_method_generated_name(_structure_k->name_, _method_k->name_, false,
+                                                 _name_k, sizeof(_name_k)) ||
+                    !zlang_emit_method_signature(program, emitter, _method_k, _structure_k->name_,
+                                                 _name_k) ||
+                    !zlang_append_text(emitter, " {\n")) {
+                    return false;
+                }
+                const zlang_ast_statement_t *const _previous_struct_k = emitter->current_struct_;
+                const char *const _previous_self_k = emitter->current_self_name_;
+                const bool _previous_pointer_k = emitter->current_self_is_pointer_;
+                emitter->current_struct_ = _structure_k;
+                emitter->current_self_name_ = "self";
+                emitter->current_self_is_pointer_ = !_method_k->is_static_;
+                const zlang_emitter_scope_t _scope_k = zlang_save_scope(emitter);
+                bool _result_k = true;
+                for (size_t _parameter = 0U; _result_k && _parameter < _method_k->parameter_count_;
+                     ++_parameter) {
+                    const zlang_parameter_t *const _parameter_k =
+                        &program->parameters_[_method_k->parameter_start_ + _parameter];
+                    char _generated_k[ZLANG_EMITTED_NAME_CAPACITY];
+                    _result_k = zlang_register_method_parameter(emitter, _parameter_k, _generated_k,
+                                                                sizeof(_generated_k));
+                }
+                if (_result_k) {
+                    _result_k = zlang_emit_body(program, _method_k->body_start_,
+                                                _method_k->body_count_, emitter, 1U);
+                }
+                zlang_restore_scope(emitter, _scope_k);
+                emitter->current_struct_ = _previous_struct_k;
+                emitter->current_self_name_ = _previous_self_k;
+                emitter->current_self_is_pointer_ = _previous_pointer_k;
+                if (!_result_k || !zlang_append_text(emitter, "}\n\n")) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
 }
 
 static bool zlang_emit_method_definitions(const zlang_program_t *program,
@@ -6671,6 +6768,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         (!emitter->collecting_array_helpers_ && !zlang_emit_array_helpers(program, emitter)) ||
         !zlang_emit_generated_declarations(program, emitter) ||
         !zlang_emit_method_prototypes(program, emitter) ||
+        !zlang_emit_trait_method_prototypes(program, emitter) ||
         !zlang_emit_vtable_thunk_prototypes(program, emitter) ||
         !zlang_emit_vtable_instances(program, emitter) ||
         !zlang_emit_function_prototypes(program, emitter)) {
@@ -6678,6 +6776,9 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
     }
 
     if (!zlang_emit_method_definitions(program, emitter)) {
+        return false;
+    }
+    if (!zlang_emit_trait_method_definitions(program, emitter)) {
         return false;
     }
     if (!zlang_emit_vtable_thunk_definitions(program, emitter)) {

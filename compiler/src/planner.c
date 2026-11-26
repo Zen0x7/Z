@@ -61,6 +61,8 @@ static bool zlang_statement_in_method(const zlang_program_t *program,
     return false;
 }
 
+static bool zlang_struct_has_descendant(const zlang_program_t *program, const char *name);
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_element_size(const zlang_program_t *program, const char *type_name,
                                uint32_t depth,
@@ -95,6 +97,17 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
         return false;
     }
     uint32_t _total_k = 0U;
+    if (_record_k->base_name_ != NULL) {
+        uint32_t _base_size_k = 0U;
+        if (!zlang_element_size(program, _record_k->base_name_, depth + 1U, &_base_size_k) ||
+            _total_k > UINT32_MAX - _base_size_k) {
+            return false;
+        }
+        _total_k = _base_size_k;
+    } else if (zlang_struct_has_descendant(program, type_name)) {
+        const uint32_t _hidden_size_k = (uint32_t)(sizeof(void *) + sizeof(uint32_t));
+        _total_k += _hidden_size_k;
+    }
     const size_t _end_k = _record_k->body_start_ + _record_k->body_count_;
     for (size_t _index = _record_k->body_start_;
          _index < _end_k && _index < program->statement_count_; ++_index) {
@@ -120,6 +133,20 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
     }
     *size = _total_k;
     return true;
+}
+
+static bool zlang_struct_has_descendant(const zlang_program_t *program, const char *name) {
+    if (name == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_struct_ && _statement_k->base_name_ != NULL &&
+            strcmp(_statement_k->base_name_, name) == 0) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static bool zlang_is_declaration(const zlang_ast_statement_t *statement) {

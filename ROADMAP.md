@@ -73,10 +73,51 @@ Build scripts in `tools/wasm/` produce artifacts from pinned upstream LLVM, Emsc
 sources. Artifacts are static files under `site/public/compiler/`, with notices in
 `site/THIRD_PARTY_NOTICES.md`. No source or binary is sent to a server.
 
+## Planned 0.39 — syntax and interface contracts
+
+The next language level adds eight syntax features and replaces field-only trait requirements with
+named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
+
+| # | Feature | Syntax |
+| --- | --- | --- |
+| 1 | jump and labels | `label:` and `jump label;` |
+| 2 | switch | `switch (value) { case literal: ... default: ... }` |
+| 3 | match | `match (value) { literal => expression, _ => expression }` |
+| 4 | ternary | `condition ? then_expression : else_expression` |
+| 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` |
+| 6 | do-while | `do { ... } while (condition);` |
+| 7 | range literal | `start..end` for exclusive `uint32` ranges |
+| 8 | labeled loop jumps | `outer: while (...) { break outer; continue outer; }` |
+
+Interfaces replace ad-hoc trait field requirements:
+
+```zlang
+interface MyInterface {
+    int32 value;
+    function foo(): int32;
+}
+
+trait MyTrait requires MyInterface {
+    function foo(): int32 {
+        return self.value;
+    }
+}
+
+struct MyStruct implements MyInterface {
+    use MyTrait;
+}
+```
+
+An interface is a named contract with fields and method signatures. A trait requires one or more
+interfaces and supplies method bodies. A struct implements interfaces and uses traits. The compiler
+checks that every implemented interface field and method exists on the struct, directly or through
+a used trait, and that every trait requirement is satisfied by an implemented interface.
+
 ## Remaining work
 
 - Add a binary verifier for native stdlib parity between registry entries, public headers and docs.
 - Extend `dump()` to user-defined `T` only when `T` implements `dump(): string`.
+- Implement planned 0.39 syntax in order, one feature at a time.
 - Add new IO domains only through the existing native `stream` contract.
 - Keep generic traits, generic inheritance and variadic type packs out of scope until explicitly
   locked.

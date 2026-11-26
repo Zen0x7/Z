@@ -238,3 +238,32 @@ byte count in `value`. `read` copies raw bytes and keeps a newline when it fits 
 descriptors: a cloned `string` copies its descriptor, not its bytes, and a cloned `stream` copies a
 borrowed handle. `reference` is a mutable caller-owned destination; `const reference` is a borrowed
 view.
+
+
+## Planned 0.39 grammar
+
+These productions are planned and are not accepted by 0.38:
+
+```text
+labelStatement    = identifier ":" statement ;
+jumpStatement     = "jump" identifier ";" ;
+switchStatement   = "switch" "(" expression ")" "{" caseClause* defaultClause? "}" ;
+caseClause        = "case" literal ":" statement* ;
+defaultClause     = "default" ":" statement* ;
+matchExpression   = "match" "(" expression ")" "{" matchArm ( "," matchArm )* "}" ;
+matchArm          = ( literal | "_" ) "=>" expression ;
+ternaryExpression = expression "?" expression ":" expression ;
+doWhileStatement  = "do" block "while" "(" expression ")" ";" ;
+rangeExpression   = expression ".." expression ;
+interfaceDeclaration = "interface" identifier "{" interfaceMember* "}" ;
+interfaceMember   = declaration | functionSignature ;
+traitDeclaration  = "trait" identifier "requires" identifier ( "," identifier )*
+                    "{" functionDeclaration* "}" ;
+structDeclaration = "struct" identifier typeParameters? inheritance?
+                    implements? "{" structMember* "}" ;
+implements        = "implements" identifier ( "," identifier )* ;
+useStatement      = "use" identifier ( "," identifier )* ";" ;
+```
+
+Named interfaces replace field-only trait requirements. A struct satisfies an interface when its
+fields and methods exist directly or through a used trait.

@@ -80,6 +80,37 @@ Status constants are `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
 `STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`. C symbols and status enum constants remain
 stable across the Zlang-facing lowercase type rename.
 
+## Planned 0.39 syntax
+
+Zlang 0.39 is planned, not implemented in 0.38. It adds eight syntax forms: labeled jumps with
+`jump label;`, `switch`, value-producing `match`, ternary `?:`, bitwise and shift operators,
+`do { ... } while (...)`, exclusive `uint32` range literals `start..end`, and labeled
+`break`/`continue`.
+
+It also replaces field-only trait requirements with named interfaces:
+
+```zlang
+interface MyInterface {
+    int32 value;
+    function foo(): int32;
+}
+
+trait MyTrait requires MyInterface {
+    function foo(): int32 {
+        return self.value;
+    }
+}
+
+struct MyStruct implements MyInterface {
+    use MyTrait;
+}
+```
+
+Interfaces declare fields and method signatures. Traits declare required interfaces and provide
+method bodies. Structs declare implemented interfaces and used traits. A struct satisfies an
+interface only when all fields and signatures exist directly or through a used trait. A trait is
+valid for a struct only when its required interfaces are implemented by that struct.
+
 ## Traps
 
 `zlang_trap(code)` terminates without formatting, allocating or printing. Codes are:

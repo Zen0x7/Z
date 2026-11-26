@@ -77,7 +77,7 @@ The registry marks `abs` as not stateful and opaque. The emitter passes the argu
 
 ## Generated C
 
-Importing `abs` activates `ZLANG_STD_MATH_ABS_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The example below produces this excerpt:
+Importing `abs` activates `ZLANG_STD_MATH_ABS_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The Example produces this excerpt:
 
 ```c
 #define ZLANG_STD_MATH_ABS_I32
@@ -85,7 +85,6 @@ Importing `abs` activates `ZLANG_STD_MATH_ABS_I32` from the first registry entry
 zlang_std_math_abs_i32(zlang_neg_i32(7));
 ```
 
-A negative literal is first lowered through the runtime's checked negation helper, `zlang_neg_i32`.
 
 The header guards do not match the registry macros. `math.h` defines all `abs` helpers, including the unsigned ones, only when `ZLANG_STD_MATH_ABS_ACTIVE` is defined. That guard lists `ZLANG_STD_MATH_ABS_I32`, `ZLANG_STD_MATH_ABS_I64`, `ZLANG_STD_MATH_ABS_F32` and `ZLANG_STD_MATH_ABS_F64`; it omits `ZLANG_STD_MATH_ABS_U32` and `ZLANG_STD_MATH_ABS_U64`. Generated C imports activate `ZLANG_STD_MATH_ABS_I32` first, so the unsigned helpers are present in generated programs. A hand-written translation unit that defines only an unsigned `abs` macro does not declare them.
 

@@ -70,13 +70,19 @@ The import activates one macro:
 #include <zlang/runtime/runtime.h>
 ```
 
-`runtime.h` then includes `zlang/standard/strings/strings.h`. For `starts_with("abc", "ab")`, the emitted call is:
+`runtime.h` then includes `zlang/standard/strings/strings.h`. The emitter interns each distinct source string literal in first-use order. The two literals in `starts_with("abc", "ab")` become read-only views named `zlang_gen_literal_0` and `zlang_gen_literal_1`. This excerpt from the Example shows their declarations and call statement:
 
 ```c
-zlang_std_io_write_bool(zlang_std_strings_starts_with(zlang_gen_literal_0, zlang_gen_literal_1));
+#define ZLANG_LITERAL_0_LENGTH 3U
+static const char zlang_gen_literal_0_data[] = "abc";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+#define ZLANG_LITERAL_1_LENGTH 2U
+static const char zlang_gen_literal_1_data[] = "ab";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+
+zlang_std_strings_starts_with(zlang_gen_literal_0, zlang_gen_literal_1);
 ```
 
-The registry symbol and macro match the emitted call.
 
 ## Example
 

@@ -7,7 +7,7 @@ navigation:
 
 # Language
 
-Zlang gives every value a known shape. Array capacities are explicit or inferred from an initializer. Mutable strings declare a capacity. The compiler checks those numbers before it writes C.
+Zlang fixes types and capacities before it emits C. Arrays use an explicit capacity or infer one from a brace initializer. A string built with `+` from a variable declares a byte capacity. The compiler rejects missing capacities before it writes C; bounds checks stay in the emitted program.
 
 ```zlang
 import { write } from "@std/io";
@@ -26,7 +26,9 @@ function main(): integer {
 }
 ```
 
-The array holds four integers. `foreach` walks those four elements. Nothing grows while the program runs.
+The array holds four integers. `foreach` walks those four elements with a native C loop. No storage grows while the program runs.
+
+For the generated loop and its names, see [Emitted C](/docs/compiler/emitted-c).
 
 ## Pages at this level
 

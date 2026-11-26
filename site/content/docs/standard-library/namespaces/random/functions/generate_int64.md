@@ -47,7 +47,7 @@ Returns one `int64` in `[from, to]`. Both bounds are reachable. Do not expect a 
 
 ## Bounds and ownership
 
-Both bounds are values. No caller-owned storage is read or written, and the runtime does not allocate.
+Both bounds are values. The generator changes the injected runtime context and does not allocate.
 
 ## Errors and traps
 
@@ -59,26 +59,32 @@ The registry marks `generate_int64` as stateful and opaque. Each call advances o
 
 ## Generated C
 
-The import activates the macro before the runtime include:
+`import { generate_int64 } from "@std/random";` activates `ZLANG_STD_RANDOM_GENERATE_INT64`:
 
 ```c
 #define ZLANG_STD_RANDOM_GENERATE_INT64
-#include <zlang/runtime/runtime.h>
 ```
 
-`runtime.h` then includes the shared random state header and `<zlang/standard/random/generate_int64.h>`. The C helper takes the context first:
+The emitted preamble also includes `<zlang/runtime/runtime.h>`. That header includes `zlang/standard/random/state.h` and `zlang/standard/random/generate_int64.h`. The header defines `zlang_std_random_generate_int64(zlang_runtime_context_t *context, int64_t from, int64_t to)` as a `ZLANG_STATIC_INLINE` wrapper; the injected context comes first.
+
+Inside the emitted `app_fn_main`, this excerpt shows the local declaration and the call:
 
 ```c
-int64_t zlang_std_random_generate_int64(zlang_runtime_context_t *context, int64_t from, int64_t to);
+int32_t app_fn_main(zlang_runtime_context_t *zlang_context) {
+    int64_t app_local_value = zlang_std_random_generate_int64(zlang_context, 1LL, 6LL);
 ```
 
-In the example's generated `app_fn_main`, the call is:
+`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_value` is the emitted name for the Zlang local `value`. `zlang_context` is the hidden parameter that carries the random state into that function. The generated entry point creates the state and passes it:
 
 ```c
-int64_t app_local_value = zlang_std_random_generate_int64(zlang_context, 1LL, 6LL);
+int main(void) {
+    zlang_runtime_context_t _zlang_context = { 0x6D2B79F5U };
+    return (int)app_fn_main(&_zlang_context);
+}
 ```
 
-Zlang functions receive the hidden context as `zlang_context`. Generated `main` creates `_zlang_context` and passes `&_zlang_context`.
+`_zlang_context` is the local state object in the emitted `main`, and `zlang_runtime_context_t` is its runtime type.
+
 
 ## Example
 

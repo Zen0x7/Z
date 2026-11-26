@@ -39,4 +39,4 @@ function main(): integer {
 }
 ```
 
-`foreach` becomes a C `for` loop. The generated binary contains no callback.
+`foreach` lowers to a native C `for` loop over the array elements. The generated binary contains no callback. For the generated loop variable and array field names, see [Emitted C](/docs/compiler/emitted-c).

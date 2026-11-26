@@ -21,6 +21,8 @@ Binary arithmetic and comparisons require both operands to have the same type. T
 
 ## Indexing and fields
 
+Inside a function with an array and a struct value, indexed reads and field writes use these forms:
+
 ```zlang
 integer first = values[0];
 point.x = 3;
@@ -30,11 +32,13 @@ String indexing reads one byte as `unsigned`. String elements are read-only. Arr
 
 ## Concatenation
 
-String literals fold at compile time. Concatenation involving a variable needs an explicit string capacity and copies into caller-owned storage.
+String literals fold at compile time. Concatenation involving a variable needs an explicit string capacity and copies into caller-owned storage:
 
 ```zlang
 string[32] full = prefix + " value";
 ```
+
+Here `prefix` is a declared `string`.
 
 ## Builtins
 

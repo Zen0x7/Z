@@ -47,4 +47,4 @@ function main(integer argc, arguments argv): integer {
 
 ## Visibility
 
-Zlang has no mutable globals. Functions receive state through parameters. Stateful standard functions add a hidden context parameter in generated C; Zlang source does not declare it.
+Zlang has no mutable globals. Functions receive state through parameters. Stateful standard functions receive a runtime context as an extra C argument; `zc` builds that argument in `main`. The Zlang signature does not include it.

@@ -47,6 +47,24 @@ Index `0` is the program path when the host supplies one. `argument_at(argv, 1U)
 
 The compiler defines one macro for each imported name. The generated C includes `<zlang/runtime/runtime.h>`, which includes `zlang/standard/program/options.h` when any program-options macro is set. The options header defines the count helper only when `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT` is defined, while `argument_at`, `has_option`, `option_value` and `has_flag` call that helper. Import `argument_count` with any of those four names. The emitted program does not compile when one of the four is imported without `argument_count`.
 
+Generated C wraps the host arguments for `main`. This excerpt comes from `tools/zc/tests/program_options.z`:
+
+```c
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
+
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv) {
+    (void)app_param_argc;
+    ...
+}
+
+int main(int argc, char **argv) {
+    zlang_arguments_t _zlang_arguments = { argc, argv };
+    return (int)app_fn_main(argc, &_zlang_arguments);
+}
+```
+
+`app_fn_main` is the generated function for source `main`. The names `app_param_argc` and `app_param_argv` come from `main`'s `argc` and `arguments argv` parameters. The options helpers read the `zlang_arguments_t` view, not `app_param_argc`. The source string literals in the fixture become generated views named `zlang_gen_literal_N`; the function pages show their declarations.
+
 ## Pages at this level
 
 - [Overview](/docs/standard-library/namespaces/program_options) — domain model.

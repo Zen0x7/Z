@@ -6,6 +6,14 @@ const { data: page } = await useAsyncData(`content-${route.path}`, () => {
   return queryCollection('content').path(route.path).first()
 })
 
+const { data: surroundings } = await useAsyncData(`docs-pager-${route.path}`, () => {
+  return queryCollectionItemSurroundings('content', route.path, {
+    before: 1,
+    after: 1,
+    fields: ['description'],
+  })
+})
+
 if (!page.value) {
   throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
 }
@@ -14,6 +22,8 @@ const isDocsPage = computed(() => route.path.startsWith('/docs'))
 const pageTitle = computed(() => page.value?.title || 'Zlang')
 const pageDescription = computed(() => page.value?.description || 'Documentation for the Zlang language.')
 const tocLinks = computed(() => (page.value as { body?: { toc?: { links?: unknown[] } } } | null)?.body?.toc?.links ?? [])
+const previousPage = computed(() => surroundings.value?.[0] ?? null)
+const nextPage = computed(() => surroundings.value?.[1] ?? null)
 
 const breadcrumbs = computed(() => {
   const match = findNavMatch(navigation.value || [], route.path)
@@ -51,6 +61,29 @@ useSeoMeta({
       </nav>
       <article class="prose-zlang">
         <ContentRenderer :value="page" />
+
+        <nav v-if="isDocsPage && (previousPage || nextPage)" class="docs-pager" aria-label="Documentation pager">
+          <NuxtLink
+            v-if="previousPage"
+            :to="previousPage.path"
+            class="docs-pager__link docs-pager__link--prev"
+          >
+            <span class="docs-pager__label">← Previous</span>
+            <span class="docs-pager__title">{{ previousPage.title }}</span>
+            <span v-if="previousPage.description" class="docs-pager__description">{{ previousPage.description }}</span>
+          </NuxtLink>
+          <span v-else />
+
+          <NuxtLink
+            v-if="nextPage"
+            :to="nextPage.path"
+            class="docs-pager__link docs-pager__link--next"
+          >
+            <span class="docs-pager__label">Next →</span>
+            <span class="docs-pager__title">{{ nextPage.title }}</span>
+            <span v-if="nextPage.description" class="docs-pager__description">{{ nextPage.description }}</span>
+          </NuxtLink>
+        </nav>
       </article>
     </div>
     <DocToc v-if="isDocsPage && tocLinks.length" :links="tocLinks as any" />

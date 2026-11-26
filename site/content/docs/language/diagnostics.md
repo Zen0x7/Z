@@ -7,13 +7,23 @@ navigation:
 
 # Diagnostics
 
-The compiler prints errors with a stable code and a source location.
+The compiler prints errors with a stable code and a source location. For this source:
 
-```console
-input.z:12:5: error[ZLANG3001]: cannot infer array extent
+```zlang
+function main(): integer {
+    integer value = 1 @ 2;
+    return 0;
+}
 ```
 
-The file, line, column and code belong to the source construct that caused the error.
+`zc` prints:
+
+```console
+main.z:2:23: error[ZLANG1003]: invalid character
+main.z:1:1: error[ZLANG1001]: module source has invalid tokens
+```
+
+Each line gives a file, line, column and code. `zc` can print more than one diagnostic for one source file. Match on the code; the message text is not a stable API.
 
 ## Common semantic codes
 

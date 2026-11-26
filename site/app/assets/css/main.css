@@ -433,6 +433,65 @@
     text-decoration: none;
   }
 
+  .docs-pager {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .docs-pager__link {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 16px;
+    border: 2px solid var(--edge);
+    border-radius: 0;
+    background: var(--paper-2);
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .docs-pager__link:hover {
+    background: var(--wash);
+    border-color: var(--ink);
+  }
+
+  .docs-pager__link--next {
+    text-align: right;
+  }
+
+  .prose-zlang .docs-pager__link,
+  .prose-zlang .docs-pager__link span {
+    text-decoration: none !important;
+  }
+
+  .prose-zlang .docs-pager__link:hover {
+    text-decoration: none !important;
+  }
+
+  .docs-pager__label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-4);
+  }
+
+  .docs-pager__title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .docs-pager__description {
+    font-size: 0.72rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
   .docs-toc {
     position: sticky;
     top: 96px;
@@ -2297,6 +2356,14 @@ pre,
 @media (max-width: 768px) {
   .site-container {
     padding-inline: 16px;
+  }
+
+  .docs-pager {
+    grid-template-columns: 1fr;
+  }
+
+  .docs-pager__link--next {
+    text-align: left;
   }
 
   .foot {

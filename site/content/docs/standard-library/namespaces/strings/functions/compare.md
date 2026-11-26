@@ -80,13 +80,19 @@ ZLANG_STATIC_INLINE int32_t zlang_std_strings_compare(zlang_string_t left, zlang
 }
 ```
 
-For `compare("abc", "abd")`, the emitted call is:
+The emitter interns each distinct source string literal in first-use order. The two literals in `compare("abc", "abd")` become read-only views named `zlang_gen_literal_0` and `zlang_gen_literal_1`. This excerpt from the Example shows their declarations and call statement:
 
 ```c
-zlang_std_io_write_i32(zlang_std_strings_compare(zlang_gen_literal_0, zlang_gen_literal_1));
+#define ZLANG_LITERAL_0_LENGTH 3U
+static const char zlang_gen_literal_0_data[] = "abc";
+static const zlang_string_t zlang_gen_literal_0 = { zlang_gen_literal_0_data, ZLANG_LITERAL_0_LENGTH };
+#define ZLANG_LITERAL_1_LENGTH 3U
+static const char zlang_gen_literal_1_data[] = "abd";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+
+zlang_std_strings_compare(zlang_gen_literal_0, zlang_gen_literal_1);
 ```
 
-The registry symbol and macro match the emitted call. The call remains in generated C when the compiler runs with `--tto`.
 
 ## Example
 

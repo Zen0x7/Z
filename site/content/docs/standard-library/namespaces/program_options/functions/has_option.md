@@ -73,11 +73,18 @@ Importing `argument_count` and `has_option` activates both macros:
 
 `<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_option` calls the shared `zlang_std_program_options_has` helper, which calls `zlang_std_program_options_argument_count`. The count helper is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_option` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION`, and the generated C does not compile.
 
-In the five-function fixture, the generated call is:
+The generated function for source `main` names the `arguments` parameter `app_param_argv`. The emitter interns each distinct source string literal in first-use order; `zlang_gen_literal_1` is the generated view for `"--name"` in `tools/zc/tests/program_options.z`. This excerpt shows its declaration and the call:
 
 ```c
-zlang_std_io_write_bool(zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_1));
+#define ZLANG_LITERAL_1_LENGTH 6U
+static const char zlang_gen_literal_1_data[] = "--name";
+static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZLANG_LITERAL_1_LENGTH };
+
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
+...
+zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_1);
 ```
+
 
 ## Example
 

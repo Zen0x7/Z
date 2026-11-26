@@ -78,13 +78,14 @@ The registry marks `min` as not stateful and opaque. The emitter passes both arg
 
 ## Generated C
 
-Importing `min` activates `ZLANG_STD_MATH_MIN_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The example below produces this excerpt:
+Importing `min` activates `ZLANG_STD_MATH_MIN_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The Example produces this excerpt:
 
 ```c
 #define ZLANG_STD_MATH_MIN_I32
 ...
 zlang_std_math_min_i32(2, 3);
 ```
+
 
 ## Example
 

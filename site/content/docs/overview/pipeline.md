@@ -25,6 +25,6 @@ That keeps stages independent and makes failures easier to place.
 
 ## Generated C
 
-The generated file includes the runtime and calls documented `zlang_*` functions. It has no opcode loop, no class registry and no runtime name lookup.
+The emitter writes native C99 with runtime includes and activation macros for imported functions. Source functions become `app_fn_*`, source locals become `app_local_*`, and imported standard calls become `zlang_std_*` symbols from the registry. Bounds and arithmetic checks call `zlang_*` runtime helpers. There is no opcode loop, class registry or runtime name lookup.
 
-See [Compiler pipeline](/docs/compiler/pipeline) for the detailed contract.
+See [Emitted C](/docs/compiler/emitted-c) for an annotated Fibonacci excerpt and [Compiler pipeline](/docs/compiler/pipeline) for the stage contract.

@@ -67,11 +67,14 @@ Importing `argument_count` activates its macro. The generated prologue defines t
 #include <zlang/runtime/runtime.h>
 ```
 
-The generated call passes the view as `zlang_arguments_t *`:
+The generated function for source `main` names the `arguments` parameter `app_param_argv` and passes it as `zlang_arguments_t *`. This excerpt comes from `tools/zc/tests/program_options.z`:
 
 ```c
-zlang_std_io_write_u32(zlang_std_program_options_argument_count(app_param_argv));
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
+...
+zlang_std_program_options_argument_count(app_param_argv);
 ```
+
 
 ## Example
 

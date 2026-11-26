@@ -74,11 +74,14 @@ Importing `argument_count` and `argument_at` activates both macros:
 
 `<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. The options header calls `zlang_std_program_options_argument_count` from `zlang_std_program_options_argument_at`, but defines that helper only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `argument_at` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_AT`, and the generated C does not compile.
 
-In the five-function fixture, the generated call is:
+This excerpt from `tools/zc/tests/program_options.z` shows the generated function declaration and call:
 
 ```c
-zlang_std_io_write_string(zlang_std_program_options_argument_at(app_param_argv, 1U));
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
+...
+zlang_std_program_options_argument_at(app_param_argv, 1U);
 ```
+
 
 ## Example
 

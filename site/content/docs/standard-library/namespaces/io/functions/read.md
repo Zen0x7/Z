@@ -62,24 +62,35 @@ The registry marks `read` as not stateful and opaque. The standard header owns n
 
 ## Generated C
 
-The import emits:
+`import { read } from "@std/io";` activates `ZLANG_STD_IO_READ`. The emitted preamble includes `<zlang/runtime/runtime.h>`, which includes `zlang/standard/io/io.h`. Excerpt of the preamble:
 
 ```c
 #define ZLANG_STD_IO_READ
+
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zlang/runtime/runtime.h>
 ```
 
-The C helper takes the view pointer, storage pointer and capacity in that order:
+The header defines the helper with the view pointer, storage pointer and capacity in that order:
 
 ```c
-int32_t zlang_std_io_read(zlang_string_t *view, char *storage, uint32_t capacity);
+ZLANG_STATIC_INLINE int32_t zlang_std_io_read(zlang_string_t *view, char *storage,
+                                              uint32_t capacity) {
+    return zlang_std_io_read_impl(view, storage, capacity, true);
+}
 ```
 
-For `string[32] line; read(line);`, the emitter uses the declaration's view, backing storage and capacity:
+For `string[32] line; read(line);`, the emitted `app_fn_main` declares the view and its storage before the call. Excerpt:
 
 ```c
-zlang_std_io_read(&app_local_line, zlang_gen_line_storage_0, 32);
+    char zlang_gen_line_storage_0[ZLANG_LINE_CAPACITY + ZLANG_ONE] = { ZLANG_ZERO };
+    zlang_string_t app_local_line = (zlang_string_t){ zlang_gen_line_storage_0, ZLANG_ZERO };
+    zlang_std_io_read(&app_local_line, zlang_gen_line_storage_0, 32);
 ```
+
+`app_fn_main` is the emitted C function for the Zlang `main`. `app_local_line` is the view for the source variable `line`. `zlang_gen_line_storage_0` is the compiler-created backing array for that declaration; the suffix `0` separates it from other generated storage. `ZLANG_LINE_CAPACITY` is the generated capacity macro for `string[32]`, and `ZLANG_ZERO` and `ZLANG_ONE` are generated value constants. The call passes the source capacity `32`.
 
 ## Example
 

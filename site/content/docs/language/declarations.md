@@ -7,7 +7,7 @@ navigation:
 
 # Declarations
 
-A variable declaration names a type and gives it a value or storage shape.
+A variable declaration names a type and gives it a value or storage shape. The declarations below appear inside a function.
 
 ```zlang
 integer total = 1;
@@ -20,6 +20,8 @@ string[32] bounded = label + " value";
 A `const` declaration cannot be assigned to. An uninitialized `const` scalar starts at zero.
 
 ## Arrays
+
+These array declarations are also function-body excerpts.
 
 ```zlang
 array[4] integer values;
@@ -34,6 +36,8 @@ An array without an explicit capacity needs a non-empty initializer. Without eit
 
 ## Structs and enums
 
+Struct and enum declarations appear at file scope:
+
 ```zlang
 struct Point {
     integer x;
@@ -45,7 +49,11 @@ enum Color {
     GREEN,
     BLUE
 }
+```
 
+Inside a function, those types name variables and array elements:
+
+```zlang
 array[4] Point points;
 Color current = GREEN;
 ```

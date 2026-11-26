@@ -67,7 +67,7 @@ The registry marks `sqrt` as not stateful and opaque. The emitter passes the arg
 
 ## Generated C
 
-Importing `sqrt` activates `ZLANG_STD_MATH_SQRT_F32`, the first registry entry with that name. A `double` call activates `ZLANG_STD_MATH_SQRT_F64` as well. The example below produces this excerpt:
+Importing `sqrt` activates `ZLANG_STD_MATH_SQRT_F32`, the first registry entry with that name. A `double` call activates `ZLANG_STD_MATH_SQRT_F64` as well. The Example produces this excerpt:
 
 ```c
 #define ZLANG_STD_MATH_SQRT_F32
@@ -75,6 +75,7 @@ Importing `sqrt` activates `ZLANG_STD_MATH_SQRT_F32`, the first registry entry w
 ...
 zlang_std_math_sqrt_f64(9.0);
 ```
+
 
 The registry records one macro per overload. The generated prologue contains `ZLANG_STD_MATH_SQRT_F32` even though the program never calls the `float` overload. This is a mismatch between the registry's per-overload activation model and the emitter's import handling. The call itself uses the resolved macro and symbol.
 

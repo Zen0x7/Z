@@ -78,13 +78,14 @@ The registry marks `max` as not stateful and opaque. The emitter passes both arg
 
 ## Generated C
 
-Importing `max` activates `ZLANG_STD_MATH_MAX_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The example below produces this excerpt:
+Importing `max` activates `ZLANG_STD_MATH_MAX_I32` from the first registry entry with that name. The call activates the macro for the selected overload. The Example produces this excerpt:
 
 ```c
 #define ZLANG_STD_MATH_MAX_I32
 ...
 zlang_std_math_max_i32(2, 3);
 ```
+
 
 ## Example
 

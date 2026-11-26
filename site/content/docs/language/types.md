@@ -20,7 +20,7 @@ Zlang has eight numeric and scalar primitives, plus structs and enums.
 | `boolean` | `true` or `false` | `bool` |
 | `string` | bounded UTF-8 view | `zlang_string_t` |
 
-There is no implicit conversion between numeric types. Use explicit conversion calls:
+There is no implicit conversion between numeric types. Use explicit conversion calls. Each call takes one numeric operand; the declarations below appear inside a function.
 
 ```zlang
 integer a = to_integer(value);
@@ -31,11 +31,11 @@ float e = to_float(value);
 double f = to_double(value);
 ```
 
-Conversion to an integer traps when the value is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap.
+Conversions to integer types truncate floating-point input toward zero. They trap on non-finite input and when the result is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap.
 
 ## Strings and arrays
 
-A string is a non-owning view over bytes. It never allocates. A string variable with capacity reserves fixed caller-owned storage.
+A string is a non-owning view over bytes. It never allocates. A string built with `+` from a variable declares a capacity with `string[N]`; `zc` reserves caller-owned storage and copies into it.
 
 An array is fixed-shape. Its capacity is part of its type. Arrays with different extents are different types.
 

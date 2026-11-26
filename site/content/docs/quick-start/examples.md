@@ -16,6 +16,8 @@ Each directory contains:
 - `expected.txt` — exact stdout;
 - `README.md` — a short explanation.
 
+The golden C uses generated names: source functions become `app_fn_*`, source locals become `app_local_*`, interned string views become `zlang_gen_literal_*`, and imported calls become `zlang_std_*`. [Emitted C](/docs/compiler/emitted-c) maps those names to Fibonacci source lines.
+
 Run one example:
 
 ```sh

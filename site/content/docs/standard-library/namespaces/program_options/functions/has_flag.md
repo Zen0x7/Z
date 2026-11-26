@@ -73,11 +73,18 @@ Importing `argument_count` and `has_flag` activates both macros:
 
 `<zlang/runtime/runtime.h>` includes `zlang/standard/program/options.h` when either macro is set. In that header, `zlang_std_program_options_has_flag` calls the shared `zlang_std_program_options_has` helper, which is also used by `has_option`. The helper calls `zlang_std_program_options_argument_count`, which is defined only under `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT`. Importing `has_flag` alone emits only `ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG`, and the generated C does not compile.
 
-In the five-function fixture, the generated call is:
+The generated function for source `main` names the `arguments` parameter `app_param_argv`. The emitter interns each distinct source string literal in first-use order; `zlang_gen_literal_2` is the generated view for `"--verbose"` in `tools/zc/tests/program_options.z`. This excerpt shows its declaration and the call:
 
 ```c
-zlang_std_io_write_bool(zlang_std_program_options_has_flag(app_param_argv, zlang_gen_literal_2));
+#define ZLANG_LITERAL_2_LENGTH 9U
+static const char zlang_gen_literal_2_data[] = "--verbose";
+static const zlang_string_t zlang_gen_literal_2 = { zlang_gen_literal_2_data, ZLANG_LITERAL_2_LENGTH };
+
+int32_t app_fn_main(int32_t app_param_argc, zlang_arguments_t *app_param_argv);
+...
+zlang_std_program_options_has_flag(app_param_argv, zlang_gen_literal_2);
 ```
+
 
 ## Example
 

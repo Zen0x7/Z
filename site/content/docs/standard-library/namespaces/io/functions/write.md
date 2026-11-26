@@ -86,21 +86,32 @@ The registry marks `write` as not stateful and opaque. The standard header owns 
 
 ## Generated C
 
-`import { write } from "@std/io";` activates `ZLANG_STD_IO_WRITE_STRING`, the first registered `write` overload. Each call also activates the macro for its resolved overload. A program that calls `write(1)` emits both macros:
+`import { write } from "@std/io";` activates `ZLANG_STD_IO_WRITE_STRING`, the first registered `write` overload. Each call also activates the macro for its resolved overload. A program with no other imports that calls `write(1)` emits this preamble:
 
 ```c
 #define ZLANG_STD_IO_WRITE_STRING
+
 #define ZLANG_STD_IO_WRITE_I32
+
+#include <stdbool.h>
+#include <stdint.h>
+
 #include <zlang/runtime/runtime.h>
 ```
 
-The call then uses the resolved C symbol:
+`ZLANG_STD_IO_WRITE_STRING` comes from the import. `ZLANG_STD_IO_WRITE_I32` comes from the argument type `integer`. `<zlang/runtime/runtime.h>` includes `zlang/standard/io/io.h`, which defines the selected wrapper:
+
+```c
+ZLANG_STATIC_INLINE bool zlang_std_io_write_i32(int32_t value) { return zlang_print_i32(value); }
+```
+
+The emitted call is:
 
 ```c
 zlang_std_io_write_i32(1);
 ```
 
-The wrapper returns `bool`; the emitted expression statement discards that value.
+`zlang_std_io_write_i32` is the runtime wrapper for the Zlang expression `write(1)`, not another Zlang function. The `i32` suffix names the selected overload. The wrapper calls the runtime print primitive `zlang_print_i32` and returns `bool`; the emitted expression statement discards that value.
 
 ## Example
 

@@ -24,7 +24,7 @@ import { compare, contains, starts_with } from "@std/strings";
 - `contains` reports whether one bounded byte sequence appears inside another.
 - `starts_with` reports whether one bounded byte sequence begins another.
 
-A Zlang string is a pointer and a byte length. A string literal is interned in read-only storage. A declared string with explicit capacity points to caller-owned storage. Both pass to these functions as `zlang_string_t` views.
+A Zlang string is a pointer and a byte length. The emitter interns each distinct source string literal in first-use order as a read-only `zlang_string_t` named `zlang_gen_literal_N`. A declared string with explicit capacity points to caller-owned storage. Both pass to these functions as `zlang_string_t` views.
 
 ## Types
 

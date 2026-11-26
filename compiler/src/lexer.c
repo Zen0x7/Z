@@ -49,7 +49,10 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"while", zlang_token_while_},
                                              {"break", zlang_token_break_},
                                              {"continue", zlang_token_continue_},
-                                             {"jump", zlang_token_jump_}};
+                                             {"jump", zlang_token_jump_},
+                                             {"switch", zlang_token_switch_},
+                                             {"case", zlang_token_case_},
+                                             {"default", zlang_token_default_}};
 
 static void zlang_lexer_advance(zlang_lexer_t *lexer) {
     const char _character_k = lexer->source_[lexer->position_];

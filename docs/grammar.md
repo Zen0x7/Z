@@ -242,7 +242,7 @@ view.
 
 ## Planned 0.39 grammar
 
-`label:` and `jump label;` are accepted. The remaining productions are planned:
+`label:`, `jump label;` and `switch` are accepted. The remaining productions are planned:
 
 ```text
 labelStatement    = identifier ":" statement ;

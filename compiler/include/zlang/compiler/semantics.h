@@ -36,6 +36,7 @@ typedef struct zlang_semantic_context_t {
     size_t symbol_count_;
     size_t scope_depth_;
     size_t loop_depth_;
+    size_t switch_depth_;
     const char *current_return_type_;
     bool has_error_;
     zlang_diagnostics_t *diagnostics_;

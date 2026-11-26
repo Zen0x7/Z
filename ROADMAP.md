@@ -81,7 +81,7 @@ named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
 | # | Feature | Syntax |
 | --- | --- | --- |
 | 1 | jump and labels | `label:` and `jump label;` — delivered |
-| 2 | switch | `switch (value) { case literal: ... default: ... }` |
+| 2 | switch | `switch (value) { case literal: ... default: ... }` — delivered |
 | 3 | match | `match (value) { literal => expression, _ => expression }` |
 | 4 | ternary | `condition ? then_expression : else_expression` |
 | 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` |

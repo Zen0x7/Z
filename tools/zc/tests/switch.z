@@ -1,0 +1,9 @@
+int32 value = 2;
+switch (value) {
+case 1:
+    value = 10;
+case 2:
+    value = 20;
+default:
+    value = 30;
+}

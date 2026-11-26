@@ -26,6 +26,7 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->symbol_count_ = 0U;
     context->scope_depth_ = 0U;
     context->loop_depth_ = 0U;
+    context->switch_depth_ = 0U;
     context->current_return_type_ = NULL;
     context->has_error_ = false;
     context->diagnostics_ = diagnostics;
@@ -1622,13 +1623,37 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_break_:
+        if (context->loop_depth_ == 0U && context->switch_depth_ == 0U) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "break is only valid inside a loop or switch");
+        }
+        break;
     case zlang_statement_continue_:
         if (context->loop_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
-                                     statement->kind_ == zlang_statement_break_
-                                         ? "break is only valid inside a loop"
-                                         : "continue is only valid inside a loop");
+                                     "continue is only valid inside a loop");
         }
+        break;
+    case zlang_statement_switch_: {
+        (void)zlang_analyze_expression(context, statement->expression_, statement);
+        ++context->switch_depth_;
+        const size_t _end_k = statement->body_start_ + statement->body_count_;
+        for (size_t _clause = statement->body_start_;
+             _clause < _end_k && _clause < context->program_->statement_count_; ++_clause) {
+            const zlang_ast_statement_t *const _clause_k = &context->program_->statements_[_clause];
+            if (_clause_k->kind_ == zlang_statement_case_ &&
+                _clause_k->expression_ != ZLANG_NO_EXPRESSION) {
+                (void)zlang_analyze_expression(context, _clause_k->expression_, _clause_k);
+            }
+            _result_k =
+                zlang_analyze_body(context, _clause_k->body_start_, _clause_k->body_count_) &&
+                _result_k;
+        }
+        --context->switch_depth_;
+        break;
+    }
+    case zlang_statement_case_:
+    case zlang_statement_default_:
         break;
     case zlang_statement_foreach_: {
         const zlang_symbol_t *const _iterable_k =

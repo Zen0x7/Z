@@ -1719,6 +1719,26 @@ static void emits_jump_and_label(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_done: ;") != NULL);
 }
 
+static void emits_switch_statement(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "int32 value = 2;\n"
+                                  "switch (value) {\n"
+                                  "case 1:\n"
+                                  "    write(1);\n"
+                                  "case 2:\n"
+                                  "    write(2);\n"
+                                  "default:\n"
+                                  "    write(0);\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "switch (app_local_value)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "case 1:") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "case 2:") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "default:") != NULL);
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "break;") >= 3U);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

@@ -4421,7 +4421,8 @@ static bool zlang_is_grouped_statement(const zlang_program_t *program,
                                        const zlang_ast_statement_t *statement) {
     if (statement->kind_ == zlang_statement_if_ || statement->kind_ == zlang_statement_while_ ||
         statement->kind_ == zlang_statement_for_ || statement->kind_ == zlang_statement_foreach_ ||
-        statement->kind_ == zlang_statement_repeat_ || statement->kind_ == zlang_statement_block_) {
+        statement->kind_ == zlang_statement_repeat_ ||
+        statement->kind_ == zlang_statement_switch_ || statement->kind_ == zlang_statement_block_) {
         return true;
     }
     return statement->kind_ == zlang_statement_expression_ &&
@@ -5357,6 +5358,49 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         }
         return true;
     }
+    case zlang_statement_switch_: {
+        if (!zlang_append_text(emitter, "switch (") ||
+            !zlang_emit_expression(program, statement->expression_, emitter) ||
+            !zlang_append_text(emitter, ") {\n")) {
+            return false;
+        }
+        const zlang_emitter_scope_t _switch_scope_k = zlang_save_scope(emitter);
+        const size_t _end_k = statement->body_start_ + statement->body_count_;
+        for (size_t _clause = statement->body_start_;
+             _clause < _end_k && _clause < program->statement_count_; ++_clause) {
+            const zlang_ast_statement_t *const _clause_k = &program->statements_[_clause];
+            if (_clause_k->kind_ != zlang_statement_case_ &&
+                _clause_k->kind_ != zlang_statement_default_) {
+                continue;
+            }
+            if (!zlang_append_indent(emitter, depth + 1U)) {
+                return false;
+            }
+            if (_clause_k->kind_ == zlang_statement_case_) {
+                if (!zlang_append_text(emitter, "case ") ||
+                    !zlang_emit_expression(program, _clause_k->expression_, emitter) ||
+                    !zlang_append_text(emitter, ":\n")) {
+                    return false;
+                }
+            } else if (!zlang_append_text(emitter, "default:\n")) {
+                return false;
+            }
+            const zlang_emitter_scope_t _clause_scope_k = zlang_save_scope(emitter);
+            const bool _body_ok_k = zlang_emit_body(program, _clause_k->body_start_,
+                                                    _clause_k->body_count_, emitter, depth + 2U) &&
+                                    zlang_append_indent(emitter, depth + 2U) &&
+                                    zlang_append_text(emitter, "break;\n");
+            zlang_restore_scope(emitter, _clause_scope_k);
+            if (!_body_ok_k) {
+                return false;
+            }
+        }
+        zlang_restore_scope(emitter, _switch_scope_k);
+        return zlang_append_indent(emitter, depth) && zlang_append_text(emitter, "}\n");
+    }
+    case zlang_statement_case_:
+    case zlang_statement_default_:
+        return true;
     case zlang_statement_return_:
         if (statement->expression_ == ZLANG_NO_EXPRESSION) {
             return zlang_append_text(emitter, "return;\n");

@@ -41,6 +41,7 @@ typedef struct zlang_parser_t {
     const char *active_generic_parameters_[ZLANG_GENERIC_PARAMETER_CAPACITY];
     size_t active_generic_parameter_count_;
     size_t position_;
+    size_t switch_depth_;
     bool failed_;
 } zlang_parser_t;
 

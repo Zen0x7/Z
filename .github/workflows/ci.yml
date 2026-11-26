@@ -458,7 +458,8 @@ jobs:
         run: ./scripts/configure_generated_files.sh
       - name: Analyze all translation units
         run: >-
-          clang --analyze -std=c99 -Iinclude -Ibuild/generated/include -Wall -Wextra -Werror
+          clang --analyze -std=c99 -DZLANG_SOURCE_DIR='"${{ github.workspace }}"'
+          -Iinclude -Ibuild/generated/include -Wall -Wextra -Werror
           -Xanalyzer -analyzer-output=text
           tests/version/version_tests.c
           tests/testing/testing_tests.c

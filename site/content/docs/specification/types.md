@@ -90,3 +90,18 @@ A declaration may list up to four type parameters. An application may pass up to
 | `STATUS_CAPACITY` | capacity exceeded |
 
 The compiler maps canonical applications to the layouts in `<zlang/standard/result/result.h>`. `what` is a read-only view of a fixed literal message. No runtime formatting or allocation is performed. Since Zlang 0.37 every registered standard library function returns `result_type<T, status_code>`; `T` is its obvious ideal value, pure and total functions report `STATUS_SUCCESS` for valid input, and programmer and resource errors remain traps.
+
+## Result capabilities
+
+`result_type<T, status_code>` is a stable envelope, not only an error wrapper. Optional
+capabilities are selected by compile-time flags:
+
+| Method | Result | Disabled behavior |
+| --- | --- | --- |
+| `time()` | `uint64` elapsed nanoseconds | returns `0` without reading a clock |
+| `dump()` | bounded canonical `string` view | returns the empty view |
+
+`ZLANG_STD_RESULT_TIMING` adds elapsed-time state and instruments registered standard library
+calls. `ZLANG_STD_RESULT_DUMP` adds bounded storage for `dump()`. Neither capability allocates.
+`dump()` includes `code`, `what`, the payload and elapsed time. A user-defined `T` must implement
+`dump(): string` before `result_type<T, status_code>.dump()` is valid.

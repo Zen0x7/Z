@@ -1687,6 +1687,26 @@ static void emits_native_result_methods(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.what_") != NULL);
 }
 
+static void emits_native_result_time_method(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "result_type<int32, status_code> result;\n"
+                                  "uint64 elapsed = result.time();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_STD_RESULT_TIMING") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_time(") != NULL);
+}
+
+static void emits_native_result_dump_method(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "result_type<int32, status_code> result;\n"
+                                  "string dump = result.dump();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_STD_RESULT_DUMP") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_dump(") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

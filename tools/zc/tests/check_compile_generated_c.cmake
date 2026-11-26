@@ -6,8 +6,13 @@ get_filename_component(_stem "${SOURCE}" NAME_WE)
 set(_emitted "${WORK_DIR}/${_stem}.c")
 set(_object "${WORK_DIR}/${_stem}.obj")
 
+set(_extra_flags)
+if(ZLANG_EXTRA_FLAGS)
+    set(_extra_flags ${ZLANG_EXTRA_FLAGS})
+endif()
+
 execute_process(
-    COMMAND "${ZLANG_COMPILE}" "${SOURCE}" --emit-c
+    COMMAND "${ZLANG_COMPILE}" "${SOURCE}" --emit-c ${_extra_flags}
     WORKING_DIRECTORY "${WORK_DIR}"
     RESULT_VARIABLE _emit_result
     OUTPUT_VARIABLE _emit_output

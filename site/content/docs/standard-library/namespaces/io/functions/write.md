@@ -23,6 +23,7 @@ canonical_symbols:
   - zlang_std_io_write_u64_stream
   - zlang_std_io_write_f32_stream
   - zlang_std_io_write_f64_stream
+  - zlang_std_io_write_string_window
 activation_macros:
   - ZLANG_STD_IO_WRITE_STRING
   - ZLANG_STD_IO_WRITE_BOOL

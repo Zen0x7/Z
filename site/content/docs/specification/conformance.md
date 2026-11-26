@@ -33,6 +33,8 @@ These assertions keep the specification tied to the emitter. If the translation 
 | inheritance and traits | `emits_struct_inheritance_and_vtable`, `emits_dynamic_dispatch_call`, `emits_trait_method_direct_call`, `rejects_downcast` |
 | generics | `emits_generic_struct_specialization`, `emits_generic_function_specialization`, `rejects_generic_argument_count_mismatch`, `rejects_duplicate_generic_parameter` |
 | native results | `emits_native_result_type`, `assigns_native_result_fields` |
+| result capabilities | `emits_native_result_time_method`, `emits_native_result_dump_method` |
+| stdlib contract verifier | `stdlib_registry_is_uniform`, `native_result_registry_is_complete` |
 | uniform stdlib result contract | `emits_stream_read_result`, `emits_stream_write_result`, `emits_stream_string_write_result`, `emits_native_result_methods` |
 | imports and modules | `emits_a_write_call`, `zlang.cli.modules`, `zlang.cli.modules_cycle`, `zlang.cli.modules_escape` |
 | standard library | `emits_scalar_write`, `emits_io_read_calls`, `emits_math_overloads`, `emits_strings_api`, `zlang.stdlib.random.generate_int32.basic` |

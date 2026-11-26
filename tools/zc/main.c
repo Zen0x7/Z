@@ -46,7 +46,8 @@
 #endif
 
 static void zlang_cli_usage(void) {
-    (void)fprintf(stderr, "usage: zc <source.z> [--emit-c] [--disable-comments] [--tto]\n");
+    (void)fprintf(stderr, "usage: zc <source.z> [--emit-c] [--disable-comments] [--tto] [--timing] "
+                          "[--dump]\n");
 }
 
 static size_t zlang_cli_stem_length(const char *path) {
@@ -290,6 +291,8 @@ int main(int argc, char **argv) {
     bool _emit_only_k = false;
     bool _disable_comments_k = false;
     bool _tto_k = false;
+    bool _timing_k = false;
+    bool _dump_k = false;
     for (int _argument = 2; _argument < argc; ++_argument) {
         if (strcmp(argv[_argument], "--emit-c") == 0) {
             _emit_only_k = true;
@@ -297,6 +300,10 @@ int main(int argc, char **argv) {
             _disable_comments_k = true;
         } else if (strcmp(argv[_argument], "--tto") == 0) {
             _tto_k = true;
+        } else if (strcmp(argv[_argument], "--timing") == 0) {
+            _timing_k = true;
+        } else if (strcmp(argv[_argument], "--dump") == 0) {
+            _dump_k = true;
         } else {
             zlang_cli_usage();
             return 1;
@@ -346,6 +353,8 @@ int main(int argc, char **argv) {
     }
     zlang_emitter_init(&_emitter, _output, sizeof(_output), &_diagnostic_state, &_plan);
     _emitter.emit_comments_ = !_disable_comments_k;
+    _emitter.force_timing_ = _timing_k;
+    _emitter.force_dump_ = _dump_k;
     if (!zlang_emit_program(&_result.program_, &_emitter)) {
         return zlang_cli_report_diagnostics(&_diagnostic_state, _source_path_k) ? 5 : 2;
     }

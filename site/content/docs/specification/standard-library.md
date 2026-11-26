@@ -38,3 +38,11 @@ Native results introduce no allocation, formatting or reflection. In Zlang 0.37 
 `read` and `read_line` have two overloads. The convenience overload reads from implicit `STDIN` at offset `0` into a caller-owned destination with its declared capacity. The explicit overload takes a borrowed stream and a bounded offset/count window. Both return `result_type<int32, status_code>` whose `value` is the number of bytes transferred. `read` copies raw bytes and keeps a newline when it fits the window; `read_line` stops at a newline and drops the delimiter. Neither overload copies buffer bytes into new storage.
 
 Parameter modes are unchanged: `clone` copies scalars or trivial descriptors (a cloned `string` copies its descriptor, not its bytes, and a cloned `stream` copies a borrowed handle), `reference` is a mutable caller-owned destination, and `const reference` is a borrowed view that is not mutated.
+
+Result capabilities are opt-in at compile time. `time()` reads elapsed nanoseconds from results
+returned by registered functions; it returns `0` and performs no clock read when
+`ZLANG_STD_RESULT_TIMING` is disabled. `dump()` returns a bounded canonical string containing
+metadata, payload and elapsed time; it returns the empty view when `ZLANG_STD_RESULT_DUMP` is
+disabled. Both capabilities are properties of the result envelope, so every registered standard
+library function exposes them without a second return shape. A user-defined `T` must implement
+`dump(): string` before a result carrying `T` can be dumped.

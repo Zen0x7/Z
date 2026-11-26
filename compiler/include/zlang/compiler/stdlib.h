@@ -40,6 +40,8 @@ typedef struct zlang_std_function_t {
     const char *return_result_error_type_;
 } zlang_std_function_t;
 
+size_t zlang_std_function_count(void);
+const zlang_std_function_t *zlang_std_function_at(size_t index);
 const zlang_std_function_t *zlang_std_find(const char *domain, const char *name);
 const zlang_std_function_t *zlang_std_find_by_name(const char *name);
 const zlang_std_function_t *zlang_std_resolve(const char *domain, const char *name,
@@ -47,11 +49,14 @@ const zlang_std_function_t *zlang_std_resolve(const char *domain, const char *na
 const zlang_std_function_t *
 zlang_std_resolve_by_name(const char *name, const char *const *argument_types, size_t count);
 
+size_t zlang_std_result_count(void);
+const zlang_std_result_t *zlang_std_result_at(size_t index);
 const zlang_std_result_t *zlang_std_find_result(const char *name);
 const zlang_std_result_t *zlang_std_find_result_by_value(const char *value_type);
 const char *zlang_std_native_c_type(const char *name);
 const char *zlang_std_native_result_field_type(const zlang_std_result_t *result,
                                                const char *field_name);
+const char *zlang_std_native_result_tag(const zlang_std_result_t *result);
 bool zlang_std_is_native_type(const char *name);
 bool zlang_std_is_native_generic_base(const char *name);
 bool zlang_std_is_known_generic_argument(const char *name);

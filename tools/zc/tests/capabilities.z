@@ -1,0 +1,7 @@
+import { write } from "@std/io";
+
+result_type<int32, status_code> result = write("x");
+uint64 elapsed = result.time();
+string dump = result.dump();
+write(elapsed);
+write(dump);

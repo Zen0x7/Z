@@ -24,9 +24,10 @@
     defined(ZLANG_STD_IO_WRITE_F32) || defined(ZLANG_STD_IO_WRITE_F64)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t
 zlang_std_io_write_stream(const zlang_stream_t destination, const zlang_string_t *source) {
+    ZLANG_STD_TIMING_BEGIN();
     zlang_std_status_t _status_k = zlang_std_status_success_;
     const int32_t _written_k = zlang_stream_write(destination, source, &_status_k);
-    return zlang_std_result_i32(_status_k, _written_k);
+    return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(_status_k, _written_k));
 }
 #endif
 
@@ -203,10 +204,11 @@ zlang_std_io_write_u64_stream(const zlang_stream_t destination, const uint64_t v
 
 #if defined(ZLANG_STD_IO_WRITE_F32)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_io_write_f32(const float value) {
+    ZLANG_STD_TIMING_BEGIN();
     char _digits_k[64];
     const int _written_k = snprintf(_digits_k, sizeof(_digits_k), "%.9g", (double)value);
     if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits_k)) {
-        return zlang_std_result_i32(zlang_std_status_io_error_, 0);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_io_error_, 0));
     }
     const zlang_string_t _source_k = {_digits_k, (uint32_t)_written_k};
     return zlang_std_io_write_stream(zlang_std_io_stream_stdout(), &_source_k);
@@ -214,10 +216,11 @@ ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_io_write_f32(const f
 
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t
 zlang_std_io_write_f32_stream(const zlang_stream_t destination, const float value) {
+    ZLANG_STD_TIMING_BEGIN();
     char _digits_k[64];
     const int _written_k = snprintf(_digits_k, sizeof(_digits_k), "%.9g", (double)value);
     if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits_k)) {
-        return zlang_std_result_i32(zlang_std_status_io_error_, 0);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_io_error_, 0));
     }
     const zlang_string_t _source_k = {_digits_k, (uint32_t)_written_k};
     return zlang_std_io_write_stream(destination, &_source_k);
@@ -226,10 +229,11 @@ zlang_std_io_write_f32_stream(const zlang_stream_t destination, const float valu
 
 #if defined(ZLANG_STD_IO_WRITE_F64)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_io_write_f64(const double value) {
+    ZLANG_STD_TIMING_BEGIN();
     char _digits_k[64];
     const int _written_k = snprintf(_digits_k, sizeof(_digits_k), "%.17g", value);
     if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits_k)) {
-        return zlang_std_result_i32(zlang_std_status_io_error_, 0);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_io_error_, 0));
     }
     const zlang_string_t _source_k = {_digits_k, (uint32_t)_written_k};
     return zlang_std_io_write_stream(zlang_std_io_stream_stdout(), &_source_k);
@@ -237,10 +241,11 @@ ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_io_write_f64(const d
 
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t
 zlang_std_io_write_f64_stream(const zlang_stream_t destination, const double value) {
+    ZLANG_STD_TIMING_BEGIN();
     char _digits_k[64];
     const int _written_k = snprintf(_digits_k, sizeof(_digits_k), "%.17g", value);
     if (_written_k < 0 || (size_t)_written_k >= sizeof(_digits_k)) {
-        return zlang_std_result_i32(zlang_std_status_io_error_, 0);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_io_error_, 0));
     }
     const zlang_string_t _source_k = {_digits_k, (uint32_t)_written_k};
     return zlang_std_io_write_stream(destination, &_source_k);
@@ -251,6 +256,7 @@ zlang_std_io_write_f64_stream(const zlang_stream_t destination, const double val
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t
 zlang_std_io_read_impl(const zlang_stream_t source, zlang_string_t *view, char *storage,
                        uint32_t capacity, uint32_t offset, uint32_t count, bool keep_terminator) {
+    ZLANG_STD_TIMING_BEGIN();
     zlang_std_status_t _status_k = zlang_std_status_success_;
     const int32_t _read_k =
         zlang_stream_read(source, storage, capacity, offset, count, keep_terminator, &_status_k);
@@ -259,7 +265,7 @@ zlang_std_io_read_impl(const zlang_stream_t source, zlang_string_t *view, char *
     if (view->length_ < _end_k) {
         view->length_ = _end_k;
     }
-    return zlang_std_result_i32(_status_k, _read_k);
+    return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(_status_k, _read_k));
 }
 #endif
 

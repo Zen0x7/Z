@@ -81,6 +81,10 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->cse_count_ = 0U;
     emitter->cse_pointer_count_ = 0U;
     emitter->emit_comments_ = true;
+    emitter->emit_timing_ = false;
+    emitter->emit_dump_ = false;
+    emitter->force_timing_ = false;
+    emitter->force_dump_ = false;
     memset(emitter->emitted_comments_, 0, sizeof(emitter->emitted_comments_));
     memset(emitter->emitted_symbols_, 0, sizeof(emitter->emitted_symbols_));
     memset(emitter->emitted_sequences_, 0, sizeof(emitter->emitted_sequences_));
@@ -2848,6 +2852,28 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
             const bool _is_ok_k = strcmp(_expression_k->name_, "is_ok") == 0;
             const bool _is_message_k = strcmp(_expression_k->name_, "message") == 0;
+            const bool _is_time_k = strcmp(_expression_k->name_, "time") == 0;
+            const bool _is_dump_k = strcmp(_expression_k->name_, "dump") == 0;
+            if (_is_time_k || _is_dump_k) {
+                const char *const _tag_k = zlang_std_native_result_tag(_native_result_k);
+                if (_tag_k == NULL || !zlang_append_text(emitter, "zlang_std_result_") ||
+                    !zlang_append_text(emitter, _tag_k) ||
+                    !zlang_append_text(emitter, _is_time_k ? "_time(" : "_dump(") ||
+                    (_is_dump_k && !zlang_append_text(emitter, "&")) ||
+                    !zlang_emit_symbol_value(emitter, _receiver_symbol_k->source_name_) ||
+                    !zlang_append_text(emitter, ")")) {
+                    return false;
+                }
+                if (_is_time_k) {
+                    emitter->emit_timing_ = true;
+                } else {
+                    emitter->emit_dump_ = true;
+                }
+                return true;
+            }
+            if (!_is_ok_k && !_is_message_k && strcmp(_expression_k->name_, "get") != 0) {
+                return false;
+            }
             const char *_field_k = "value";
             if (_is_ok_k) {
                 _field_k = "code";
@@ -5674,6 +5700,8 @@ static bool zlang_activate_macro(zlang_emitter_t *emitter, const char *macro) {
 }
 
 static bool zlang_activate_std_macros(const zlang_program_t *program, zlang_emitter_t *emitter) {
+    emitter->emit_timing_ = emitter->force_timing_;
+    emitter->emit_dump_ = emitter->force_dump_;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if ((_statement_k->type_name_ != NULL &&
@@ -5718,6 +5746,14 @@ static bool zlang_activate_std_macros(const zlang_program_t *program, zlang_emit
     }
     for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
         const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
+        if (_expression_k->kind_ == zlang_expression_method_call_ && _expression_k->name_ != NULL) {
+            if (strcmp(_expression_k->name_, "time") == 0) {
+                emitter->emit_timing_ = true;
+            } else if (strcmp(_expression_k->name_, "dump") == 0) {
+                emitter->emit_dump_ = true;
+            }
+            continue;
+        }
         if (_expression_k->kind_ != zlang_expression_call_ ||
             zlang_find_import_statement(program, _expression_k->name_) == NULL) {
             continue;
@@ -5740,7 +5776,14 @@ static bool zlang_emit_prologue(zlang_emitter_t *emitter) {
             return false;
         }
     }
-    if (emitter->activated_macro_count_ > 0U && !zlang_append_text(emitter, "\n")) {
+    if (emitter->emit_timing_ && !zlang_append_text(emitter, "#define ZLANG_STD_RESULT_TIMING\n")) {
+        return false;
+    }
+    if (emitter->emit_dump_ && !zlang_append_text(emitter, "#define ZLANG_STD_RESULT_DUMP\n")) {
+        return false;
+    }
+    if ((emitter->activated_macro_count_ > 0U || emitter->emit_timing_ || emitter->emit_dump_) &&
+        !zlang_append_text(emitter, "\n")) {
         return false;
     }
     return zlang_append_text(emitter, "#include <stdbool.h>\n#include <stdint.h>\n\n"
@@ -6946,9 +6989,10 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
             _statement_k->kind_ == zlang_statement_import_) {
             continue;
         }
-        if (zlang_is_file_scope(emitter, _statement_k) &&
-            !zlang_emit_statement(program, _statement_k, emitter, 0U)) {
-            return false;
+        if (zlang_is_file_scope(emitter, _statement_k)) {
+            if (!zlang_emit_statement(program, _statement_k, emitter, 0U)) {
+                return false;
+            }
         }
     }
 
@@ -7046,8 +7090,16 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
     zlang_diagnostics_t *const _diagnostics_k = emitter->diagnostics_;
     const zlang_memory_plan_t *const _plan_k = emitter->plan_;
     const bool _emit_comments_k = emitter->emit_comments_;
+    const bool _emit_timing_k = emitter->emit_timing_;
+    const bool _emit_dump_k = emitter->emit_dump_;
+    const bool _force_timing_k = emitter->force_timing_;
+    const bool _force_dump_k = emitter->force_dump_;
     zlang_emitter_init(emitter, _buffer_k, _capacity_k, _diagnostics_k, _plan_k);
     emitter->emit_comments_ = _emit_comments_k;
+    emitter->emit_timing_ = _emit_timing_k;
+    emitter->emit_dump_ = _emit_dump_k;
+    emitter->force_timing_ = _force_timing_k;
+    emitter->force_dump_ = _force_dump_k;
     emitter->collecting_array_helpers_ = true;
     if (!zlang_emit_program_pass(program, emitter)) {
         return false;
@@ -7057,6 +7109,10 @@ bool zlang_emit_program(const zlang_program_t *program, zlang_emitter_t *emitter
     memcpy(_helpers_k, emitter->requested_array_helpers_, sizeof(_helpers_k));
     zlang_emitter_init(emitter, _buffer_k, _capacity_k, _diagnostics_k, _plan_k);
     emitter->emit_comments_ = _emit_comments_k;
+    emitter->emit_timing_ = _emit_timing_k;
+    emitter->emit_dump_ = _emit_dump_k;
+    emitter->force_timing_ = _force_timing_k;
+    emitter->force_dump_ = _force_dump_k;
     emitter->collecting_array_helpers_ = false;
     emitter->requested_array_helper_count_ = _helper_count_k;
     memcpy(emitter->requested_array_helpers_, _helpers_k, sizeof(_helpers_k));

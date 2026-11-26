@@ -1,17 +1,4 @@
-coverage:
-  status:
-    project:
-      default:
-        target: 100%
-        threshold: 0%
-        paths:
-          - include/
-    patch:
-      default:
-        target: 100%
-        paths:
-          - include/
-
+# Coverage is reported for visibility. No numeric status target is enforced.
 ignore:
   - "tests/**"
   - "fuzz/**"

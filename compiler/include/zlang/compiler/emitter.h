@@ -126,6 +126,10 @@ typedef struct zlang_emitter_t {
     size_t cse_pointer_count_;
     bool emitted_comments_[ZLANG_EMITTED_COMMENT_CAPACITY];
     bool emit_comments_;
+    bool emit_timing_;
+    bool emit_dump_;
+    bool force_timing_;
+    bool force_dump_;
     zlang_emitted_array_helper_t requested_array_helpers_[ZLANG_EMITTED_ARRAY_HELPER_CAPACITY];
     size_t requested_array_helper_count_;
     bool collecting_array_helpers_;

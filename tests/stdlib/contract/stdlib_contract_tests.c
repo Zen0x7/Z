@@ -1,5 +1,6 @@
 #define ZLANG_TRAP_SINK(code) ((void)(code))
 #define ZLANG_STD_RESULT
+#include "zlang/compiler/stdlib.h"
 #include "zlang/runtime/runtime.h"
 #include "zlang/testing/testing.h"
 
@@ -158,6 +159,122 @@ static void stream_backends_share_read_and_write_semantics(zlang_test_context_t 
     ZLANG_CHECK(context, zlang_std_io_stream_stdin().ops_ != NULL);
     ZLANG_CHECK(context, zlang_std_io_stream_stdout().ops_ != NULL);
     ZLANG_CHECK(context, zlang_std_io_stream_stderr().ops_ != NULL);
+}
+
+static const char *const uniform_domains_k[] = {"io", "math", "program_options", "random",
+                                                "strings"};
+
+static bool zlang_contract_is_uniform_domain(const char *domain) {
+    for (size_t _index = 0U; _index < sizeof(uniform_domains_k) / sizeof(uniform_domains_k[0]);
+         ++_index) {
+        if (strcmp(domain, uniform_domains_k[_index]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void stdlib_registry_is_uniform(zlang_test_context_t *const context) {
+    bool _uniform_k = zlang_std_function_count() > 0U;
+    for (size_t _index = 0U; _index < zlang_std_function_count(); ++_index) {
+        const zlang_std_function_t *const _entry_k = zlang_std_function_at(_index);
+        const zlang_std_result_t *const _result_k =
+            _entry_k != NULL ? zlang_std_find_result(_entry_k->return_type_) : NULL;
+        _uniform_k = _uniform_k && _entry_k != NULL && _entry_k->domain_ != NULL &&
+                     zlang_contract_is_uniform_domain(_entry_k->domain_) && _result_k != NULL &&
+                     _entry_k->return_kind_ == zlang_std_return_result_ &&
+                     _entry_k->return_result_value_type_ != NULL &&
+                     strcmp(_entry_k->return_result_value_type_, _result_k->value_type_) == 0 &&
+                     _entry_k->return_result_error_type_ != NULL &&
+                     strcmp(_entry_k->return_result_error_type_, "status_code") == 0 &&
+                     _entry_k->c_symbol_ != NULL && _entry_k->activation_macro_ != NULL &&
+                     _result_k->c_constructor_ != NULL && _result_k->c_type_ != NULL;
+    }
+    ZLANG_CHECK(context, _uniform_k);
+}
+
+static void native_result_registry_is_complete(zlang_test_context_t *const context) {
+    bool _complete_k = zlang_std_result_count() == 9U;
+    for (size_t _index = 0U; _index < zlang_std_result_count(); ++_index) {
+        const zlang_std_result_t *const _entry_k = zlang_std_result_at(_index);
+        _complete_k = _complete_k && _entry_k != NULL && _entry_k->name_ != NULL &&
+                      strncmp(_entry_k->name_, "result_type<", 12U) == 0 &&
+                      strstr(_entry_k->name_, ",status_code>") != NULL &&
+                      zlang_std_is_native_result_method(_entry_k, "is_ok") &&
+                      zlang_std_is_native_result_method(_entry_k, "get") &&
+                      zlang_std_is_native_result_method(_entry_k, "message") &&
+                      zlang_std_native_result_method_type(_entry_k, "message") != NULL &&
+                      (!strcmp(_entry_k->value_type_, "void") ||
+                       zlang_std_native_result_method_type(_entry_k, "get") != NULL);
+    }
+    ZLANG_CHECK(context, _complete_k);
+}
+
+static bool zlang_contract_read_file(const char *path, char *buffer, size_t capacity) {
+    FILE *const _file_k = fopen(path, "rb");
+    if (_file_k == NULL) {
+        return false;
+    }
+    const size_t _length_k = fread(buffer, 1U, capacity - 1U, _file_k);
+    buffer[_length_k] = '\0';
+    (void)fclose(_file_k);
+    return true;
+}
+
+static bool zlang_contract_header_path(const zlang_std_function_t *entry, char *path,
+                                       size_t capacity) {
+    if (strcmp(entry->domain_, "math") == 0) {
+        return snprintf(path, capacity, "%s/include/zlang/standard/math/math.h", ZLANG_SOURCE_DIR) <
+               (int)capacity;
+    }
+    if (strcmp(entry->domain_, "io") == 0) {
+        return snprintf(path, capacity, "%s/include/zlang/standard/io/io.h", ZLANG_SOURCE_DIR) <
+               (int)capacity;
+    }
+    if (strcmp(entry->domain_, "strings") == 0) {
+        return snprintf(path, capacity, "%s/include/zlang/standard/strings/strings.h",
+                        ZLANG_SOURCE_DIR) < (int)capacity;
+    }
+    if (strcmp(entry->domain_, "program_options") == 0) {
+        return snprintf(path, capacity, "%s/include/zlang/standard/program/options.h",
+                        ZLANG_SOURCE_DIR) < (int)capacity;
+    }
+    if (strcmp(entry->domain_, "random") == 0) {
+        const char *const _name_k = strstr(entry->name_, "generate_");
+        return _name_k != NULL && snprintf(path, capacity, "%s/include/zlang/standard/random/%s.h",
+                                           ZLANG_SOURCE_DIR, _name_k) < (int)capacity;
+    }
+    return false;
+}
+
+static bool zlang_contract_doc_path(const zlang_std_function_t *entry, char *path,
+                                    size_t capacity) {
+    return snprintf(path, capacity,
+                    "%s/site/content/docs/standard-library/namespaces/%s/functions/%s.md",
+                    ZLANG_SOURCE_DIR, entry->domain_, entry->name_) < (int)capacity;
+}
+
+static void stdlib_registry_matches_headers_and_docs(zlang_test_context_t *const context) {
+    char _header_k[32768];
+    char _docs_k[32768];
+    char _path_k[1024];
+    bool _matches_k = true;
+    for (size_t _index = 0U; _index < zlang_std_function_count(); ++_index) {
+        const zlang_std_function_t *const _entry_k = zlang_std_function_at(_index);
+        const zlang_std_result_t *const _result_k =
+            _entry_k != NULL ? zlang_std_find_result(_entry_k->return_type_) : NULL;
+        _matches_k = _matches_k && _entry_k != NULL && _result_k != NULL &&
+                     zlang_contract_header_path(_entry_k, _path_k, sizeof(_path_k)) &&
+                     zlang_contract_read_file(_path_k, _header_k, sizeof(_header_k)) &&
+                     strstr(_header_k, _entry_k->c_symbol_) != NULL &&
+                     (strstr(_header_k, _entry_k->activation_macro_) != NULL ||
+                      strcmp(_entry_k->domain_, "random") == 0) &&
+                     zlang_contract_doc_path(_entry_k, _path_k, sizeof(_path_k)) &&
+                     zlang_contract_read_file(_path_k, _docs_k, sizeof(_docs_k)) &&
+                     strstr(_docs_k, "result_type<") != NULL &&
+                     strstr(_docs_k, _entry_k->c_symbol_) != NULL;
+    }
+    ZLANG_CHECK(context, _matches_k);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

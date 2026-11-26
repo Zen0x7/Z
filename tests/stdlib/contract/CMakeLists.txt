@@ -1,1 +1,3 @@
 zlang_add_test_module(stdlib_contract)
+target_link_libraries(zlang_stdlib_contract_tests PRIVATE zlang::compiler_core)
+target_compile_definitions(zlang_stdlib_contract_tests PRIVATE ZLANG_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

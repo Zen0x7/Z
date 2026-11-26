@@ -861,6 +861,12 @@ static const zlang_std_function_t functions_k[] = {{"random",
                                                     "boolean",
                                                     "status_code"}};
 
+size_t zlang_std_function_count(void) { return sizeof(functions_k) / sizeof(functions_k[0]); }
+
+const zlang_std_function_t *zlang_std_function_at(size_t index) {
+    return index < zlang_std_function_count() ? &functions_k[index] : NULL;
+}
+
 const zlang_std_function_t *zlang_std_find(const char *domain, const char *name) {
     if (domain == NULL || name == NULL) {
         return NULL;
@@ -956,6 +962,12 @@ static const zlang_std_result_t results_k[] = {
     {"result_type<string,status_code>", "string", "status_code", "zlang_std_result_string_status_t",
      "zlang_std_result_string"}};
 
+size_t zlang_std_result_count(void) { return sizeof(results_k) / sizeof(results_k[0]); }
+
+const zlang_std_result_t *zlang_std_result_at(size_t index) {
+    return index < zlang_std_result_count() ? &results_k[index] : NULL;
+}
+
 const zlang_std_result_t *zlang_std_find_result(const char *name) {
     if (name == NULL) {
         return NULL;
@@ -1025,6 +1037,40 @@ static const char *const status_constant_c_names_k[] = {
     "zlang_std_status_success_", "zlang_std_status_end_of_input_", "zlang_std_status_io_error_",
     "zlang_std_status_invalid_argument_", "zlang_std_status_capacity_"};
 
+const char *zlang_std_native_result_tag(const zlang_std_result_t *result) {
+    if (result == NULL) {
+        return NULL;
+    }
+    if (strcmp(result->value_type_, "void") == 0) {
+        return "void";
+    }
+    if (strcmp(result->value_type_, "int32") == 0) {
+        return "i32";
+    }
+    if (strcmp(result->value_type_, "uint32") == 0) {
+        return "u32";
+    }
+    if (strcmp(result->value_type_, "int64") == 0) {
+        return "i64";
+    }
+    if (strcmp(result->value_type_, "uint64") == 0) {
+        return "u64";
+    }
+    if (strcmp(result->value_type_, "boolean") == 0) {
+        return "bool";
+    }
+    if (strcmp(result->value_type_, "float") == 0) {
+        return "f32";
+    }
+    if (strcmp(result->value_type_, "double") == 0) {
+        return "f64";
+    }
+    if (strcmp(result->value_type_, "string") == 0) {
+        return "string";
+    }
+    return NULL;
+}
+
 const char *zlang_std_status_constant_c_name(const char *name) {
     if (name == NULL) {
         return NULL;
@@ -1069,7 +1115,8 @@ bool zlang_std_is_native_result_method(const zlang_std_result_t *result, const c
         return false;
     }
     return strcmp(method_name, "is_ok") == 0 || strcmp(method_name, "get") == 0 ||
-           strcmp(method_name, "message") == 0;
+           strcmp(method_name, "message") == 0 || strcmp(method_name, "time") == 0 ||
+           strcmp(method_name, "dump") == 0;
 }
 
 const char *zlang_std_native_result_method_type(const zlang_std_result_t *result,
@@ -1080,8 +1127,11 @@ const char *zlang_std_native_result_method_type(const zlang_std_result_t *result
     if (strcmp(method_name, "is_ok") == 0) {
         return "boolean";
     }
-    if (strcmp(method_name, "message") == 0) {
+    if (strcmp(method_name, "message") == 0 || strcmp(method_name, "dump") == 0) {
         return "string";
+    }
+    if (strcmp(method_name, "time") == 0) {
+        return "uint64";
     }
     if (strcmp(result->value_type_, "void") == 0) {
         return NULL;

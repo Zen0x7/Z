@@ -1,6 +1,6 @@
 # Zlang working specification notes
 
-Current version: **0.37**
+Current version: **0.38**
 
 The normative specification is published at <https://z.iantorres.cl/docs/specification>. This file is
 a compact working note for agents: it records the current contract and the decisions that produced
@@ -37,6 +37,8 @@ Generated C:
 | `arguments` | host argument view | `zlang_arguments_t` |
 | `stream` | borrowed native stream handle | `zlang_stream_t` |
 | `result_type<T, status_code>` | native result layout | `zlang_std_result_*_status_t` |
+| `time()` | optional result capability | `uint64` nanoseconds |
+| `dump()` | optional result capability | bounded canonical `string` view |
 
 There is no implicit numeric conversion. Explicit conversions are `to_int32`, `to_uint32`,
 `to_int64`, `to_uint64`, `to_float` and `to_double`. Arithmetic is checked for signed overflow;
@@ -61,6 +63,13 @@ generic inheritance and variadic type packs remain out of scope.
 Every registered standard library function returns `result_type<T, status_code>`. `T` is the
 function's ideal value, `code` carries a `status_code`, and `what` is a bounded read-only message.
 Functions with no recoverable failure return `SUCCESS`. Programmer and resource errors trap.
+
+`result_type` is a stable envelope, not only an error wrapper. Optional capabilities are selected
+at compile time. `time()` returns `uint64` elapsed nanoseconds; with `ZLANG_STD_RESULT_TIMING`
+disabled it is the constant `0` and no clock read or timing state is emitted. `dump()` returns a
+bounded canonical string containing `code`, `what`, the payload and elapsed time; with
+`ZLANG_STD_RESULT_DUMP` disabled it returns the empty view. A user-defined `T` must implement
+`dump(): string` before `result_type<T, status_code>.dump()` is valid.
 
 Streams are borrowed, trivially copyable handles with a constant operations table. Stdio and
 caller-owned memory streams implement the same contract as future sockets, pipes and devices.
@@ -108,6 +117,7 @@ native results, streams, diagnostics, golden examples and installed-package beha
 - **0.35** — stable native stream contract with stdio and memory backends.
 - **0.36** — built-in result names become `result_type<T, status_code>` and `status_code`.
 - **0.37** — every registered stdlib function returns `result_type<T, status_code>`.
+- **0.38** — opt-in result capabilities: `time()` and `dump()` selected by compile-time flags.
 
 Older numbered status sections and duplicated design notes were folded into the site specification
 and removed from this working file.

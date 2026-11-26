@@ -7,7 +7,8 @@
 #include <math.h>
 #include <stdint.h>
 
-#if defined(ZLANG_STD_MATH_ABS_I32) || defined(ZLANG_STD_MATH_ABS_I64) ||                          \
+#if defined(ZLANG_STD_MATH_ABS_I32) || defined(ZLANG_STD_MATH_ABS_U32) ||                          \
+    defined(ZLANG_STD_MATH_ABS_I64) || defined(ZLANG_STD_MATH_ABS_U64) ||                          \
     defined(ZLANG_STD_MATH_ABS_F32) || defined(ZLANG_STD_MATH_ABS_F64)
 #define ZLANG_STD_MATH_ABS_ACTIVE
 #endif
@@ -32,37 +33,49 @@
 
 #if defined(ZLANG_STD_MATH_ABS_ACTIVE)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_math_abs_i32(int32_t value) {
+    ZLANG_STD_TIMING_BEGIN();
     /* cppcheck-suppress integerOverflowCond */
     if (value == INT32_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
-        return zlang_std_result_i32(zlang_std_status_invalid_argument_, 0);
+        return ZLANG_STD_TIMED_CALL(i32,
+                                    zlang_std_result_i32(zlang_std_status_invalid_argument_, 0));
     }
-    return zlang_std_result_i32(zlang_std_status_success_, value < 0 ? -value : value);
+    return ZLANG_STD_TIMED_CALL(
+        i32, zlang_std_result_i32(zlang_std_status_success_, value < 0 ? -value : value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u32_status_t zlang_std_math_abs_u32(uint32_t value) {
-    return zlang_std_result_u32(zlang_std_status_success_, value);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(u32, zlang_std_result_u32(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_i64_status_t zlang_std_math_abs_i64(int64_t value) {
+    ZLANG_STD_TIMING_BEGIN();
     /* cppcheck-suppress integerOverflowCond */
     if (value == INT64_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
-        return zlang_std_result_i64(zlang_std_status_invalid_argument_, 0);
+        return ZLANG_STD_TIMED_CALL(i64,
+                                    zlang_std_result_i64(zlang_std_status_invalid_argument_, 0));
     }
-    return zlang_std_result_i64(zlang_std_status_success_, value < 0 ? -value : value);
+    return ZLANG_STD_TIMED_CALL(
+        i64, zlang_std_result_i64(zlang_std_status_success_, value < 0 ? -value : value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u64_status_t zlang_std_math_abs_u64(uint64_t value) {
-    return zlang_std_result_u64(zlang_std_status_success_, value);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(u64, zlang_std_result_u64(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_abs_f32(float value) {
-    return zlang_std_result_f32(zlang_std_status_success_, value < 0.0F ? -value : value);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f32, zlang_std_result_f32(zlang_std_status_success_, value < 0.0F ? -value : value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_abs_f64(double value) {
-    return zlang_std_result_f64(zlang_std_status_success_, value < 0.0 ? -value : value);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f64, zlang_std_result_f64(zlang_std_status_success_, value < 0.0 ? -value : value));
 }
 #endif
 
@@ -70,151 +83,182 @@ ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_abs_f64(double 
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_math_clamp_i32(int32_t value,
                                                                            int32_t low,
                                                                            int32_t high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_i32(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_i32(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_success_, high));
     }
-    return zlang_std_result_i32(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(i32, zlang_std_result_i32(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u32_status_t zlang_std_math_clamp_u32(uint32_t value,
                                                                            uint32_t low,
                                                                            uint32_t high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_u32(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(u32, zlang_std_result_u32(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_u32(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(u32, zlang_std_result_u32(zlang_std_status_success_, high));
     }
-    return zlang_std_result_u32(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(u32, zlang_std_result_u32(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_i64_status_t zlang_std_math_clamp_i64(int64_t value,
                                                                            int64_t low,
                                                                            int64_t high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_i64(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(i64, zlang_std_result_i64(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_i64(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(i64, zlang_std_result_i64(zlang_std_status_success_, high));
     }
-    return zlang_std_result_i64(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(i64, zlang_std_result_i64(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u64_status_t zlang_std_math_clamp_u64(uint64_t value,
                                                                            uint64_t low,
                                                                            uint64_t high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_u64(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(u64, zlang_std_result_u64(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_u64(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(u64, zlang_std_result_u64(zlang_std_status_success_, high));
     }
-    return zlang_std_result_u64(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(u64, zlang_std_result_u64(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_clamp_f32(float value, float low,
                                                                            float high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high || !isfinite(value) || !isfinite(low) || !isfinite(high)) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_f32(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(f32, zlang_std_result_f32(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_f32(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(f32, zlang_std_result_f32(zlang_std_status_success_, high));
     }
-    return zlang_std_result_f32(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(f32, zlang_std_result_f32(zlang_std_status_success_, value));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_clamp_f64(double value, double low,
                                                                            double high) {
+    ZLANG_STD_TIMING_BEGIN();
     if (low > high || !isfinite(value) || !isfinite(low) || !isfinite(high)) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value < low) {
-        return zlang_std_result_f64(zlang_std_status_success_, low);
+        return ZLANG_STD_TIMED_CALL(f64, zlang_std_result_f64(zlang_std_status_success_, low));
     }
     if (value > high) {
-        return zlang_std_result_f64(zlang_std_status_success_, high);
+        return ZLANG_STD_TIMED_CALL(f64, zlang_std_result_f64(zlang_std_status_success_, high));
     }
-    return zlang_std_result_f64(zlang_std_status_success_, value);
+    return ZLANG_STD_TIMED_CALL(f64, zlang_std_result_f64(zlang_std_status_success_, value));
 }
 #endif
 
 #if defined(ZLANG_STD_MATH_MIN_ACTIVE)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_math_min_i32(int32_t left,
                                                                          int32_t right) {
-    return zlang_std_result_i32(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        i32, zlang_std_result_i32(zlang_std_status_success_, left < right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_u32_status_t zlang_std_math_min_u32(uint32_t left,
                                                                          uint32_t right) {
-    return zlang_std_result_u32(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        u32, zlang_std_result_u32(zlang_std_status_success_, left < right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_i64_status_t zlang_std_math_min_i64(int64_t left,
                                                                          int64_t right) {
-    return zlang_std_result_i64(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        i64, zlang_std_result_i64(zlang_std_status_success_, left < right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_u64_status_t zlang_std_math_min_u64(uint64_t left,
                                                                          uint64_t right) {
-    return zlang_std_result_u64(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        u64, zlang_std_result_u64(zlang_std_status_success_, left < right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_min_f32(float left, float right) {
-    return zlang_std_result_f32(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f32, zlang_std_result_f32(zlang_std_status_success_, left < right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_min_f64(double left,
                                                                          double right) {
-    return zlang_std_result_f64(zlang_std_status_success_, left < right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f64, zlang_std_result_f64(zlang_std_status_success_, left < right ? left : right));
 }
 #endif
 
 #if defined(ZLANG_STD_MATH_MAX_ACTIVE)
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t zlang_std_math_max_i32(int32_t left,
                                                                          int32_t right) {
-    return zlang_std_result_i32(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        i32, zlang_std_result_i32(zlang_std_status_success_, left > right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_u32_status_t zlang_std_math_max_u32(uint32_t left,
                                                                          uint32_t right) {
-    return zlang_std_result_u32(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        u32, zlang_std_result_u32(zlang_std_status_success_, left > right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_i64_status_t zlang_std_math_max_i64(int64_t left,
                                                                          int64_t right) {
-    return zlang_std_result_i64(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        i64, zlang_std_result_i64(zlang_std_status_success_, left > right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_u64_status_t zlang_std_math_max_u64(uint64_t left,
                                                                          uint64_t right) {
-    return zlang_std_result_u64(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        u64, zlang_std_result_u64(zlang_std_status_success_, left > right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_max_f32(float left, float right) {
-    return zlang_std_result_f32(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f32, zlang_std_result_f32(zlang_std_status_success_, left > right ? left : right));
 }
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_max_f64(double left,
                                                                          double right) {
-    return zlang_std_result_f64(zlang_std_status_success_, left > right ? left : right);
+    ZLANG_STD_TIMING_BEGIN();
+    return ZLANG_STD_TIMED_CALL(
+        f64, zlang_std_result_f64(zlang_std_status_success_, left > right ? left : right));
 }
 #endif
 
 #if defined(ZLANG_STD_MATH_SQRT_F32) || defined(ZLANG_STD_MATH_SQRT_F64)
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_sqrt_f32(float value) {
+    ZLANG_STD_TIMING_BEGIN();
     if (value < 0.0F || !isfinite(value)) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value <= 1.0F) {
-        return zlang_std_result_f32(zlang_std_status_success_, value);
+        return ZLANG_STD_TIMED_CALL(f32, zlang_std_result_f32(zlang_std_status_success_, value));
     }
     float _low_k = 1.0F;
     float _high_k = value;
@@ -226,15 +270,16 @@ ZLANG_STATIC_INLINE zlang_std_result_f32_status_t zlang_std_math_sqrt_f32(float 
             _low_k = _mid_k;
         }
     }
-    return zlang_std_result_f32(zlang_std_status_success_, _low_k);
+    return ZLANG_STD_TIMED_CALL(f32, zlang_std_result_f32(zlang_std_status_success_, _low_k));
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_sqrt_f64(double value) {
+    ZLANG_STD_TIMING_BEGIN();
     if (value < 0.0 || !isfinite(value)) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
     }
     if (value <= 1.0) {
-        return zlang_std_result_f64(zlang_std_status_success_, value);
+        return ZLANG_STD_TIMED_CALL(f64, zlang_std_result_f64(zlang_std_status_success_, value));
     }
     double _low_k = 1.0;
     double _high_k = value;
@@ -246,7 +291,7 @@ ZLANG_STATIC_INLINE zlang_std_result_f64_status_t zlang_std_math_sqrt_f64(double
             _low_k = _mid_k;
         }
     }
-    return zlang_std_result_f64(zlang_std_status_success_, _low_k);
+    return ZLANG_STD_TIMED_CALL(f64, zlang_std_result_f64(zlang_std_status_success_, _low_k));
 }
 #endif
 

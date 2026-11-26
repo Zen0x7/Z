@@ -1,6 +1,6 @@
 # Zlang roadmap
 
-Current version: **0.37**
+Current version: **0.38**
 
 This file is a compact record of delivered language levels, locked decisions and remaining work. The
 published specification at <https://z.iantorres.cl/docs/specification> is normative. Detailed design
@@ -23,6 +23,7 @@ at runtime that could have been decided at compile time.
 - Stable diagnostic codes with one-based source locations.
 - Compile-time generics with monomorphization; no runtime generic representation.
 - Native `result_type<T, status_code>` layouts shared by the compiler registry and public headers.
+- Result capabilities are compile-time flags; disabled capabilities have no runtime work.
 - Borrowed native streams with one operations table for stdio, memory and future backends.
 - Every registered stdlib function returns `result_type<T, status_code>`.
 
@@ -43,6 +44,7 @@ at runtime that could have been decided at compile time.
 | 0.35 | Stable native stream contract with stdio and memory backends |
 | 0.36 | Built-in result rename to `result_type<T, status_code>` and `status_code` |
 | 0.37 | Uniform `result_type<T, status_code>` contract across all registered stdlib domains |
+| 0.38 | Compile-time result capabilities: `time()` and `dump()` |
 
 ## Current shape
 
@@ -74,8 +76,7 @@ sources. Artifacts are static files under `site/public/compiler/`, with notices 
 ## Remaining work
 
 - Add a binary verifier for native stdlib parity between registry entries, public headers and docs.
-- Evaluate an opt-in `--timing` mode that extends results with an elapsed-time accessor. Timing is
-  not part of the default contract because clock reads change observable output.
+- Extend `dump()` to user-defined `T` only when `T` implements `dump(): string`.
 - Add new IO domains only through the existing native `stream` contract.
 - Keep generic traits, generic inheritance and variadic type packs out of scope until explicitly
   locked.

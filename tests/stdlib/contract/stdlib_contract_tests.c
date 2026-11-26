@@ -127,29 +127,33 @@ static void stream_backends_share_read_and_write_semantics(zlang_test_context_t 
                                                  1U, false, &_status_k) == 0);
 
     FILE *const _file_k = tmpfile();
-    ZLANG_CHECK(context, _file_k != NULL);
+    bool _stdio_ok_k = _file_k != NULL;
     if (_file_k != NULL) {
         const zlang_stream_t _stdio_k = zlang_stream_from_ops(&zlang_stream_stdio_ops_k, _file_k);
         const zlang_string_t _line_source_k = {"a\nb", 3U};
-        ZLANG_CHECK(context, zlang_stream_write(_stdio_k, &_line_source_k, &_status_k) == 3);
-        ZLANG_CHECK(context, fseek(_file_k, 0L, SEEK_SET) == 0);
-        ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
-                                               8U, false, &_status_k) == 1);
-        ZLANG_CHECK(context, _destination_k[0] == 'a');
-        ZLANG_CHECK(context, fseek(_file_k, 1L, SEEK_SET) == 0);
-        ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
-                                               8U, true, &_status_k) == 1);
-        ZLANG_CHECK(context, _destination_k[0] == '\n');
-        ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
-                                               8U, false, &_status_k) == 1);
-        ZLANG_CHECK(context, _destination_k[0] == 'b');
-        ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
-                                               8U, false, &_status_k) == 0);
-        ZLANG_CHECK(context, _status_k == zlang_std_status_end_of_input_);
+        const int32_t _write_k = zlang_stream_write(_stdio_k, &_line_source_k, &_status_k);
+        const bool _seek_zero_k = fseek(_file_k, 0L, SEEK_SET) == 0;
+        const int32_t _first_k = zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k),
+                                                   0U, 8U, false, &_status_k);
+        const bool _first_content_k = _destination_k[0] == 'a';
+        const bool _seek_one_k = fseek(_file_k, 1L, SEEK_SET) == 0;
+        const int32_t _newline_k = zlang_stream_read(
+            _stdio_k, _destination_k, sizeof(_destination_k), 0U, 8U, true, &_status_k);
+        const bool _newline_content_k = _destination_k[0] == '\n';
+        const int32_t _last_k = zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k),
+                                                  0U, 8U, false, &_status_k);
+        const bool _last_content_k = _destination_k[0] == 'b';
+        const int32_t _end_k = zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k),
+                                                 0U, 8U, false, &_status_k);
+        const bool _end_status_k = _status_k == zlang_std_status_end_of_input_;
         const zlang_string_t _empty_k = {NULL, 0U};
-        ZLANG_CHECK(context, zlang_stream_write(_stdio_k, &_empty_k, &_status_k) == 0);
+        const int32_t _empty_write_k = zlang_stream_write(_stdio_k, &_empty_k, &_status_k);
+        _stdio_ok_k = _write_k == 3 && _seek_zero_k && _first_k == 1 && _first_content_k &&
+                      _seek_one_k && _newline_k == 1 && _newline_content_k && _last_k == 1 &&
+                      _last_content_k && _end_k == 0 && _end_status_k && _empty_write_k == 0;
         (void)fclose(_file_k);
     }
+    ZLANG_CHECK(context, _stdio_ok_k);
 
     ZLANG_CHECK(context, zlang_std_io_stream_stdin().ops_ != NULL);
     ZLANG_CHECK(context, zlang_std_io_stream_stdout().ops_ != NULL);

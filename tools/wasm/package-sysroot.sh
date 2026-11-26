@@ -55,5 +55,5 @@ cp -R "$ZLANG_REPO/include/zlang/." "$SYSROOT/include/zlang/"
 printf 'zlang wasm sysroot\nwasi-sdk: %s\nllvm: %s\n' \
   "$WASI_SDK_VERSION" "$LLVM_TAG" > "$SYSROOT/ZLANG_SYSROOT"
 
-tar -cf "$DIST/sysroot.tar" -C "$SYSROOT" .
-echo "sysroot packaged: $DIST/sysroot.tar"
+tar -czf "$DIST/sysroot.tar.gz" -C "$SYSROOT" .
+echo "sysroot packaged: $DIST/sysroot.tar.gz"

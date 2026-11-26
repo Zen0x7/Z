@@ -1,6 +1,6 @@
 import { write } from "@std/io";
 import { generate_int32 } from "@std/random";
 
-int32 value = generate_int32(1, 1);
-write(value);
+result_type<int32, status_code> value = generate_int32(1, 1);
+write(value.get());
 write("\n");

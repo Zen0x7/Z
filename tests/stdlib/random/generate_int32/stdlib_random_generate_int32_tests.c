@@ -8,7 +8,9 @@ static void generate_int32_stays_in_range(zlang_test_context_t *const context) {
     zlang_runtime_context_t _state;
     zlang_std_random_seed(&_state, 1U);
     for (int32_t _iteration = 0; _iteration < 100; ++_iteration) {
-        const int32_t _value_k = zlang_std_random_generate_int32(&_state, 3, 9);
+        const zlang_std_result_i32_status_t _result_k =
+            zlang_std_random_generate_int32(&_state, 3, 9);
+        const int32_t _value_k = _result_k.value_;
         ZLANG_CHECK(context, _value_k >= 3 && _value_k <= 9);
     }
 }
@@ -17,12 +19,16 @@ static void generate_int32_extreme_ranges(zlang_test_context_t *const context) {
     zlang_runtime_context_t _state;
     zlang_std_random_seed(&_state, 7U);
     for (int32_t _iteration = 0; _iteration < 100; ++_iteration) {
-        const int32_t _value_k = zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MAX);
+        const zlang_std_result_i32_status_t _result_k =
+            zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MAX);
+        const int32_t _value_k = _result_k.value_;
         ZLANG_CHECK(context, _value_k >= INT32_MIN && _value_k <= INT32_MAX);
         ZLANG_CHECK(context,
-                    zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MIN) == INT32_MIN);
+                    zlang_std_random_generate_int32(&_state, INT32_MIN, INT32_MIN).value_ ==
+                        INT32_MIN);
         ZLANG_CHECK(context,
-                    zlang_std_random_generate_int32(&_state, INT32_MAX, INT32_MAX) == INT32_MAX);
+                    zlang_std_random_generate_int32(&_state, INT32_MAX, INT32_MAX).value_ ==
+                        INT32_MAX);
     }
 }
 

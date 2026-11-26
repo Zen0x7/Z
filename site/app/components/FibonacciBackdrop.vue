@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import * as THREE from 'three'
 
+const props = defineProps<{ compact?: boolean }>()
+
 const colorMode = useColorMode()
 const host = ref<HTMLDivElement | null>(null)
 const ready = ref(false)
 
-const count = 900
+const count = props.compact ? 420 : 900
+const dotSize = 3.7
+const dotOpacity = 0.42
+const rotationStep = props.compact ? 0.0008 : 0.0006
+const compactCanvasSize = 1000
 const goldenAngle = Math.PI * (3 - Math.sqrt(5))
 const positions = new Float32Array(count * 3)
 
@@ -50,8 +56,8 @@ function createDotTexture() {
 function resize() {
   if (!renderer || !camera || !host.value) return
 
-  const width = window.innerWidth * 0.8
-  const height = window.innerHeight * 0.8
+  const width = props.compact ? compactCanvasSize : window.innerWidth * 0.8
+  const height = props.compact ? compactCanvasSize : window.innerHeight * 0.8
   const aspect = width / Math.max(height, 1)
 
   camera.left = -2.1 * aspect
@@ -61,7 +67,7 @@ function resize() {
   camera.updateProjectionMatrix()
 
   if (cluster) {
-    cluster.position.x = camera.right * 0.72
+    cluster.position.x = props.compact ? 0 : camera.right * 0.72
   }
 
   renderer.setSize(width, height, false)
@@ -71,7 +77,7 @@ function resize() {
 
 function tick() {
   if (cluster && renderer && camera && scene) {
-    cluster.rotation.z += 0.0006
+    cluster.rotation.z += rotationStep
     renderer.render(scene, camera)
   }
   frame = requestAnimationFrame(tick)
@@ -105,13 +111,13 @@ onMounted(() => {
   dotTexture = createDotTexture()
 
   material = new THREE.PointsMaterial({
-    color: colorMode.value === 'dark' ? 0xfcfcf8 : 0x111111,
+    color: props.compact ? 0xfcfcf8 : colorMode.value === 'dark' ? 0xfcfcf8 : 0x111111,
     map: dotTexture,
     alphaTest: 0.02,
-    size: 3.7,
+    size: dotSize,
     sizeAttenuation: false,
     transparent: true,
-    opacity: 0.42,
+    opacity: dotOpacity,
   })
 
   cluster.add(new THREE.Points(geometry, material))
@@ -125,7 +131,8 @@ onMounted(() => {
 })
 
 watch(() => colorMode.value, () => {
-  material?.color.set(colorMode.value === 'dark' ? 0xfcfcf8 : 0x111111)
+  if (props.compact || !material) return
+  material.color.set(colorMode.value === 'dark' ? 0xfcfcf8 : 0x111111)
   if (renderer && camera && scene) renderer.render(scene, camera)
 })
 
@@ -146,7 +153,7 @@ onUnmounted(() => {
   <div
     ref="host"
     class="fib-backdrop"
-    :class="ready && 'fib-backdrop--ready'"
+    :class="[ready && 'fib-backdrop--ready', compact && 'fib-backdrop--compact']"
     aria-hidden="true"
   />
 </template>

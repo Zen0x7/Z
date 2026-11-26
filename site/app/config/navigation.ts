@@ -3,6 +3,7 @@ export const docsNavigation = [
   { label: 'Quick start', to: '/docs/quick-start', description: 'Build and run a program' },
   { label: 'Language', to: '/docs/language', description: 'Syntax and semantics' },
   { label: 'Specification', to: '/docs/specification', description: 'Normative contract' },
+  { label: 'Playground', to: '/playground', description: 'Compile and run in the browser' },
   { label: 'Compiler', to: '/docs/compiler', description: 'Pipeline and emitted C' },
   { label: 'Standard library', to: '/docs/standard-library', description: 'Domains and imports' },
 ] as const

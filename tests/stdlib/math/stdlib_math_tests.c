@@ -14,13 +14,13 @@
 #undef ZLANG_TEST_CASE
 
 static void math_overloads_compute(zlang_test_context_t *const context) {
-    ZLANG_CHECK(context, zlang_std_math_abs_i32(-7) == 7);
-    ZLANG_CHECK(context, zlang_std_math_abs_i64(-7LL) == 7LL);
-    ZLANG_CHECK(context, zlang_std_math_clamp_i32(9, 1, 5) == 5);
-    ZLANG_CHECK(context, zlang_std_math_min_i32(2, 3) == 2);
-    ZLANG_CHECK(context, zlang_std_math_max_i32(2, 3) == 3);
-    ZLANG_CHECK(context, zlang_std_math_sqrt_f64(9.0) > 2.99);
-    ZLANG_CHECK(context, zlang_std_math_sqrt_f64(9.0) < 3.01);
+    ZLANG_CHECK(context, zlang_std_math_abs_i32(-7).value_ == 7);
+    ZLANG_CHECK(context, zlang_std_math_abs_i64(-7LL).value_ == 7LL);
+    ZLANG_CHECK(context, zlang_std_math_clamp_i32(9, 1, 5).value_ == 5);
+    ZLANG_CHECK(context, zlang_std_math_min_i32(2, 3).value_ == 2);
+    ZLANG_CHECK(context, zlang_std_math_max_i32(2, 3).value_ == 3);
+    ZLANG_CHECK(context, zlang_std_math_sqrt_f64(9.0).value_ > 2.99);
+    ZLANG_CHECK(context, zlang_std_math_sqrt_f64(9.0).value_ < 3.01);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

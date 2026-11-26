@@ -153,7 +153,7 @@ export const zlangLanguage: LanguageRegistration = {
     variables: {
       patterns: [
         {
-          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|arguments)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|arguments|status_code|result_type)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'storage.type.zlang' },
             2: { name: 'punctuation.zlang' },
@@ -163,7 +163,7 @@ export const zlangLanguage: LanguageRegistration = {
           },
         },
         {
-          match: String.raw`\b(array)(?:(\[)([^\]]*)(\]))?\s+(boolean|int32|uint32|int64|uint64|float|double|string|arguments|[A-Za-z_]\w*)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(array)(?:(\[)([^\]]*)(\]))?\s+(boolean|int32|uint32|int64|uint64|float|double|string|arguments|status_code|result_type|[A-Za-z_]\w*)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'storage.type.zlang' },
             2: { name: 'punctuation.zlang' },

@@ -6,7 +6,8 @@ function pure_add(clone int32 left, clone int32 right): int32 {
 }
 
 function rolls(): int32 {
-    return generate_int32(1, 6);
+    result_type<int32, status_code> _roll = generate_int32(1, 6);
+    return _roll.get();
 }
 
 function rolls_twice(): int32 {

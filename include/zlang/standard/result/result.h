@@ -74,56 +74,56 @@ typedef struct zlang_std_result_string_status_t {
 
 ZLANG_STATIC_INLINE zlang_std_result_void_status_t
 zlang_std_result_void(const zlang_std_status_t code) {
-    zlang_std_result_void_status_t result = {code, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_void_status_t _result_k = {code, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_i32_status_t
 zlang_std_result_i32(const zlang_std_status_t code, const int32_t value) {
-    zlang_std_result_i32_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_i32_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u32_status_t
 zlang_std_result_u32(const zlang_std_status_t code, const uint32_t value) {
-    zlang_std_result_u32_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_u32_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_i64_status_t
 zlang_std_result_i64(const zlang_std_status_t code, const int64_t value) {
-    zlang_std_result_i64_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_i64_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_u64_status_t
 zlang_std_result_u64(const zlang_std_status_t code, const uint64_t value) {
-    zlang_std_result_u64_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_u64_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_bool_status_t
 zlang_std_result_bool(const zlang_std_status_t code, const bool value) {
-    zlang_std_result_bool_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_bool_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f32_status_t
 zlang_std_result_f32(const zlang_std_status_t code, const float value) {
-    zlang_std_result_f32_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_f32_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_f64_status_t
 zlang_std_result_f64(const zlang_std_status_t code, const double value) {
-    zlang_std_result_f64_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_f64_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 ZLANG_STATIC_INLINE zlang_std_result_string_status_t
 zlang_std_result_string(const zlang_std_status_t code, const zlang_string_t value) {
-    zlang_std_result_string_status_t result = {code, value, zlang_std_status_message(code)};
-    return result;
+    zlang_std_result_string_status_t _result_k = {code, value, zlang_std_status_message(code)};
+    return _result_k;
 }
 
 #endif /* ZLANG_STANDARD_RESULT_RESULT_H */

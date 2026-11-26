@@ -1073,6 +1073,25 @@ Zlang 0.36 renames the native result family to `result_type<T, status_code>` and
 type to `status_code`. C layouts, C symbols and uppercase status constants remain unchanged. The
 rename applies to compiler registry entries, semantics, tests, documentation and site pages.
 
+## 0.37 implementation status
+
+Status: implemented.
+
+Zlang 0.37 will require every registered standard library function to return
+`result_type<T, status_code>`. The rule removes API dissonance between related functions: `read` and
+`write` are opposite directions of the same IO operation and therefore use the same result shape.
+`T` is the function's ideal value; `code` is a `status_code`; `what` is a bounded read-only message
+view. Functions with no recoverable failure return `SUCCESS`. Traps remain for programmer and
+resource errors, and a trapped function does not return.
+
+Each function is reviewed by asking whether it returns the standard result, whether `T` is the
+obvious value expected from the function name, and whether `T` is complete enough for the case. A
+future opt-in `--timing` mode may extend results with an explicit elapsed-time accessor.
+
+Parameter modes are audited under the rule that `clone` copies only trivial descriptors or scalars.
+Cloning a `string` copies the view descriptor, not its bytes. Cloning a `stream` copies a borrowed
+handle. `reference` means mutable destination; `const reference` means borrowed, non-mutated view.
+
 ## 0.35 implementation status
 
 Status: implemented.
@@ -1123,3 +1142,4 @@ inheritance remain outside scope.
 | explicit write window | `emits_stream_write_result` |
 | native result methods | `emits_native_result_methods` |
 | generic struct methods | `emits_generic_struct_method` |
+| uniform stdlib result contract | `emits_math_overloads`, `emits_strings_api`, `zlang.stdlib.random.generate_int32.basic` |

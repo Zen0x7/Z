@@ -24,7 +24,7 @@ emcmake cmake -S "$LLVM_SRC/llvm" -B "$LLVM_BUILD" -GNinja \
   -DCMAKE_CXX_FLAGS="-msimd128 -mbulk-memory" \
   -DCMAKE_EXE_LINKER_FLAGS="\
 -s NO_INVOKE_RUN \
--s EXIT_RUNTIME \
+-s EXIT_RUNTIME=0 \
 -s ENVIRONMENT=worker \
 -s STACK_SIZE=4194304 \
 -s INITIAL_HEAP=134217728 \

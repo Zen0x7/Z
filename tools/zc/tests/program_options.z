@@ -2,15 +2,20 @@ import { write } from "@std/io";
 import { argument_count, argument_at, has_option, option_value, has_flag } from "@std/program_options";
 
 function main(int32 argc, arguments argv): int32 {
-    write(argument_count(argv));
+    result_type<uint32, status_code> _count = argument_count(argv);
+    result_type<string, status_code> _arg = argument_at(argv, 1U);
+    result_type<boolean, status_code> _has = has_option(argv, "--name");
+    result_type<string, status_code> _value = option_value(argv, "--name");
+    result_type<boolean, status_code> _flag = has_flag(argv, "--verbose");
+    write(_count.get());
     write(" ");
-    write(argument_at(argv, 1U));
+    write(_arg.get());
     write(" ");
-    write(has_option(argv, "--name"));
+    write(_has.get());
     write(" ");
-    write(option_value(argv, "--name"));
+    write(_value.get());
     write(" ");
-    write(has_flag(argv, "--verbose"));
+    write(_flag.get());
     write("\n");
     return 0;
 }

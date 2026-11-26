@@ -1244,3 +1244,51 @@ types.
 Zlang 0.36 is implemented at language level 0.36. All Zlang source, registry signatures, diagnostics
 fixtures, tests, documentation and site pages use `result_type<T, status_code>` and `status_code`.
 The canonical C layouts remain `zlang_std_result_*_status_t` and `zlang_std_status_t`.
+
+## 0.37 — Design note
+
+Status: Locked.
+
+Zlang 0.37 audits and unifies the standard library around one principle: functions in the same
+domain must produce the same shape of result. `read` and `write` are opposite directions of the same
+IO operation, so returning different value shapes creates cognitive dissonance. The model follows
+Boost.Asio's `error_code, bytes_transferred` pattern: every stdlib function returns
+`result_type<T, status_code>`, including functions whose normal path cannot fail. `T` is the value
+the function would ideally return; `code` always reports status; `what` is a bounded read-only
+message view.
+
+Every registered function is checked with three questions:
+
+1. Does it return `result_type<T, status_code>`?
+2. Is `T` the obvious value one expects from the function name?
+3. Is `T` complete enough for the case, or must the result expose more context?
+
+A future `--timing` extension may add an explicit `time()` accessor with elapsed nanoseconds to the
+result envelope. Timing is opt-in because it adds clock reads and changes observable output.
+
+A trap is still a trap. Null storage, zero capacity, invalid offsets and capacity overflow remain
+runtime traps because they are programmer or resource errors. A trapped function does not return a
+result. Recoverable stream and operation outcomes are reported through `status_code`.
+
+Parameter modes are audited with one rule: `clone` means a trivially copyable descriptor or scalar,
+not a buffer copy. A `string` clone copies the view descriptor, and a `stream` clone copies the
+borrowed handle. `reference` is reserved for mutable destinations; `const reference` is for borrowed
+views that are not mutated. Every registered function records its mode and ownership meaning.
+
+The audit covers the current domains only: `io`, `math`, `program_options`, `random` and `strings`.
+Planned domains remain planned. Registry entries, public headers, emitted C, tests, SPEC and site
+documentation must agree for every function.
+
+## 0.37 — Completion
+
+Zlang 0.37 is implemented at language level 0.37. Every registered stdlib function in `io`, `math`,
+`program_options`, `random` and `strings` returns `result_type<T, status_code>`. `T` is the obvious
+value of the operation; `code` carries `status_code`; `what` carries the bounded message view.
+Functions with no recoverable failure return `SUCCESS`. Traps remain traps for programmer and
+resource errors.
+
+Runtime wrappers and public headers now return canonical result structs: `zlang_std_result_i32_*`,
+`zlang_std_result_u32_*`, `zlang_std_result_i64_*`, `zlang_std_result_u64_*`,
+`zlang_std_result_bool_*`, `zlang_std_result_f32_*`, `zlang_std_result_f64_*` and
+`zlang_std_result_string_*`. Stdlib tests, compiler fixtures, examples, SPEC and repository docs
+were updated together. Site documentation remains a separate workstream.

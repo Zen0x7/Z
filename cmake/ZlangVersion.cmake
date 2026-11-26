@@ -1,6 +1,6 @@
 # Single source of truth for the package version and the documented language level.
-set(ZLANG_PROJECT_VERSION 0.36.0)
-set(ZLANG_LANGUAGE_VERSION 0.36)
+set(ZLANG_PROJECT_VERSION 0.37.0)
+set(ZLANG_LANGUAGE_VERSION 0.37)
 
 string(REPLACE "." ";" _zlang_version_parts "${ZLANG_PROJECT_VERSION}")
 list(GET _zlang_version_parts 0 ZLANG_VERSION_MAJOR)

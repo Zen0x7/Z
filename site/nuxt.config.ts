@@ -26,7 +26,7 @@ function collectContentRoutes(directory: string, base = '/docs'): string[] {
   return routes
 }
 
-const prerenderRoutes = ['/', ...new Set(collectContentRoutes(contentRoot))]
+const prerenderRoutes = ['/', '/playground', ...new Set(collectContentRoutes(contentRoot))]
 
 export default defineNuxtConfig({
   modules: [

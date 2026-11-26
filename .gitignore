@@ -9,3 +9,5 @@ compile_commands.json
 .cache/
 
 /install/
+
+/site/public/compiler/sysroot.tar

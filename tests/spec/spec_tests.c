@@ -1321,11 +1321,11 @@ static void emits_checked_unary_negation(zlang_test_context_t *const context) {
 static void emits_math_overloads(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { abs, clamp, min, max, sqrt } from \"@std/math\";\n"
-                                  "int32 a = abs(3);\n"
-                                  "double b = sqrt(9.0);\n"
-                                  "int32 c = clamp(7, 1, 5);\n"
-                                  "int32 d = min(2, 3);\n"
-                                  "int32 e = max(2, 3);";
+                                  "result_type<int32, status_code> a = abs(3);\n"
+                                  "result_type<double, status_code> b = sqrt(9.0);\n"
+                                  "result_type<int32, status_code> c = clamp(7, 1, 5);\n"
+                                  "result_type<int32, status_code> d = min(2, 3);\n"
+                                  "result_type<int32, status_code> e = max(2, 3);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_abs_i32(3)") != NULL);
@@ -1339,9 +1339,9 @@ static void emits_strings_api(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
         "import { compare, contains, starts_with } from \"@std/strings\";\n"
-        "int32 a = compare(\"a\", \"b\");\n"
-        "boolean b = contains(\"abc\", \"b\");\n"
-        "boolean c = starts_with(\"abc\", \"a\");";
+        "result_type<int32, status_code> a = compare(\"a\", \"b\");\n"
+        "result_type<boolean, status_code> b = contains(\"abc\", \"b\");\n"
+        "result_type<boolean, status_code> c = starts_with(\"abc\", \"a\");";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_strings_compare(") != NULL);

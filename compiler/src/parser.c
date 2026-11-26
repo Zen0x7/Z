@@ -996,9 +996,35 @@ static bool zlang_parse_shift(zlang_parser_t *parser, size_t *expression) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_relational(zlang_parser_t *parser, size_t *expression) {
+static bool zlang_parse_range(zlang_parser_t *parser, size_t *expression) {
     size_t _left_k = ZLANG_NO_EXPRESSION;
     if (!zlang_parse_shift(parser, &_left_k)) {
+        return false;
+    }
+    if (zlang_parser_current(parser)->kind_ != zlang_token_dot_dot_) {
+        *expression = _left_k;
+        return true;
+    }
+    zlang_parser_advance(parser);
+    size_t _right_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_shift(parser, &_right_k)) {
+        return false;
+    }
+    const size_t _range_k = zlang_parser_add_expression(parser);
+    if (_range_k == ZLANG_NO_EXPRESSION) {
+        return false;
+    }
+    parser->expressions_[_range_k].kind_ = zlang_expression_range_;
+    parser->expressions_[_range_k].left_ = _left_k;
+    parser->expressions_[_range_k].right_ = _right_k;
+    *expression = _range_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_relational(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_range(parser, &_left_k)) {
         return false;
     }
     for (;;) {
@@ -1879,15 +1905,29 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     if (!zlang_parser_expect(parser, zlang_token_in_, "expected 'in' in foreach")) {
         return false;
     }
+    size_t _range_k = ZLANG_NO_EXPRESSION;
     const zlang_token_t *const _iterable_k = zlang_parser_current(parser);
-    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an array name")) {
+    const bool _range_kind_k = _iterable_k->kind_ == zlang_token_integer_literal_ ||
+                               _iterable_k->kind_ == zlang_token_identifier_;
+    if (!_range_kind_k) {
+        zlang_parser_unsupported(parser, "expected an array name or range");
+        return false;
+    }
+    if (!zlang_parse_expression(parser, &_range_k)) {
+        return false;
+    }
+    const bool _is_range_k = _range_k < parser->expression_count_ &&
+                             parser->expressions_[_range_k].kind_ == zlang_expression_range_;
+    if (!_is_range_k && _iterable_k->kind_ != zlang_token_identifier_) {
+        zlang_parser_unsupported(parser, "expected an array name or range");
         return false;
     }
     if (!zlang_parser_expect(parser, zlang_token_right_paren_, "expected ')' in foreach")) {
         return false;
     }
 
-    const uint32_t _array_rank_k = zlang_parser_array_rank(parser, _iterable_k->text_);
+    const uint32_t _array_rank_k =
+        _is_range_k ? 0U : zlang_parser_array_rank(parser, _iterable_k->text_);
     const bool _coordinates_k = _array_rank_k > 1U && _name_count_k == _array_rank_k;
     if (_array_rank_k > 1U && !_coordinates_k) {
         zlang_parser_unsupported(parser,
@@ -1898,6 +1938,10 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
         zlang_parser_unsupported(parser, "foreach expects index and item, or one item name");
         return false;
     }
+    if (_is_range_k && _name_count_k > 2U) {
+        zlang_parser_unsupported(parser, "foreach over a range expects one index name");
+        return false;
+    }
 
     const size_t _statement_k = zlang_parser_add_statement(parser);
     if (_statement_k == (size_t)-1) {
@@ -1905,8 +1949,10 @@ static bool zlang_parse_foreach(zlang_parser_t *parser) {
     }
     zlang_ast_statement_t *const _statement_k_k = &parser->statements_[_statement_k];
     _statement_k_k->kind_ = zlang_statement_foreach_;
-    _statement_k_k->type_name_ = zlang_parser_sequence_type(parser, _iterable_k->text_);
-    _statement_k_k->iterable_name_ = _iterable_k->text_;
+    _statement_k_k->type_name_ =
+        _is_range_k ? "uint32" : zlang_parser_sequence_type(parser, _iterable_k->text_);
+    _statement_k_k->iterable_name_ = _is_range_k ? NULL : _iterable_k->text_;
+    _statement_k_k->expression_ = _is_range_k ? _range_k : ZLANG_NO_EXPRESSION;
     _statement_k_k->line_ = _names_k[0]->line_;
     _statement_k_k->column_ = _names_k[0]->column_;
     if (_coordinates_k) {

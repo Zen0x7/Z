@@ -79,7 +79,8 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_bit_xor_,
     zlang_expression_bit_not_,
     zlang_expression_shift_left_,
-    zlang_expression_shift_right_
+    zlang_expression_shift_right_,
+    zlang_expression_range_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {

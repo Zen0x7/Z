@@ -1,0 +1,4 @@
+import { write } from "@std/io";
+foreach (index in 0U..3U) {
+    write(index);
+}

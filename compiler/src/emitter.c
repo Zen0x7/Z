@@ -2579,6 +2579,8 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         }
         return zlang_append_text(emitter, ")");
     }
+    case zlang_expression_range_:
+        return false;
     case zlang_expression_wildcard_:
         return false;
     case zlang_expression_equal_:
@@ -5559,10 +5561,39 @@ static bool zlang_emit_statement(const zlang_program_t *program,
     }
     case zlang_statement_foreach_: {
         const zlang_emitter_scope_t _foreach_scope_k = zlang_save_scope(emitter);
+        const bool _range_kind_k = statement->expression_ != ZLANG_NO_EXPRESSION;
         const zlang_emitted_symbol_t *const _iterable_symbol_k =
-            zlang_find_active_symbol(emitter, statement->iterable_name_);
-        if (_iterable_symbol_k == NULL) {
+            _range_kind_k ? NULL : zlang_find_active_symbol(emitter, statement->iterable_name_);
+        if (!_range_kind_k && _iterable_symbol_k == NULL) {
             return false;
+        }
+        if (_range_kind_k) {
+            char _index_name[ZLANG_EMITTED_NAME_CAPACITY];
+            const char *const _name_k =
+                statement->index_name_ != NULL ? statement->index_name_ : statement->name_;
+            if (_name_k == NULL ||
+                !zlang_register_symbol(emitter, _name_k, "uint32", "app_local_", 0U, false, false,
+                                       false, false, _index_name, sizeof(_index_name)) ||
+                !zlang_append_indent(emitter, depth) ||
+                !zlang_append_text(emitter, "for (uint32_t ") ||
+                !zlang_append_text(emitter, _index_name) || !zlang_append_text(emitter, " = ") ||
+                !zlang_emit_expression(program, program->expressions_[statement->expression_].left_,
+                                       emitter) ||
+                !zlang_append_text(emitter, "; ") || !zlang_append_text(emitter, _index_name) ||
+                !zlang_append_text(emitter, " < ") ||
+                !zlang_emit_expression(
+                    program, program->expressions_[statement->expression_].right_, emitter) ||
+                !zlang_append_text(emitter, "; ++") || !zlang_append_text(emitter, _index_name) ||
+                !zlang_append_text(emitter, ") {\n")) {
+                zlang_restore_scope(emitter, _foreach_scope_k);
+                return false;
+            }
+            const bool _body_ok_k = zlang_emit_body(program, statement->body_start_,
+                                                    statement->body_count_, emitter, depth + 1U) &&
+                                    zlang_append_indent(emitter, depth) &&
+                                    zlang_append_text(emitter, "}\n");
+            zlang_restore_scope(emitter, _foreach_scope_k);
+            return _body_ok_k;
         }
         if (statement->foreach_rank_ > 1U) {
             char _coordinate_names[ZLANG_ARRAY_MAX_RANK][ZLANG_EMITTED_NAME_CAPACITY];

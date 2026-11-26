@@ -592,6 +592,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         return _expression_k->name_;
     }
+    case zlang_expression_range_: {
+        const char *const _start_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _end_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_type_matches("uint32", _start_k) || !zlang_type_matches("uint32", _end_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "range endpoints must be uint32");
+            return NULL;
+        }
+        return "uint32_range";
+    }
     case zlang_expression_wildcard_:
         return NULL;
     case zlang_expression_match_: {
@@ -1761,9 +1773,12 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
     case zlang_statement_default_:
         break;
     case zlang_statement_foreach_: {
+        const bool _range_kind_k = statement->expression_ != ZLANG_NO_EXPRESSION;
         const zlang_symbol_t *const _iterable_k =
-            zlang_find_symbol(context, statement->iterable_name_);
-        if (_iterable_k == NULL || !_iterable_k->is_sequence_) {
+            _range_kind_k ? NULL : zlang_find_symbol(context, statement->iterable_name_);
+        if (_range_kind_k) {
+            (void)zlang_analyze_expression(context, statement->expression_, statement);
+        } else if (_iterable_k == NULL || !_iterable_k->is_sequence_) {
             return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
                                 "foreach iterable refers to an undeclared array");
         }

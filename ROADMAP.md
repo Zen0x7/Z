@@ -86,7 +86,7 @@ named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
 | 4 | ternary | `condition ? then_expression : else_expression` — delivered |
 | 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` — delivered |
 | 6 | do-while | `do { ... } while (condition);` — delivered |
-| 7 | range literal | `start..end` for exclusive `uint32` ranges |
+| 7 | range literal | `start..end` for exclusive `uint32` ranges — delivered |
 | 8 | labeled loop jumps | `outer: while (...) { break outer; continue outer; }` |
 
 Interfaces replace ad-hoc trait field requirements:

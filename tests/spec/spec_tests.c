@@ -1787,6 +1787,18 @@ static void emits_do_while_statement(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "} while (app_local_index < 3);") != NULL);
 }
 
+static void emits_range_foreach(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "foreach (index in 0U..3U) {\n"
+                                  "    write(index);\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "for (uint32_t app_local_index = 0U; "
+                                         "app_local_index < 3U; ++app_local_index)") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

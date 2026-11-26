@@ -70,6 +70,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_comma_,
     zlang_token_colon_,
     zlang_token_dot_,
+    zlang_token_dot_dot_,
     zlang_token_equal_,
     zlang_token_arrow_,
     zlang_token_question_,

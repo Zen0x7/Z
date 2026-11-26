@@ -329,6 +329,13 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     token->column_ = column;
 
     const char _next_k = lexer->source_[lexer->position_ + 1U];
+    if (_character_k == '.' && _next_k == '.') {
+        token->kind_ = zlang_token_dot_dot_;
+        token->length_ = 2U;
+        zlang_lexer_advance(lexer);
+        zlang_lexer_advance(lexer);
+        return true;
+    }
     if (_character_k == '=' && _next_k == '>') {
         token->kind_ = zlang_token_arrow_;
         token->length_ = 2U;

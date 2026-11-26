@@ -242,8 +242,8 @@ view.
 
 ## Planned 0.39 grammar
 
-`label:`, `jump label;`, `switch`, `match`, ternary `?:`, bitwise/shift operators and `do while`
-are accepted. The remaining productions are planned:
+`label:`, `jump label;`, `switch`, `match`, ternary `?:`, bitwise/shift operators, `do while` and
+range literals are accepted. The remaining production is planned:
 
 ```text
 labelStatement    = identifier ":" statement ;

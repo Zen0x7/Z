@@ -1446,6 +1446,77 @@ static void reuses_repeated_index_reads(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_gen_value_") != NULL);
 }
 
+static void emits_struct_inheritance_and_vtable(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "struct Shape { integer value; function area(): integer { return value; } }\n"
+        "struct Square : Shape { integer side; }\n"
+        "Square square;\n"
+        "integer result = square.value;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_struct_shape_t zlang_base_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_TYPE_SQUARE") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_vtable_shape") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_square.zlang_base_.value_") != NULL);
+}
+
+static void emits_dynamic_dispatch_call(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "struct Shape { integer value; function area(): integer { return value; } }\n"
+        "struct Square : Shape { integer side; function area(): integer { return side; } }\n"
+        "function describe(reference Shape shape): integer { return shape.area(); }\n"
+        "Square square;\n"
+        "integer result = describe(square);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_slot_area_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_vtable_square_area") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, ")->zlang_vtable_->zlang_slot_area_") != NULL);
+}
+
+static void emits_trait_method_direct_call(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "trait Named requires integer value {\n"
+                                  "    function label(): integer { return value; }\n"
+                                  "}\n"
+                                  "struct Counter uses Named { integer value; }\n"
+                                  "function main(): integer {\n"
+                                  "    Counter counter;\n"
+                                  "    integer result = counter.label();\n"
+                                  "    return result;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_label") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "app_fn_counter_label(&app_local_counter)") != NULL);
+}
+
+static void rejects_downcast(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Shape { integer value; }\n"
+                                  "struct Square : Shape { integer side; }\n"
+                                  "Shape base;\n"
+                                  "Square square = base;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void rejects_override_signature_mismatch(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "struct Shape { function area(): integer { return 1; } }\n"
+        "struct Square : Shape { function area(clone integer scale): integer { return scale; } }";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

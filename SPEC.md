@@ -82,8 +82,9 @@ stable across the Zlang-facing lowercase type rename.
 
 ## Planned 0.39 syntax
 
-Zlang 0.39 is planned, not implemented in 0.38. It adds eight syntax forms: labeled jumps with
-`jump label;`, `switch`, value-producing `match`, ternary `?:`, bitwise and shift operators,
+Zlang 0.39 adds eight syntax forms. Point 1, labeled jumps with `jump label;`, is delivered in
+this working tree; points 2–8 remain planned. The full set is `switch`, value-producing `match`,
+ternary `?:`, bitwise and shift operators,
 `do { ... } while (...)`, exclusive `uint32` range literals `start..end`, and labeled
 `break`/`continue`.
 

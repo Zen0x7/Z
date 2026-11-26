@@ -320,6 +320,12 @@ static bool zlang_parser_generic_application_ahead(const zlang_parser_t *parser)
     return false;
 }
 
+static bool zlang_parser_starts_label(const zlang_parser_t *parser) {
+    return zlang_parser_current(parser)->kind_ == zlang_token_identifier_ &&
+           parser->position_ + 1U < parser->token_count_ &&
+           parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_colon_;
+}
+
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
     const zlang_token_t *const _token_k = zlang_parser_current(parser);
     if (_token_k->kind_ == zlang_token_const_ || _token_k->kind_ == zlang_token_array_ ||
@@ -408,6 +414,8 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
 static bool zlang_parse_import(zlang_parser_t *parser);
 static bool zlang_parse_return(zlang_parser_t *parser);
 static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_kind_t kind);
+static bool zlang_parse_label(zlang_parser_t *parser);
+static bool zlang_parse_jump(zlang_parser_t *parser);
 static bool zlang_parse_block(zlang_parser_t *parser, size_t statement);
 static bool zlang_parse_statements(zlang_parser_t *parser);
 
@@ -1877,6 +1885,41 @@ static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_k
                                                               : "expected ';' after continue");
 }
 
+static bool zlang_parse_label(zlang_parser_t *parser) {
+    const zlang_token_t *const _name_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    if (!zlang_parser_expect(parser, zlang_token_colon_, "expected ':' after label")) {
+        return false;
+    }
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    parser->statements_[_statement_k].kind_ = zlang_statement_label_;
+    parser->statements_[_statement_k].name_ = _name_k->text_;
+    parser->statements_[_statement_k].line_ = _name_k->line_;
+    parser->statements_[_statement_k].column_ = _name_k->column_;
+    return true;
+}
+
+static bool zlang_parse_jump(zlang_parser_t *parser) {
+    const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    const zlang_token_t *const _name_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a label after jump")) {
+        return false;
+    }
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    parser->statements_[_statement_k].kind_ = zlang_statement_jump_;
+    parser->statements_[_statement_k].name_ = _name_k->text_;
+    parser->statements_[_statement_k].line_ = _keyword_k->line_;
+    parser->statements_[_statement_k].column_ = _keyword_k->column_;
+    return zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after jump");
+}
+
 static bool
 // NOLINTNEXTLINE(misc-no-recursion)
 zlang_parse_for(zlang_parser_t *parser) { // NOLINT(misc-no-recursion)
@@ -2003,7 +2046,15 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
     while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
            zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
-        if (zlang_parser_starts_declaration(parser)) {
+        if (zlang_parser_starts_label(parser)) {
+            if (!zlang_parse_label(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_jump_) {
+            if (!zlang_parse_jump(parser)) {
+                return false;
+            }
+        } else if (zlang_parser_starts_declaration(parser)) {
             if (!zlang_parse_declaration(parser)) {
                 return false;
             }
@@ -2861,7 +2912,15 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
 
     while (zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
-        if (zlang_parser_starts_declaration(parser)) {
+        if (zlang_parser_starts_label(parser)) {
+            if (!zlang_parse_label(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_jump_) {
+            if (!zlang_parse_jump(parser)) {
+                return false;
+            }
+        } else if (zlang_parser_starts_declaration(parser)) {
             if (!zlang_parse_declaration(parser)) {
                 return false;
             }

@@ -5339,6 +5339,24 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         return zlang_append_text(emitter, "break;\n");
     case zlang_statement_continue_:
         return zlang_append_text(emitter, "continue;\n");
+    case zlang_statement_label_: {
+        char _label_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k)) ||
+            !zlang_append_text(emitter, "zlang_label_") || !zlang_append_text(emitter, _label_k) ||
+            !zlang_append_text(emitter, ": ;\n")) {
+            return false;
+        }
+        return true;
+    }
+    case zlang_statement_jump_: {
+        char _label_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k)) ||
+            !zlang_append_text(emitter, "goto zlang_label_") ||
+            !zlang_append_text(emitter, _label_k) || !zlang_append_text(emitter, ";\n")) {
+            return false;
+        }
+        return true;
+    }
     case zlang_statement_return_:
         if (statement->expression_ == ZLANG_NO_EXPRESSION) {
             return zlang_append_text(emitter, "return;\n");

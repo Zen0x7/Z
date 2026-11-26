@@ -1,0 +1,5 @@
+int32 value = 0;
+jump done;
+value = 1;
+done:
+value = 2;

@@ -54,6 +54,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_while_,
     zlang_token_break_,
     zlang_token_continue_,
+    zlang_token_jump_,
     zlang_token_left_paren_,
     zlang_token_right_paren_,
     zlang_token_left_brace_,

@@ -19,6 +19,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/stateful_calls.z ${CMAKE_CURRENT_BINARY_DIR}/stateful_calls.z COPYONLY)
     configure_file(tests/program_options.z ${CMAKE_CURRENT_BINARY_DIR}/program_options.z COPYONLY)
     configure_file(tests/capabilities.z ${CMAKE_CURRENT_BINARY_DIR}/capabilities.z COPYONLY)
+    configure_file(tests/jump.z ${CMAKE_CURRENT_BINARY_DIR}/jump.z COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z --emit-c)
@@ -59,6 +60,18 @@ if(ZLANG_BUILD_TESTS)
                      -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_generated_c PROPERTIES LABELS module:cli)
+
+    add_test(NAME zlang.cli.compiles_jump
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/jump.z
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DC_COMPILER_FRONTEND=${CMAKE_C_COMPILER_FRONTEND_VARIANT}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
+    set_tests_properties(zlang.cli.compiles_jump PROPERTIES LABELS module:cli)
 
     add_test(NAME zlang.cli.compiles_capabilities
              COMMAND ${CMAKE_COMMAND}

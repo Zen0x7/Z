@@ -2079,9 +2079,42 @@ static bool zlang_validate_generic_applications(zlang_semantic_context_t *contex
     return _result_k;
 }
 
+static const zlang_ast_statement_t *zlang_find_label(const zlang_program_t *program,
+                                                     const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_label_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+static bool zlang_validate_jumps(const zlang_program_t *program, zlang_diagnostics_t *diagnostics) {
+    bool _result_k = true;
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_jump_) {
+            continue;
+        }
+        if (zlang_find_label(program, _statement_k->name_) == NULL) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                        _statement_k->line_, _statement_k->column_,
+                                        "jump target is not a declared label");
+            _result_k = false;
+        }
+    }
+    return _result_k;
+}
+
 bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_context_t *context) {
     context->program_ = program;
     if (!zlang_register_imports(program, context) ||
+        !zlang_validate_jumps(program, context->diagnostics_) ||
         !zlang_validate_generic_applications(context) ||
         !zlang_validate_inferred_shapes(program, context->diagnostics_)) {
         return false;

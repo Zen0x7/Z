@@ -1707,6 +1707,18 @@ static void emits_native_result_dump_method(zlang_test_context_t *const context)
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_dump(") != NULL);
 }
 
+static void emits_jump_and_label(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "jump done;\n"
+                                  "write(1);\n"
+                                  "done:\n"
+                                  "write(2);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "goto zlang_label_done;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_done: ;") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

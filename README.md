@@ -19,8 +19,13 @@ Zlang is a small source-to-source language for bounded, deterministic programs. 
 `.z` source, `zc` emits readable C99, and your normal C toolchain builds the
 executable. The runtime is header-only.
 
-There is no VM, bytecode, garbage collector or hidden runtime allocator. Types, capacities and
-storage decisions are resolved by the compiler.
+There is no VM, bytecode, garbage collector or hidden runtime allocator. Types, capacities,
+storage decisions and parameter modes are resolved by the compiler. The language also has
+compile-time generics and native `result_type<T, status_code>` layouts.
+
+The documentation site is the published source of truth for the language:
+<https://z.iantorres.cl>. `SPEC.md` and `ROADMAP.md` are working documents where changes
+are accumulated before they are merged into the site specification.
 
 ## Quick start
 
@@ -33,8 +38,14 @@ ctest --test-dir build --output-on-failure -j
 Create `hello.z`:
 
 ```zlang
-write("Hello from Zlang");
-write("\n");
+import { write } from "@std/io";
+
+function main(): int32 {
+    write("Hello from Zlang");
+    write("\n");
+
+    return 0;
+}
 ```
 
 Then compile and run it:
@@ -50,18 +61,29 @@ Use `--emit-c` to write only the generated C file:
 ./build/tools/zc/zc hello.z --emit-c
 ```
 
+## Browser playground
+
+The site includes a client-side playground at <https://z.iantorres.cl/playground>.
+`zc.wasm` turns Zlang into C, `clang.wasm` and `lld.wasm` compile it to WebAssembly, and a
+small WASI host runs it in the browser. No source or binary is sent to a server.
+
+The toolchain artifacts are built from upstream LLVM, Emscripten and wasi-sdk with the
+scripts in `tools/wasm/`. They are served as static files from `site/public/compiler/`;
+third-party notices live in `site/THIRD_PARTY_NOTICES.md`.
+
 ## Design in three lines
 
 - Header-only C99 runtime and no compiled library to install.
 - Fixed-shape arrays with compile-time storage and bounds checks that trap on violation.
-- Checked arithmetic, bounded strings and explicit `clone` / `reference` parameter qualifiers.
+- Explicit `clone` / `reference` modes, compile-time generics and bounded standard domains.
 
 ## Explore
 
+- [Documentation site](https://z.iantorres.cl)
+- [Language specification](https://z.iantorres.cl/docs/specification)
+- [Browser playground](https://z.iantorres.cl/playground)
 - [Executable examples](examples/README.md)
-- [Language specification](SPEC.md)
-- [Language grammar](docs/grammar.md)
-- [Live API reference](https://z.iantorres.cl)
-- [API reference source](docs/index.md)
+- [Working language notes](SPEC.md)
 - [Roadmap and locked decisions](ROADMAP.md)
+- [API reference source](docs/index.md)
 - [Contributor guide](AGENTS.md)

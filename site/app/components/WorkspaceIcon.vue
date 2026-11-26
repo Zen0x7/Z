@@ -34,6 +34,14 @@ defineProps<{ name: string }>()
       <path d="M24 20h8M48 53h8" />
     </g>
 
+    <g v-else-if="name === 'playground'">
+      <rect x="12" y="16" width="56" height="48" rx="1" />
+      <path d="M12 27h56" />
+      <circle cx="20" cy="22" r="1.5" />
+      <circle cx="27" cy="22" r="1.5" />
+      <path d="M34 38l14 7-14 7z" />
+    </g>
+
     <g v-else-if="name === 'doxygen'">
       <path d="M14 18h20c4 0 6 2 6 6v42c0-4-2-6-6-6H14V18Z" />
       <path d="M66 18H46c-4 0-6 2-6 6v42c0-4 2-6 6-6h20V18Z" />

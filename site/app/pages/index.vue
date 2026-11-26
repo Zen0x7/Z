@@ -59,6 +59,12 @@ const destinations = [
     note: 'Storage plan, pipeline and diagnostics.',
   },
   {
+    label: 'Playground',
+    icon: 'playground',
+    to: '/playground',
+    note: 'Compile and run Zlang in the browser.',
+  },
+  {
     label: 'Doxygen API',
     icon: 'doxygen',
     href: 'https://z-doxygen.iantorres.cl',
@@ -74,7 +80,7 @@ const destinations = [
 
 useSeoMeta({
   title: 'Zlang — a language transpiled into pure C',
-  description: 'Zlang is a language that can be transpiled into pure C. Start with the quick start, language guide, specification or API reference.',
+  description: 'Zlang is a language that can be transpiled into pure C. Start with the quick start, language guide, specification, playground or API reference.',
 })
 </script>
 

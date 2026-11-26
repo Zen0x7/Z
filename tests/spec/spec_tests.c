@@ -136,6 +136,7 @@ static bool zlang_spec_transpile(zlang_spec_session_t *session, const char *sour
         return false;
     }
 
+    memset(&session->emitter_, 0, sizeof(session->emitter_));
     zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
                        &session->diagnostics_, &session->plan_);
     return zlang_emit_program(&session->result_.program_, &session->emitter_);
@@ -1189,6 +1190,7 @@ static bool zlang_spec_transpile_tto(zlang_spec_session_t *session, const char *
         return false;
     }
     session->output_[0] = '\0';
+    memset(&session->emitter_, 0, sizeof(session->emitter_));
     zlang_emitter_init(&session->emitter_, session->output_, sizeof(session->output_),
                        &session->diagnostics_, &session->plan_);
     return zlang_emit_program(&session->result_.program_, &session->emitter_);

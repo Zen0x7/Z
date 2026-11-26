@@ -1478,6 +1478,8 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         _parameter_k->column_ = _start_k->column_;
         _parameter_k->is_const_ = _is_const_k;
         _parameter_k->is_reference_ = _is_reference_k;
+        memset(_parameter_k->extents_, 0, sizeof(_parameter_k->extents_));
+        _parameter_k->rank_ = 0U;
         if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
             break;
         }
@@ -1800,6 +1802,7 @@ void zlang_parser_init(zlang_parser_t *parser, zlang_token_t *tokens, size_t tok
     parser->statement_capacity_ = statement_capacity;
     parser->parameters_ = parameters;
     parser->parameter_capacity_ = parameter_capacity;
+    memset(parameters, 0, parameter_capacity * sizeof(*parameters));
     parser->lexer_.comments_ = comments;
     parser->lexer_.comment_capacity_ = comment_capacity;
     parser->diagnostics_ = diagnostics;

@@ -905,6 +905,23 @@ Zlang 0.19 emits only the array helpers referenced by generated code and declare
 before their definitions, so functions may call functions defined later in the source.
 
 
+## 0.29 implementation status
+
+Zlang 0.29 supports single inheritance with `struct Derived : Base`. The base is the first C
+subobject of the derived struct. A derived value can be used where a base value or `reference Base`
+is expected; the reverse conversion is rejected. Arrays keep their exact element types and do not
+participate in inheritance.
+
+Instance methods are virtual by default. A polymorphic hierarchy emits one internal vtable type and
+one vtable instance per concrete struct. The root subobject carries an internal type tag and vtable
+pointer. Dynamic calls through a base receiver use the vtable slot for the method name; trait calls
+are direct calls because trait methods are compiled into the using struct.
+
+A trait declares required fields and methods with `trait Name requires ... { ... }`. A struct opts
+in with `uses Name`. Trait methods become concrete methods of the using struct, cannot override
+inherited methods, and introduce no runtime indirection. The cost of tags, vtable pointers and
+indirect calls is accepted; generated programs still perform no dynamic allocation.
+
 ## 0.28 implementation status
 
 Zlang 0.28 replaces `record` with `struct` and adds struct members. A struct can declare fields,

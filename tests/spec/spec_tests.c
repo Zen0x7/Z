@@ -1639,6 +1639,16 @@ static void assigns_native_result_fields(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.value_ = 9") != NULL);
 }
 
+static void emits_stream_string_write_result(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { write } from \"@std/io\";\n"
+                                  "Result<int32, Status> response = write(STDOUT, \"hello\");";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_write_string_stream(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_stream_stdout()") != NULL);
+}
+
 static void emits_stream_write_result(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"

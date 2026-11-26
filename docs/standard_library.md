@@ -5,6 +5,11 @@ implemented standard functions are the deterministic `random` generators and the
 `@std/program_options` domain.
 User modules are resolved through the same import syntax with relative paths and `z.yaml` aliases.
 
+The following domains are **planned only** and are not registered or importable yet:
+`@std/algorithms`, `@std/encoding`, `@std/memory`, `@std/streams`, `@std/filesystem`,
+`@std/system` and `@std/networking`. They are listed as design targets because the domain-based
+import grammar is intended to grow without adding aliases such as `net` or `fs`.
+
 ## Import grammar
 
 A program opts into standard functions by name:

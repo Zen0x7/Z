@@ -1785,6 +1785,13 @@ static const char *zlang_expression_type(const zlang_program_t *program,
                 }
             }
         }
+        if (emitter != NULL && emitter->current_struct_ != NULL) {
+            const zlang_ast_statement_t *const _field_k = zlang_find_field_owner(
+                program, emitter->current_struct_, _expression_k->name_, &(uint32_t){0}, 0U);
+            if (_field_k != NULL) {
+                return _field_k->type_name_;
+            }
+        }
         return NULL;
     }
     case zlang_expression_enum_item_: {

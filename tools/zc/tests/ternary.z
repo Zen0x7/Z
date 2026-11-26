@@ -1,0 +1,2 @@
+boolean ok = true;
+int32 value = ok ? 1 : 2;

@@ -72,7 +72,8 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_construct_,
     zlang_expression_method_call_,
     zlang_expression_wildcard_,
-    zlang_expression_match_
+    zlang_expression_match_,
+    zlang_expression_ternary_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {

@@ -83,7 +83,7 @@ stable across the Zlang-facing lowercase type rename.
 ## Planned 0.39 syntax
 
 Zlang 0.39 adds eight syntax forms. Point 1, labeled jumps with `jump label;`, is delivered in
-this working tree; points 1–3 are delivered. Points 4–8 remain planned:
+this working tree; points 1–4 are delivered. Points 5–8 remain planned:
 ternary `?:`, bitwise and shift operators,
 `do { ... } while (...)`, exclusive `uint32` range literals `start..end`, and labeled
 `break`/`continue`.

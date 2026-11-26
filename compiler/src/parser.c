@@ -1078,10 +1078,43 @@ static zlang_expression_kind_t zlang_compound_operator(zlang_token_kind_t kind) 
 
 static bool
 // NOLINTNEXTLINE(misc-no-recursion)
+zlang_parse_ternary(zlang_parser_t *parser,
+                    size_t *expression) { // NOLINT(misc-no-recursion)
+    size_t _condition_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_logical_or(parser, &_condition_k)) {
+        return false;
+    }
+    if (zlang_parser_current(parser)->kind_ != zlang_token_question_) {
+        *expression = _condition_k;
+        return true;
+    }
+    zlang_parser_advance(parser);
+    size_t _then_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_expression(parser, &_then_k) || // NOLINT(misc-no-recursion)
+        !zlang_parser_expect(parser, zlang_token_colon_, "expected ':' after ternary branch") ||
+        !zlang_parse_expression(parser, expression)) { // NOLINT(misc-no-recursion)
+        return false;
+    }
+    const size_t _ternary_k = zlang_parser_add_expression(parser);
+    if (_ternary_k == ZLANG_NO_EXPRESSION) {
+        return false;
+    }
+    parser->expressions_[_ternary_k].kind_ = zlang_expression_ternary_;
+    parser->expressions_[_ternary_k].left_ = _condition_k;
+    parser->expressions_[_ternary_k].right_ = _then_k;
+    const size_t _else_k = *expression;
+    parser->expressions_[_ternary_k].argument_indices_[0] = _else_k;
+    parser->expressions_[_ternary_k].argument_count_ = 1U;
+    *expression = _ternary_k;
+    return true;
+}
+
+static bool
+// NOLINTNEXTLINE(misc-no-recursion)
 zlang_parse_expression(zlang_parser_t *parser,
                        size_t *expression) { // NOLINT(misc-no-recursion)
     size_t _left_k = ZLANG_NO_EXPRESSION;
-    if (!zlang_parse_logical_or(parser, &_left_k)) {
+    if (!zlang_parse_ternary(parser, &_left_k)) {
         return false;
     }
     const zlang_token_kind_t _assignment_kind_k = zlang_parser_current(parser)->kind_;

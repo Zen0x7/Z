@@ -402,6 +402,9 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     case '=':
         token->kind_ = zlang_token_equal_;
         break;
+    case '?':
+        token->kind_ = zlang_token_question_;
+        break;
     case '!':
         token->kind_ = zlang_token_not_;
         break;

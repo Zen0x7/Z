@@ -1751,6 +1751,15 @@ static void emits_match_expression(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "app_local_value == 1 ? 10 : 20") != NULL);
 }
 
+static void emits_ternary_expression(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "boolean ok = true;\n"
+                                  "int32 value = ok ? 1 : 2;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_ok ? 1 : 2") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

@@ -630,6 +630,23 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         return _result_k;
     }
+    case zlang_expression_ternary_: {
+        const char *const _condition_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _then_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        const char *const _else_k =
+            _expression_k->argument_count_ == 1U
+                ? zlang_analyze_expression(context, _expression_k->argument_indices_[0], statement)
+                : NULL;
+        if (!zlang_type_matches("boolean", _condition_k) || _then_k == NULL ||
+            !zlang_type_matches(_then_k, _else_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "ternary branches must have the same type");
+            return NULL;
+        }
+        return _then_k;
+    }
     case zlang_expression_boolean_literal_:
         return "boolean";
     case zlang_expression_string_literal_:

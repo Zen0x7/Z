@@ -83,7 +83,7 @@ named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
 | 1 | jump and labels | `label:` and `jump label;` — delivered |
 | 2 | switch | `switch (value) { case literal: ... default: ... }` — delivered |
 | 3 | match | `match (value) { literal => expression, _ => expression }` — delivered |
-| 4 | ternary | `condition ? then_expression : else_expression` |
+| 4 | ternary | `condition ? then_expression : else_expression` — delivered |
 | 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` |
 | 6 | do-while | `do { ... } while (condition);` |
 | 7 | range literal | `start..end` for exclusive `uint32` ranges |

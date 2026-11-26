@@ -71,6 +71,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_dot_,
     zlang_token_equal_,
     zlang_token_arrow_,
+    zlang_token_question_,
     zlang_token_equal_equal_,
     zlang_token_not_equal_,
     zlang_token_less_,

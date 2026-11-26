@@ -2589,6 +2589,18 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
     case zlang_expression_not_equal_: {
         return zlang_emit_comparison(program, _expression_k, emitter);
     }
+    case zlang_expression_ternary_: {
+        if (_expression_k->argument_count_ != 1U || !zlang_append_text(emitter, "(") ||
+            !zlang_emit_expression(program, _expression_k->left_, emitter) ||
+            !zlang_append_text(emitter, " ? ") ||
+            !zlang_emit_expression(program, _expression_k->right_, emitter) ||
+            !zlang_append_text(emitter, " : ") ||
+            !zlang_emit_expression(program, _expression_k->argument_indices_[0], emitter) ||
+            !zlang_append_text(emitter, ")")) {
+            return false;
+        }
+        return true;
+    }
     case zlang_expression_not_: {
         const bool _parenthesize_k =
             zlang_expression_is_comparison(program->expressions_[_expression_k->left_].kind_);

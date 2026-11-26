@@ -2,7 +2,8 @@
 #define ZLANG_STANDARD_RESULT_RESULT_H
 
 #include "zlang/detail/inline.h"
-#include "zlang/runtime/runtime.h"
+#include "zlang/runtime/contract.h"
+#include "zlang/standard/status/status.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,35 +15,6 @@
  * application to one of the typedefs below. No message is formatted at
  * runtime: `what` is a read-only view of a fixed literal.
  */
-
-typedef enum zlang_std_status_t {
-    ZLANG_STD_STATUS_SUCCESS = 0U,
-    ZLANG_STD_STATUS_END_OF_INPUT = 1U,
-    ZLANG_STD_STATUS_IO_ERROR = 2U,
-    ZLANG_STD_STATUS_INVALID_ARGUMENT = 3U,
-    ZLANG_STD_STATUS_CAPACITY = 4U
-} zlang_std_status_t;
-
-ZLANG_STATIC_INLINE zlang_string_t zlang_std_status_message(const zlang_std_status_t code) {
-    switch (code) {
-    case ZLANG_STD_STATUS_SUCCESS:
-        return (zlang_string_t){"success", 7U};
-    case ZLANG_STD_STATUS_END_OF_INPUT:
-        return (zlang_string_t){"end of input", 12U};
-    case ZLANG_STD_STATUS_IO_ERROR:
-        return (zlang_string_t){"input/output error", 18U};
-    case ZLANG_STD_STATUS_INVALID_ARGUMENT:
-        return (zlang_string_t){"invalid argument", 16U};
-    case ZLANG_STD_STATUS_CAPACITY:
-        return (zlang_string_t){"capacity exceeded", 17U};
-    default:
-        return (zlang_string_t){"unknown status", 14U};
-    }
-}
-
-ZLANG_STATIC_INLINE bool zlang_std_status_is_ok(const zlang_std_status_t code) {
-    return code == ZLANG_STD_STATUS_SUCCESS;
-}
 
 #define ZLANG_STD_RESULT_FIELDS_CODE zlang_std_status_t code_;
 #define ZLANG_STD_RESULT_FIELDS_WHAT zlang_string_t what_;

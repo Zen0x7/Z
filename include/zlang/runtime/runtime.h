@@ -3,6 +3,7 @@
 
 #include "zlang/detail/inline.h"
 #include "zlang/runtime/context.h"
+#include "zlang/runtime/contract.h"
 
 #include <limits.h>
 #include <math.h>
@@ -19,24 +20,6 @@
  * Generated code never formats an error string at runtime. Errors are reported as fixed numeric
  * trap codes declared in SPEC.md.
  */
-#define ZLANG_TRAP_OVERFLOW 1U
-#define ZLANG_TRAP_BOUNDS 2U
-#define ZLANG_TRAP_CAPACITY 3U
-#define ZLANG_TRAP_INVALID_ARGUMENT 4U
-#define ZLANG_TRAP_DIVISION_BY_ZERO 5U
-
-/** Read-only view of host process arguments created by generated main. */
-typedef struct zlang_arguments_t {
-    int argc_;
-    char **argv_;
-} zlang_arguments_t;
-
-/** A non-owning byte string: a pointer and an explicit length. */
-typedef struct zlang_string_t {
-    const char *data_;
-    uint32_t length_;
-} zlang_string_t;
-
 /**
  * @brief Write the exact declared byte count of a string to a stream.
  * @param stream Destination stream.
@@ -59,21 +42,6 @@ ZLANG_STATIC_INLINE bool zlang_write(FILE *stream, zlang_string_t value) {
  * @return `true` on success.
  */
 ZLANG_STATIC_INLINE bool zlang_print(zlang_string_t value) { return zlang_write(stdout, value); }
-
-#ifndef ZLANG_TRAP_SINK
-/* raise() terminates through SIGABRT without giving optimizers a noreturn
-   edge here, so callers can still guard custom sinks that do return. */
-#define ZLANG_TRAP_SINK(code) ((void)(code), (void)raise(SIGABRT))
-#endif
-
-/**
- * @brief Terminate execution with a fixed trap code.
- * @param code One of the `ZLANG_TRAP_*` values.
- */
-ZLANG_STATIC_INLINE void zlang_trap(uint8_t code) {
-    (void)code;
-    ZLANG_TRAP_SINK(code);
-}
 
 /**
  * @brief Add two signed integers, trapping on overflow.

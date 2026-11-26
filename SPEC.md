@@ -1065,6 +1065,20 @@ The migration will update the stdlib registry, public headers, generated C fixtu
 examples and the documentation. Native parity between registry entry, header declaration and docs
 must be verified before each migrated function is considered complete.
 
+## 0.35 implementation status
+
+Status: implemented.
+
+Zlang 0.35 defines a stable native stream contract. A stream is a borrowed, trivially copyable
+handle with a constant operations table and caller-owned state. IO functions use explicit
+`source` and `destination` roles: `read(source, destination, offset, count)` and
+`write(destination, source, offset, count)`. Convenience overloads may keep implicit stdin or
+stdout, but the explicit forms are canonical.
+
+Stdio and caller-owned memory streams implement the contract. Future sockets, pipes, descriptors
+and hardware backends must implement the same operations rather than introducing parallel IO
+families. Status codes are shared through `<zlang/standard/status/status.h>`.
+
 ## 0.34 implementation status
 
 Status: implemented.
@@ -1097,5 +1111,7 @@ inheritance remain outside scope.
 | native `Result<T, Status>` mapping | `emits_native_result_type`, `assigns_native_result_fields` |
 | IO byte-transfer results | `emits_io_read_calls`, `zlang.cli.io_read` |
 | explicit stream handles | `emits_stream_write_result`, `emits_stream_read_result` |
+| stable native stream contract | `streams_use_the_same_contract` |
+| explicit write window | `emits_stream_write_result` |
 | native result methods | `emits_native_result_methods` |
 | generic struct methods | `emits_generic_struct_method` |

@@ -10,26 +10,21 @@ navigation:
 
 # Functions
 
-`@std/io` registers one read function, one line reader and eight `write` overloads. The compiler picks the overload from the argument type.
+`@std/io` exposes `read`, `read_line` and `write`. Every operation uses the stable [stream contract](/docs/specification/streams) and returns `Result<int32, Status>` with the transferred byte count.
 
 ## Catalog
 
-| Name | Signature | Parameter mode | C symbol | Macro |
-| --- | --- | --- | --- | --- |
-| [`read`](/docs/standard-library/namespaces/io/functions/read) | `function read(reference string value): int32` | reference | `zlang_std_io_read` | `ZLANG_STD_IO_READ` |
-| [`read_line`](/docs/standard-library/namespaces/io/functions/read_line) | `function read_line(reference string value): int32` | reference | `zlang_std_io_read_line` | `ZLANG_STD_IO_READ_LINE` |
-| [`write`](/docs/standard-library/namespaces/io/functions/write) | `function write(clone string value): string` | clone | `zlang_std_io_write_string` | `ZLANG_STD_IO_WRITE_STRING` |
-| `write` | `function write(clone boolean value): boolean` | clone | `zlang_std_io_write_bool` | `ZLANG_STD_IO_WRITE_BOOL` |
-| `write` | `function write(clone int32 value): int32` | clone | `zlang_std_io_write_i32` | `ZLANG_STD_IO_WRITE_I32` |
-| `write` | `function write(clone uint32 value): uint32` | clone | `zlang_std_io_write_u32` | `ZLANG_STD_IO_WRITE_U32` |
-| `write` | `function write(clone int64 value): int64` | clone | `zlang_std_io_write_i64` | `ZLANG_STD_IO_WRITE_I64` |
-| `write` | `function write(clone uint64 value): uint64` | clone | `zlang_std_io_write_u64` | `ZLANG_STD_IO_WRITE_U64` |
-| `write` | `function write(clone float value): float` | clone | `zlang_std_io_write_f32` | `ZLANG_STD_IO_WRITE_F32` |
-| `write` | `function write(clone double value): double` | clone | `zlang_std_io_write_f64` | `ZLANG_STD_IO_WRITE_F64` |
+| Name | Canonical signature | C symbol | Macro |
+| --- | --- | --- | --- |
+| [`read`](/docs/standard-library/namespaces/io/functions/read) | `read(source, destination, offset, count)` | `zlang_std_io_read`, `zlang_std_io_read_stream` | `ZLANG_STD_IO_READ` |
+| [`read_line`](/docs/standard-library/namespaces/io/functions/read_line) | `read_line(source, destination, offset, count)` | `zlang_std_io_read_line`, `zlang_std_io_read_line_stream` | `ZLANG_STD_IO_READ_LINE` |
+| [`write`](/docs/standard-library/namespaces/io/functions/write) | `write(destination, source, offset, count)` | `zlang_std_io_write_*` | `ZLANG_STD_IO_WRITE_*` |
 
-The registry gives each `write` overload the same return type as its argument. Every generated C wrapper returns `bool` from the runtime print helper. Binding the `string` overload's result to a `string` emits C that does not compile; numeric bindings compile but receive a converted `bool`. Use `write` as an expression statement and ignore the result.
+Convenience overloads keep implicit stdin for `read` and stdout for `write`. The explicit stream overloads are canonical: a socket, pipe, descriptor, memory stream or hardware backend can implement the same native operations without changing Zlang signatures.
 
-At an import statement the emitter activates the first registered overload, `ZLANG_STD_IO_WRITE_STRING`, before adding the resolved overload's macro at each call.
+## Result contract
+
+`value` is the number of bytes transferred. `code` is `SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. Invalid offsets, null storage and capacity overflow trap.
 
 ## Pages at this level
 

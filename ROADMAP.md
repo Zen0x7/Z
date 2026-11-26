@@ -1197,3 +1197,32 @@ floating conversion names are unchanged.
 This is a breaking rename with no aliases or compatibility layer. Compiler keywords, AST type
 names, stdlib signatures, diagnostics fixtures, examples, goldens, tests and documentation were
 updated together. Runtime helper names such as `zlang_print_i32` remain unchanged.
+
+## 0.35 — Design note
+
+Status: Locked.
+
+Zlang 0.35 fixes the native stream contract before adding new IO domains. A stream is a trivially
+copyable borrowed handle with a constant operations table and a caller-owned state pointer. The
+operations are `read(source, destination, offset, count)` and
+`write(destination, source, offset, count)`; the convenience overloads keep implicit stdin and
+stdout, but the canonical API is explicit on both ends.
+
+The stream type does not expose `FILE *`, sockets, descriptors or hardware pins. Stdio, memory,
+POSIX descriptors, Windows handles, sockets, pipes and device backends implement the same native
+operations table. New IO APIs consume `stream` instead of introducing parallel read or write
+families.
+
+## 0.35 — Completion
+
+Zlang 0.35 is implemented at language level 0.35. `<zlang/standard/io/stream.h>` defines the stable
+`zlang_stream_t` handle, the constant `zlang_stream_ops_t` table and generic `zlang_stream_read` and
+`zlang_stream_write` helpers. Stdio and caller-owned memory streams implement the contract.
+`<zlang/standard/io/io.h>` now uses only the stream contract, and `write` supports an explicit
+string window overload: `write(destination, source, offset, count)`.
+
+Status codes live in `<zlang/standard/status/status.h>` and are shared by result values and stream
+operations. No mutable global state or heap allocation is introduced. Future socket, pipe and
+hardware backends can plug into the same contract without changing Zlang signatures.
+
+The pending checklist earlier in this file is historical: 0.30 through 0.35 are implemented. Future work starts from the stable stream contract and the version sections above.

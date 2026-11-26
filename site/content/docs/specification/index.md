@@ -7,7 +7,7 @@ navigation:
 
 # Language Specification
 
-Current Version: v0.34
+Current Version: v0.35
 
 This specification defines Zlang. It fixes source syntax, static meaning and the C that `zc` emits. It does not define compiler internals, command-line options or CI. `ROADMAP.md` records how the language reached this state.
 

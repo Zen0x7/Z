@@ -302,6 +302,35 @@ static const zlang_test_case_t cases_k[] = {
 };
 #undef ZLANG_TEST_CASE
 
+static void streams_use_the_same_contract(zlang_test_context_t *const context) {
+    char _storage_k[16] = {0};
+    zlang_memory_stream_t _memory_k = zlang_memory_stream_init(_storage_k, sizeof(_storage_k), 0U);
+    const zlang_stream_t _stream_k = zlang_std_io_stream_memory(&_memory_k);
+    const zlang_string_t _source_k = {"abc", 3U};
+    zlang_std_status_t _status_k = zlang_std_status_success_;
+
+    const int32_t _written_k = zlang_stream_write(_stream_k, &_source_k, &_status_k);
+    const bool _write_ok_k = _written_k == 3 && _status_k == zlang_std_status_success_;
+    const bool _content_ok_k = memcmp(_storage_k, "abc", 3U) == 0;
+
+    _memory_k.position_ = 0U;
+    char _destination_k[16] = {0};
+    const int32_t _read_k = zlang_stream_read(_stream_k, _destination_k, sizeof(_destination_k), 0U,
+                                              2U, false, &_status_k);
+    const bool _read_ok_k = _read_k == 2 && _status_k == zlang_std_status_success_;
+    const bool _read_content_ok_k = memcmp(_destination_k, "ab", 2U) == 0;
+
+    const zlang_stream_t _stdout_k = zlang_std_io_stream_stdout();
+    const bool _ops_ok_k =
+        _stdout_k.ops_ != NULL && _stdout_k.ops_->read_ != NULL && _stdout_k.ops_->write_ != NULL;
+
+    ZLANG_CHECK(context, _write_ok_k);
+    ZLANG_CHECK(context, _content_ok_k);
+    ZLANG_CHECK(context, _read_ok_k);
+    ZLANG_CHECK(context, _read_content_ok_k);
+    ZLANG_CHECK(context, _ops_ok_k);
+}
+
 int main(const int argc, char **const argv) {
     return zlang_test_main(argc, argv, "zlang.runtime", cases_k,
                            sizeof(cases_k) / sizeof(cases_k[0]));

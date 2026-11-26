@@ -370,6 +370,20 @@ static const zlang_std_function_t functions_k[] = {{"random",
                                                     zlang_std_return_result_,
                                                     "int32",
                                                     "Status"},
+                                                   {"io",
+                                                    "write",
+                                                    "Result<int32,Status>",
+                                                    "zlang_std_io_write_string_window",
+                                                    "ZLANG_STD_IO_WRITE_STRING",
+                                                    4U,
+                                                    {"stream", "string", "uint32", "uint32"},
+                                                    false,
+                                                    true,
+                                                    {false, false, false, false},
+                                                    {false, false, false, false},
+                                                    zlang_std_return_result_,
+                                                    "int32",
+                                                    "Status"},
                                                    {"math",
                                                     "abs",
                                                     "int32",
@@ -1008,8 +1022,8 @@ static const char *const status_constants_k[] = {"STATUS_SUCCESS", "STATUS_END_O
                                                  "STATUS_CAPACITY"};
 
 static const char *const status_constant_c_names_k[] = {
-    "ZLANG_STD_STATUS_SUCCESS", "ZLANG_STD_STATUS_END_OF_INPUT", "ZLANG_STD_STATUS_IO_ERROR",
-    "ZLANG_STD_STATUS_INVALID_ARGUMENT", "ZLANG_STD_STATUS_CAPACITY"};
+    "zlang_std_status_success_", "zlang_std_status_end_of_input_", "zlang_std_status_io_error_",
+    "zlang_std_status_invalid_argument_", "zlang_std_status_capacity_"};
 
 const char *zlang_std_status_constant_c_name(const char *name) {
     if (name == NULL) {

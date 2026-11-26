@@ -1635,7 +1635,7 @@ static void assigns_native_result_fields(zlang_test_context_t *const context) {
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_,
-                                "app_local_result.code_ = ZLANG_STD_STATUS_SUCCESS") != NULL);
+                                "app_local_result.code_ = zlang_std_status_success_") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.value_ = 9") != NULL);
 }
 

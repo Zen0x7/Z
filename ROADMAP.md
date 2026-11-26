@@ -87,7 +87,7 @@ named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
 | 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` — delivered |
 | 6 | do-while | `do { ... } while (condition);` — delivered |
 | 7 | range literal | `start..end` for exclusive `uint32` ranges — delivered |
-| 8 | labeled loop jumps | `outer: while (...) { break outer; continue outer; }` |
+| 8 | labeled loop jumps | `outer: while (...) { break outer; continue outer; }` — delivered |
 
 Interfaces replace ad-hoc trait field requirements:
 

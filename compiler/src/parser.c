@@ -2160,11 +2160,17 @@ static bool zlang_parse_return(zlang_parser_t *parser) {
 static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_kind_t kind) {
     const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
     zlang_parser_advance(parser);
+    const char *_label_k = NULL;
+    if (zlang_parser_current(parser)->kind_ == zlang_token_identifier_) {
+        _label_k = zlang_parser_current(parser)->text_;
+        zlang_parser_advance(parser);
+    }
     const size_t _statement_k = zlang_parser_add_statement(parser);
     if (_statement_k == (size_t)-1) {
         return false;
     }
     parser->statements_[_statement_k].kind_ = kind;
+    parser->statements_[_statement_k].name_ = _label_k;
     parser->statements_[_statement_k].line_ = _keyword_k->line_;
     parser->statements_[_statement_k].column_ = _keyword_k->column_;
     return zlang_parser_expect(parser, zlang_token_semicolon_,
@@ -3293,6 +3299,29 @@ static bool zlang_parser_instantiate_generics(zlang_parser_t *parser) {
     return true;
 }
 
+static bool zlang_parser_is_loop_kind(zlang_statement_kind_t kind) {
+    return kind == zlang_statement_while_ || kind == zlang_statement_do_while_ ||
+           kind == zlang_statement_for_ || kind == zlang_statement_foreach_ ||
+           kind == zlang_statement_repeat_;
+}
+
+static bool zlang_parser_link_labeled_loops(zlang_parser_t *parser) {
+    for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
+        zlang_ast_statement_t *const _label_k = &parser->statements_[_index];
+        if (_label_k->kind_ != zlang_statement_label_ || _index + 1U >= parser->statement_count_) {
+            continue;
+        }
+        zlang_ast_statement_t *const _loop_k = &parser->statements_[_index + 1U];
+        if (!zlang_parser_is_loop_kind(_loop_k->kind_)) {
+            continue;
+        }
+        _label_k->body_start_ = _index + 1U;
+        _label_k->body_count_ = 1U;
+        _loop_k->base_name_ = _label_k->name_;
+    }
+    return true;
+}
+
 bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size_t scratch_capacity,
                  zlang_parse_result_t *result) {
     parser->token_count_ = 0U;
@@ -3428,7 +3457,7 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     result->program_.expression_count_ = parser->expression_count_;
     result->program_.parameters_ = parser->parameters_;
     result->program_.parameter_count_ = parser->parameter_count_;
-    if (!zlang_parser_instantiate_generics(parser)) {
+    if (!zlang_parser_link_labeled_loops(parser) || !zlang_parser_instantiate_generics(parser)) {
         return false;
     }
     result->program_.statements_ = parser->statements_;

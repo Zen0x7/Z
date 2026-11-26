@@ -63,6 +63,21 @@ static const zlang_symbol_t *zlang_find_symbol(const zlang_semantic_context_t *c
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_label(const zlang_program_t *program,
+                                                     const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_label_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *program,
                                                       const char *name) {
     if (program == NULL || name == NULL) {
@@ -1740,13 +1755,23 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_break_:
-        if (context->loop_depth_ == 0U && context->switch_depth_ == 0U) {
+        if (statement->name_ != NULL) {
+            if (zlang_find_label(context->program_, statement->name_) == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "break label is not a declared label");
+            }
+        } else if (context->loop_depth_ == 0U && context->switch_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
                                      "break is only valid inside a loop or switch");
         }
         break;
     case zlang_statement_continue_:
-        if (context->loop_depth_ == 0U) {
+        if (statement->name_ != NULL) {
+            if (zlang_find_label(context->program_, statement->name_) == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "continue label is not a declared label");
+            }
+        } else if (context->loop_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
                                      "continue is only valid inside a loop");
         }
@@ -2222,21 +2247,6 @@ static bool zlang_validate_generic_applications(zlang_semantic_context_t *contex
         }
     }
     return _result_k;
-}
-
-static const zlang_ast_statement_t *zlang_find_label(const zlang_program_t *program,
-                                                     const char *name) {
-    if (program == NULL || name == NULL) {
-        return NULL;
-    }
-    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
-        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (_statement_k->kind_ == zlang_statement_label_ && _statement_k->name_ != NULL &&
-            strcmp(_statement_k->name_, name) == 0) {
-            return _statement_k;
-        }
-    }
-    return NULL;
 }
 
 static bool zlang_validate_jumps(const zlang_program_t *program, zlang_diagnostics_t *diagnostics) {

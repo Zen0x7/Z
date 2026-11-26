@@ -1799,6 +1799,22 @@ static void emits_range_foreach(zlang_test_context_t *const context) {
                                          "app_local_index < 3U; ++app_local_index)") != NULL);
 }
 
+static void emits_labeled_loop_jumps(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "int32 index = 0;\n"
+                                  "outer:\n"
+                                  "while (index < 3) {\n"
+                                  "    index += 1;\n"
+                                  "    continue outer;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_outer: ;") == NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_outer_continue: ;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "goto zlang_label_outer_continue;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_outer_break: ;") == NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

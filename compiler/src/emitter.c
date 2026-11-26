@@ -5405,15 +5405,71 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         return zlang_append_text(emitter, ";\n");
     }
     case zlang_statement_break_:
+        if (statement->name_ != NULL) {
+            char _label_k[ZLANG_EMITTED_NAME_CAPACITY];
+            if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k)) ||
+                !zlang_append_text(emitter, "goto zlang_label_") ||
+                !zlang_append_text(emitter, _label_k) || !zlang_append_text(emitter, "_break;\n")) {
+                return false;
+            }
+            return true;
+        }
         return zlang_append_text(emitter, "break;\n");
     case zlang_statement_continue_:
+        if (statement->name_ != NULL) {
+            char _label_k[ZLANG_EMITTED_NAME_CAPACITY];
+            if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k)) ||
+                !zlang_append_text(emitter, "goto zlang_label_") ||
+                !zlang_append_text(emitter, _label_k) ||
+                !zlang_append_text(emitter, "_continue;\n")) {
+                return false;
+            }
+            return true;
+        }
         return zlang_append_text(emitter, "continue;\n");
     case zlang_statement_label_: {
         char _label_k[ZLANG_EMITTED_NAME_CAPACITY];
-        if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k)) ||
-            !zlang_append_text(emitter, "zlang_label_") || !zlang_append_text(emitter, _label_k) ||
-            !zlang_append_text(emitter, ": ;\n")) {
+        bool _has_jump_k = false;
+        bool _has_break_k = false;
+        bool _has_continue_k = false;
+        if (!zlang_lower_name(statement->name_, _label_k, sizeof(_label_k))) {
             return false;
+        }
+        for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+            const zlang_ast_statement_t *const _candidate_k = &program->statements_[_index];
+            if (_candidate_k->name_ == NULL || statement->name_ == NULL ||
+                strcmp(_candidate_k->name_, statement->name_) != 0) {
+                continue;
+            }
+            if (_candidate_k->kind_ == zlang_statement_jump_) {
+                _has_jump_k = true;
+            } else if (_candidate_k->kind_ == zlang_statement_break_) {
+                _has_break_k = true;
+            } else if (_candidate_k->kind_ == zlang_statement_continue_) {
+                _has_continue_k = true;
+            }
+        }
+        if (_has_jump_k &&
+            (!zlang_append_text(emitter, "zlang_label_") || !zlang_append_text(emitter, _label_k) ||
+             !zlang_append_text(emitter, ": ;\n"))) {
+            return false;
+        }
+        if (statement->body_count_ == 1U && statement->body_start_ < program->statement_count_) {
+            if (_has_continue_k && (!zlang_append_text(emitter, "zlang_label_") ||
+                                    !zlang_append_text(emitter, _label_k) ||
+                                    !zlang_append_text(emitter, "_continue: ;\n"))) {
+                return false;
+            }
+            if (!zlang_emit_statement(program, &program->statements_[statement->body_start_],
+                                      emitter, depth)) {
+                return false;
+            }
+            if (_has_break_k && (!zlang_append_indent(emitter, depth) ||
+                                 !zlang_append_text(emitter, "zlang_label_") ||
+                                 !zlang_append_text(emitter, _label_k) ||
+                                 !zlang_append_text(emitter, "_break: ;\n"))) {
+                return false;
+            }
         }
         return true;
     }

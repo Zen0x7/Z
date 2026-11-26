@@ -1,0 +1,8 @@
+int32 index = 0;
+outer:
+while (index < 3) {
+    if (index == 1) {
+        continue outer;
+    }
+    break outer;
+}

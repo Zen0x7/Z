@@ -242,8 +242,9 @@ view.
 
 ## Planned 0.39 grammar
 
-`label:`, `jump label;`, `switch`, `match`, ternary `?:`, bitwise/shift operators, `do while` and
-range literals are accepted. The remaining production is planned:
+All eight syntax forms are accepted: labels and `jump label;`, `switch`, `match`, ternary `?:`,
+bitwise/shift operators, `do while`, range literals and labeled loop jumps. The interface model is
+planned:
 
 ```text
 labelStatement    = identifier ":" statement ;

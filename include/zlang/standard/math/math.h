@@ -31,8 +31,10 @@
 
 #if defined(ZLANG_STD_MATH_ABS_ACTIVE)
 ZLANG_STATIC_INLINE int32_t zlang_std_math_abs_i32(int32_t value) {
+    /* cppcheck-suppress integerOverflowCond */
     if (value == INT32_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
+        return INT32_MIN;
     }
     return value < 0 ? -value : value;
 }
@@ -40,8 +42,10 @@ ZLANG_STATIC_INLINE int32_t zlang_std_math_abs_i32(int32_t value) {
 ZLANG_STATIC_INLINE uint32_t zlang_std_math_abs_u32(uint32_t value) { return value; }
 
 ZLANG_STATIC_INLINE int64_t zlang_std_math_abs_i64(int64_t value) {
+    /* cppcheck-suppress integerOverflowCond */
     if (value == INT64_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
+        return INT64_MIN;
     }
     return value < 0 ? -value : value;
 }

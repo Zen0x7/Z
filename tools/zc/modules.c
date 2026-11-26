@@ -207,7 +207,7 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
     return true;
 }
 
-static bool zlang_modules_alias(zlang_modules_t *modules, const char *name, char *output,
+static bool zlang_modules_alias(const zlang_modules_t *modules, const char *name, char *output,
                                 size_t capacity) {
     for (size_t _index = 0U; _index < modules->alias_count_; ++_index) {
         if (strcmp(modules->alias_names_[_index], name) == 0) {
@@ -229,7 +229,7 @@ static bool zlang_modules_within_root(const zlang_modules_t *modules, const char
            (path[_root_k] == '/' || path[_root_k] == '\\' || path[_root_k] == '\0');
 }
 
-static bool zlang_modules_resolve(zlang_modules_t *modules, const char *base_path,
+static bool zlang_modules_resolve(const zlang_modules_t *modules, const char *base_path,
                                   const char *specifier, char *output, size_t capacity) {
     if (specifier == NULL) {
         return false;
@@ -299,7 +299,7 @@ static bool zlang_modules_identifier_kind(zlang_token_kind_t kind) {
            kind == zlang_token_enum_;
 }
 
-static bool zlang_modules_copy_token_name(zlang_module_t *module, const zlang_token_t *token,
+static bool zlang_modules_copy_token_name(const zlang_module_t *module, const zlang_token_t *token,
                                           char *output, size_t capacity) {
     if (token == NULL || token->length_ + 1U > capacity ||
         token->offset_ + token->length_ > module->source_length_) {
@@ -479,7 +479,7 @@ static bool zlang_modules_scan(zlang_module_t *module, zlang_diagnostics_t *diag
     return true;
 }
 
-static bool zlang_modules_canonical(zlang_module_t *module, const char *name, char *output,
+static bool zlang_modules_canonical(const zlang_module_t *module, const char *name, char *output,
                                     size_t capacity) {
     if (strcmp(module->id_, "root") == 0) {
         return zlang_modules_copy(output, capacity, name);
@@ -603,7 +603,7 @@ static bool zlang_modules_bind_enum_items(zlang_modules_t *modules, zlang_module
 static bool zlang_modules_find_declaration(zlang_modules_t *modules, const char *path,
                                            const char *name, char *output, size_t capacity) {
     for (size_t _index = 0U; _index < modules->module_count_; ++_index) {
-        zlang_module_t *const _module_k = &modules->modules_[_index];
+        const zlang_module_t *const _module_k = &modules->modules_[_index];
         if (strcmp(_module_k->path_, path) != 0) {
             continue;
         }
@@ -713,7 +713,7 @@ static bool zlang_modules_load(zlang_modules_t *modules, const char *path, bool 
         return false;
     }
     for (size_t _index = 0U; _index < modules->module_count_; ++_index) {
-        zlang_module_t *const _module_k = &modules->modules_[_index];
+        const zlang_module_t *const _module_k = &modules->modules_[_index];
         if (strcmp(_module_k->path_, _normalized_k) == 0) {
             if (_module_k->visiting_) {
                 zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT,

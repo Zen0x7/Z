@@ -2075,7 +2075,7 @@ static bool zlang_add_inferred_shape(zlang_program_t *program, size_t function_s
         return false;
     }
     for (size_t _index = 0U; _index < program->inferred_shape_count_; ++_index) {
-        zlang_inferred_shape_t *const _entry_k = &program->inferred_shapes_[_index];
+        const zlang_inferred_shape_t *const _entry_k = &program->inferred_shapes_[_index];
         if (_entry_k->function_statement_ != function_statement ||
             _entry_k->rank_ != array->rank_ ||
             strcmp(_entry_k->type_name_, array->type_name_) != 0) {

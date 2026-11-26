@@ -35,7 +35,8 @@ static bool zlang_method_is_virtual(const zlang_program_t *program, const char *
                                     const char *name);
 static bool zlang_vtable_wrapper_name(const char *struct_name, const char *method_name,
                                       char *output, size_t capacity);
-static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
+static bool zlang_collect_vtable_slots(const zlang_emitter_t *emitter,
+                                       const zlang_program_t *program,
                                        zlang_emitted_vtable_t *vtable);
 static const zlang_ast_statement_t *zlang_effective_method(const zlang_program_t *program,
                                                            const char *struct_name,
@@ -1629,7 +1630,8 @@ static bool zlang_collect_struct_vtable_slots(const zlang_program_t *program,
     return true;
 }
 
-static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_program_t *program,
+static bool zlang_collect_vtable_slots(const zlang_emitter_t *emitter,
+                                       const zlang_program_t *program,
                                        zlang_emitted_vtable_t *vtable) {
     if (vtable == NULL || vtable->statement_ == NULL) {
         return true;
@@ -1646,10 +1648,13 @@ static bool zlang_collect_vtable_slots(zlang_emitter_t *emitter, const zlang_pro
             return false;
         }
         vtable->slot_count_ = _root_vtable_k->slot_count_;
-        memcpy(vtable->slot_methods_, _root_vtable_k->slot_methods_,
-               sizeof(vtable->slot_methods_[0]) * vtable->slot_count_);
-        memcpy(vtable->slot_names_, _root_vtable_k->slot_names_,
-               sizeof(vtable->slot_names_[0]) * vtable->slot_count_);
+        for (size_t _slot = 0U; _slot < _root_vtable_k->slot_count_; ++_slot) {
+            vtable->slot_methods_[_slot] = _root_vtable_k->slot_methods_[_slot];
+            if (!zlang_copy_name(_root_vtable_k->slot_names_[_slot], vtable->slot_names_[_slot],
+                                 sizeof(vtable->slot_names_[0]))) {
+                return false;
+            }
+        }
         return true;
     }
     vtable->slot_count_ = 0U;

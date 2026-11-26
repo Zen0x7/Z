@@ -156,8 +156,10 @@ ZLANG_STATIC_INLINE bool zlang_print_bool(bool value) {
  * @brief Negate a signed 32-bit integer, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int32_t zlang_neg_i32(int32_t value) {
+    /* cppcheck-suppress integerOverflowCond */
     if (value == INT32_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
+        return INT32_MIN;
     }
     return -value;
 }
@@ -166,8 +168,10 @@ ZLANG_STATIC_INLINE int32_t zlang_neg_i32(int32_t value) {
  * @brief Negate a signed 64-bit integer, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int64_t zlang_neg_i64(int64_t value) {
+    /* cppcheck-suppress integerOverflowCond */
     if (value == INT64_MIN) {
         zlang_trap(ZLANG_TRAP_OVERFLOW);
+        return INT64_MIN;
     }
     return -value;
 }

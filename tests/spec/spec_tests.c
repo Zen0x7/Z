@@ -1512,6 +1512,61 @@ static void rejects_override_signature_mismatch(zlang_test_context_t *const cont
                 zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
 }
 
+static void rejects_trait_override_of_inherited_method(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Base { function area(): integer { return 1; } }\n"
+                                  "trait Area requires integer value {\n"
+                                  "    function area(): integer { return value; }\n"
+                                  "}\n"
+                                  "struct Derived : Base uses Area { integer value; }";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_find_diagnostic(
+                             &_session, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) != NULL);
+}
+
+static void rejects_conflicting_trait_methods(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "trait Left requires integer value {\n"
+                                  "    function label(): integer { return value; }\n"
+                                  "}\n"
+                                  "trait Right requires integer value {\n"
+                                  "    function label(): integer { return value + 1; }\n"
+                                  "}\n"
+                                  "struct Both uses Left, Right { integer value; }";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_find_diagnostic(
+                             &_session, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) != NULL);
+}
+
+static void emits_unbounded_polymorphic_metadata(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct A0 {}\n"
+                                  "struct B0 : A0 {}\n"
+                                  "struct A1 {}\n"
+                                  "struct B1 : A1 {}\n"
+                                  "struct A2 {}\n"
+                                  "struct B2 : A2 {}\n"
+                                  "struct A3 {}\n"
+                                  "struct B3 : A3 {}\n"
+                                  "struct A4 {}\n"
+                                  "struct B4 : A4 {}\n"
+                                  "struct A5 {}\n"
+                                  "struct B5 : A5 {}\n"
+                                  "struct A6 {}\n"
+                                  "struct B6 : A6 {}\n"
+                                  "struct A7 {}\n"
+                                  "struct B7 : A7 {}\n"
+                                  "struct A8 {}\n"
+                                  "struct B8 : A8 {}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_TYPE_B8 ") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "const zlang_vtable_a8_t zlang_vtable_b8") != NULL);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

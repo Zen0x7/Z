@@ -138,6 +138,21 @@ static bool zlang_inherited_method_mismatch(const zlang_program_t *program,
     return _inherited_k != NULL && !zlang_method_signature_matches(method, _inherited_k, program);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_has_inherited_method(const zlang_program_t *program,
+                                       const zlang_ast_statement_t *structure,
+                                       const char *method_name) {
+    if (structure == NULL || structure->base_name_ == NULL || method_name == NULL) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _base_k = zlang_find_struct(program, structure->base_name_);
+    if (_base_k == NULL) {
+        return false;
+    }
+    return zlang_find_struct_method(program, _base_k->name_, method_name) != NULL ||
+           zlang_has_inherited_method(program, _base_k, method_name);
+}
+
 static const zlang_ast_statement_t *zlang_find_owner_method(const zlang_program_t *program,
                                                             const char *owner_name,
                                                             const char *method_name) {
@@ -1198,6 +1213,50 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                                         _field_k->type_name_)) {
                     _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
                                              "struct does not satisfy trait requirements");
+                }
+            }
+        }
+        for (size_t _trait = 0U; _trait < statement->uses_count_; ++_trait) {
+            const zlang_ast_statement_t *const _trait_k =
+                zlang_find_trait(context->program_, statement->uses_names_[_trait]);
+            if (_trait_k == NULL) {
+                continue;
+            }
+            const size_t _trait_end_k = _trait_k->body_start_ + _trait_k->body_count_;
+            for (size_t _index = _trait_k->body_start_;
+                 _index < _trait_end_k && _index < context->program_->statement_count_; ++_index) {
+                const zlang_ast_statement_t *const _method_k =
+                    &context->program_->statements_[_index];
+                if (_method_k->kind_ != zlang_statement_function_ || _method_k->name_ == NULL) {
+                    continue;
+                }
+                if (zlang_has_inherited_method(context->program_, statement, _method_k->name_)) {
+                    _result_k =
+                        zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, _method_k,
+                                     "trait method conflicts with an inherited method");
+                }
+                for (size_t _previous = 0U; _previous < _trait; ++_previous) {
+                    const zlang_ast_statement_t *const _previous_trait_k =
+                        zlang_find_trait(context->program_, statement->uses_names_[_previous]);
+                    if (_previous_trait_k == NULL) {
+                        continue;
+                    }
+                    const size_t _previous_end_k =
+                        _previous_trait_k->body_start_ + _previous_trait_k->body_count_;
+                    for (size_t _previous_index = _previous_trait_k->body_start_;
+                         _previous_index < _previous_end_k &&
+                         _previous_index < context->program_->statement_count_;
+                         ++_previous_index) {
+                        const zlang_ast_statement_t *const _previous_method_k =
+                            &context->program_->statements_[_previous_index];
+                        if (_previous_method_k->kind_ == zlang_statement_function_ &&
+                            _previous_method_k->name_ != NULL &&
+                            strcmp(_previous_method_k->name_, _method_k->name_) == 0) {
+                            _result_k =
+                                zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION,
+                                             _method_k, "trait methods conflict with each other");
+                        }
+                    }
                 }
             }
         }

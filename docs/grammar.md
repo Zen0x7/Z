@@ -110,8 +110,8 @@ struct Counter uses Named {
 
 A trait requirement names a field that the using struct must provide with the same type. Trait
 methods are compiled into the using struct, are called directly and never use the vtable. They
-cannot have the same name as an inherited method. Multiple inheritance and downcasting are not
-supported.
+cannot have the same name as an inherited method or as a method from another trait used by the
+same struct. Multiple inheritance and downcasting are not supported.
 
 Every parameter needs `clone` or `reference`, with optional `const` before the mode. `clone` is a
 local value copy; `reference` aliases caller storage and cannot be stored or returned. Shadowing a

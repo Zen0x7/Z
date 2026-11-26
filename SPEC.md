@@ -456,7 +456,7 @@ Any additional `zlang_*` call requires an amendment to this specification.
 
 Generated C must not contain:
 
-- a function pointer table for dispatch;
+- a function pointer table except the internal vtables required by 0.29 inheritance;
 - a closure or callback passed to a runtime helper;
 - a string literal containing a source variable name;
 - `malloc`, `calloc`, `realloc`, `free`, `strdup`, or equivalent;
@@ -505,8 +505,8 @@ The compiler may emit more than one diagnostic, but it must not generate C for a
 
 The following are explicitly outside Zlang:
 
-- runtime reflection, dynamic dispatch, or runtime names;
-- classes, inheritance, and objects;
+- runtime reflection or runtime names;
+- classes, multiple inheritance, or heap-backed objects;
 - heap-backed strings or vectors, or any operation that grows storage dynamically;
 - garbage collection or reference counting;
 - hard realtime timing guarantees beyond predictable memory behavior;
@@ -802,6 +802,12 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | const parameter mutation rejection | `rejects_mutation_of_const_parameter` |
 | reference lvalue rejection | `rejects_non_lvalue_reference_argument` |
 | diagnostic source locations | `reports_syntax_diagnostics_with_source_locations`, `reports_type_and_resource_diagnostics_with_source_locations`, `zlang.cli.diagnostic_format` |
+| `struct Derived : Base` inheritance and vtable emission | `emits_struct_inheritance_and_vtable`, `emits_unbounded_polymorphic_metadata` |
+| dynamic dispatch through a base receiver | `emits_dynamic_dispatch_call` |
+| static traits via `uses` | `emits_trait_method_direct_call` |
+| downcast rejection | `rejects_downcast` |
+| override signature validation | `rejects_override_signature_mismatch` |
+| trait collision rejection | `rejects_trait_override_of_inherited_method`, `rejects_conflicting_trait_methods` |
 
 
 ## 0.6 implementation status
@@ -920,7 +926,8 @@ are direct calls because trait methods are compiled into the using struct.
 A trait declares required fields and methods with `trait Name requires ... { ... }`. A struct opts
 in with `uses Name`. Trait methods become concrete methods of the using struct, cannot override
 inherited methods, and introduce no runtime indirection. The cost of tags, vtable pointers and
-indirect calls is accepted; generated programs still perform no dynamic allocation.
+indirect calls is accepted; generated programs still perform no dynamic allocation. The emitter
+derives dispatch metadata from the AST, so it has no fixed vtable or type-tag capacity.
 
 ## 0.28 implementation status
 

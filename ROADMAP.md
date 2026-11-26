@@ -1031,4 +1031,5 @@ the vtable and cannot override inherited methods. The golden suite includes
 
 Inheritance has a runtime cost: larger structs, tags, vtable pointers and indirect calls. The
 generated program still performs no dynamic allocation and uses no runtime type registry beyond the
-internal dispatch tables.
+internal dispatch tables. The emitter derives tags, vtable types, slots and instances directly from
+the AST, so this metadata has no fixed emitter-side capacity and adds no stack storage.

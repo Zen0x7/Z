@@ -136,6 +136,7 @@ static void stream_backends_share_read_and_write_semantics(zlang_test_context_t 
         ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
                                                8U, false, &_status_k) == 1);
         ZLANG_CHECK(context, _destination_k[0] == 'a');
+        ZLANG_CHECK(context, fseek(_file_k, 1L, SEEK_SET) == 0);
         ZLANG_CHECK(context, zlang_stream_read(_stdio_k, _destination_k, sizeof(_destination_k), 0U,
                                                8U, true, &_status_k) == 1);
         ZLANG_CHECK(context, _destination_k[0] == '\n');

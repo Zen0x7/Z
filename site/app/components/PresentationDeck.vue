@@ -4,20 +4,15 @@ const emit = defineEmits<{ done: [] }>()
 const slide = ref(0)
 const total = 4
 
-const presentationCode = String.raw`// Import what you need from the standard library
-import { write } from "@std/io";
+const presentationCode = String.raw`import { write } from "@std/io";
 
-// main is where the program starts
 function main(): integer {
-    // We need to define enough space to generate a sequence
     array[10] integer fib = {0, 1};
 
-    // Fill every remaining slot with the sum of the previous two
     for (integer index = 2; index < 10; index += 1) {
         fib[index] = fib[index - 1] + fib[index - 2];
     }
 
-    // Walk the sequence and write each value
     foreach (value in fib) {
         write(value);
         write(" ");
@@ -41,14 +36,18 @@ const buildGenerated = String.raw`int32_t app_fn_main(void) {
     app_array_fib_t app_local_fib = { { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 } };
 
     for (int32_t app_local_index = 2; (app_local_index < 10); app_local_index = zlang_add_i32(app_local_index, 1)) {
-        app_local_fib.data_[(uint32_t)app_local_index] = zlang_add_i32(app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 1)], app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 2)]);
+        int32_t zlang_gen_read_3 = app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 1)];
+        int32_t zlang_gen_read_4 = app_local_fib.data_[(uint32_t)zlang_sub_i32(app_local_index, 2)];
+        app_local_fib.data_[(uint32_t)app_local_index] = zlang_add_i32(zlang_gen_read_3, zlang_gen_read_4);
     }
 
-    for (uint32_t zlang_gen_foreach_3 = ZLANG_ZERO; zlang_gen_foreach_3 < 10; ++zlang_gen_foreach_3) {
-        int32_t app_local_value = app_local_fib.data_[zlang_gen_foreach_3];
+    for (uint32_t zlang_gen_foreach_5 = ZLANG_ZERO; zlang_gen_foreach_5 < 10; ++zlang_gen_foreach_5) {
+        int32_t app_local_value = app_local_fib.data_[zlang_gen_foreach_5];
         zlang_std_io_write_i32(app_local_value);
         zlang_std_io_write_string(zlang_gen_literal_0);
     }
+
+    zlang_std_io_write_string(zlang_gen_literal_1);
 
     return 0;
 }`
@@ -191,11 +190,11 @@ onUnmounted(() => {
             <CodeBlock
               :code="presentationCode"
               lang="zlang"
-              filename="fibonacci.z · annotated"
+              filename="fibonacci.z"
             />
           </div>
           <p class="deck-reveal deck-caption" style="--delay: 760ms">
-            The sequence behind sunflower seeds and pinecones, written in ten lines.
+            The sequence behind sunflower seeds and pinecones, in fixed memory.
           </p>
         </div>
       </section>

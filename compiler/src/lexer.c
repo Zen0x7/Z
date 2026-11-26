@@ -52,7 +52,8 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"jump", zlang_token_jump_},
                                              {"switch", zlang_token_switch_},
                                              {"case", zlang_token_case_},
-                                             {"default", zlang_token_default_}};
+                                             {"default", zlang_token_default_},
+                                             {"match", zlang_token_match_}};
 
 static void zlang_lexer_advance(zlang_lexer_t *lexer) {
     const char _character_k = lexer->source_[lexer->position_];
@@ -327,6 +328,13 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     token->column_ = column;
 
     const char _next_k = lexer->source_[lexer->position_ + 1U];
+    if (_character_k == '=' && _next_k == '>') {
+        token->kind_ = zlang_token_arrow_;
+        token->length_ = 2U;
+        zlang_lexer_advance(lexer);
+        zlang_lexer_advance(lexer);
+        return true;
+    }
     if ((_character_k == '&' && _next_k == '&') || (_character_k == '|' && _next_k == '|')) {
         token->kind_ = _character_k == '&' ? zlang_token_and_ : zlang_token_or_;
         token->length_ = 2U;

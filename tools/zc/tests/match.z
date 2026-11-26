@@ -1,0 +1,5 @@
+int32 value = 2;
+int32 label = match (value) {
+    1 => 10,
+    _ => 20
+};

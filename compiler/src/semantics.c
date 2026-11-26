@@ -592,6 +592,44 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         return _expression_k->name_;
     }
+    case zlang_expression_wildcard_:
+        return NULL;
+    case zlang_expression_match_: {
+        const char *const _selector_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const size_t _count_k = _expression_k->argument_count_;
+        bool _has_wildcard_k = false;
+        const char *_result_k = NULL;
+        bool _valid_k = _selector_k != NULL && _count_k >= 2U && (_count_k % 2U) == 0U;
+        for (size_t _arm = 0U; _valid_k && _arm < _count_k; _arm += 2U) {
+            const size_t _pattern_index_k = _expression_k->argument_indices_[_arm];
+            const size_t _value_index_k = _expression_k->argument_indices_[_arm + 1U];
+            const zlang_ast_expression_t *const _pattern_k =
+                _pattern_index_k < context->program_->expression_count_
+                    ? &context->program_->expressions_[_pattern_index_k]
+                    : NULL;
+            const bool _arm_wildcard_k =
+                _pattern_k != NULL && _pattern_k->kind_ == zlang_expression_wildcard_;
+            _has_wildcard_k = _has_wildcard_k || _arm_wildcard_k;
+            const char *const _pattern_type_k =
+                _arm_wildcard_k ? _selector_k
+                                : zlang_analyze_expression(context, _pattern_index_k, statement);
+            const char *const _value_type_k =
+                zlang_analyze_expression(context, _value_index_k, statement);
+            _valid_k = _valid_k && _pattern_type_k != NULL &&
+                       zlang_type_matches(_selector_k, _pattern_type_k) && _value_type_k != NULL &&
+                       (_result_k == NULL || zlang_type_matches(_result_k, _value_type_k));
+            if (_result_k == NULL) {
+                _result_k = _value_type_k;
+            }
+        }
+        if (!_valid_k || !_has_wildcard_k) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "match requires matching arms and a wildcard arm");
+            return NULL;
+        }
+        return _result_k;
+    }
     case zlang_expression_boolean_literal_:
         return "boolean";
     case zlang_expression_string_literal_:

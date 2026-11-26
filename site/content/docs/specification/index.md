@@ -52,8 +52,8 @@ No external language standard is incorporated by reference. Zlang defines its ow
 
 ## Planned 0.39 work
 
-Labeled jumps and `switch` are implemented in this working tree. The remaining planned syntax
-forms are value-producing `match`, ternary `?:`,
+Labeled jumps, `switch` and value-producing `match` are implemented in this working tree. The
+remaining planned syntax forms are ternary `?:`,
 bitwise and shift operators, `do while`, exclusive `uint32` range literals, and labeled loop jumps.
 The trait model is also planned to change: interfaces become named field-and-method contracts,
 traits require interfaces, and structs declare `implements` interfaces and `use` traits.

@@ -1739,6 +1739,18 @@ static void emits_switch_statement(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_, "break;") >= 3U);
 }
 
+static void emits_match_expression(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "int32 value = 2;\n"
+                                  "int32 label = match (value) {\n"
+                                  "    1 => 10,\n"
+                                  "    _ => 20\n"
+                                  "};";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_value == 1 ? 10 : 20") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

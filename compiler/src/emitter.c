@@ -2548,6 +2548,39 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         }
         return true;
     }
+    case zlang_expression_match_: {
+        const size_t _count_k = _expression_k->argument_count_;
+        if (_count_k < 2U || (_count_k % 2U) != 0U || !zlang_append_text(emitter, "(")) {
+            return false;
+        }
+        for (size_t _arm = 0U; _arm < _count_k; _arm += 2U) {
+            const size_t _pattern_index_k = _expression_k->argument_indices_[_arm];
+            const size_t _value_index_k = _expression_k->argument_indices_[_arm + 1U];
+            const zlang_ast_expression_t *const _pattern_k =
+                _pattern_index_k < program->expression_count_
+                    ? &program->expressions_[_pattern_index_k]
+                    : NULL;
+            const bool _wildcard_k =
+                _pattern_k != NULL && _pattern_k->kind_ == zlang_expression_wildcard_;
+            if (_wildcard_k) {
+                if (!zlang_emit_expression(program, _value_index_k, emitter)) {
+                    return false;
+                }
+                break;
+            }
+            if (!zlang_emit_expression(program, _expression_k->left_, emitter) ||
+                !zlang_append_text(emitter, " == ") ||
+                !zlang_emit_expression(program, _pattern_index_k, emitter) ||
+                !zlang_append_text(emitter, " ? ") ||
+                !zlang_emit_expression(program, _value_index_k, emitter) ||
+                !zlang_append_text(emitter, " : ")) {
+                return false;
+            }
+        }
+        return zlang_append_text(emitter, ")");
+    }
+    case zlang_expression_wildcard_:
+        return false;
     case zlang_expression_equal_:
     case zlang_expression_less_:
     case zlang_expression_greater_:

@@ -501,6 +501,85 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].is_float_ = _token_k->is_float_;
         zlang_parser_advance(parser);
         break;
+    case zlang_token_match_: {
+        zlang_parser_advance(parser);
+        if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after match")) {
+            return false;
+        }
+        size_t _selector_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_expression(parser, &_selector_k)) { // NOLINT(misc-no-recursion)
+            return false;
+        }
+        if (parser->expressions_[_selector_k].kind_ != zlang_expression_identifier_) {
+            zlang_parser_unsupported(parser, "match selector must be an identifier");
+            return false;
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                                 "expected ')' after match selector") ||
+            !zlang_parser_expect(parser, zlang_token_left_brace_, "expected '{' after match")) {
+            return false;
+        }
+        const size_t _match_k = zlang_parser_add_expression(parser);
+        if (_match_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_match_k].kind_ = zlang_expression_match_;
+        parser->expressions_[_match_k].left_ = _selector_k;
+        size_t _arm_count_k = 0U;
+        while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
+               zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
+            if (_arm_count_k + 2U > ZLANG_CALL_ARGUMENT_CAPACITY) {
+                zlang_parser_unsupported(parser, "match arm capacity exceeded");
+                return false;
+            }
+            size_t _pattern_k = ZLANG_NO_EXPRESSION;
+            const zlang_token_t *const _pattern_k_token_k = zlang_parser_current(parser);
+            const bool _wildcard_k = _pattern_k_token_k->kind_ == zlang_token_identifier_ &&
+                                     _pattern_k_token_k->text_ != NULL &&
+                                     strcmp(_pattern_k_token_k->text_, "_") == 0;
+            if (_wildcard_k) {
+                zlang_parser_advance(parser);
+                _pattern_k = zlang_parser_add_expression(parser);
+                if (_pattern_k == ZLANG_NO_EXPRESSION) {
+                    return false;
+                }
+                parser->expressions_[_pattern_k].kind_ = zlang_expression_wildcard_;
+                parser->expressions_[_pattern_k].line_ = _pattern_k_token_k->line_;
+                parser->expressions_[_pattern_k].column_ = _pattern_k_token_k->column_;
+            } else if (_pattern_k_token_k->kind_ == zlang_token_integer_literal_ ||
+                       _pattern_k_token_k->kind_ == zlang_token_true_ ||
+                       _pattern_k_token_k->kind_ == zlang_token_false_ ||
+                       (_pattern_k_token_k->kind_ == zlang_token_identifier_ &&
+                        zlang_parser_is_user_type(parser, _pattern_k_token_k))) {
+                if (!zlang_parse_primary(parser, &_pattern_k)) {
+                    return false;
+                }
+            } else {
+                zlang_parser_unsupported(parser, "expected a literal, enum item or '_' in match");
+                return false;
+            }
+            if (!zlang_parser_expect(parser, zlang_token_arrow_,
+                                     "expected '=>' after match pattern")) {
+                return false;
+            }
+            size_t _value_k = ZLANG_NO_EXPRESSION;
+            if (!zlang_parse_expression(parser, &_value_k)) { // NOLINT(misc-no-recursion)
+                return false;
+            }
+            parser->expressions_[_match_k].argument_indices_[_arm_count_k++] = _pattern_k;
+            parser->expressions_[_match_k].argument_indices_[_arm_count_k++] = _value_k;
+            if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+                break;
+            }
+            zlang_parser_advance(parser);
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_brace_, "expected '}' after match")) {
+            return false;
+        }
+        parser->expressions_[_match_k].argument_count_ = _arm_count_k;
+        *expression = _match_k;
+        return true;
+    }
     case zlang_token_true_:
     case zlang_token_false_:
         _expression_k = zlang_parser_add_expression(parser);

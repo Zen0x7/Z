@@ -208,7 +208,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'storage.type.zlang',
-          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|array|arguments)\b`,
+          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|array|arguments|stream|status_code|result_type)\b`,
         },
         {
           name: 'storage.type.zlang',

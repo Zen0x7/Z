@@ -44,7 +44,7 @@ dispatch through the constant operations table and report status through `zlang_
 
 ## Results
 
-IO results are canonical `Result<int32, Status>` values. `value` is the number of bytes transferred.
+IO results are canonical `result_type<int32, status_code>` values. `value` is the number of bytes transferred.
 `code` is `SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. Invalid offsets, null storage and capacity failures
 trap.
 

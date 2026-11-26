@@ -17,7 +17,7 @@ activation_macros:
 
 ## Summary
 
-`read_line` reads one line into caller-owned bounded storage, drops the newline and returns the transferred byte count in a canonical `Result<int32, Status>`.
+`read_line` reads one line into caller-owned bounded storage, drops the newline and returns the transferred byte count in a canonical `result_type<int32, status_code>`.
 
 ## Import
 
@@ -28,9 +28,9 @@ import { read_line } from "@std/io";
 ## Signatures
 
 ```zlang
-function read_line(reference string destination): Result<int32, Status>
+function read_line(reference string destination): result_type<int32, status_code>
 function read_line(clone stream source, reference string destination,
-                   uint32 offset, uint32 count): Result<int32, Status>
+                   uint32 offset, uint32 count): result_type<int32, status_code>
 ```
 
 The first overload reads from `stdin` at offset `0` for the declared capacity.
@@ -58,7 +58,7 @@ import { read_line } from "@std/io";
 
 function main(): int32 {
     string[32] line;
-    Result<int32, Status> count = read_line(line);
+    result_type<int32, status_code> count = read_line(line);
     write(count.value);
     return 0;
 }

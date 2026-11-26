@@ -79,7 +79,7 @@ A declaration may list up to four type parameters. An application may pass up to
 
 ## Native results
 
-`Result<T, Status>` is a closed native generic family. `T` is the ideal value and `Status` is the error code. A function with no payload uses `Result<void, Status>`. Every result exposes `code`, `what` and, for non-void payloads, `value`.
+`result_type<T, status_code>` is a closed native generic family. `T` is the ideal value and `status_code` is the error code. A function with no payload uses `result_type<void, status_code>`. Every result exposes `code`, `what` and, for non-void payloads, `value`.
 
 | Constant | Meaning |
 | --- | --- |

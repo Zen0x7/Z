@@ -30,4 +30,4 @@ The registry currently records state, opacity and parameter modes. Full lifecycl
 
 `random.generate_int32` is stateful and opaque. The compiler may fold its constant arguments, but it must not fold, cache or reorder the result.
 
-`io.write` is effectful and deterministic for a given value. It writes to a borrowed stream and returns `Result<int32, Status>` with the number of bytes written. The [write reference](/docs/standard-library/namespaces/io/functions/write) records the canonical signatures.
+`io.write` is effectful and deterministic for a given value. It writes to a borrowed stream and returns `result_type<int32, status_code>` with the number of bytes written. The [write reference](/docs/standard-library/namespaces/io/functions/write) records the canonical signatures.

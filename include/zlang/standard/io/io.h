@@ -13,8 +13,8 @@
 /** @file
  * @brief Native IO helpers built on the stable Zlang stream contract.
  *
- * Every operation returns `Result<int32, Status>` with the transferred byte count in `value`.
- * Streams and strings are borrowed views; buffer bytes are never copied except into the
+ * Every operation returns `result_type<int32, status_code>` with the transferred byte count in
+ * `value`. Streams and strings are borrowed views; buffer bytes are never copied except into the
  * caller-owned destination supplied to a read.
  */
 

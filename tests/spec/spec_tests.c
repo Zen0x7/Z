@@ -1153,8 +1153,8 @@ static void emits_io_read_calls(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { read, read_line } from \"@std/io\";\n"
                                   "string[16] line;\n"
-                                  "Result<int32, Status> a = read_line(line);\n"
-                                  "Result<int32, Status> b = read(line);";
+                                  "result_type<int32, status_code> a = read_line(line);\n"
+                                  "result_type<int32, status_code> b = read(line);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read_line(") != NULL);
@@ -1166,7 +1166,7 @@ static void rejects_read_without_bounded_string(zlang_test_context_t *const cont
     zlang_spec_session_t _session;
     const char *const _source_k = "import { read } from \"@std/io\";\n"
                                   "string view = \"x\";\n"
-                                  "Result<int32, Status> n = read(view);";
+                                  "result_type<int32, status_code> n = read(view);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -1619,7 +1619,7 @@ static void rejects_duplicate_generic_parameter(zlang_test_context_t *const cont
 
 static void emits_native_result_type(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "Result<int32, Status> result;";
+    const char *const _source_k = "result_type<int32, status_code> result;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_STD_RESULT") != NULL);
@@ -1629,7 +1629,7 @@ static void emits_native_result_type(zlang_test_context_t *const context) {
 
 static void assigns_native_result_fields(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "Result<int32, Status> result;\n"
+    const char *const _source_k = "result_type<int32, status_code> result;\n"
                                   "result.code = STATUS_SUCCESS;\n"
                                   "result.value = 9;";
 
@@ -1641,8 +1641,9 @@ static void assigns_native_result_fields(zlang_test_context_t *const context) {
 
 static void emits_stream_string_write_result(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "import { write } from \"@std/io\";\n"
-                                  "Result<int32, Status> response = write(STDOUT, \"hello\");";
+    const char *const _source_k =
+        "import { write } from \"@std/io\";\n"
+        "result_type<int32, status_code> response = write(STDOUT, \"hello\");";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_write_string_stream(") != NULL);
@@ -1652,7 +1653,7 @@ static void emits_stream_string_write_result(zlang_test_context_t *const context
 static void emits_stream_write_result(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"
-                                  "Result<int32, Status> response = write(STDERR, 7);";
+                                  "result_type<int32, status_code> response = write(STDERR, 7);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_write_i32_stream") != NULL);
@@ -1662,9 +1663,10 @@ static void emits_stream_write_result(zlang_test_context_t *const context) {
 
 static void emits_stream_read_result(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "import { read } from \"@std/io\";\n"
-                                  "string[16] line;\n"
-                                  "Result<int32, Status> response = read(STDIN, line, 0U, 8U);";
+    const char *const _source_k =
+        "import { read } from \"@std/io\";\n"
+        "string[16] line;\n"
+        "result_type<int32, status_code> response = read(STDIN, line, 0U, 8U);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read_stream") != NULL);
@@ -1674,7 +1676,7 @@ static void emits_stream_read_result(zlang_test_context_t *const context) {
 
 static void emits_native_result_methods(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "Result<int32, Status> result;\n"
+    const char *const _source_k = "result_type<int32, status_code> result;\n"
                                   "boolean ok = result.is_ok();\n"
                                   "int32 value = result.get();\n"
                                   "string message = result.message();";

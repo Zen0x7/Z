@@ -2,14 +2,14 @@ import { read, read_line, write } from "@std/io";
 
 function main(): int32 {
     string[16] line;
-    Result<int32, Status> first = read_line(line);
+    result_type<int32, status_code> first = read_line(line);
     write(line);
     write("|");
     write(first.value);
     write("\n");
 
     string[16] raw;
-    Result<int32, Status> second = read(raw);
+    result_type<int32, status_code> second = read(raw);
     write(raw);
     write("|");
     write(second.value);

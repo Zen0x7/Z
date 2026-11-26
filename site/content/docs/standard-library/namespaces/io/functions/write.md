@@ -38,7 +38,7 @@ activation_macros:
 
 ## Summary
 
-`write` sends one value to a stream and returns the number of bytes written in a canonical `Result<int32, Status>`.
+`write` sends one value to a stream and returns the number of bytes written in a canonical `result_type<int32, status_code>`.
 
 ## Import
 
@@ -51,22 +51,22 @@ import { write } from "@std/io";
 Convenience overloads use `stdout` implicitly:
 
 ```zlang
-function write(clone string value): Result<int32, Status>
-function write(clone boolean value): Result<int32, Status>
-function write(clone int32 value): Result<int32, Status>
-function write(clone uint32 value): Result<int32, Status>
-function write(clone int64 value): Result<int32, Status>
-function write(clone uint64 value): Result<int32, Status>
-function write(clone float value): Result<int32, Status>
-function write(clone double value): Result<int32, Status>
+function write(clone string value): result_type<int32, status_code>
+function write(clone boolean value): result_type<int32, status_code>
+function write(clone int32 value): result_type<int32, status_code>
+function write(clone uint32 value): result_type<int32, status_code>
+function write(clone int64 value): result_type<int32, status_code>
+function write(clone uint64 value): result_type<int32, status_code>
+function write(clone float value): result_type<int32, status_code>
+function write(clone double value): result_type<int32, status_code>
 ```
 
 Explicit stream overloads accept `STDIN`, `STDOUT`, `STDERR` or a future stream handle:
 
 ```zlang
-function write(clone stream target, clone string value): Result<int32, Status>
-function write(clone stream target, clone boolean value): Result<int32, Status>
-function write(clone stream target, clone int32 value): Result<int32, Status>
+function write(clone stream target, clone string value): result_type<int32, status_code>
+function write(clone stream target, clone boolean value): result_type<int32, status_code>
+function write(clone stream target, clone int32 value): result_type<int32, status_code>
 ```
 
 The remaining scalar overloads follow the same pattern.
@@ -78,7 +78,7 @@ A `string` parameter clones the view descriptor only. Buffer bytes are never cop
 `value` is the transferred byte count. `code` is `STATUS_SUCCESS` on a complete write and `STATUS_IO_ERROR` when the stream fails. `message` is a bounded read-only view of the fixed status message.
 
 ```zlang
-Result<int32, Status> response = write(STDOUT, 7);
+result_type<int32, status_code> response = write(STDOUT, 7);
 if (response.is_ok()) {
     write(response.value);
 } else {

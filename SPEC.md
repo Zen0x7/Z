@@ -1019,16 +1019,16 @@ Generic structs cannot inherit, use traits or declare methods. Generic functions
 and have flat bodies. Nested type arguments are not part of the MVP. Invalid applications, duplicate
 type parameters and capacity exhaustion produce diagnostics.
 
-The canonical stdlib result shape is `Result<T, E>`: `T` is the value the function would ideally
+The canonical stdlib result shape is `result_type<T, E>`: `T` is the value the function would ideally
 return, `E` is the error code, and `what` carries a bounded message. A function with no payload uses
-`Result<void, Status>`. Stdlib adoption is deferred to 0.31.
+`result_type<void, status_code>`. Stdlib adoption is deferred to 0.31.
 
 ## 0.31 implementation status
 
 Status: implemented.
 
 Zlang 0.31 defines native generic facilities for the standard library. A closed registry of
-`Result<T, Status>` applications maps canonical Zlang names to C layouts declared in
+`result_type<T, status_code>` applications maps canonical Zlang names to C layouts declared in
 `<zlang/standard/result/result.h>`. Every result exposes `code`, `what` and, except for `void`,
 `value`. Status constants are exposed as `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
 `STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`.
@@ -1043,7 +1043,7 @@ their 0.30 signatures; no function is migrated in 0.31.
 Status: implemented.
 
 Zlang 0.32 will redesign IO around streams, bounded caller-owned buffers and byte-transfer
-results. Both `write` and `read` return `Result<int32, Status>`, where `value` is the number of
+results. Both `write` and `read` return `result_type<int32, status_code>`, where `value` is the number of
 bytes actually transferred and `code` is `SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. This follows the
 `error_code, bytes_transferred` model used by libraries such as Boost.Asio, adapted to Zlang's
 synchronous and allocation-free contract.
@@ -1059,11 +1059,19 @@ bounded string view and return the number of bytes written. Neither operation co
 string and stream parameters are views. The stdlib documentation must state that explicitly.
 
 Programmer and resource errors such as null storage, zero capacity, invalid offsets and capacity
-overflow remain traps. Recoverable stream conditions are reported through `Result<int32, Status>`.
+overflow remain traps. Recoverable stream conditions are reported through `result_type<int32, status_code>`.
 
 The migration will update the stdlib registry, public headers, generated C fixtures, the golden
 examples and the documentation. Native parity between registry entry, header declaration and docs
 must be verified before each migrated function is considered complete.
+
+## 0.36 implementation status
+
+Status: implemented.
+
+Zlang 0.36 renames the native result family to `result_type<T, status_code>` and the native error
+type to `status_code`. C layouts, C symbols and uppercase status constants remain unchanged. The
+rename applies to compiler registry entries, semantics, tests, documentation and site pages.
 
 ## 0.35 implementation status
 
@@ -1094,7 +1102,7 @@ signatures, docs, tests, goldens and site content must be updated together.
 
 Status: implemented.
 
-Zlang 0.33 will add generic methods. The first target is `Result<T, E>` ergonomics: `is_ok()`,
+Zlang 0.33 will add generic methods. The first target is `result_type<T, E>` ergonomics: `is_ok()`,
 `get()` and `message()` will be implemented as native helpers and exposed through method syntax.
 After that, general methods on generic structs and functions may be introduced. Generic methods will
 be monomorphized per specialization and will not add runtime dispatch. Generic traits and generic
@@ -1108,7 +1116,7 @@ inheritance remain outside scope.
 | generic function specialization | `emits_generic_function_specialization` |
 | generic argument count validation | `rejects_generic_argument_count_mismatch` |
 | duplicate generic parameter rejection | `rejects_duplicate_generic_parameter` |
-| native `Result<T, Status>` mapping | `emits_native_result_type`, `assigns_native_result_fields` |
+| native `result_type<T, status_code>` mapping | `emits_native_result_type`, `assigns_native_result_fields` |
 | IO byte-transfer results | `emits_io_read_calls`, `zlang.cli.io_read` |
 | explicit stream handles | `emits_stream_write_result`, `emits_stream_read_result` |
 | stable native stream contract | `streams_use_the_same_contract` |

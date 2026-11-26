@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 /** @file
- * @brief Canonical C layout for Zlang native `Result<T, Status>` values.
+ * @brief Canonical C layout for Zlang native `result_type<T, status_code>` values.
  *
  * The header owns the C representation. The compiler maps the Zlang type
  * application to one of the typedefs below. No message is formatted at

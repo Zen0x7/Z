@@ -118,18 +118,18 @@ User generics are AST templates. Each concrete application is monomorphized into
 type or function with substituted source type names. C identifiers are sanitized from canonical
 source names, so `Pair<int32, boolean>` becomes `app_struct_pair_integer_boolean_t`.
 
-Native `Result<T, Status>` applications are registry entries mapped to C layouts in
+Native `result_type<T, status_code>` applications are registry entries mapped to C layouts in
 `<zlang/standard/result/result.h>`. They do not produce emitted user structs. The compiler activates
 `ZLANG_STD_RESULT` in generated C when a native result type appears. Native stdlib parity requires
 the compiler registry, public header and documentation to agree.
 
-0.32 IO uses explicit stream handles and `Result<int32, Status>` byte-transfer results. Streams
+0.32 IO uses explicit stream handles and `result_type<int32, status_code>` byte-transfer results. Streams
 are borrowed handles; `STDIN`, `STDOUT` and `STDERR` are ordinary stream values, and future
 facilities such as sockets must fit the same API. Convenience overloads keep implicit stdin and
 stdout. `read` writes into a bounded caller-owned view at an explicit offset and count; `write`
 borrows a bounded view. Neither operation copies buffer bytes.
 
-0.33 adds generic methods. Native `Result` helpers lower to direct C field reads and
+0.33 adds generic methods. Native `result_type` helpers lower to direct C field reads and
 `zlang_std_status_is_ok`. Methods declared in generic structs are copied into each specialization
 with substituted type names and emitted as ordinary C functions. No vtable or runtime dispatch is
 introduced.

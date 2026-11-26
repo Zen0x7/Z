@@ -17,7 +17,7 @@ activation_macros:
 
 ## Summary
 
-`read` reads bytes into caller-owned bounded storage and returns the transferred byte count in a canonical `Result<int32, Status>`.
+`read` reads bytes into caller-owned bounded storage and returns the transferred byte count in a canonical `result_type<int32, status_code>`.
 
 ## Import
 
@@ -28,9 +28,9 @@ import { read } from "@std/io";
 ## Signatures
 
 ```zlang
-function read(reference string destination): Result<int32, Status>
+function read(reference string destination): result_type<int32, status_code>
 function read(clone stream source, reference string destination,
-              uint32 offset, uint32 count): Result<int32, Status>
+              uint32 offset, uint32 count): result_type<int32, status_code>
 ```
 
 The first overload reads from `stdin` at offset `0` for the declared capacity. The explicit overload reads from any stream into a bounded window.
@@ -58,7 +58,7 @@ import { read } from "@std/io";
 
 function main(): int32 {
     string[32] line;
-    Result<int32, Status> count = read(line);
+    result_type<int32, status_code> count = read(line);
     write(count.value);
     return 0;
 }

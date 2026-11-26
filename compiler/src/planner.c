@@ -94,7 +94,7 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
         *size = 4U;
         return true;
     }
-    if (strcmp(type_name, "Status") == 0) {
+    if (strcmp(type_name, "status_code") == 0) {
         *size = 4U;
         return true;
     }

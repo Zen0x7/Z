@@ -612,7 +612,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             }
         }
         if (zlang_std_is_status_constant(_expression_k->name_)) {
-            return "Status";
+            return "status_code";
         }
         if (zlang_std_is_stream_constant(_expression_k->name_)) {
             return "stream";

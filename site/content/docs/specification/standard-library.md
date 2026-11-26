@@ -31,6 +31,6 @@ Output uses `write` from `@std/io`. There is no built-in `print`. `read` and `re
 
 ## Native result parity
 
-`Result<T, Status>` applications map to canonical C layouts in `<zlang/standard/result/result.h>`. The compiler registry, the public header and the documentation must agree for every native function. A change to one of the three requires a review of the other two.
+`result_type<T, status_code>` applications map to canonical C layouts in `<zlang/standard/result/result.h>`. The compiler registry, the public header and the documentation must agree for every native function. A change to one of the three requires a review of the other two.
 
 Native results introduce no allocation, formatting or reflection. Existing standard functions keep their current signatures; none returns a native result.

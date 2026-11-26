@@ -10,7 +10,7 @@ navigation:
 
 # Functions
 
-`@std/io` exposes `read`, `read_line` and `write`. Every operation uses the stable [stream contract](/docs/specification/streams) and returns `Result<int32, Status>` with the transferred byte count.
+`@std/io` exposes `read`, `read_line` and `write`. Every operation uses the stable [stream contract](/docs/specification/streams) and returns `result_type<int32, status_code>` with the transferred byte count.
 
 ## Catalog
 

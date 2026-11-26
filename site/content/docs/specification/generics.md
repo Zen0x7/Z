@@ -52,10 +52,10 @@ The generated identifiers derive from the concrete application. Two applications
 
 ## Native results
 
-`Result<T, Status>` uses the same application syntax. Unlike user generics, its applications form a closed family mapped to fixed C layouts. See [Types and values](/docs/specification/types).
+`result_type<T, status_code>` uses the same application syntax. Unlike user generics, its applications form a closed family mapped to fixed C layouts. See [Types and values](/docs/specification/types).
 
 ## Generic methods
 
 A generic struct can declare flat instance methods. The compiler copies the method into each specialization with the same substituted type names used for fields and signatures. Names such as `app_fn_box_int32_get` are emitted as ordinary C functions; no vtable or runtime dispatch is involved.
 
-Native `Result<T, Status>` values expose `is_ok()`, `get()` and `message()`. These methods lower to direct C field reads and `zlang_std_status_is_ok`; they are not user-defined generic methods.
+Native `result_type<T, status_code>` values expose `is_ok()`, `get()` and `message()`. These methods lower to direct C field reads and `zlang_std_status_is_ok`; they are not user-defined generic methods.

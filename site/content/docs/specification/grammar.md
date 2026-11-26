@@ -107,4 +107,4 @@ A `foreach` over a rank-N array takes either N index names or N index names foll
 
 `!` binds tighter than comparisons. `&&` binds tighter than `||`. Assignment has the lowest precedence. Parentheses may group any expression.
 
-Generic applications, including `Result<T, Status>`, use `typeArguments`. The compiler checks the arity and the closed result family after parsing.
+Generic applications, including `result_type<T, status_code>`, use `typeArguments`. The compiler checks the arity and the closed result family after parsing.

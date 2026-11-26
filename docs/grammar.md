@@ -211,13 +211,13 @@ type parameters and four arguments per application are supported.
 
 ## Native results (0.31)
 
-`Result<T, Status>` is a closed native generic family. Supported applications such as
-`Result<void, Status>` and `Result<int32, Status>` map to canonical C layouts in
+`result_type<T, status_code>` is a closed native generic family. Supported applications such as
+`result_type<void, status_code>` and `result_type<int32, status_code>` map to canonical C layouts in
 `<zlang/standard/result/result.h>`. Results expose `code`, `what` and, for non-void payloads,
 `value`. Status constants are `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
 `STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`.
 
-0.32 IO operations return `Result<int32, Status>` with the transferred byte count in `value`.
+0.32 IO operations return `result_type<int32, status_code>` with the transferred byte count in `value`.
 Convenience overloads use implicit stdout or stdin. Explicit overloads accept `STDIN`, `STDOUT` and
 `STDERR` as borrowed stream handles, so future facilities such as sockets can use the same API.
 `read` takes a bounded destination view, an offset and a maximum byte count. String and stream

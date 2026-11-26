@@ -1048,9 +1048,9 @@ The MVP supports concrete type arguments and type parameters already in scope. G
 generic traits, inheritance over generic structs and variadic type packs are not part of 0.30.
 Capacity exhaustion produces a diagnostic instead of a silent failure.
 
-The canonical stdlib result shape is `Result<T, E>`: `T` is the value the function would
+The canonical stdlib result shape is `result_type<T, E>`: `T` is the value the function would
 ideally return, `E` is the error code, and `what` carries a bounded message. A function with no
-payload uses `Result<void, Status>`. Stdlib normalization is scheduled for 0.31; 0.30 only
+payload uses `result_type<void, status_code>`. Stdlib normalization is scheduled for 0.31; 0.30 only
 provides the language mechanism.
 
 
@@ -1064,19 +1064,19 @@ functions; no heap, runtime reflection or generic value representation is emitte
 Generic structs cannot inherit, use traits or declare methods. Generic functions must be top-level
 and have flat bodies. Invalid applications, duplicate type parameters and capacity exhaustion are
 reported through diagnostics. The canonical result shape for later stdlib normalization is
-`Result<T, E>`, with `T` as the ideal value, `E` as the error code and `what` as a bounded message.
+`result_type<T, E>`, with `T` as the ideal value, `E` as the error code and `what` as a bounded message.
 
 ## 0.31 — Design note
 
 Status: Locked.
 
 Zlang 0.31 adds native generic facilities for the standard library. The compiler registry and the
-public C headers share a closed set of `Result<T, Status>` specializations. `Result<T, E>` keeps `T`
+public C headers share a closed set of `result_type<T, status_code>` specializations. `result_type<T, E>` keeps `T`
 as the ideal value, `E` as the error code and `what` as a bounded read-only message. A function with
-no payload uses `Result<void, Status>`.
+no payload uses `result_type<void, status_code>`.
 
 Native result layouts live in `<zlang/standard/result/result.h>`; the compiler maps canonical Zlang
-applications such as `Result<int32, Status>` to those C types. The stdlib registry records
+applications such as `result_type<int32, status_code>` to those C types. The stdlib registry records
 structured return metadata and parameter modes, including `const reference`. No runtime allocation,
 formatting or reflection is introduced.
 
@@ -1088,7 +1088,7 @@ facility itself.
 
 ## 0.31 — Completion
 
-Zlang 0.31 is implemented at language level 0.31. Native `Result<T, Status>` applications map to
+Zlang 0.31 is implemented at language level 0.31. Native `result_type<T, status_code>` applications map to
 canonical C layouts in `<zlang/standard/result/result.h>`. Results expose `code`, `what` and, for
 non-void payloads, `value`. Status constants are available in Zlang source and emit their C enum
 constants.
@@ -1103,7 +1103,7 @@ exists so 0.32 can migrate IO without mixing compiler and header contracts.
 Status: Locked.
 
 IO will be redesigned around explicit stream handles and byte-transfer results. `write` and `read`
-both return `Result<int32, Status>`: `value` is the number of bytes transferred and `code` is
+both return `result_type<int32, status_code>`: `value` is the number of bytes transferred and `code` is
 `SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. The model matches the `error_code, bytes_transferred`
 shape used by Boost.Asio, adapted to synchronous allocation-free Zlang.
 
@@ -1114,7 +1114,7 @@ implicit stdin or stdout, but the explicit stream overload is canonical.
 `read` writes into a bounded destination view at an explicit offset and maximum byte count. `write`
 borrows a bounded source view. Neither operation copies buffer bytes; string and stream parameters
 are views and the docs must say so. Null storage, invalid offsets, zero capacity and capacity
-overflow remain traps. Recoverable stream conditions are returned as `Result<int32, Status>`.
+overflow remain traps. Recoverable stream conditions are returned as `result_type<int32, status_code>`.
 
 ## 0.34 — Design note
 
@@ -1138,15 +1138,15 @@ separate decision is made.
 
 - **0.31 — Native result facilities**: implemented in the working tree; not committed or pushed.
 - **0.32 — IO redesign**:
-  - `write` and `read` return `Result<int32, Status>` with transferred bytes in `value`.
+  - `write` and `read` return `result_type<int32, status_code>` with transferred bytes in `value`.
   - IO accepts explicit stream handles; `stdin`, `stdout` and `stderr` are ordinary streams.
   - Future sockets must fit the same stream API.
   - `read` takes destination view, offset and maximum byte count.
   - String and stream parameters are borrowed views; no buffer bytes are copied.
-  - Recoverable conditions use `Result`; null storage, invalid offsets and capacity failures trap.
+  - Recoverable conditions use `result_type`; null storage, invalid offsets and capacity failures trap.
   - Registry, header and docs must stay in parity.
 - **0.33 — Generic methods**:
-  - first target is `Result` helpers: `is_ok()`, `get()` and `message()`;
+  - first target is `result_type` helpers: `is_ok()`, `get()` and `message()`;
   - then general methods on generic structs and functions;
   - monomorphized per specialization, with no runtime dispatch;
   - generic traits and generic inheritance remain out of scope.
@@ -1164,7 +1164,7 @@ separate decision is made.
 ## 0.32 — Completion
 
 Zlang 0.32 is implemented at language level 0.32. `write` and `read` return
-`Result<int32, Status>` with the transferred byte count in `value`. Convenience overloads keep
+`result_type<int32, status_code>` with the transferred byte count in `value`. Convenience overloads keep
 implicit stdout and stdin; explicit overloads accept `STDIN`, `STDOUT` and `STDERR` as borrowed
 stream handles. Future stream facilities can use the same native `stream` type.
 
@@ -1178,7 +1178,7 @@ Native IO parity is enforced by matching compiler registry entries, public C hea
 
 ## 0.33 — Completion
 
-Zlang 0.33 is implemented at language level 0.33. Native `Result<T, E>` values expose `is_ok()`,
+Zlang 0.33 is implemented at language level 0.33. Native `result_type<T, E>` values expose `is_ok()`,
 `get()` and `message()` through direct method syntax. These helpers are lowered to C field reads
 and `zlang_std_status_is_ok`; they add no vtable or runtime dispatch.
 
@@ -1226,3 +1226,21 @@ operations. No mutable global state or heap allocation is introduced. Future soc
 hardware backends can plug into the same contract without changing Zlang signatures.
 
 The pending checklist earlier in this file is historical: 0.30 through 0.35 are implemented. Future work starts from the stable stream contract and the version sections above.
+
+## 0.36 — Design note
+
+Status: Locked.
+
+Zlang 0.36 renames the native result family to lowercase built-in names. `Result<T, Status>` becomes
+`result_type<T, status_code>`, and the error type `Status` becomes `status_code`. The C layouts,
+C symbols and status enum constants remain unchanged; only the Zlang-facing type names change.
+
+This keeps built-in type names consistent with `int32`, `uint32`, `stream` and the rest of the
+language. Syntax highlighters must treat `result_type` and `status_code` as reserved built-in
+types.
+
+## 0.36 — Completion
+
+Zlang 0.36 is implemented at language level 0.36. All Zlang source, registry signatures, diagnostics
+fixtures, tests, documentation and site pages use `result_type<T, status_code>` and `status_code`.
+The canonical C layouts remain `zlang_std_result_*_status_t` and `zlang_std_status_t`.

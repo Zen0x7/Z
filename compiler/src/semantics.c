@@ -212,6 +212,7 @@ static const zlang_ast_statement_t *zlang_find_struct_method_any(const zlang_pro
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_type_matches(const char *expected, const char *actual);
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_is_ancestor(const zlang_program_t *program, const char *base_name,
                               const char *derived_name, uint32_t depth) {
     if (base_name == NULL || derived_name == NULL || depth > 16U) {
@@ -322,6 +323,7 @@ static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *prog
     return zlang_find_field(program, zlang_find_struct(program, structure->base_name_), name);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_struct_has_cycle(const zlang_program_t *program, const char *name,
                                    uint32_t depth) {
     if (name == NULL || depth > 16U) {

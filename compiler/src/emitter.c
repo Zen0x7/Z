@@ -42,6 +42,8 @@ static const zlang_ast_statement_t *zlang_effective_method(const zlang_program_t
                                                            const char *struct_name,
                                                            const char *method_name);
 static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool is_reference);
+// NOLINTNEXTLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_expression_as(const zlang_program_t *program, size_t index,
                                      zlang_emitter_t *emitter, const char *expected_type,
                                      bool is_reference);
@@ -1566,7 +1568,9 @@ static bool zlang_vtable_wrapper_name(const char *struct_name, const char *metho
         strlen(_base_k) + strlen(_lower_method_k) >= capacity) {
         return false;
     }
-    memcpy(output, _base_k, strlen(_base_k));
+    if (!zlang_copy_name(_base_k, output, capacity)) {
+        return false;
+    }
     memcpy(output + strlen(_base_k), _lower_method_k, strlen(_lower_method_k) + 1U);
     return true;
 }
@@ -1595,6 +1599,7 @@ static bool zlang_add_vtable_slot(zlang_emitted_vtable_t *vtable,
     return true;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_collect_struct_vtable_slots(const zlang_program_t *program,
                                               zlang_emitted_vtable_t *vtable,
                                               const char *struct_name, uint32_t depth) {
@@ -2397,6 +2402,7 @@ static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool
     return true;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_expression_as(const zlang_program_t *program, size_t index,
                                      zlang_emitter_t *emitter, const char *expected_type,
                                      bool is_reference) {
@@ -4397,6 +4403,7 @@ static bool zlang_emit_body(const zlang_program_t *program, size_t start, size_t
                             zlang_emitter_t *emitter, uint32_t depth);
 
 // NOLINTNEXTLINE(misc-no-recursion)
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_statement(const zlang_program_t *program,
                                  const zlang_ast_statement_t *statement, zlang_emitter_t *emitter,
                                  uint32_t depth);
@@ -5085,9 +5092,10 @@ static bool zlang_emit_struct_initializer(const zlang_program_t *program, zlang_
     return zlang_append_text(emitter, "}");
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_emit_statement(const zlang_program_t *program,
                                  const zlang_ast_statement_t *statement, zlang_emitter_t *emitter,
-                                 uint32_t depth) { // NOLINT(misc-no-recursion)
+                                 uint32_t depth) {
     if (!zlang_emit_attached_comments(program, emitter, depth, statement->line_)) {
         return false;
     }

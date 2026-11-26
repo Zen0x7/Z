@@ -512,7 +512,7 @@ static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_n
     if (emitter->emitted_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY ||
         emitter->active_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY || _user_written_k < 0 ||
         (size_t)_user_written_k >= sizeof(_user_name) ||
-        !zlang_make_unique_name(emitter, _user_name, generated, generated_capacity)) {
+        (!zlang_make_unique_name(emitter, _user_name, generated, generated_capacity))) {
         return false;
     }
     zlang_emitted_symbol_t *const _symbol_k =
@@ -537,6 +537,43 @@ static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_n
         }
     }
     ++emitter->active_symbol_count_;
+    if (emitter->active_symbol_count_ > emitter->emitted_symbol_count_) {
+        emitter->emitted_symbol_count_ = emitter->active_symbol_count_;
+    }
+    return true;
+}
+
+static bool zlang_register_method_parameter(zlang_emitter_t *emitter,
+                                            const zlang_parameter_t *parameter, char *generated,
+                                            size_t generated_capacity) {
+    if (emitter == NULL || parameter == NULL || parameter->name_ == NULL || generated == NULL ||
+        emitter->active_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY) {
+        return false;
+    }
+    const int _written_k =
+        snprintf(generated, generated_capacity, "app_param_%s", parameter->name_);
+    if (_written_k < 0 || (size_t)_written_k >= generated_capacity) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < emitter->active_symbol_count_; ++_index) {
+        const zlang_emitted_symbol_t *const _symbol_k = &emitter->emitted_symbols_[_index];
+        if (zlang_same_text(_symbol_k->generated_name_, generated)) {
+            return false;
+        }
+    }
+    zlang_emitted_symbol_t *const _symbol_k =
+        &emitter->emitted_symbols_[emitter->active_symbol_count_++];
+    memset(_symbol_k, 0, sizeof(*_symbol_k));
+    _symbol_k->source_name_ = parameter->name_;
+    _symbol_k->type_name_ = parameter->type_name_;
+    _symbol_k->is_array_ = parameter->is_array_;
+    _symbol_k->array_rank_ = parameter->rank_;
+    for (uint32_t _axis = 0U; _axis < parameter->rank_ && _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
+        _symbol_k->array_extents_[_axis] = parameter->extents_[_axis];
+    }
+    _symbol_k->is_sequence_ = parameter->is_array_;
+    _symbol_k->is_reference_ = parameter->is_reference_;
+    zlang_copy_name(generated, _symbol_k->generated_name_, sizeof(_symbol_k->generated_name_));
     if (emitter->active_symbol_count_ > emitter->emitted_symbol_count_) {
         emitter->emitted_symbol_count_ = emitter->active_symbol_count_;
     }
@@ -592,9 +629,17 @@ static bool zlang_emit_symbol_lvalue(zlang_emitter_t *emitter, const char *sourc
     if (_symbol_k == NULL) {
         if (emitter->program_ != NULL && emitter->current_struct_ != NULL &&
             emitter->current_self_name_ != NULL) {
-            const zlang_ast_statement_t *const _field_k = zlang_find_field_statement(
-                emitter->program_, emitter->current_struct_, source_name);
+            uint32_t _depth_k = 0U;
+            const zlang_ast_statement_t *const _field_k = zlang_find_field_owner(
+                emitter->program_, emitter->current_struct_, source_name, &_depth_k, 0U);
             if (_field_k != NULL) {
+                if (_depth_k > 0U) {
+                    return zlang_append_text(emitter, emitter->current_self_name_) &&
+                           zlang_emit_base_chain(emitter, _depth_k,
+                                                 emitter->current_self_is_pointer_) &&
+                           zlang_append_text(emitter, ".") &&
+                           zlang_append_field_name(emitter, _field_k->name_);
+                }
                 return zlang_append_text(emitter, emitter->current_self_name_) &&
                        zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
                        zlang_append_field_name(emitter, _field_k->name_);
@@ -1856,8 +1901,9 @@ static bool zlang_current_field(const zlang_program_t *program, const zlang_emit
     if (program == NULL || emitter == NULL || emitter->current_struct_ == NULL || field == NULL) {
         return false;
     }
+    uint32_t _depth_k = 0U;
     const zlang_ast_statement_t *const _field_k =
-        zlang_find_field_statement(program, emitter->current_struct_, name);
+        zlang_find_field_owner(program, emitter->current_struct_, name, &_depth_k, 0U);
     if (_field_k == NULL) {
         return false;
     }
@@ -2326,8 +2372,13 @@ static const zlang_std_function_t *zlang_std_call(const zlang_program_t *program
 
 static bool zlang_emit_base_chain(zlang_emitter_t *emitter, uint32_t depth, bool is_reference) {
     for (uint32_t _index = 0U; _index < depth; ++_index) {
-        if (!zlang_append_text(emitter,
-                               _index == 0U && is_reference ? "->zlang_base_" : ".zlang_base_")) {
+        if (!_index && is_reference) {
+            if (!zlang_append_text(emitter, "->zlang_base_")) {
+                return false;
+            }
+            continue;
+        }
+        if (!zlang_append_text(emitter, ".") || !zlang_append_text(emitter, "zlang_base_")) {
             return false;
         }
     }
@@ -2472,9 +2523,21 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         const zlang_ast_statement_t *_field_k = NULL;
         if (zlang_current_field(program, emitter, _expression_k->name_, &_field_k) &&
             emitter->current_self_name_ != NULL) {
-            const char *_separator_k = emitter->current_self_is_pointer_ ? "->" : ".";
+            uint32_t _depth_k = 0U;
+            const zlang_ast_statement_t *const _owner_k = zlang_find_field_owner(
+                program, emitter->current_struct_, _expression_k->name_, &_depth_k, 0U);
+            if (_owner_k == NULL) {
+                return false;
+            }
+            if (_depth_k > 0U) {
+                return zlang_append_text(emitter, emitter->current_self_name_) &&
+                       zlang_emit_base_chain(emitter, _depth_k,
+                                             emitter->current_self_is_pointer_) &&
+                       zlang_append_text(emitter, ".") &&
+                       zlang_append_field_name(emitter, _field_k->name_);
+            }
             return zlang_append_text(emitter, emitter->current_self_name_) &&
-                   zlang_append_text(emitter, _separator_k) &&
+                   zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
                    zlang_append_field_name(emitter, _field_k->name_);
         }
         const char *const _enum_k = zlang_generated_enum_item(emitter, _expression_k->name_);
@@ -6519,10 +6582,8 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
             const zlang_parameter_t *const _parameter_k =
                 &program->parameters_[_method_k->parameter_start_ + _parameter];
             char _generated_k[ZLANG_EMITTED_NAME_CAPACITY];
-            _result_k = zlang_register_symbol(
-                emitter, _parameter_k->name_, _parameter_k->type_name_, "app_param_", 0U, false,
-                false, _parameter_k->is_array_, _parameter_k->is_reference_, _generated_k,
-                sizeof(_generated_k));
+            _result_k = zlang_register_method_parameter(emitter, _parameter_k, _generated_k,
+                                                        sizeof(_generated_k));
         }
         if (_result_k && _method_k->is_constructor_) {
             const zlang_ast_statement_t *const _struct_k = emitter->current_struct_;

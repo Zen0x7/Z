@@ -248,7 +248,7 @@ static bool zlang_modules_resolve(const zlang_modules_t *modules, const char *ba
             return false;
         }
         char _alias_k[ZLANG_MODULE_NAME_CAPACITY];
-        const size_t _alias_length_k = (size_t)(_slash_k - specifier - 1U);
+        const size_t _alias_length_k = (size_t)(_slash_k - specifier - 1);
         if (_alias_length_k + 1U > sizeof(_alias_k)) {
             return false;
         }

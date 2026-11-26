@@ -1,5 +1,5 @@
 import { one } from "./a";
 
-function two(): integer {
+function two(): int32 {
     return one();
 }

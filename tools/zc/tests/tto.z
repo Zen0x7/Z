@@ -1,7 +1,7 @@
 import { write } from "@std/io";
-array[3] integer fixed = {1, 2, 3};
-integer total = 2 + 3 * 4;
-integer first = fixed[0];
+array[3] int32 fixed = {1, 2, 3};
+int32 total = 2 + 3 * 4;
+int32 first = fixed[0];
 fixed[1] = total;
 write(first);
 write(" ");

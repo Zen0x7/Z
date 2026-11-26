@@ -1,13 +1,13 @@
 import { write } from "@std/io";
 struct Matrix {
-    array[2][3] integer cells;
+    array[2][3] int32 cells;
 }
 
-function main(): integer {
+function main(): int32 {
     Matrix matrix;
 
     matrix.cells[1][2] = 7;
-    integer value = matrix.cells[1][2];
+    int32 value = matrix.cells[1][2];
 
     write(value);
     write("\n");

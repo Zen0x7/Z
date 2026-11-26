@@ -37,13 +37,13 @@ import { min } from "@std/math";
 ## Signature
 
 ```zlang
-function min(clone integer left, clone integer right): integer
+function min(clone int32 left, clone int32 right): int32
 ```
 
 | Registry signature | C symbol | Activation macro |
 | --- | --- | --- |
-| `function min(clone integer left, clone integer right): integer` | `zlang_std_math_min_i32` | `ZLANG_STD_MATH_MIN_I32` |
-| `function min(clone unsigned left, clone unsigned right): unsigned` | `zlang_std_math_min_u32` | `ZLANG_STD_MATH_MIN_U32` |
+| `function min(clone int32 left, clone int32 right): int32` | `zlang_std_math_min_i32` | `ZLANG_STD_MATH_MIN_I32` |
+| `function min(clone uint32 left, clone uint32 right): uint32` | `zlang_std_math_min_u32` | `ZLANG_STD_MATH_MIN_U32` |
 | `function min(clone int64 left, clone int64 right): int64` | `zlang_std_math_min_i64` | `ZLANG_STD_MATH_MIN_I64` |
 | `function min(clone uint64 left, clone uint64 right): uint64` | `zlang_std_math_min_u64` | `ZLANG_STD_MATH_MIN_U64` |
 | `function min(clone float left, clone float right): float` | `zlang_std_math_min_f32` | `ZLANG_STD_MATH_MIN_F32` |
@@ -53,7 +53,7 @@ function min(clone integer left, clone integer right): integer
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
-| `left` | one of `integer`, `unsigned`, `int64`, `uint64`, `float`, `double` | clone | First candidate |
+| `left` | one of `int32`, `uint32`, `int64`, `uint64`, `float`, `double` | clone | First candidate |
 | `right` | same type as `left` | clone | Second candidate |
 
 Both arguments must have the same type. No capacity is required.
@@ -93,7 +93,7 @@ zlang_std_math_min_i32(2, 3);
 import { write } from "@std/io";
 import { min } from "@std/math";
 
-function main(): integer {
+function main(): int32 {
     write(min(2, 3));
     write("\n");
     return 0;

@@ -1,6 +1,6 @@
 ---
 title: compare
-description: Compare two bounded string views byte by byte and return a three-way integer result.
+description: Compare two bounded string views byte by byte and return a three-way `int32` result.
 domain: strings
 kind: function
 status: implemented
@@ -29,7 +29,7 @@ import { compare } from "@std/strings";
 ## Signature
 
 ```zlang
-function compare(clone string left, clone string right): integer
+function compare(clone string left, clone string right): int32
 ```
 
 Both parameters are passed by clone. A string argument is a view, so cloning it copies the pointer and byte length, not the bytes.
@@ -47,11 +47,11 @@ Each view is valid when its data pointer is non-null or its declared length is z
 
 ## Result
 
-`compare` returns `integer`. It returns `-1` when `left` is byte-wise smaller, `0` when both views have equal bytes and equal length, and `1` when `left` is byte-wise greater.
+`compare` returns `int32`. It returns `-1` when `left` is byte-wise smaller, `0` when both views have equal bytes and equal length, and `1` when `left` is byte-wise greater.
 
 ## Bounds and ownership
 
-`zlang_string_equal_compare` reads at most the smaller of the two declared byte lengths. It compares bytes as unsigned values. Equal prefixes are resolved by length, so `"a"` sorts before `"aa"`.
+`zlang_string_equal_compare` reads at most the smaller of the two declared byte lengths. It compares bytes as uint32 values. Equal prefixes are resolved by length, so `"a"` sorts before `"aa"`.
 
 `compare` copies no bytes. It allocates no buffer and takes ownership of neither input. Both views remain valid after the call.
 
@@ -100,7 +100,7 @@ zlang_std_strings_compare(zlang_gen_literal_0, zlang_gen_literal_1);
 import { compare } from "@std/strings";
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     write(compare("abc", "abd"));
     write("\n");
     write(compare("abc", "abc"));

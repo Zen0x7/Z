@@ -1,9 +1,9 @@
 import { generate_int32 } from "@std/random";
 
-function add_one(clone integer value): integer {
+function add_one(clone int32 value): int32 {
     return value + 1;
 }
 
-function zero(): integer {
+function zero(): int32 {
     return generate_int32(0, 0);
 }

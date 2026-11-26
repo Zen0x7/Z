@@ -1,12 +1,12 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    array[6] integer values = {5, 1, 4, 2, 8, 3};
+function main(): int32 {
+    array[6] int32 values = {5, 1, 4, 2, 8, 3};
 
-    for (integer pass = 0; pass < 5; pass += 1) {
-        for (integer index = 0; index < 5 - pass; index += 1) {
+    for (int32 pass = 0; pass < 5; pass += 1) {
+        for (int32 index = 0; index < 5 - pass; index += 1) {
             if (values[index] > values[index + 1]) {
-                integer temporary = values[index];
+                int32 temporary = values[index];
                 values[index] = values[index + 1];
                 values[index + 1] = temporary;
             }

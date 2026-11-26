@@ -1,1 +1,1 @@
-integer retries = 3;
+int32 retries = 3;

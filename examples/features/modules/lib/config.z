@@ -1,1 +1,1 @@
-integer base = 40;
+int32 base = 40;

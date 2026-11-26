@@ -1,14 +1,14 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    array[2][2] integer square = {{1, 2}, {3, 4}};
-    array[2][2][2] integer cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
-    array[2][2][2][2] integer hyper = {
+function main(): int32 {
+    array[2][2] int32 square = {{1, 2}, {3, 4}};
+    array[2][2][2] int32 cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};
+    array[2][2][2][2] int32 hyper = {
         {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
         {{{9, 10}, {11, 12}}, {{13, 14}, {15, 16}}}
     };
 
-    integer total = 0;
+    int32 total = 0;
 
     foreach (row, col in square) {
         total += square[row][col];

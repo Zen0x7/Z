@@ -1,17 +1,17 @@
 import { write } from "@std/io";
 struct Point {
-    integer x;
+    int32 x;
 }
 
-function read(const reference Point point): integer {
+function read(const reference Point point): int32 {
     return point.x;
 }
 
-function copy_value(const clone integer value): integer {
+function copy_value(const clone int32 value): int32 {
     return value;
 }
 
-function main(): integer {
+function main(): int32 {
     Point point;
     point.x = 6;
 

@@ -7,6 +7,7 @@
 
 #include "zlang/compiler/ast.h"
 #include "zlang/compiler/diagnostics.h"
+#include "zlang/compiler/generics.h"
 #include "zlang/compiler/lexer.h"
 
 #include <stdbool.h>
@@ -35,6 +36,10 @@ typedef struct zlang_parser_t {
     zlang_diagnostics_t *diagnostics_;
     const char *string_names_[32];
     size_t string_count_;
+    zlang_generic_application_t generic_applications_[ZLANG_MAX_GENERIC_APPLICATIONS];
+    size_t generic_application_count_;
+    const char *active_generic_parameters_[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t active_generic_parameter_count_;
     size_t position_;
     bool failed_;
 } zlang_parser_t;
@@ -45,6 +50,13 @@ void zlang_parser_init(zlang_parser_t *parser, zlang_token_t *tokens, size_t tok
                        zlang_parameter_t *parameters, size_t parameter_capacity,
                        zlang_comment_t *comments, size_t comment_capacity,
                        zlang_diagnostics_t *diagnostics);
+
+bool zlang_parser_record_generic_application(zlang_parser_t *parser, const char *name,
+                                             const char *base_name, const char *const *arguments,
+                                             size_t argument_count, uint32_t line, uint32_t column,
+                                             bool is_function);
+const zlang_generic_application_t *
+zlang_parser_find_generic_application(const zlang_parser_t *parser, const char *name);
 
 /* Parses source into caller-owned AST arrays. Returns false when parsing or
    lexing produces a diagnostic; result is only valid on success. */

@@ -24,8 +24,8 @@ navigation:
 
 | Zlang | Emitted C |
 | --- | --- |
-| `integer` | `int32_t` |
-| `unsigned` | `uint32_t` |
+| `int32` | `int32_t` |
+| `uint32` | `uint32_t` |
 | `int64` | `int64_t` |
 | `uint64` | `uint64_t` |
 | `float` | `float` |
@@ -40,12 +40,12 @@ navigation:
 - Logical operators use native C short-circuit behavior.
 - `foreach` becomes a native `for` loop with a generated index.
 - Indexed access uses bounds checks.
-- `write(value)` calls the `@std/io` symbol registered for the argument type. With an `integer`, it calls `zlang_std_io_write_i32`.
+- `write(value)` calls the `@std/io` symbol registered for the argument type. With an `int32`, it calls `zlang_std_io_write_i32`.
 - Bounds failures call `zlang_trap(ZLANG_TRAP_BOUNDS)`.
 
 ## Generated names
 
-The emitter derives generated names from source constructs. The array declaration `array[10] integer fib = {0, 1};` produces the capacity macro and typedef. The string literals in `write(" ")` and `write("\n")` produce interned views. This excerpt from `examples/algorithms/fibonacci/main.c` shows the declarations:
+The emitter derives generated names from source constructs. The array declaration `array[10] int32 fib = {0, 1};` produces the capacity macro and typedef. The string literals in `write(" ")` and `write("\n")` produce interned views. This excerpt from `examples/algorithms/fibonacci/main.c` shows the declarations:
 
 ```c
 /* generated capacities */
@@ -71,7 +71,7 @@ static const zlang_string_t zlang_gen_literal_1 = { zlang_gen_literal_1_data, ZL
 | Generated name | Source construct |
 | --- | --- |
 | `app_array_fib_t` | the array `fib`; declared in the typedef above |
-| `ZLANG_FIB_CAPACITY` | the capacity `10` in `array[10] integer fib` |
+| `ZLANG_FIB_CAPACITY` | the capacity `10` in `array[10] int32 fib` |
 | `zlang_gen_literal_0` | `" "` in `write(" ")`, declared above |
 | `zlang_gen_literal_1` | `"\n"` in `write("\n")`, declared above |
 
@@ -93,7 +93,7 @@ The two indexed reads in the assignment `fib[index] = fib[index - 1] + fib[index
 
 | Generated name | Source construct |
 | --- | --- |
-| `app_fn_main` | `function main(): integer` |
+| `app_fn_main` | `function main(): int32` |
 | `app_local_fib` | the local variable `fib` |
 | `app_local_index` | the `for` variable `index` |
 | `app_local_value` | the `foreach` variable `value` |

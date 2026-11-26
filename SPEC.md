@@ -46,7 +46,7 @@ Zlang intentionally resembles Java and PHP in readability. It uses braces, semic
 A minimal program:
 
 ```zlang
-integer var = 10;
+int32 var = 10;
 write("Hello");
 ```
 
@@ -92,8 +92,8 @@ A source file is UTF-8. Only ASCII characters are allowed in identifiers and key
 Keywords are reserved and cannot be used as identifiers:
 
 ```text
-boolean break clone const continue double else enum false float for foreach function if integer
-int64 length struct reference repeat return sequence string true uint64 unsigned while
+boolean break clone const continue double else enum false float for foreach function if int32
+int64 length struct reference repeat return sequence string true uint64 uint32 while
 ```
 
 The generated-code namespace is also reserved. An identifier beginning with `zlang`, `_zlang` or
@@ -101,7 +101,7 @@ The generated-code namespace is also reserved. An identifier beginning with `zla
 
 ### 6.3 Numeric literals
 
-An integer literal without a suffix has type `integer`. With `u`, it has type `unsigned`. With
+An integer literal without a suffix has type `int32`. With `u`, it has type `uint32`. With
 `i64`, it has type `int64`. With `u64`, it has type `uint64`. A floating literal has type `double`;
 with the `f` suffix it has type `float`. A literal outside the range of its type is a diagnostic.
 
@@ -111,13 +111,13 @@ with the `f` suffix it has type `float`. A literal outside the range of its type
 
 Zlang has eight numeric and scalar primitive types, plus user-defined struct and enum types.
 
-### 7.1 `integer`
+### 7.1 `int32`
 
 A signed 32-bit value. Emitted as `int32_t` from `<stdint.h>`.
 
-### 7.2 `unsigned`
+### 7.2 `uint32`
 
-An unsigned 32-bit value. Emitted as `uint32_t` from `<stdint.h>`.
+An uint32 32-bit value. Emitted as `uint32_t` from `<stdint.h>`.
 
 ### 7.3 `int64`
 
@@ -125,7 +125,7 @@ A signed 64-bit value. Emitted as `int64_t` from `<stdint.h>`.
 
 ### 7.4 `uint64`
 
-An unsigned 64-bit value. Emitted as `uint64_t` from `<stdint.h>`.
+An uint32 64-bit value. Emitted as `uint64_t` from `<stdint.h>`.
 
 ### 7.5 `float`
 
@@ -150,11 +150,11 @@ A string literal is interned by the compiler and emitted in read-only storage. S
 An array is a fixed-shape container written as `<type>[<capacity>]`. Capacity is part of the type, not a dynamic property.
 
 ```zlang
-array[4] integer values;
+array[4] int32 values;
 array[8] string[32] names;
 ```
 
-The capacity must be a positive integer literal. `array[] integer values;` is illegal and produces a resource diagnostic. A sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `array[] integer values = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
+The capacity must be a positive integer literal. `array[] int32 values;` is illegal and produces a resource diagnostic. A sequence may also be initialized with a brace list; the compiler infers the capacity from the number of elements. An explicit capacity may be combined with a shorter initializer, in which case capacity is unchanged and length is the number of initializer elements. `array[] int32 values = {};` is rejected with `ZLANG3001`, and an initializer longer than the declared capacity is rejected with `ZLANG3003`.
 
 An array has no logical length. Every extent is fixed at compile time and every index is bounds checked. Its storage is decided at compile time:
 
@@ -166,11 +166,11 @@ An array has no logical length. Every extent is fixed at compile time and every 
 
 There is no implicit conversion between numeric types, or between numeric types and `boolean`.
 Binary arithmetic and comparisons require both operands to have exactly the same type. Explicit
-conversion calls are `to_integer`, `to_unsigned`, `to_int64`, `to_uint64`, `to_float` and
-`to_double`; they take exactly one numeric operand. Conversion to an integer type traps when the
+conversion calls are `to_int32`, `to_uint32`, `to_int64`, `to_uint64`, `to_float` and
+`to_double`; they take exactly one numeric operand. Conversion to an int32 type traps when the
 value is out of range, and conversion from a floating-point value truncates toward zero and traps
 on non-finite input. Floating arithmetic follows IEEE-754, so division by zero produces an infinity
-or NaN instead of a Zlang trap. `%` is valid only for integral types. Unary negation of `integer`
+or NaN instead of a Zlang trap. `%` is valid only for integral types. Unary negation of `int32`
 and `int64` traps on the signed minimum value. String `==` and `!=` compare content through the
 runtime helper; string ordering is rejected. A string can only be used where a `string` is
 expected. Array types with different extents are different types. A struct or enum type matches only the same user-defined name, including in function parameters, return values and variable initializers.
@@ -188,10 +188,10 @@ expected. Array types with different extents are different types. A struct or en
 Examples:
 
 ```zlang
-integer count = 10;
+int32 count = 10;
 boolean ready = true;
 string greeting = "Hello";
-array[4] integer values;
+array[4] int32 values;
 ```
 
 A declaration introduces a compile-time symbol. The name is never emitted as a string. Generated C uses the same source identifier when it is available; otherwise the compiler appends a numeric suffix and structs the mapping internally. Sibling scopes may reuse the same source name without colliding in generated C.
@@ -291,7 +291,7 @@ repeat (<count-expression>) {
 }
 ```
 
-Equivalent to a counted loop from `0` to `count - 1`. The expression must be `unsigned`.
+Equivalent to a counted loop from `0` to `count - 1`. The expression must be `uint32`.
 
 ### 10.6 `return`
 
@@ -325,7 +325,7 @@ of types, without a mode. Struct parameters and return values lower to generated
 Functions have no access to mutable globals, because Zlang has no global variables.
 
 ```zlang
-function add(clone integer left, clone integer right): integer {
+function add(clone int32 left, clone int32 right): int32 {
     return left + right;
 }
 ```
@@ -360,8 +360,8 @@ Every generated C file begins with:
 
 | Zlang | Emitted C |
 | --- | --- |
-| `integer` | `int32_t` |
-| `unsigned` | `uint32_t` |
+| `int32` | `int32_t` |
+| `uint32` | `uint32_t` |
 | `boolean` | `bool` |
 | `string` | `zlang_string_t` |
 | `array[N] T name` | generated typedef `zlang_name_t` with a `ZLANG_NAME_CAPACITY` macro |
@@ -370,8 +370,8 @@ Every generated C file begins with:
 
 | Zlang | Emitted C |
 | --- | --- |
-| `integer var = 10;` | `int32_t var = 10;` |
-| `unsigned n = 2u;` | `uint32_t n = 2U;` |
+| `int32 var = 10;` | `int32_t var = 10;` |
+| `uint32 n = 2u;` | `uint32_t n = 2U;` |
 | `boolean ready = true;` | `bool ready = true;` |
 | `string s = "Hi";` | `zlang_string_t s = { "Hi", 2U };` |
 | `a + b` | checked addition, then plain `a + b` |
@@ -541,7 +541,7 @@ declaration    = "const"? arrayModifier? typeName typeModifier? identifier
                  ( "=" expression )? ";" ;
 
 typeName       = builtinType | identifier ;
-builtinType    = "integer" | "unsigned" | "boolean" | "string" ;
+builtinType    = "int32" | "uint32" | "boolean" | "string" ;
 
 recordDeclaration = "struct" identifier "{" declaration* "}" ;
 
@@ -606,8 +606,8 @@ emitted as native `else if` chains.
 Source:
 
 ```zlang
-integer var = 10;
-array[4] integer values;
+int32 var = 10;
+array[4] int32 values;
 
 foreach (item in values) {
     write("Hello");
@@ -655,11 +655,11 @@ it. Version-by-version history is kept in `ROADMAP.md`.
 A conformance test may assert on emitted C text without running the program:
 
 ```text
-parse("integer var = 10;").transpile().contains("int32_t var = 10;")
+parse("int32 var = 10;").transpile().contains("int32_t var = 10;")
 ```
 
 ```text
-parse("array[] integer values;").diagnostics().contains("ZLANG3001")
+parse("array[] int32 values;").diagnostics().contains("ZLANG3001")
 ```
 
 These assertions are the primary way the language definition is kept honest: if the translation changes, the specification changes with it.
@@ -691,7 +691,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | `import { write } from "@std/io"` | `emits_a_write_call` |
 | `identifier "[" expression "]"` | `emits_append_and_checked_index` |
 | `"append" "(" identifier "," expression ")"` | `emits_append_and_checked_index` |
-| integer, string, and boolean literals | `covers_every_annex_a_production` |
+| int32, string, and boolean literals | `covers_every_annex_a_production` |
 | array declaration with capacity | `uses_static_storage_for_sequences_over_the_stack_limit` |
 | preserved comments and escaped string literals | `preserves_comments_and_unescapes_strings` |
 | comments attached to source constructs | `attaches_comments_to_source_constructs` |
@@ -723,7 +723,7 @@ The matrix is maintained in `tests/spec/test_cases.h`.
 | boolean operand checking | `rejects_non_boolean_logical_operands` |
 | `break` and `continue` | `emits_break_and_continue` |
 | invalid loop jumps | `rejects_break_outside_loop`, `rejects_continue_outside_loop` |
-| boolean and unsigned conditions | `rejects_non_boolean_if_condition`, `rejects_non_unsigned_repeat_count` |
+| boolean and uint32 conditions | `rejects_non_boolean_if_condition`, `rejects_non_unsigned_repeat_count` |
 | return validation | `validates_return_types`, `rejects_return_outside_function` |
 | self concatenation | `accepts_self_concatenation_with_explicit_capacity` |
 | nested statements emitted once | `does_not_duplicate_nested_statements` |
@@ -945,7 +945,7 @@ changing evaluation order or bounds semantics.
 
 ## 0.26 implementation status
 
-With `--tto`, Zlang 0.26 proves ranges for canonical `for` loops over signed `integer` variables with
+With `--tto`, Zlang 0.26 proves ranges for canonical `for` loops over signed `int32` variables with
 constant start, constant `<` or `<=` bound and `+= 1` update. One-dimensional array reads and writes
 whose indices are the induction variable plus or minus a constant are emitted as direct `data_[]`
 accesses when the whole proven range is inside the array extent. An index whose range cannot be
@@ -954,7 +954,7 @@ proved keeps its bounds check and `ZLANG_TRAP_BOUNDS`.
 ## 0.25 implementation status
 
 Zlang 0.25 adds `read` and `read_line` to `@std/io`. Both take a mutable bounded string destination
-and return `integer`: `-1` at EOF, otherwise the number of logical bytes read. Line endings are
+and return `int32`: `-1` at EOF, otherwise the number of logical bytes read. Line endings are
 normalized across platforms; CRLF is treated as one logical newline. Overflow traps with
 `ZLANG_TRAP_CAPACITY`.
 
@@ -1004,3 +1004,98 @@ comment inside an enum is emitted before the matching enumerator. Consecutive `/
 together as one block, and block comments keep their internal line breaks. Comments that do not
 document a specific construct are emitted at the start of `main`. They are documentation only and
 have no semantic effect. `--disable-comments` omits them from the generated C.
+
+## 0.30 implementation status
+
+Status: implemented.
+
+Zlang 0.30 adds compile-time generics for structs and functions. A declaration may list up to four
+type parameters, and an application may pass up to four concrete type arguments. Applications such
+as `Pair<int32, boolean>` and `identity<int32>(1)` are monomorphized into concrete C99 types and
+functions with substituted type names. There is no runtime generic representation, heap allocation
+or reflection.
+
+Generic structs cannot inherit, use traits or declare methods. Generic functions must be top-level
+and have flat bodies. Nested type arguments are not part of the MVP. Invalid applications, duplicate
+type parameters and capacity exhaustion produce diagnostics.
+
+The canonical stdlib result shape is `Result<T, E>`: `T` is the value the function would ideally
+return, `E` is the error code, and `what` carries a bounded message. A function with no payload uses
+`Result<void, Status>`. Stdlib adoption is deferred to 0.31.
+
+## 0.31 implementation status
+
+Status: implemented.
+
+Zlang 0.31 defines native generic facilities for the standard library. A closed registry of
+`Result<T, Status>` applications maps canonical Zlang names to C layouts declared in
+`<zlang/standard/result/result.h>`. Every result exposes `code`, `what` and, except for `void`,
+`value`. Status constants are exposed as `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
+`STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`.
+
+The stdlib registry records structured return metadata and parameter modes. Native function
+development requires parity between the compiler registry, the public C header and the
+documentation; a future binary verifier is planned for that check. Existing stdlib functions keep
+their 0.30 signatures; no function is migrated in 0.31.
+
+## 0.32 implementation status
+
+Status: implemented.
+
+Zlang 0.32 will redesign IO around streams, bounded caller-owned buffers and byte-transfer
+results. Both `write` and `read` return `Result<int32, Status>`, where `value` is the number of
+bytes actually transferred and `code` is `SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. This follows the
+`error_code, bytes_transferred` model used by libraries such as Boost.Asio, adapted to Zlang's
+synchronous and allocation-free contract.
+
+IO functions will accept an explicit stream handle. `stdin`, `stdout` and `stderr` are ordinary
+stream values; the same API must be able to accept future stream facilities such as sockets
+without a separate error protocol. Convenience overloads may keep implicit `stdout` and `stdin`,
+but the explicit stream overload is canonical.
+
+`read` will write into caller-owned storage and will take the destination view, an offset and a
+maximum byte count. It returns the number of bytes read into that window. `write` will borrow a
+bounded string view and return the number of bytes written. Neither operation copies buffer bytes;
+string and stream parameters are views. The stdlib documentation must state that explicitly.
+
+Programmer and resource errors such as null storage, zero capacity, invalid offsets and capacity
+overflow remain traps. Recoverable stream conditions are reported through `Result<int32, Status>`.
+
+The migration will update the stdlib registry, public headers, generated C fixtures, the golden
+examples and the documentation. Native parity between registry entry, header declaration and docs
+must be verified before each migrated function is considered complete.
+
+## 0.34 implementation status
+
+Status: implemented.
+
+Zlang 0.34 will rename the built-in scalar types `int32` and `uint32` to `int32` and `uint32`.
+The explicit conversion calls follow the same rule: `to_int32` becomes `to_int32` and
+`to_uint32` becomes `to_uint32`. The C representation is already `int32_t` and `uint32_t`; the
+rename makes source names match the emitted representation and aligns them with `int64` and
+`uint64`. This is a breaking change with no aliases or compatibility layer. Compiler rules, stdlib
+signatures, docs, tests, goldens and site content must be updated together.
+
+## 0.33 implementation status
+
+Status: implemented.
+
+Zlang 0.33 will add generic methods. The first target is `Result<T, E>` ergonomics: `is_ok()`,
+`get()` and `message()` will be implemented as native helpers and exposed through method syntax.
+After that, general methods on generic structs and functions may be introduced. Generic methods will
+be monomorphized per specialization and will not add runtime dispatch. Generic traits and generic
+inheritance remain outside scope.
+
+## 0.30–0.31 conformance additions
+
+| Requirement | Test |
+| --- | --- |
+| generic struct specialization | `emits_generic_struct_specialization`, `zlang.examples.features.generics` |
+| generic function specialization | `emits_generic_function_specialization` |
+| generic argument count validation | `rejects_generic_argument_count_mismatch` |
+| duplicate generic parameter rejection | `rejects_duplicate_generic_parameter` |
+| native `Result<T, Status>` mapping | `emits_native_result_type`, `assigns_native_result_fields` |
+| IO byte-transfer results | `emits_io_read_calls`, `zlang.cli.io_read` |
+| explicit stream handles | `emits_stream_write_result`, `emits_stream_read_result` |
+| native result methods | `emits_native_result_methods` |
+| generic struct methods | `emits_generic_struct_method` |

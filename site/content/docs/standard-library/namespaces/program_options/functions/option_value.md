@@ -93,7 +93,7 @@ zlang_std_program_options_option_value(app_param_argv, zlang_gen_literal_1);
 import { write } from "@std/io";
 import { argument_count, option_value } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(option_value(argv, "--name"));
     write("\n");
     return 0;

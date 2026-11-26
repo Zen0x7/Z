@@ -1,9 +1,9 @@
 import { write } from "@std/io";
-function first(): integer {
+function first(): int32 {
     return second();
 }
 
-function second(): integer {
+function second(): int32 {
     return 7;
 }
 

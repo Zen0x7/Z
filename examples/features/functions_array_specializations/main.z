@@ -1,12 +1,12 @@
 import { write } from "@std/io";
-function first(clone array source): integer {
+function first(clone array source): int32 {
     return source[0];
 }
 
-function main(): integer {
-    array[2][3] integer grid;
+function main(): int32 {
+    array[2][3] int32 grid;
     grid[0][0] = 7;
-    array[4] integer line;
+    array[4] int32 line;
     line[0] = 9;
 
     write(first(grid));

@@ -64,7 +64,13 @@ export const zlangTheme: ThemeRegistrationRaw = {
       },
     },
     {
-      scope: ['keyword.operator', 'keyword.operator.assignment', 'punctuation'],
+      scope: ['keyword.operator', 'keyword.operator.assignment'],
+      settings: {
+        foreground: '#ffcb6b',
+      },
+    },
+    {
+      scope: ['punctuation'],
       settings: {
         foreground: '#c8c8c2',
       },

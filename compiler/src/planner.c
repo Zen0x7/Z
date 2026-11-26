@@ -3,6 +3,8 @@
  */
 
 #include "zlang/compiler/planner.h"
+#include "zlang/compiler/generics.h"
+#include "zlang/compiler/stdlib.h"
 
 #include <string.h>
 
@@ -70,7 +72,7 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
     if (type_name == NULL || size == NULL || depth > 8U) {
         return false;
     }
-    if (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0 ||
+    if (strcmp(type_name, "int32") == 0 || strcmp(type_name, "uint32") == 0 ||
         strcmp(type_name, "float") == 0) {
         *size = 4U;
         return true;
@@ -90,6 +92,28 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
     }
     if (zlang_find_enum(program, type_name) != NULL) {
         *size = 4U;
+        return true;
+    }
+    if (strcmp(type_name, "Status") == 0) {
+        *size = 4U;
+        return true;
+    }
+    if (strcmp(type_name, "stream") == 0) {
+        *size = (uint32_t)(sizeof(void *) + sizeof(uint32_t));
+        return true;
+    }
+    const zlang_std_result_t *const _result_k = zlang_std_find_result(type_name);
+    if (_result_k != NULL) {
+        uint32_t _total_k = (uint32_t)(sizeof(void *) + (sizeof(uint32_t) * 2U));
+        if (strcmp(_result_k->value_type_, "void") != 0) {
+            uint32_t _value_size_k = 0U;
+            if (!zlang_element_size(program, _result_k->value_type_, depth + 1U, &_value_size_k) ||
+                _total_k > UINT32_MAX - _value_size_k) {
+                return false;
+            }
+            _total_k += _value_size_k;
+        }
+        *size = _total_k;
         return true;
     }
     const zlang_ast_statement_t *const _record_k = zlang_find_struct(program, type_name);
@@ -197,12 +221,27 @@ static bool zlang_declaration_size(const zlang_program_t *program,
     return true;
 }
 
+static bool zlang_statement_inside_generic_template(const zlang_program_t *program, size_t index) {
+    for (size_t _statement = 0U; _statement < program->statement_count_; ++_statement) {
+        const zlang_ast_statement_t *const _owner_k = &program->statements_[_statement];
+        if (!_owner_k->is_generic_ || _owner_k->body_count_ == 0U) {
+            continue;
+        }
+        const size_t _end_k = _owner_k->body_start_ + _owner_k->body_count_;
+        if (index >= _owner_k->body_start_ && index < _end_k) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool zlang_plan_memory(const zlang_program_t *program, zlang_memory_plan_t *plan) {
     plan->count_ = 0U;
 
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
-        if (!zlang_is_declaration(_statement_k)) {
+        if (_statement_k->is_generic_ || zlang_statement_inside_generic_template(program, _index) ||
+            !zlang_is_declaration(_statement_k)) {
             continue;
         }
         if (plan->count_ >= plan->capacity_) {

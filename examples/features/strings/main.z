@@ -1,9 +1,9 @@
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     string folded = "z" + "lang";
     string[32] bounded = folded + " tour";
-    unsigned first = bounded[0];
+    uint32 first = bounded[0];
     string[8] letter = "abc";
     letter = "z";
 

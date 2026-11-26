@@ -18,6 +18,19 @@
 #define ZLANG_CALL_ARGUMENT_CAPACITY 32U
 #define ZLANG_ARRAY_MAX_RANK 4U
 #define ZLANG_MAX_INFERRED_SHAPES 16U
+#define ZLANG_GENERIC_PARAMETER_CAPACITY 4U
+#define ZLANG_GENERIC_NAME_CAPACITY 128U
+#define ZLANG_MAX_GENERIC_APPLICATIONS 32U
+
+typedef struct zlang_generic_application_t {
+    const char *name_;
+    const char *base_name_;
+    const char *arguments_[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t argument_count_;
+    uint32_t line_;
+    uint32_t column_;
+    bool is_function_;
+} zlang_generic_application_t;
 
 typedef enum zlang_expression_kind_t {
     zlang_expression_integer_literal_,
@@ -162,6 +175,9 @@ typedef struct zlang_ast_statement_t {
     const char *owner_name_;
     const char *uses_names_[4];
     size_t uses_count_;
+    const char *generic_parameters_[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t generic_parameter_count_;
+    bool is_generic_;
     const char *requires_names_[4];
     const char *requires_type_names_[4];
     size_t requires_count_;
@@ -197,6 +213,8 @@ typedef struct zlang_program_t {
     size_t comment_count_;
     zlang_inferred_shape_t inferred_shapes_[ZLANG_MAX_INFERRED_SHAPES];
     size_t inferred_shape_count_;
+    zlang_generic_application_t generic_applications_[ZLANG_MAX_GENERIC_APPLICATIONS];
+    size_t generic_application_count_;
 } zlang_program_t;
 
 #endif /* ZLANG_COMPILER_AST_H */

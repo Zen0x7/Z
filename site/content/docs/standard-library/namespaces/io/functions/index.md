@@ -16,12 +16,12 @@ navigation:
 
 | Name | Signature | Parameter mode | C symbol | Macro |
 | --- | --- | --- | --- | --- |
-| [`read`](/docs/standard-library/namespaces/io/functions/read) | `function read(reference string value): integer` | reference | `zlang_std_io_read` | `ZLANG_STD_IO_READ` |
-| [`read_line`](/docs/standard-library/namespaces/io/functions/read_line) | `function read_line(reference string value): integer` | reference | `zlang_std_io_read_line` | `ZLANG_STD_IO_READ_LINE` |
+| [`read`](/docs/standard-library/namespaces/io/functions/read) | `function read(reference string value): int32` | reference | `zlang_std_io_read` | `ZLANG_STD_IO_READ` |
+| [`read_line`](/docs/standard-library/namespaces/io/functions/read_line) | `function read_line(reference string value): int32` | reference | `zlang_std_io_read_line` | `ZLANG_STD_IO_READ_LINE` |
 | [`write`](/docs/standard-library/namespaces/io/functions/write) | `function write(clone string value): string` | clone | `zlang_std_io_write_string` | `ZLANG_STD_IO_WRITE_STRING` |
 | `write` | `function write(clone boolean value): boolean` | clone | `zlang_std_io_write_bool` | `ZLANG_STD_IO_WRITE_BOOL` |
-| `write` | `function write(clone integer value): integer` | clone | `zlang_std_io_write_i32` | `ZLANG_STD_IO_WRITE_I32` |
-| `write` | `function write(clone unsigned value): unsigned` | clone | `zlang_std_io_write_u32` | `ZLANG_STD_IO_WRITE_U32` |
+| `write` | `function write(clone int32 value): int32` | clone | `zlang_std_io_write_i32` | `ZLANG_STD_IO_WRITE_I32` |
+| `write` | `function write(clone uint32 value): uint32` | clone | `zlang_std_io_write_u32` | `ZLANG_STD_IO_WRITE_U32` |
 | `write` | `function write(clone int64 value): int64` | clone | `zlang_std_io_write_i64` | `ZLANG_STD_IO_WRITE_I64` |
 | `write` | `function write(clone uint64 value): uint64` | clone | `zlang_std_io_write_u64` | `ZLANG_STD_IO_WRITE_U64` |
 | `write` | `function write(clone float value): float` | clone | `zlang_std_io_write_f32` | `ZLANG_STD_IO_WRITE_F32` |

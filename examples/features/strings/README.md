@@ -7,7 +7,7 @@ This example exercises:
 
 - compile-time folding of literal concatenation;
 - `string[N]` bounded concatenation;
-- string indexing returning an unsigned byte;
+- string indexing returning an uint32 byte;
 - assignment of a string literal to a bounded string;
 - printing strings and scalar bytes.
 

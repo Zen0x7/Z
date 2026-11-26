@@ -4,13 +4,13 @@ Calculates one value for each arithmetic operator and prints them on one line.
 
 This example exercises:
 
-- signed `integer` and unsigned `unsigned` values;
+- signed `int32` and uint32 `uint32` values;
 - `+`, `-`, `*`, `/`, `%` and unary `-`;
-- unsigned literals such as `5U`;
+- uint32 literals such as `5U`;
 - all compound numeric assignments;
-- scalar printing of both signed and unsigned values.
+- scalar printing of both signed and uint32 values.
 
-The generated C dispatches signed operations to `zlang_*_i32` and unsigned addition to
+The generated C dispatches signed operations to `zlang_*_i32` and uint32 addition to
 `zlang_add_u32`.
 
 ```sh

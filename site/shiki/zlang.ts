@@ -15,6 +15,7 @@ export const zlangLanguage: LanguageRegistration = {
     { include: '#strings' },
     { include: '#numbers' },
     { include: '#declarations' },
+    { include: '#generics' },
     { include: '#variables' },
     { include: '#keywords' },
     { include: '#modifiers' },
@@ -59,50 +60,124 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'constant.numeric.integer.zlang',
-          match: String.raw`\b\d+[uU]?\b`,
+          match: String.raw`\b\d+(?:\.\d+)?(?:[uU]|[iI]64|[uU]64|[fF])?\b`,
         },
       ],
     },
     declarations: {
       patterns: [
         {
+          match: String.raw`\b([A-Za-z_]\w*)(<)([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)(>)(?=\s*\()`,
+          captures: {
+            1: { name: 'entity.name.function.zlang' },
+            2: { name: 'punctuation.zlang' },
+            3: { name: 'storage.type.zlang' },
+            4: { name: 'punctuation.zlang' },
+          },
+        },
+        {
+          match: String.raw`\b(function)\s+([A-Za-z_]\w*)(<)([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)(>)`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'entity.name.function.zlang' },
+            3: { name: 'punctuation.zlang' },
+            4: { name: 'storage.type.zlang' },
+            5: { name: 'punctuation.zlang' },
+          },
+        },
+        {
           match: String.raw`\b(function)\s+([A-Za-z_]\w*)`,
           captures: {
-            1: { name: 'storage.type.function.zlang' },
+            1: { name: 'keyword.control.zlang' },
             2: { name: 'entity.name.function.zlang' },
           },
         },
         {
-          match: String.raw`\b(struct|enum)\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(trait|struct|enum)\s+([A-Za-z_]\w*)(<)([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)(>)`,
           captures: {
-            1: { name: 'storage.type.zlang' },
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'entity.name.type.zlang' },
+            3: { name: 'punctuation.zlang' },
+            4: { name: 'storage.type.zlang' },
+            5: { name: 'punctuation.zlang' },
+          },
+        },
+        {
+          match: String.raw`\b(trait|struct|enum)\s+([A-Za-z_]\w*)`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
             2: { name: 'entity.name.type.zlang' },
           },
+        },
+        {
+          match: String.raw`\b(uses)\s+([A-Za-z_]\w*)`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'entity.name.type.zlang' },
+          },
+        },
+        {
+          match: String.raw`\b(constructor)\s*(?=\()`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
+          },
+        },
+      ],
+    },
+    generics: {
+      patterns: [
+        {
+          begin: String.raw`\b([A-Za-z_]\w*)(<)`,
+          beginCaptures: {
+            1: { name: 'entity.name.type.zlang' },
+            2: { name: 'punctuation.zlang' },
+          },
+          end: String.raw`>`,
+          endCaptures: {
+            0: { name: 'punctuation.zlang' },
+          },
+          contentName: 'storage.type.zlang',
+          patterns: [
+            {
+              name: 'storage.type.zlang',
+              match: String.raw`[A-Za-z_]\w*`,
+            },
+            {
+              name: 'punctuation.zlang',
+              match: String.raw`,`,
+            },
+          ],
         },
       ],
     },
     variables: {
       patterns: [
         {
-          match: String.raw`\b(boolean|integer|unsigned|string)(?:\[([^\]]*)\])?\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|arguments)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'storage.type.zlang' },
-            2: { name: 'constant.numeric.integer.zlang' },
-            3: { name: 'variable.other.declaration.zlang' },
-          },
-        },
-        {
-          match: String.raw`\b(array)(?:\[([^\]]*)\])?\s+(boolean|integer|unsigned|string|[A-Za-z_]\w*)(?:\[([^\]]*)\])?\s+([A-Za-z_]\w*)`,
-          captures: {
-            1: { name: 'storage.type.zlang' },
-            2: { name: 'constant.numeric.integer.zlang' },
-            3: { name: 'storage.type.zlang' },
-            4: { name: 'constant.numeric.integer.zlang' },
+            2: { name: 'punctuation.zlang' },
+            3: { name: 'constant.numeric.integer.zlang' },
+            4: { name: 'punctuation.zlang' },
             5: { name: 'variable.other.declaration.zlang' },
           },
         },
         {
-          match: String.raw`\b([A-Za-z_]\w*)\s*(?:\+=|-=|\*=|/=|%=|=)(?!=)`,
+          match: String.raw`\b(array)(?:(\[)([^\]]*)(\]))?\s+(boolean|int32|uint32|int64|uint64|float|double|string|arguments|[A-Za-z_]\w*)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
+          captures: {
+            1: { name: 'storage.type.zlang' },
+            2: { name: 'punctuation.zlang' },
+            3: { name: 'constant.numeric.integer.zlang' },
+            4: { name: 'punctuation.zlang' },
+            5: { name: 'storage.type.zlang' },
+            6: { name: 'punctuation.zlang' },
+            7: { name: 'constant.numeric.integer.zlang' },
+            8: { name: 'punctuation.zlang' },
+            9: { name: 'variable.other.declaration.zlang' },
+          },
+        },
+        {
+          match: String.raw`\b([A-Za-z_]\w*)(?=\s*(?:\+=|-=|\*=|/=|%=|=)(?!=))`,
           captures: {
             1: { name: 'variable.other.assignment.zlang' },
           },
@@ -115,13 +190,17 @@ export const zlangLanguage: LanguageRegistration = {
           name: 'keyword.control.zlang',
           match: String.raw`\b(if|else|while|for|foreach|in|repeat|break|continue|return|import|from)\b`,
         },
+        {
+          name: 'keyword.control.zlang',
+          match: String.raw`\b(uses|requires)\b`,
+        },
       ],
     },
     modifiers: {
       patterns: [
         {
           name: 'storage.modifier.zlang',
-          match: String.raw`\b(const|clone|reference)\b`,
+          match: String.raw`\b(const|clone|reference|static)\b`,
         },
       ],
     },
@@ -129,7 +208,30 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'storage.type.zlang',
-          match: String.raw`\b(boolean|integer|unsigned|string|array|struct|enum|function|arguments)\b`,
+          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|array|arguments)\b`,
+        },
+        {
+          name: 'storage.type.zlang',
+          match: String.raw`\b[A-Z][A-Za-z0-9_]*\b(?=\s+[A-Za-z_]\w*\s*(?:[,)={;]|\s))`,
+        },
+        {
+          name: 'entity.name.type.zlang',
+          match: String.raw`\buses\s+([A-Z][A-Za-z0-9_]*)\b`,
+        },
+        {
+          name: 'entity.name.type.zlang',
+          match: String.raw`\b[A-Z][A-Za-z0-9_]*\b(?=\s*\.)`,
+        },
+        {
+          name: 'entity.name.type.zlang',
+          match: String.raw`\b[A-Z][A-Za-z0-9_]*\b(?=\s*\()`,
+        },
+        {
+          match: String.raw`(:)\s*([A-Z][A-Za-z0-9_]*)\b(?=\s*\{)`,
+          captures: {
+            1: { name: 'punctuation.zlang' },
+            2: { name: 'entity.name.type.zlang' },
+          },
         },
       ],
     },
@@ -187,7 +289,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'punctuation.zlang',
-          match: String.raw`[{}()\[\];,.]`,
+          match: String.raw`[{}()\[\];,.:]`,
         },
       ],
     },

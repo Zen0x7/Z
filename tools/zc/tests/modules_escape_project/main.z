@@ -1,5 +1,5 @@
 import { secret } from "../outside";
 
-function main(): integer {
+function main(): int32 {
     return secret;
 }

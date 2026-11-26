@@ -1,0 +1,22 @@
+import { write } from "@std/io";
+
+struct Pair<T, U> {
+    T first;
+    U second;
+}
+
+function identity<T>(clone T value): T {
+    return value;
+}
+
+function main(): int32 {
+    Pair<int32, boolean> pair;
+    pair.first = 7;
+    pair.second = true;
+
+    int32 value = identity<int32>(pair.first);
+    write(value);
+    write(" ");
+    write(pair.second);
+    return 0;
+}

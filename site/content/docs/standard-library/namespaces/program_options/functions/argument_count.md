@@ -27,7 +27,7 @@ import { argument_count } from "@std/program_options";
 ## Signature
 
 ```zlang
-function argument_count(reference arguments argv): unsigned
+function argument_count(reference arguments argv): uint32
 ```
 
 The registry records one parameter of type `arguments` in reference mode.
@@ -42,7 +42,7 @@ Pass the `arguments` parameter of `main`. The `argc` parameter is not used by th
 
 ## Result
 
-Returns `unsigned`, emitted as `uint32_t`. The count includes the program path at index `0` when the host supplies one. In the `zc` fixture, four arguments after the program path produce `5`.
+Returns `uint32`, emitted as `uint32_t`. The count includes the program path at index `0` when the host supplies one. In the `zc` fixture, four arguments after the program path produce `5`.
 
 ## Bounds and ownership
 
@@ -82,7 +82,7 @@ zlang_std_program_options_argument_count(app_param_argv);
 import { write } from "@std/io";
 import { argument_count } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(argument_count(argv));
     write("\n");
     return 0;

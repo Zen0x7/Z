@@ -37,13 +37,13 @@ import { abs } from "@std/math";
 ## Signature
 
 ```zlang
-function abs(clone integer value): integer
+function abs(clone int32 value): int32
 ```
 
 | Registry signature | C symbol | Activation macro |
 | --- | --- | --- |
-| `function abs(clone integer value): integer` | `zlang_std_math_abs_i32` | `ZLANG_STD_MATH_ABS_I32` |
-| `function abs(clone unsigned value): unsigned` | `zlang_std_math_abs_u32` | `ZLANG_STD_MATH_ABS_U32` |
+| `function abs(clone int32 value): int32` | `zlang_std_math_abs_i32` | `ZLANG_STD_MATH_ABS_I32` |
+| `function abs(clone uint32 value): uint32` | `zlang_std_math_abs_u32` | `ZLANG_STD_MATH_ABS_U32` |
 | `function abs(clone int64 value): int64` | `zlang_std_math_abs_i64` | `ZLANG_STD_MATH_ABS_I64` |
 | `function abs(clone uint64 value): uint64` | `zlang_std_math_abs_u64` | `ZLANG_STD_MATH_ABS_U64` |
 | `function abs(clone float value): float` | `zlang_std_math_abs_f32` | `ZLANG_STD_MATH_ABS_F32` |
@@ -53,13 +53,13 @@ function abs(clone integer value): integer
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
-| `value` | one of `integer`, `unsigned`, `int64`, `uint64`, `float`, `double` | clone | Value whose magnitude is returned |
+| `value` | one of `int32`, `uint32`, `int64`, `uint64`, `float`, `double` | clone | Value whose magnitude is returned |
 
 `abs` takes one scalar argument. No capacity is required.
 
 ## Result
 
-Returns a value of the argument's type. Unsigned values are returned unchanged. Signed values are negated when negative. For the `float` and `double` overloads, the helper uses an ordered comparison against zero: NaN is returned as NaN, negative zero is returned unchanged, and an infinity keeps its magnitude. The C helper returns the same numeric C type that the registry lists for each overload.
+Returns a value of the argument's type. `uint32` values are returned unchanged. Signed values are negated when negative. For the `float` and `double` overloads, the helper uses an ordered comparison against zero: NaN is returned as NaN, negative zero is returned unchanged, and an infinity keeps its magnitude. The C helper returns the same numeric C type that the registry lists for each overload.
 
 ## Bounds and ownership
 
@@ -69,7 +69,7 @@ Returns a value of the argument's type. Unsigned values are returned unchanged. 
 
 `zlang_std_math_abs_i32` traps with `ZLANG_TRAP_OVERFLOW` (code `1`) when `value` is `INT32_MIN`. `zlang_std_math_abs_i64` traps with the same code when `value` is `INT64_MIN`. This check prevents negating a signed minimum value, which has no representable positive result.
 
-The unsigned, `float` and `double` helpers contain no trap. Floating-point helpers do not reject NaN or infinity. Floating arithmetic follows IEEE-754, so division by zero in the surrounding program produces infinity or NaN instead of a Zlang trap.
+The uint32, `float` and `double` helpers contain no trap. Floating-point helpers do not reject NaN or infinity. Floating arithmetic follows IEEE-754, so division by zero in the surrounding program produces infinity or NaN instead of a Zlang trap.
 
 ## State and concurrency
 
@@ -86,7 +86,7 @@ zlang_std_math_abs_i32(zlang_neg_i32(7));
 ```
 
 
-The header guards do not match the registry macros. `math.h` defines all `abs` helpers, including the unsigned ones, only when `ZLANG_STD_MATH_ABS_ACTIVE` is defined. That guard lists `ZLANG_STD_MATH_ABS_I32`, `ZLANG_STD_MATH_ABS_I64`, `ZLANG_STD_MATH_ABS_F32` and `ZLANG_STD_MATH_ABS_F64`; it omits `ZLANG_STD_MATH_ABS_U32` and `ZLANG_STD_MATH_ABS_U64`. Generated C imports activate `ZLANG_STD_MATH_ABS_I32` first, so the unsigned helpers are present in generated programs. A hand-written translation unit that defines only an unsigned `abs` macro does not declare them.
+The header guards do not match the registry macros. `math.h` defines all `abs` helpers, including the `uint32` ones, only when `ZLANG_STD_MATH_ABS_ACTIVE` is defined. That guard lists `ZLANG_STD_MATH_ABS_I32`, `ZLANG_STD_MATH_ABS_I64`, `ZLANG_STD_MATH_ABS_F32` and `ZLANG_STD_MATH_ABS_F64`; it omits `ZLANG_STD_MATH_ABS_U32` and `ZLANG_STD_MATH_ABS_U64`. Generated C imports activate `ZLANG_STD_MATH_ABS_I32` first, so the `uint32` helpers are present in generated programs. A hand-written translation unit that defines only a `uint32` `abs` macro does not declare them.
 
 ## Example
 
@@ -94,7 +94,7 @@ The header guards do not match the registry macros. `math.h` defines all `abs` h
 import { write } from "@std/io";
 import { abs } from "@std/math";
 
-function main(): integer {
+function main(): int32 {
     write(abs(-7));
     write("\n");
     return 0;

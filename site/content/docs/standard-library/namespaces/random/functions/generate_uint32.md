@@ -1,6 +1,6 @@
 ---
 title: generate_uint32
-description: Generate an unsigned value inside an inclusive 32-bit range.
+description: Generate a `uint32` value inside an inclusive 32-bit range.
 domain: random
 kind: function
 status: implemented
@@ -27,7 +27,7 @@ import { generate_uint32 } from "@std/random";
 ## Signature
 
 ```zlang
-function generate_uint32(clone unsigned from, clone unsigned to): unsigned
+function generate_uint32(clone uint32 from, clone uint32 to): uint32
 ```
 
 Both parameters are passed by value.
@@ -36,14 +36,14 @@ Both parameters are passed by value.
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
-| `from` | `unsigned` | clone | Lower bound of the inclusive range |
-| `to` | `unsigned` | clone | Upper bound of the inclusive range |
+| `from` | `uint32` | clone | Lower bound of the inclusive range |
+| `to` | `uint32` | clone | Upper bound of the inclusive range |
 
-`from` must not be greater than `to`. The full `unsigned` range is allowed.
+`from` must not be greater than `to`. The full `uint32` range is allowed.
 
 ## Result
 
-Returns one `unsigned` in `[from, to]`. Both bounds are reachable. Do not expect a specific value or sequence.
+Returns one `uint32` in `[from, to]`. Both bounds are reachable. Do not expect a specific value or sequence.
 
 ## Bounds and ownership
 
@@ -92,8 +92,8 @@ int main(void) {
 import { write } from "@std/io";
 import { generate_uint32 } from "@std/random";
 
-function main(): integer {
-    unsigned value = generate_uint32(1u, 6u);
+function main(): int32 {
+    uint32 value = generate_uint32(1u, 6u);
     write(value);
     write("\n");
     return 0;

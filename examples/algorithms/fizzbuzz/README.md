@@ -7,7 +7,7 @@ This example exercises:
 - a native `for` loop;
 - an `if` / `else if` / `else if` / `else` chain;
 - modulo tests for divisibility by `15`, `3` and `5`;
-- printing both string literals and integer values.
+- printing both string literals and int32 values.
 
 Each iteration ends with an explicit newline string.
 

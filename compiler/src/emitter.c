@@ -3,6 +3,7 @@
  */
 
 #include "zlang/compiler/emitter.h"
+#include "zlang/compiler/generics.h"
 #include "zlang/compiler/stdlib.h"
 
 #include <stdio.h>
@@ -208,6 +209,7 @@ static bool zlang_collect_stateful_usage(const zlang_program_t *program, zlang_e
 static bool zlang_function_marked(const zlang_emitter_t *emitter, const char *name);
 
 static bool zlang_is_nested(const zlang_program_t *program, size_t index);
+static bool zlang_is_generic_template(const zlang_ast_statement_t *statement);
 
 static bool zlang_spec_extent_macro(const zlang_program_t *program, const zlang_emitter_t *emitter,
                                     const zlang_array_specialization_t *specialization,
@@ -352,10 +354,10 @@ static bool zlang_append_indent(zlang_emitter_t *emitter, uint32_t depth) {
 }
 
 static const char *zlang_c_type(const char *type_name) {
-    if (strcmp(type_name, "integer") == 0) {
+    if (strcmp(type_name, "int32") == 0) {
         return "int32_t";
     }
-    if (strcmp(type_name, "unsigned") == 0) {
+    if (strcmp(type_name, "uint32") == 0) {
         return "uint32_t";
     }
     if (strcmp(type_name, "int64") == 0) {
@@ -383,10 +385,10 @@ static const char *zlang_c_type(const char *type_name) {
 }
 
 static const char *zlang_default_initializer(const char *type_name) {
-    if (strcmp(type_name, "integer") == 0) {
+    if (strcmp(type_name, "int32") == 0) {
         return "0";
     }
-    if (strcmp(type_name, "unsigned") == 0) {
+    if (strcmp(type_name, "uint32") == 0) {
         return "ZLANG_ZERO";
     }
     if (strcmp(type_name, "boolean") == 0) {
@@ -703,6 +705,30 @@ static bool zlang_lower_name(const char *source, char *output, size_t capacity) 
         output[_index] = (char)(_code_k >= 'A' && _code_k <= 'Z' ? _code_k - 'A' + 'a' : _code_k);
     }
     output[strlen(source)] = '\0';
+    return true;
+}
+
+static bool zlang_generic_emitted_name(const char *source, char *output, size_t capacity) {
+    if (source == NULL || source[0] == '\0' || capacity == 0U) {
+        return false;
+    }
+    size_t _length_k = 0U;
+    for (size_t _index = 0U; source[_index] != '\0'; ++_index) {
+        unsigned char _character_k = (unsigned char)source[_index];
+        if (_character_k >= 'A' && _character_k <= 'Z') {
+            _character_k = (unsigned char)(_character_k - 'A' + 'a');
+        }
+        const bool _valid_k = (_character_k >= 'a' && _character_k <= 'z') ||
+                              (_character_k >= '0' && _character_k <= '9') || _character_k == '_';
+        if (_length_k + 2U >= capacity) {
+            return false;
+        }
+        output[_length_k++] = (char)(_valid_k && _character_k <= 0x7FU ? _character_k : '_');
+    }
+    while (_length_k > 0U && output[_length_k - 1U] == '_' && strchr(source, '<') != NULL) {
+        --_length_k;
+    }
+    output[_length_k] = '\0';
     return true;
 }
 
@@ -1168,8 +1194,12 @@ static const char *zlang_generated_type(const zlang_program_t *program,
     if (_entry_k != NULL) {
         return _entry_k->type_name_;
     }
+    const char *const _native_k = zlang_std_native_c_type(type_name);
+    if (_native_k != NULL) {
+        return _native_k;
+    }
     if (type_name != NULL &&
-        (strcmp(type_name, "integer") == 0 || strcmp(type_name, "unsigned") == 0 ||
+        (strcmp(type_name, "int32") == 0 || strcmp(type_name, "uint32") == 0 ||
          strcmp(type_name, "int64") == 0 || strcmp(type_name, "uint64") == 0 ||
          strcmp(type_name, "float") == 0 || strcmp(type_name, "double") == 0 ||
          strcmp(type_name, "boolean") == 0 || strcmp(type_name, "string") == 0 ||
@@ -1201,6 +1231,9 @@ static bool zlang_collect_user_types(zlang_emitter_t *emitter, const zlang_progr
             _statement_k->kind_ != zlang_statement_enum_) {
             continue;
         }
+        if (zlang_is_generic_template(_statement_k)) {
+            continue;
+        }
         if (zlang_find_user_type(emitter, _statement_k->name_) != NULL) {
             continue;
         }
@@ -1215,7 +1248,7 @@ static bool zlang_collect_user_types(zlang_emitter_t *emitter, const zlang_progr
         char _base[ZLANG_EMITTED_NAME_CAPACITY];
         const char *const _prefix_k =
             _statement_k->kind_ == zlang_statement_enum_ ? "app_enum_" : "app_struct_";
-        if (!zlang_lower_name(_statement_k->name_, _lower_name, sizeof(_lower_name)) ||
+        if (!zlang_generic_emitted_name(_statement_k->name_, _lower_name, sizeof(_lower_name)) ||
             !zlang_assemble_name(_prefix_k, _lower_name, "_t", _base, sizeof(_base)) ||
             !zlang_make_unique_name(emitter, _base, _entry_k->type_name_,
                                     sizeof(_entry_k->type_name_))) {
@@ -1627,7 +1660,7 @@ static const char *zlang_expression_type(const zlang_program_t *program,
         if (_expression_k->is_uint64_) {
             return "uint64";
         }
-        return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+        return _expression_k->is_unsigned_ ? "uint32" : "int32";
     case zlang_expression_float_literal_:
         return _expression_k->is_float_ ? "float" : "double";
     case zlang_expression_conversion_:
@@ -1709,10 +1742,10 @@ static const char *zlang_expression_type(const zlang_program_t *program,
     case zlang_expression_negative_: {
         const char *const _operand_k =
             zlang_expression_type(program, emitter, _expression_k->left_);
-        return _operand_k != NULL ? _operand_k : "integer";
+        return _operand_k != NULL ? _operand_k : "int32";
     }
     case zlang_expression_length_:
-        return "unsigned";
+        return "uint32";
     case zlang_expression_index_: {
         const zlang_emitted_symbol_t *const _symbol_k =
             zlang_find_active_symbol(emitter, _expression_k->name_);
@@ -1720,7 +1753,7 @@ static const char *zlang_expression_type(const zlang_program_t *program,
             return NULL;
         }
         if (!_symbol_k->is_sequence_ && strcmp(_symbol_k->type_name_, "string") == 0) {
-            return "unsigned";
+            return "uint32";
         }
         return _symbol_k->type_name_;
     }
@@ -1759,9 +1792,9 @@ static const char *zlang_expression_type(const zlang_program_t *program,
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_method_generated_name(const char *struct_name, const char *method_name,
                                         bool is_constructor, char *output, size_t capacity) {
-    char _struct_k[24];
-    char _method_k[24];
-    if (!zlang_lower_name(struct_name, _struct_k, sizeof(_struct_k)) ||
+    char _struct_k[32U];
+    char _method_k[24U];
+    if (!zlang_generic_emitted_name(struct_name, _struct_k, sizeof(_struct_k)) ||
         (!is_constructor && !zlang_lower_name(method_name, _method_k, sizeof(_method_k)))) {
         return false;
     }
@@ -1796,7 +1829,7 @@ static bool zlang_emit_index_expression(const zlang_program_t *program, size_t i
     const char *const _type_k = zlang_expression_type(program, emitter, index);
     const bool _literal_k = _expression_k->kind_ == zlang_expression_integer_literal_ &&
                             _expression_k->integer_value_ >= 0;
-    const bool _needs_cast_k = !_literal_k && _type_k != NULL && strcmp(_type_k, "integer") == 0;
+    const bool _needs_cast_k = !_literal_k && _type_k != NULL && strcmp(_type_k, "int32") == 0;
     return (!_needs_cast_k || zlang_append_text(emitter, "(uint32_t)")) &&
            zlang_emit_expression(program, index, emitter);
 }
@@ -1850,10 +1883,10 @@ static const char *zlang_array_get_function(const char *type_name) {
     if (type_name == NULL) {
         return NULL;
     }
-    if (strcmp(type_name, "integer") == 0) {
+    if (strcmp(type_name, "int32") == 0) {
         return "zlang_array_get_i32(";
     }
-    if (strcmp(type_name, "unsigned") == 0) {
+    if (strcmp(type_name, "uint32") == 0) {
         return "zlang_array_get_u32(";
     }
     if (strcmp(type_name, "boolean") == 0) {
@@ -1869,7 +1902,7 @@ static const char *zlang_arithmetic_function(zlang_expression_kind_t kind, const
     if (type_name == NULL) {
         return NULL;
     }
-    const bool _unsigned_k = strcmp(type_name, "unsigned") == 0;
+    const bool _unsigned_k = strcmp(type_name, "uint32") == 0;
     const bool _signed_64_k = strcmp(type_name, "int64") == 0;
     const bool _unsigned_64_k = strcmp(type_name, "uint64") == 0;
     switch (kind) {
@@ -1941,10 +1974,10 @@ static const char *zlang_conversion_function(const char *target, const char *sou
         return NULL;
     }
     const bool _source_float_k = strcmp(source, "float") == 0 || strcmp(source, "double") == 0;
-    const bool _source_i64_k = strcmp(source, "integer") == 0 || strcmp(source, "int64") == 0;
-    const bool _source_u32_k = strcmp(source, "unsigned") == 0;
+    const bool _source_i64_k = strcmp(source, "int32") == 0 || strcmp(source, "int64") == 0;
+    const bool _source_u32_k = strcmp(source, "uint32") == 0;
     const bool _source_u64_k = strcmp(source, "uint64") == 0;
-    if (strcmp(target, "integer") == 0) {
+    if (strcmp(target, "int32") == 0) {
         if (_source_i64_k) {
             return "zlang_to_i32_i64(";
         }
@@ -1958,7 +1991,7 @@ static const char *zlang_conversion_function(const char *target, const char *sou
             return "zlang_to_i32_f64(";
         }
     }
-    if (strcmp(target, "unsigned") == 0) {
+    if (strcmp(target, "uint32") == 0) {
         if (_source_i64_k) {
             return "zlang_to_u32_i64(";
         }
@@ -2070,12 +2103,12 @@ static const char *zlang_program_declared_type(const zlang_program_t *program, c
                 }
             }
             if (_statement_k->index_name_ != NULL && strcmp(_statement_k->index_name_, name) == 0) {
-                return "unsigned";
+                return "uint32";
             }
             for (uint32_t _axis = 0U; _axis < _statement_k->foreach_rank_; ++_axis) {
                 if (_statement_k->foreach_names_[_axis] != NULL &&
                     strcmp(_statement_k->foreach_names_[_axis], name) == 0) {
-                    return "unsigned";
+                    return "uint32";
                 }
             }
         }
@@ -2115,7 +2148,7 @@ static const char *zlang_analyze_type_fallback(const zlang_program_t *program,
         if (_expression_k->is_uint64_) {
             return "uint64";
         }
-        return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+        return _expression_k->is_unsigned_ ? "uint32" : "int32";
     case zlang_expression_float_literal_:
         return _expression_k->is_float_ ? "float" : "double";
     case zlang_expression_boolean_literal_:
@@ -2188,7 +2221,7 @@ static const char *zlang_analyze_type_fallback(const zlang_program_t *program,
     case zlang_expression_or_:
         return "boolean";
     case zlang_expression_length_:
-        return "unsigned";
+        return "uint32";
     default:
         return NULL;
     }
@@ -2240,7 +2273,7 @@ static const zlang_std_function_t *zlang_std_call(const zlang_program_t *program
     if (strcmp(call->name_, "write") == 0 && _argument_count_k == 1U &&
         _argument_types_k[0] == NULL) {
         return zlang_std_resolve(zlang_std_domain(_import_k->type_name_), call->name_,
-                                 (const char *const[]){"unsigned"}, 1U);
+                                 (const char *const[]){"uint32"}, 1U);
     }
     return NULL;
 }
@@ -2416,6 +2449,14 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                    zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
                    zlang_append_field_name(emitter, _field_k->name_);
         }
+        const char *const _status_k = zlang_std_status_constant_c_name(_expression_k->name_);
+        if (_status_k != NULL) {
+            return zlang_append_text(emitter, _status_k);
+        }
+        const char *const _stream_k = zlang_std_stream_constant_c_name(_expression_k->name_);
+        if (_stream_k != NULL) {
+            return zlang_append_text(emitter, _stream_k);
+        }
         const char *const _enum_k = zlang_generated_enum_item(emitter, _expression_k->name_);
         return _enum_k != NULL && zlang_append_text(emitter, _enum_k);
     }
@@ -2452,7 +2493,7 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
     }
     case zlang_expression_negative_: {
         const char *const _type_k = zlang_expression_type(program, emitter, _expression_k->left_);
-        if (_type_k != NULL && strcmp(_type_k, "integer") == 0) {
+        if (_type_k != NULL && strcmp(_type_k, "int32") == 0) {
             return zlang_append_text(emitter, "zlang_neg_i32(") &&
                    zlang_emit_expression(program, _expression_k->left_, emitter) &&
                    zlang_append_text(emitter, ")");
@@ -2796,6 +2837,32 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
             _receiver_type_k = _receiver_symbol_k->type_name_;
         }
+        const zlang_std_result_t *const _native_result_k =
+            _receiver_type_k != NULL ? zlang_std_find_result(_receiver_type_k) : NULL;
+        if (_native_result_k != NULL) {
+            const char *const _method_type_k =
+                zlang_std_native_result_method_type(_native_result_k, _expression_k->name_);
+            if (_expression_k->argument_count_ != 0U || _method_type_k == NULL ||
+                _receiver_symbol_k == NULL) {
+                return false;
+            }
+            const bool _is_ok_k = strcmp(_expression_k->name_, "is_ok") == 0;
+            const bool _is_message_k = strcmp(_expression_k->name_, "message") == 0;
+            const char *_field_k = "value";
+            if (_is_ok_k) {
+                _field_k = "code";
+            } else if (_is_message_k) {
+                _field_k = "what";
+            }
+            if (_is_ok_k && !zlang_append_text(emitter, "zlang_std_status_is_ok(")) {
+                return false;
+            }
+            if (!zlang_emit_symbol_value(emitter, _receiver_symbol_k->source_name_) ||
+                !zlang_append_text(emitter, ".") || !zlang_append_field_name(emitter, _field_k)) {
+                return false;
+            }
+            return !_is_ok_k || zlang_append_text(emitter, ")");
+        }
         const char *_owner_k = NULL;
         bool _is_trait_k = false;
         const zlang_ast_statement_t *const _method_k = zlang_find_method(
@@ -2931,9 +2998,16 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                 if (!_argument_ok_k) {
                     return false;
                 }
-                if ((strcmp(_std_k->name_, "read") == 0 ||
-                     strcmp(_std_k->name_, "read_line") == 0) &&
-                    _argument == 0U) {
+                bool _destination_just_emitted_k = false;
+                if (_argument < _std_k->parameter_count_ &&
+                    _std_k->parameter_is_reference_[_argument] &&
+                    _std_k->parameter_types_[_argument] != NULL &&
+                    strcmp(_std_k->parameter_types_[_argument], "string") == 0 &&
+                    (strcmp(_std_k->name_, "read") == 0 ||
+                     strcmp(_std_k->name_, "read_line") == 0)) {
+                    _destination_just_emitted_k = true;
+                }
+                if (_destination_just_emitted_k) {
                     const zlang_ast_expression_t *const _destination_k =
                         &program->expressions_[_argument_index_k];
                     const zlang_emitted_symbol_t *const _symbol_k =
@@ -3005,6 +3079,9 @@ zlang_emit_reference_argument(const zlang_program_t *program, size_t index,
         return false;
     }
     const zlang_ast_expression_t *const _expression_k = &program->expressions_[index];
+    if (_expression_k->kind_ == zlang_expression_string_literal_) {
+        return zlang_append_text(emitter, "&") && zlang_emit_literal_view(program, index, emitter);
+    }
     if (_expression_k->kind_ == zlang_expression_identifier_) {
         const zlang_emitted_symbol_t *const _symbol_k =
             zlang_find_active_symbol(emitter, _expression_k->name_);
@@ -3271,7 +3348,8 @@ static bool zlang_register_function_names(const zlang_program_t *program,
                                           zlang_emitter_t *emitter) {
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _function_k = &program->statements_[_index];
-        if (_function_k->kind_ != zlang_statement_function_ || zlang_is_nested(program, _index)) {
+        if (_function_k->kind_ != zlang_statement_function_ || zlang_is_nested(program, _index) ||
+            zlang_is_generic_template(_function_k)) {
             continue;
         }
         size_t _specialization_count_k = 0U;
@@ -3468,7 +3546,9 @@ static bool zlang_function_generated_name(const zlang_program_t *program,
                                           const zlang_ast_statement_t *function,
                                           const zlang_array_specialization_t *specialization,
                                           char *output, size_t capacity) {
-    if (!zlang_assemble_name("app_fn_", function->name_, "", output, capacity)) {
+    char _function_name_k[ZLANG_EMITTED_NAME_CAPACITY];
+    if (!zlang_generic_emitted_name(function->name_, _function_name_k, sizeof(_function_name_k)) ||
+        !zlang_assemble_name("app_fn_", _function_name_k, "", output, capacity)) {
         return false;
     }
     if (specialization == NULL) {
@@ -5040,14 +5120,15 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             if (!zlang_emit_expression(program, statement->expression_, emitter)) {
                 return false;
             }
-        } else if (zlang_find_struct_statement(program, statement->type_name_) != NULL &&
-                   zlang_struct_is_polymorphic(program, statement->type_name_)) {
-            if (!zlang_emit_struct_initializer(program, emitter, statement->type_name_,
-                                               statement->type_name_)) {
-                return false;
-            }
-        } else if (zlang_find_struct_statement(program, statement->type_name_) != NULL) {
-            if (!zlang_append_text(emitter, "{ ZLANG_ZERO }")) {
+        } else if (zlang_std_find_result(statement->type_name_) != NULL ||
+                   zlang_find_struct_statement(program, statement->type_name_) != NULL) {
+            if (zlang_find_struct_statement(program, statement->type_name_) != NULL &&
+                zlang_struct_is_polymorphic(program, statement->type_name_)) {
+                if (!zlang_emit_struct_initializer(program, emitter, statement->type_name_,
+                                                   statement->type_name_)) {
+                    return false;
+                }
+            } else if (!zlang_append_text(emitter, "{ ZLANG_ZERO }")) {
                 return false;
             }
         } else if (!zlang_append_text(emitter, zlang_default_initializer(statement->type_name_))) {
@@ -5318,7 +5399,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         if (statement->foreach_rank_ > 1U) {
             char _coordinate_names[ZLANG_ARRAY_MAX_RANK][ZLANG_EMITTED_NAME_CAPACITY];
             for (uint32_t _axis = 0U; _axis < statement->foreach_rank_; ++_axis) {
-                if (!zlang_register_symbol(emitter, statement->foreach_names_[_axis], "unsigned",
+                if (!zlang_register_symbol(emitter, statement->foreach_names_[_axis], "uint32",
                                            "app_local_", 0U, false, false, false, false,
                                            _coordinate_names[_axis],
                                            sizeof(_coordinate_names[_axis]))) {
@@ -5361,7 +5442,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         const char *const _iterable_k = zlang_resolve_name(emitter, statement->iterable_name_);
         if (_loop_written_k < 0 || (size_t)_loop_written_k >= sizeof(_loop_index) ||
             (statement->index_name_ != NULL &&
-             !zlang_register_symbol(emitter, statement->index_name_, "unsigned", "app_local_", 0U,
+             !zlang_register_symbol(emitter, statement->index_name_, "uint32", "app_local_", 0U,
                                     false, false, false, false, _user_index_name,
                                     sizeof(_user_index_name))) ||
             !zlang_register_symbol(emitter, statement->name_, statement->type_name_, "app_local_",
@@ -5595,6 +5676,38 @@ static bool zlang_activate_macro(zlang_emitter_t *emitter, const char *macro) {
 static bool zlang_activate_std_macros(const zlang_program_t *program, zlang_emitter_t *emitter) {
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if ((_statement_k->type_name_ != NULL &&
+             (zlang_std_is_native_type(_statement_k->type_name_) &&
+              strcmp(_statement_k->type_name_, "stream") != 0)) ||
+            (_statement_k->name_ != NULL && zlang_std_is_status_constant(_statement_k->name_))) {
+            if (!zlang_activate_macro(emitter, "ZLANG_STD_RESULT")) {
+                return false;
+            }
+        }
+    }
+    for (size_t _index = 0U; _index < program->parameter_count_; ++_index) {
+        const zlang_parameter_t *const _parameter_k = &program->parameters_[_index];
+        if (_parameter_k->type_name_ != NULL &&
+            zlang_std_is_native_type(_parameter_k->type_name_) &&
+            !zlang_activate_macro(emitter, "ZLANG_STD_RESULT")) {
+            return false;
+        }
+    }
+    for (size_t _index = 0U; _index < program->expression_count_; ++_index) {
+        const zlang_ast_expression_t *const _expression_k = &program->expressions_[_index];
+        if (_expression_k->name_ != NULL && zlang_std_is_status_constant(_expression_k->name_) &&
+            !zlang_activate_macro(emitter, "ZLANG_STD_RESULT")) {
+            return false;
+        }
+    }
+    for (size_t _index = 0U; _index < program->generic_application_count_; ++_index) {
+        if (zlang_std_find_result(program->generic_applications_[_index].name_) != NULL &&
+            !zlang_activate_macro(emitter, "ZLANG_STD_RESULT")) {
+            return false;
+        }
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if (_statement_k->kind_ == zlang_statement_import_ &&
             !zlang_activate_macro(
                 emitter,
@@ -5819,7 +5932,7 @@ static bool zlang_is_array_field_statement(const zlang_program_t *program,
                                            const zlang_ast_statement_t *statement) {
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _owner_k = &program->statements_[_index];
-        if (_owner_k->kind_ != zlang_statement_struct_) {
+        if (_owner_k->kind_ != zlang_statement_struct_ || zlang_is_generic_template(_owner_k)) {
             continue;
         }
         const size_t _end_k = _owner_k->body_start_ + _owner_k->body_count_;
@@ -6000,6 +6113,7 @@ static bool zlang_emit_type_tags(const zlang_program_t *program, zlang_emitter_t
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if (_statement_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_statement_k) ||
             !zlang_struct_is_polymorphic(program, _statement_k->name_)) {
             continue;
         }
@@ -6369,6 +6483,7 @@ static bool zlang_emit_vtable_thunk_definitions(const zlang_program_t *program,
     for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
         const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
         if (_structure_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_structure_k) ||
             !zlang_struct_is_polymorphic(program, _structure_k->name_)) {
             continue;
         }
@@ -6448,6 +6563,7 @@ static bool zlang_emit_vtable_thunk_prototypes(const zlang_program_t *program,
     for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
         const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
         if (_structure_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_structure_k) ||
             !zlang_struct_is_polymorphic(program, _structure_k->name_)) {
             continue;
         }
@@ -6504,6 +6620,7 @@ static bool zlang_emit_vtable_instances(const zlang_program_t *program, zlang_em
     for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
         const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
         if (_structure_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_structure_k) ||
             !zlang_struct_is_polymorphic(program, _structure_k->name_)) {
             continue;
         }
@@ -6567,7 +6684,8 @@ static bool zlang_emit_trait_method_prototypes(const zlang_program_t *program,
                                                zlang_emitter_t *emitter) {
     for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
         const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
-        if (_structure_k->kind_ != zlang_statement_struct_) {
+        if (_structure_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_structure_k)) {
             continue;
         }
         for (size_t _trait = 0U; _trait < _structure_k->uses_count_; ++_trait) {
@@ -6602,7 +6720,7 @@ static bool zlang_emit_method_prototypes(const zlang_program_t *program, zlang_e
     bool _header_k = false;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _owner_k = &program->statements_[_index];
-        if (_owner_k->kind_ != zlang_statement_struct_) {
+        if (_owner_k->kind_ != zlang_statement_struct_ || zlang_is_generic_template(_owner_k)) {
             continue;
         }
         const size_t _owner_end_k = _owner_k->body_start_ + _owner_k->body_count_;
@@ -6637,7 +6755,8 @@ static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
                                                 zlang_emitter_t *emitter) {
     for (size_t _owner = 0U; _owner < program->statement_count_; ++_owner) {
         const zlang_ast_statement_t *const _structure_k = &program->statements_[_owner];
-        if (_structure_k->kind_ != zlang_statement_struct_) {
+        if (_structure_k->kind_ != zlang_statement_struct_ ||
+            zlang_is_generic_template(_structure_k)) {
             continue;
         }
         for (size_t _trait = 0U; _trait < _structure_k->uses_count_; ++_trait) {
@@ -6700,7 +6819,7 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
     bool _header_k = false;
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _owner_k = &program->statements_[_index];
-        if (_owner_k->kind_ != zlang_statement_struct_) {
+        if (_owner_k->kind_ != zlang_statement_struct_ || zlang_is_generic_template(_owner_k)) {
             continue;
         }
         const size_t _owner_end_k = _owner_k->body_start_ + _owner_k->body_count_;
@@ -6778,6 +6897,10 @@ static bool zlang_is_type_definition(const zlang_ast_statement_t *statement) {
     return statement->kind_ == zlang_statement_struct_ || statement->kind_ == zlang_statement_enum_;
 }
 
+static bool zlang_is_generic_template(const zlang_ast_statement_t *statement) {
+    return statement != NULL && statement->is_generic_;
+}
+
 static bool zlang_is_file_scope(const zlang_emitter_t *emitter,
                                 const zlang_ast_statement_t *statement) {
     return statement->kind_ == zlang_statement_function_ ||
@@ -6819,6 +6942,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
     for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
         const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
         if (zlang_is_nested(program, _index) || zlang_is_type_definition(_statement_k) ||
+            zlang_is_generic_template(_statement_k) ||
             _statement_k->kind_ == zlang_statement_import_) {
             continue;
         }

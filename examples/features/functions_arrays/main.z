@@ -5,10 +5,10 @@ function stamp(clone array source): array {
     return result;
 }
 
-function main(): integer {
-    array[2][3] integer grid;
+function main(): int32 {
+    array[2][3] int32 grid;
     grid[0][1] = 5;
-    array[2][3] integer stamped = stamp(grid);
+    array[2][3] int32 stamped = stamp(grid);
 
     write(stamped[0][1]);
     write("\n");

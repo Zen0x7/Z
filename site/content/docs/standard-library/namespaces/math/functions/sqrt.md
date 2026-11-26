@@ -37,7 +37,7 @@ function sqrt(clone float value): float
 | `function sqrt(clone float value): float` | `zlang_std_math_sqrt_f32` | `ZLANG_STD_MATH_SQRT_F32` |
 | `function sqrt(clone double value): double` | `zlang_std_math_sqrt_f64` | `ZLANG_STD_MATH_SQRT_F64` |
 
-There are no integer overloads. Integer input is rejected by overload resolution because Zlang has no implicit numeric conversion.
+There are no `int32` overloads. `int32` input is rejected by overload resolution because Zlang has no implicit numeric conversion.
 
 ## Parameters
 
@@ -85,7 +85,7 @@ The registry records one macro per overload. The generated prologue contains `ZL
 import { write } from "@std/io";
 import { sqrt } from "@std/math";
 
-function main(): integer {
+function main(): int32 {
     write(sqrt(9.0));
     write("\n");
     return 0;

@@ -27,9 +27,9 @@ Import the names you call. The compiler resolves each call to an overload from t
 - `min` and `max` select one of two values.
 - `sqrt` applies the square-root helper to finite, non-negative input. It returns values up to one unchanged; see the function page for the exact range behavior.
 
-Each name has overloads for `integer`, `unsigned`, `int64` and `uint64`. `abs`, `clamp`, `min` and `max` also have `float` and `double` overloads. `sqrt` has `float` and `double` overloads only. Zlang has no implicit conversion between numeric types, so all arguments of a call must match the selected overload.
+Each name has overloads for `int32`, `uint32`, `int64` and `uint64`. `abs`, `clamp`, `min` and `max` also have `float` and `double` overloads. `sqrt` has `float` and `double` overloads only. Zlang has no implicit conversion between numeric types, so all arguments of a call must match the selected overload.
 
-Integer literals without a suffix have type `integer`. A `u`, `i64` or `u64` suffix selects the wider or unsigned type. A floating literal has type `double`; an `f` suffix selects `float`.
+Integer literals without a suffix have type `int32`. A `u` suffix selects `uint32`; `i64` and `u64` select the 64-bit types. A floating literal has type `double`; an `f` suffix selects `float`.
 
 ## Types
 

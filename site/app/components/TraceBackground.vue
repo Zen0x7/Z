@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const traces = [
-  { from: 'integer', to: 'int32_t', left: '6%', top: '26%', delay: 80 },
-  { from: 'unsigned', to: 'uint32_t', left: '78%', top: '27%', delay: 380 },
+  { from: 'int32', to: 'int32_t', left: '6%', top: '26%', delay: 80 },
+  { from: 'uint32', to: 'uint32_t', left: '78%', top: '27%', delay: 380 },
   { from: 'boolean', to: 'bool', left: '84%', top: '35%', delay: 680 },
   { from: 'string', to: 'zlang_string_t', left: '4%', top: '39%', delay: 980 },
   { from: 'array[10]', to: 'data_[10]', left: '68%', top: '73%', delay: 1280 },

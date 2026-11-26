@@ -37,13 +37,13 @@ import { max } from "@std/math";
 ## Signature
 
 ```zlang
-function max(clone integer left, clone integer right): integer
+function max(clone int32 left, clone int32 right): int32
 ```
 
 | Registry signature | C symbol | Activation macro |
 | --- | --- | --- |
-| `function max(clone integer left, clone integer right): integer` | `zlang_std_math_max_i32` | `ZLANG_STD_MATH_MAX_I32` |
-| `function max(clone unsigned left, clone unsigned right): unsigned` | `zlang_std_math_max_u32` | `ZLANG_STD_MATH_MAX_U32` |
+| `function max(clone int32 left, clone int32 right): int32` | `zlang_std_math_max_i32` | `ZLANG_STD_MATH_MAX_I32` |
+| `function max(clone uint32 left, clone uint32 right): uint32` | `zlang_std_math_max_u32` | `ZLANG_STD_MATH_MAX_U32` |
 | `function max(clone int64 left, clone int64 right): int64` | `zlang_std_math_max_i64` | `ZLANG_STD_MATH_MAX_I64` |
 | `function max(clone uint64 left, clone uint64 right): uint64` | `zlang_std_math_max_u64` | `ZLANG_STD_MATH_MAX_U64` |
 | `function max(clone float left, clone float right): float` | `zlang_std_math_max_f32` | `ZLANG_STD_MATH_MAX_F32` |
@@ -53,7 +53,7 @@ function max(clone integer left, clone integer right): integer
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
-| `left` | one of `integer`, `unsigned`, `int64`, `uint64`, `float`, `double` | clone | First candidate |
+| `left` | one of `int32`, `uint32`, `int64`, `uint64`, `float`, `double` | clone | First candidate |
 | `right` | same type as `left` | clone | Second candidate |
 
 Both arguments must have the same type. No capacity is required.
@@ -93,7 +93,7 @@ zlang_std_math_max_i32(2, 3);
 import { write } from "@std/io";
 import { max } from "@std/math";
 
-function main(): integer {
+function main(): int32 {
     write(max(2, 3));
     write("\n");
     return 0;

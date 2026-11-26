@@ -1,6 +1,6 @@
 import { write } from "@std/io";
 struct Point {
-    integer x;
+    int32 x;
 }
 
 function make(): Point {
@@ -9,11 +9,11 @@ function make(): Point {
     return result;
 }
 
-function shift(reference Point point, clone integer amount) {
+function shift(reference Point point, clone int32 amount) {
     point.x = point.x + amount;
 }
 
-function main(): integer {
+function main(): int32 {
     Point point = make();
     shift(point, 4);
 

@@ -34,7 +34,7 @@ No function in this domain parses `--name=value` syntax or allocates storage.
 `main` receives the view through its two implicit host parameters:
 
 ```zlang
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     return 0;
 }
 ```

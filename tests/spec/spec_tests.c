@@ -198,7 +198,7 @@ static void reports_lexer_diagnostics_and_emits_while(zlang_test_context_t *cons
     zlang_spec_session_t _invalid_character_session;
     zlang_spec_session_t _while_session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid_character_session, "integer var = @;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid_character_session, "int32 var = @;"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_invalid_character_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_INVALID_CHARACTER));
 
@@ -209,7 +209,7 @@ static void reports_lexer_diagnostics_and_emits_while(zlang_test_context_t *cons
 static void preserves_comments_and_unescapes_strings(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "// first line\ninteger var = 10; /* block */\nwrite(\"say \\\"hi\\\"\");";
+        "// first line\nint32 var = 10; /* block */\nwrite(\"say \\\"hi\\\"\");";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, ZLANG_SPEC_SCALAR_EXPECTED) != NULL);
@@ -225,7 +225,7 @@ static void attaches_comments_to_source_constructs(zlang_test_context_t *const c
     zlang_spec_session_t _session;
     const char *const _source_k = "// function note\n"
                                   "\n"
-                                  "function abc(): integer {\n"
+                                  "function abc(): int32 {\n"
                                   "    // body note\n"
                                   "    // second body note\n"
                                   "    return 1;\n"
@@ -233,10 +233,10 @@ static void attaches_comments_to_source_constructs(zlang_test_context_t *const c
                                   "// struct note\n"
                                   "struct A {\n"
                                   "    // field note\n"
-                                  "    integer x;\n"
+                                  "    int32 x;\n"
                                   "    /* field block\n"
                                   "       second line */\n"
-                                  "    integer y;\n"
+                                  "    int32 y;\n"
                                   "}\n"
                                   "// enum note\n"
                                   "enum E {\n"
@@ -265,7 +265,7 @@ static void attaches_comments_to_source_constructs(zlang_test_context_t *const c
 static void rejects_a_duplicate_declaration(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = 10; integer var = 20;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = 10; int32 var = 20;"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION));
     ZLANG_CHECK(context, _session.output_[0] == '\0');
@@ -274,7 +274,7 @@ static void rejects_a_duplicate_declaration(zlang_test_context_t *const context)
 static void rejects_an_undefined_initializer(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = missing;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = missing;"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER));
     ZLANG_CHECK(context, _session.output_[0] == '\0');
@@ -283,7 +283,7 @@ static void rejects_an_undefined_initializer(zlang_test_context_t *const context
 static void rejects_a_type_mismatch(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = \"text\";"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = \"text\";"));
     ZLANG_CHECK(context,
                 zlang_diagnostics_contains(&_session.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
     ZLANG_CHECK(context, _session.output_[0] == '\0');
@@ -336,10 +336,10 @@ static void emits_functions_with_user_defined_types(zlang_test_context_t *const 
 static void passes_complex_function_arguments(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "struct Point { integer x; integer y; }\n"
-        "const integer base = 2;\n"
+        "struct Point { int32 x; int32 y; }\n"
+        "const int32 base = 2;\n"
         "array[2] Point points;\n"
-        "function add(clone integer left, clone integer right): integer { return left + right; }\n"
+        "function add(clone int32 left, clone int32 right): int32 { return left + right; }\n"
         "Point origin;\n"
         "points[0].x = 9;\n"
         "points[0].y = add(points[0].x, base);";
@@ -351,8 +351,8 @@ static void passes_complex_function_arguments(zlang_test_context_t *const contex
 
 static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Point { integer x; }\n"
-                                  "array[4] integer values;\n"
+    const char *const _source_k = "struct Point { int32 x; }\n"
+                                  "array[4] int32 values;\n"
                                   "values[0] = 1;\n"
                                   "array[2] Point points;\n"
                                   "Point origin;\n"
@@ -368,7 +368,7 @@ static void emits_temporaries_without_synthetic_blocks(zlang_test_context_t *con
 
 static void reuses_field_pointers_contextually(zlang_test_context_t *const context) {
     zlang_spec_session_t _reuse;
-    const char *const _reuse_source_k = "struct Point { integer x; integer y; }\n"
+    const char *const _reuse_source_k = "struct Point { int32 x; int32 y; }\n"
                                         "array[2] Point points;\n"
                                         "Point origin;\n"
                                         "points[0].x = 9;\n"
@@ -381,10 +381,10 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
     ZLANG_CHECK(context, strstr(_reuse.output_, "->y_ = 3;") != NULL);
 
     zlang_spec_session_t _invalidate;
-    const char *const _invalidate_source_k = "struct Point { integer x; }\n"
+    const char *const _invalidate_source_k = "struct Point { int32 x; }\n"
                                              "array[2] Point points;\n"
                                              "Point origin;\n"
-                                             "unsigned index = 0U;\n"
+                                             "uint32 index = 0U;\n"
                                              "points[index].x = 1;\n"
                                              "index = 1U;\n"
                                              "points[index].x = 2;";
@@ -397,7 +397,7 @@ static void reuses_field_pointers_contextually(zlang_test_context_t *const conte
 
 static void reuses_index_values_across_if_branches(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[4] integer values = {1, 2, 3};\n"
+    const char *const _source_k = "array[4] int32 values = {1, 2, 3};\n"
                                   "if (values[0] > 3) {\n"
                                   "    write(\"big\");\n"
                                   "} else if (values[0] == 3) {\n"
@@ -419,7 +419,7 @@ static void reuses_index_values_across_if_branches(zlang_test_context_t *const c
 static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "boolean ready = true;\n"
-                                  "array[4] integer values = {1};\n"
+                                  "array[4] int32 values = {1};\n"
                                   "boolean ok = ready || values[0] == 1;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -430,16 +430,16 @@ static void keeps_short_circuit_index_reads_inline(zlang_test_context_t *const c
 static void emits_parameter_qualifiers(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "struct Point { integer x; }\n"
-        "function bump(reference Point point, clone integer amount) {\n"
+        "struct Point { int32 x; }\n"
+        "function bump(reference Point point, clone int32 amount) {\n"
         "    point.x = point.x + amount;\n"
         "}\n"
-        "function add_to(reference integer value, const clone integer amount) {\n"
+        "function add_to(reference int32 value, const clone int32 amount) {\n"
         "    value = value + amount;\n"
         "}\n"
         "Point origin;\n"
         "origin.x = 1;\n"
-        "integer total = 1;\n"
+        "int32 total = 1;\n"
         "bump(origin, 2);\n"
         "add_to(total, 2);";
 
@@ -461,14 +461,14 @@ static void emits_parameter_qualifiers(zlang_test_context_t *const context) {
 static void rejects_missing_parameter_qualifier(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     ZLANG_CHECK(context,
-                !zlang_spec_transpile(&_session, "function bad(integer value): void { return; }"));
+                !zlang_spec_transpile(&_session, "function bad(int32 value): void { return; }"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT));
 }
 
 static void rejects_mutation_of_const_parameter(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Point { integer x; }\n"
+    const char *const _source_k = "struct Point { int32 x; }\n"
                                   "function bad(const reference Point point) { point.x = 1; }";
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -477,7 +477,7 @@ static void rejects_mutation_of_const_parameter(zlang_test_context_t *const cont
 
 static void rejects_non_lvalue_reference_argument(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "function bad(reference integer value) { return; }\n"
+    const char *const _source_k = "function bad(reference int32 value) { return; }\n"
                                   "bad(1);";
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -487,7 +487,7 @@ static void rejects_non_lvalue_reference_argument(zlang_test_context_t *const co
 static void warns_about_unnecessary_references(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "function read(const reference integer value): integer { return value; }\n"
+        "function read(const reference int32 value): int32 { return value; }\n"
         "function unused(reference boolean flag) { return; }";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -497,7 +497,7 @@ static void warns_about_unnecessary_references(zlang_test_context_t *const conte
 
 static void accepts_mutated_scalar_reference(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "function bump(reference integer value) { value = value + 1; }";
+    const char *const _source_k = "function bump(reference int32 value) { value = value + 1; }";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_count_diagnostics(
@@ -506,9 +506,9 @@ static void accepts_mutated_scalar_reference(zlang_test_context_t *const context
 
 static void emits_fixed_multidimensional_arrays(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[2][3] integer grid;\n"
+    const char *const _source_k = "array[2][3] int32 grid;\n"
                                   "grid[1][2] = 7;\n"
-                                  "integer value = grid[1][2];";
+                                  "int32 value = grid[1][2];";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_gen_array_offset_2") != NULL);
@@ -526,7 +526,7 @@ static void emits_fixed_multidimensional_arrays(zlang_test_context_t *const cont
 
 static void rejects_source_array_helpers(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[2][3] integer grid;\n"
+    const char *const _source_k = "array[2][3] int32 grid;\n"
                                   "array_set(grid, {1, 2}, 7);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
@@ -536,9 +536,9 @@ static void rejects_source_array_helpers(zlang_test_context_t *const context) {
 
 static void infers_local_array_shape(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array integer grid;\n"
-                                  "for (integer row = 0; row < 2; row += 1) {\n"
-                                  "    for (integer col = 0; col < 3; col += 1) {\n"
+    const char *const _source_k = "array int32 grid;\n"
+                                  "for (int32 row = 0; row < 2; row += 1) {\n"
+                                  "    for (int32 col = 0; col < 3; col += 1) {\n"
                                   "        grid[row][col] = row + col;\n"
                                   "    }\n"
                                   "}";
@@ -556,8 +556,8 @@ static void infers_array_function_shape(zlang_test_context_t *const context) {
                                   "    array result;\n"
                                   "    return result;\n"
                                   "}\n"
-                                  "array[2][3] integer grid;\n"
-                                  "array[2][3] integer copied = abc(grid);";
+                                  "array[2][3] int32 grid;\n"
+                                  "array[2][3] int32 copied = abc(grid);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -574,8 +574,8 @@ static void infers_array_function_shape(zlang_test_context_t *const context) {
 
 static void rejects_unknown_array_extent(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "integer index = 1;\n"
-                                  "array integer values;\n"
+    const char *const _source_k = "int32 index = 1;\n"
+                                  "array int32 values;\n"
                                   "values[index] = 3;";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
@@ -585,7 +585,7 @@ static void rejects_unknown_array_extent(zlang_test_context_t *const context) {
 
 static void emits_nested_array_initializer(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array integer grid = {{1, 2, 3}, {4, 5, 6}};";
+    const char *const _source_k = "array int32 grid = {{1, 2, 3}, {4, 5, 6}};";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "ZLANG_GRID_EXTENT_0 2U") != NULL);
@@ -595,7 +595,7 @@ static void emits_nested_array_initializer(zlang_test_context_t *const context) 
 
 static void rejects_const_array_write(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "const array[3] integer values = {1, 2, 3};\n"
+    const char *const _source_k = "const array[3] int32 values = {1, 2, 3};\n"
                                   "values[1] = 9;";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
@@ -605,8 +605,8 @@ static void rejects_const_array_write(zlang_test_context_t *const context) {
 
 static void emits_whole_array_copy(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[3] integer source = {1, 2, 3};\n"
-                                  "array[3] integer target = {0, 0, 0};\n"
+    const char *const _source_k = "array[3] int32 source = {1, 2, 3};\n"
+                                  "array[3] int32 target = {0, 0, 0};\n"
                                   "target = source;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
@@ -616,8 +616,8 @@ static void emits_whole_array_copy(zlang_test_context_t *const context) {
 
 static void emits_multidimensional_foreach(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[2][3] integer grid = {{1, 2, 3}, {4, 5, 6}};\n"
-                                  "integer total = 0;\n"
+    const char *const _source_k = "array[2][3] int32 grid = {{1, 2, 3}, {4, 5, 6}};\n"
+                                  "int32 total = 0;\n"
                                   "foreach (row, col in grid) {\n"
                                   "    total += grid[row][col];\n"
                                   "}";
@@ -630,10 +630,10 @@ static void emits_multidimensional_foreach(zlang_test_context_t *const context) 
 
 static void emits_array_record_field_access(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Matrix { array[2][3] integer cells; }\n"
+    const char *const _source_k = "struct Matrix { array[2][3] int32 cells; }\n"
                                   "Matrix matrix;\n"
                                   "matrix.cells[1][2] = 7;\n"
-                                  "integer value = matrix.cells[1][2];";
+                                  "int32 value = matrix.cells[1][2];";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_gen_array_i32_2_3_t cells_;") != NULL);
@@ -651,10 +651,10 @@ static void emits_multiple_array_specializations(zlang_test_context_t *const con
                                   "    array result;\n"
                                   "    return result;\n"
                                   "}\n"
-                                  "array[2][3] integer grid;\n"
-                                  "array[2][3] integer copied = stamp(grid);\n"
-                                  "array[4] integer line;\n"
-                                  "array[4] integer copied2 = stamp(line);";
+                                  "array[2][3] int32 grid;\n"
+                                  "array[2][3] int32 copied = stamp(grid);\n"
+                                  "array[4] int32 line;\n"
+                                  "array[4] int32 copied2 = stamp(line);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "app_fn_stamp_2_3_i32") != NULL);
@@ -665,8 +665,8 @@ static void emits_multiple_array_specializations(zlang_test_context_t *const con
 static void emits_three_dimensional_arrays(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "array[2][2][2] integer cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};\n"
-        "integer sum = 0;\n"
+        "array[2][2][2] int32 cube = {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}};\n"
+        "int32 sum = 0;\n"
         "foreach (i, j, k in cube) {\n"
         "    sum += cube[i][j][k];\n"
         "}";
@@ -680,11 +680,11 @@ static void emits_three_dimensional_arrays(zlang_test_context_t *const context) 
 
 static void emits_four_dimensional_arrays(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "array[2][2][2][2] integer hyper = {\n"
+    const char *const _source_k = "array[2][2][2][2] int32 hyper = {\n"
                                   "    {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},\n"
                                   "    {{{9, 10}, {11, 12}}, {{13, 14}, {15, 16}}}\n"
                                   "};\n"
-                                  "integer sum = 0;\n"
+                                  "int32 sum = 0;\n"
                                   "foreach (a, b, c, d in hyper) {\n"
                                   "    sum += hyper[a][b][c][d];\n"
                                   "}";
@@ -698,8 +698,8 @@ static void emits_four_dimensional_arrays(zlang_test_context_t *const context) {
 }
 
 static void rejects_reserved_identifiers(zlang_test_context_t *const context) {
-    static const char *const sources_k[] = {
-        "integer zlang_value = 1;", "integer zlang_gen_value = 1;", "integer ZLANG_VALUE = 1;"};
+    static const char *const sources_k[] = {"int32 zlang_value = 1;", "int32 zlang_gen_value = 1;",
+                                            "int32 ZLANG_VALUE = 1;"};
     for (size_t _index = 0U; _index < sizeof(sources_k) / sizeof(sources_k[0]); ++_index) {
         zlang_spec_session_t _session;
         ZLANG_CHECK(context, !zlang_spec_transpile(&_session, sources_k[_index]));
@@ -736,14 +736,14 @@ static void covers_every_annex_a_production(zlang_test_context_t *const context)
 static void reports_syntax_diagnostics_with_source_locations(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var 10;"));
-    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, 1U, 13U);
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var 10;"));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, 1U, 11U);
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "write(\"oops);"));
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNTERMINATED_STRING, 1U, 7U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = @;"));
-    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_INVALID_CHARACTER, 1U, 15U);
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = @;"));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_INVALID_CHARACTER, 1U, 13U);
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "break;"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
@@ -754,22 +754,22 @@ static void
 reports_type_and_resource_diagnostics_with_source_locations(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = 99999999999999999999;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = 99999999999999999999;"));
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, 1U,
-                                 15U);
+                                 13U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = 10; integer var = 20;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = 10; int32 var = 20;"));
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, 1U,
-                                 19U);
+                                 17U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = missing;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = missing;"));
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, 1U,
-                                 15U);
+                                 13U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer var = \"text\";"));
-    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 15U);
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 var = \"text\";"));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, 1U, 13U);
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[] integer values;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[] int32 values;"));
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE, 1U, 1U);
 }
 
@@ -851,11 +851,10 @@ static void renames_sibling_scope_declarations(zlang_test_context_t *const conte
 static void rejects_a_shadowed_declaration(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context,
-                !zlang_spec_transpile(&_session, "integer outer = 1; { integer outer = 2; }"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 outer = 1; { int32 outer = 2; }"));
     ZLANG_CHECK(context, _session.diagnostics_.count_ == 1U);
     zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_SHADOWED_DECLARATION, 1U,
-                                 22U);
+                                 20U);
 }
 
 static void rejects_variable_concatenation_without_capacity(zlang_test_context_t *const context) {
@@ -877,7 +876,7 @@ static void warns_about_unused_explicit_capacity(zlang_test_context_t *const con
 static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[2] integer values = {1, 2, 3};"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[2] int32 values = {1, 2, 3};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_INITIALIZER_TOO_LONG));
 }
@@ -885,7 +884,7 @@ static void rejects_an_initializer_longer_than_capacity(zlang_test_context_t *co
 static void rejects_an_empty_inferred_array(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[] integer values = {};"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "array[] int32 values = {};"));
     ZLANG_CHECK(context, zlang_diagnostics_contains(&_session.diagnostics_,
                                                     ZLANG_DIAGNOSTIC_UNBOUNDED_SEQUENCE));
 }
@@ -960,8 +959,8 @@ static void validates_return_types(zlang_test_context_t *const context) {
     zlang_spec_session_t _valid;
     zlang_spec_session_t _invalid;
 
-    ZLANG_CHECK(context, zlang_spec_transpile(&_valid, "function pick(): integer { return 1; }"));
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid, "function pick(): integer { return; }"));
+    ZLANG_CHECK(context, zlang_spec_transpile(&_valid, "function pick(): int32 { return 1; }"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_invalid, "function pick(): int32 { return; }"));
     ZLANG_CHECK(context,
                 zlang_diagnostics_contains(&_invalid.diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH));
 }
@@ -1154,19 +1153,20 @@ static void emits_io_read_calls(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { read, read_line } from \"@std/io\";\n"
                                   "string[16] line;\n"
-                                  "integer a = read_line(line);\n"
-                                  "integer b = read(line);";
+                                  "Result<int32, Status> a = read_line(line);\n"
+                                  "Result<int32, Status> b = read(line);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read_line(") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_status_t") != NULL);
 }
 
 static void rejects_read_without_bounded_string(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { read } from \"@std/io\";\n"
                                   "string view = \"x\";\n"
-                                  "integer n = read(view);";
+                                  "Result<int32, Status> n = read(view);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -1192,8 +1192,8 @@ static bool zlang_spec_transpile_tto(zlang_spec_session_t *session, const char *
 static void folds_proven_loop_indices(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"
-                                  "array[10] integer values;\n"
-                                  "for (integer index = 2; index < 10; index += 1) {\n"
+                                  "array[10] int32 values;\n"
+                                  "for (int32 index = 2; index < 10; index += 1) {\n"
                                   "    values[index] = values[index - 1] + values[index - 2];\n"
                                   "}";
 
@@ -1206,8 +1206,8 @@ static void folds_proven_loop_indices(zlang_test_context_t *const context) {
 static void materializes_proven_nested_reads(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"
-                                  "array[10] integer values;\n"
-                                  "for (integer index = 2; index < 10; index += 1) {\n"
+                                  "array[10] int32 values;\n"
+                                  "for (int32 index = 2; index < 10; index += 1) {\n"
                                   "    values[index] = values[index - 1] + values[index - 2];\n"
                                   "}";
 
@@ -1220,9 +1220,9 @@ static void materializes_proven_nested_reads(zlang_test_context_t *const context
 static void keeps_unproven_bounds_traps(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { write } from \"@std/io\";\n"
-                                  "array[4] integer values;\n"
-                                  "integer limit = 6;\n"
-                                  "for (integer index = 0; index < limit; index += 1) {\n"
+                                  "array[4] int32 values;\n"
+                                  "int32 limit = 6;\n"
+                                  "for (int32 index = 0; index < limit; index += 1) {\n"
                                   "    values[index] = 1;\n"
                                   "}";
 
@@ -1232,14 +1232,13 @@ static void keeps_unproven_bounds_traps(zlang_test_context_t *const context) {
 
 static void emits_struct_constructor_and_methods(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k =
-        "struct Counter {\n"
-        "    integer value;\n"
-        "    constructor(clone integer initial) { value = initial; }\n"
-        "    function increment(): integer { value += 1; return value; }\n"
-        "}\n"
-        "Counter counter = Counter(1);\n"
-        "integer result = counter.increment();";
+    const char *const _source_k = "struct Counter {\n"
+                                  "    int32 value;\n"
+                                  "    constructor(clone int32 initial) { value = initial; }\n"
+                                  "    function increment(): int32 { value += 1; return value; }\n"
+                                  "}\n"
+                                  "Counter counter = Counter(1);\n"
+                                  "int32 result = counter.increment();";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_construct") != NULL);
@@ -1250,8 +1249,8 @@ static void emits_struct_constructor_and_methods(zlang_test_context_t *const con
 static void emits_static_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Counter {\n"
-                                  "    integer value;\n"
-                                  "    constructor(clone integer initial) { value = initial; }\n"
+                                  "    int32 value;\n"
+                                  "    constructor(clone int32 initial) { value = initial; }\n"
                                   "    static function zero(): Counter { return Counter(0); }\n"
                                   "}\n"
                                   "Counter counter = Counter.zero();";
@@ -1263,8 +1262,8 @@ static void emits_static_struct_method(zlang_test_context_t *const context) {
 static void rejects_method_field_name_conflict(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Counter {\n"
-                                  "    integer value;\n"
-                                  "    function value(): integer { return 1; }\n"
+                                  "    int32 value;\n"
+                                  "    function value(): int32 { return 1; }\n"
                                   "}";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
@@ -1283,7 +1282,7 @@ static void rejects_print_keyword(zlang_test_context_t *const context) {
 static void rejects_mixed_numeric_addition(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "integer value = 1 + 2U;"));
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, "int32 value = 1 + 2U;"));
     ZLANG_CHECK(context,
                 zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
 }
@@ -1314,19 +1313,19 @@ static void rejects_string_ordering(zlang_test_context_t *const context) {
 static void emits_checked_unary_negation(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
 
-    ZLANG_CHECK(context, zlang_spec_transpile(&_session, "integer counter = 3;\n"
-                                                         "integer value = -counter;"));
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, "int32 counter = 3;\n"
+                                                         "int32 value = -counter;"));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_neg_i32(app_local_counter)") != NULL);
 }
 
 static void emits_math_overloads(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { abs, clamp, min, max, sqrt } from \"@std/math\";\n"
-                                  "integer a = abs(3);\n"
+                                  "int32 a = abs(3);\n"
                                   "double b = sqrt(9.0);\n"
-                                  "integer c = clamp(7, 1, 5);\n"
-                                  "integer d = min(2, 3);\n"
-                                  "integer e = max(2, 3);";
+                                  "int32 c = clamp(7, 1, 5);\n"
+                                  "int32 d = min(2, 3);\n"
+                                  "int32 e = max(2, 3);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_math_abs_i32(3)") != NULL);
@@ -1340,7 +1339,7 @@ static void emits_strings_api(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
         "import { compare, contains, starts_with } from \"@std/strings\";\n"
-        "integer a = compare(\"a\", \"b\");\n"
+        "int32 a = compare(\"a\", \"b\");\n"
         "boolean b = contains(\"abc\", \"b\");\n"
         "boolean c = starts_with(\"abc\", \"a\");";
 
@@ -1376,7 +1375,7 @@ static void emits_wide_and_floating_primitives(zlang_test_context_t *const conte
 
 static void emits_explicit_numeric_conversions(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "integer truncated = to_integer(3.75);\n"
+    const char *const _source_k = "int32 truncated = to_int32(3.75);\n"
                                   "double widened = to_double(7);\n"
                                   "int64 signed_value = to_int64(9U);\n"
                                   "float narrowed = to_float(widened);";
@@ -1390,7 +1389,7 @@ static void emits_explicit_numeric_conversions(zlang_test_context_t *const conte
 
 static void rejects_implicit_numeric_conversion(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "integer value = 2.5;";
+    const char *const _source_k = "int32 value = 2.5;";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -1404,10 +1403,10 @@ static void rejects_index_outside_inferred_shape(zlang_test_context_t *const con
                                   "    result[9] = 1;\n"
                                   "    return result;\n"
                                   "}\n"
-                                  "array[2] integer small;\n"
-                                  "array[4] integer large;\n"
-                                  "array[2] integer a = stamp(small);\n"
-                                  "array[4] integer b = stamp(large);";
+                                  "array[2] int32 small;\n"
+                                  "array[4] int32 large;\n"
+                                  "array[2] int32 a = stamp(small);\n"
+                                  "array[4] int32 b = stamp(large);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -1444,10 +1443,10 @@ static void reuses_repeated_index_reads(zlang_test_context_t *const context) {
 static void emits_struct_inheritance_and_vtable(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "struct Shape { integer value; function area(): integer { return value; } }\n"
-        "struct Square : Shape { integer side; }\n"
+        "struct Shape { int32 value; function area(): int32 { return value; } }\n"
+        "struct Square : Shape { int32 side; }\n"
         "Square square;\n"
-        "integer result = square.value;";
+        "int32 result = square.value;";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "app_struct_shape_t zlang_base_") != NULL);
@@ -1459,11 +1458,11 @@ static void emits_struct_inheritance_and_vtable(zlang_test_context_t *const cont
 static void emits_dynamic_dispatch_call(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "struct Shape { integer value; function area(): integer { return value; } }\n"
-        "struct Square : Shape { integer side; function area(): integer { return side; } }\n"
-        "function describe(reference Shape shape): integer { return shape.area(); }\n"
+        "struct Shape { int32 value; function area(): int32 { return value; } }\n"
+        "struct Square : Shape { int32 side; function area(): int32 { return side; } }\n"
+        "function describe(reference Shape shape): int32 { return shape.area(); }\n"
         "Square square;\n"
-        "integer result = describe(square);";
+        "int32 result = describe(square);";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_slot_area_") != NULL);
@@ -1473,13 +1472,13 @@ static void emits_dynamic_dispatch_call(zlang_test_context_t *const context) {
 
 static void emits_trait_method_direct_call(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "trait Named requires integer value {\n"
-                                  "    function label(): integer { return value; }\n"
+    const char *const _source_k = "trait Named requires int32 value {\n"
+                                  "    function label(): int32 { return value; }\n"
                                   "}\n"
-                                  "struct Counter uses Named { integer value; }\n"
-                                  "function main(): integer {\n"
+                                  "struct Counter uses Named { int32 value; }\n"
+                                  "function main(): int32 {\n"
                                   "    Counter counter;\n"
-                                  "    integer result = counter.label();\n"
+                                  "    int32 result = counter.label();\n"
                                   "    return result;\n"
                                   "}";
 
@@ -1491,8 +1490,8 @@ static void emits_trait_method_direct_call(zlang_test_context_t *const context) 
 
 static void rejects_downcast(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Shape { integer value; }\n"
-                                  "struct Square : Shape { integer side; }\n"
+    const char *const _source_k = "struct Shape { int32 value; }\n"
+                                  "struct Square : Shape { int32 side; }\n"
                                   "Shape base;\n"
                                   "Square square = base;";
 
@@ -1504,8 +1503,8 @@ static void rejects_downcast(zlang_test_context_t *const context) {
 static void rejects_override_signature_mismatch(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k =
-        "struct Shape { function area(): integer { return 1; } }\n"
-        "struct Square : Shape { function area(clone integer scale): integer { return scale; } }";
+        "struct Shape { function area(): int32 { return 1; } }\n"
+        "struct Square : Shape { function area(clone int32 scale): int32 { return scale; } }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -1514,11 +1513,11 @@ static void rejects_override_signature_mismatch(zlang_test_context_t *const cont
 
 static void rejects_trait_override_of_inherited_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Base { function area(): integer { return 1; } }\n"
-                                  "trait Area requires integer value {\n"
-                                  "    function area(): integer { return value; }\n"
+    const char *const _source_k = "struct Base { function area(): int32 { return 1; } }\n"
+                                  "trait Area requires int32 value {\n"
+                                  "    function area(): int32 { return value; }\n"
                                   "}\n"
-                                  "struct Derived : Base uses Area { integer value; }";
+                                  "struct Derived : Base uses Area { int32 value; }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_find_diagnostic(
@@ -1527,13 +1526,13 @@ static void rejects_trait_override_of_inherited_method(zlang_test_context_t *con
 
 static void rejects_conflicting_trait_methods(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "trait Left requires integer value {\n"
-                                  "    function label(): integer { return value; }\n"
+    const char *const _source_k = "trait Left requires int32 value {\n"
+                                  "    function label(): int32 { return value; }\n"
                                   "}\n"
-                                  "trait Right requires integer value {\n"
-                                  "    function label(): integer { return value + 1; }\n"
+                                  "trait Right requires int32 value {\n"
+                                  "    function label(): int32 { return value + 1; }\n"
                                   "}\n"
-                                  "struct Both uses Left, Right { integer value; }";
+                                  "struct Both uses Left, Right { int32 value; }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_find_diagnostic(
@@ -1565,6 +1564,130 @@ static void emits_unbounded_polymorphic_metadata(zlang_test_context_t *const con
     ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_TYPE_B8 ") != NULL);
     ZLANG_CHECK(context,
                 strstr(_session.output_, "const zlang_vtable_a8_t zlang_vtable_b8") != NULL);
+}
+
+static void emits_generic_struct_specialization(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Pair<T, U> {\n"
+                                  "    T first;\n"
+                                  "    U second;\n"
+                                  "}\n"
+                                  "Pair<int32, boolean> pair;\n"
+                                  "pair.first = 7;\n"
+                                  "pair.second = true;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "typedef struct app_struct_pair_int32_boolean_t") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t first_;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "bool second_;") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_pair.first_ = 7;") != NULL);
+}
+
+static void emits_generic_function_specialization(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function identity<T>(clone T value): T {\n"
+                                  "    return value;\n"
+                                  "}\n"
+                                  "int32 result = identity<int32>(7);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t app_fn_identity_int32(") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_identity_int32(7)") != NULL);
+}
+
+static void rejects_generic_argument_count_mismatch(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Pair<T, U> { T first; U second; }\n"
+                                  "Pair<int32> pair;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_find_diagnostic(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) != NULL);
+}
+
+static void rejects_duplicate_generic_parameter(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Pair<T, T> {\n"
+                                  "    T first;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_find_diagnostic(
+                             &_session, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) != NULL);
+}
+
+static void emits_native_result_type(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "Result<int32, Status> result;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#define ZLANG_STD_RESULT") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_status_t") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "{ ZLANG_ZERO }") != NULL);
+}
+
+static void assigns_native_result_fields(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "Result<int32, Status> result;\n"
+                                  "result.code = STATUS_SUCCESS;\n"
+                                  "result.value = 9;";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "app_local_result.code_ = ZLANG_STD_STATUS_SUCCESS") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.value_ = 9") != NULL);
+}
+
+static void emits_stream_write_result(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { write } from \"@std/io\";\n"
+                                  "Result<int32, Status> response = write(STDERR, 7);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_write_i32_stream") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_stream_stderr()") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_result_i32_status_t") != NULL);
+}
+
+static void emits_stream_read_result(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "import { read } from \"@std/io\";\n"
+                                  "string[16] line;\n"
+                                  "Result<int32, Status> response = read(STDIN, line, 0U, 8U);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_read_stream") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_io_stream_stdin()") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "0U, 8U") != NULL);
+}
+
+static void emits_native_result_methods(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "Result<int32, Status> result;\n"
+                                  "boolean ok = result.is_ok();\n"
+                                  "int32 value = result.get();\n"
+                                  "string message = result.message();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_std_status_is_ok") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.value_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_local_result.what_") != NULL);
+}
+
+static void emits_generic_struct_method(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Box<T> {\n"
+                                  "    T value;\n"
+                                  "    function get(): T { return value; }\n"
+                                  "}\n"
+                                  "Box<int32> box;\n"
+                                  "box.value = 9;\n"
+                                  "int32 value = box.get();";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_box_int32_get") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "return self->value_;") != NULL);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

@@ -158,7 +158,7 @@ implemented.
 | `networking` | Sockets and protocols | `tcp_listener`, `tcp_connect`, `send_bytes`, `receive_bytes`, `close_socket` | resource-based, explicit close |
 | `system` | Process and environment access | `exit_process`, `args_count`, `arg_at`, `environment_get` | effectful, platform-dependent |
 
-`generate_float32` and `generate_float64` use the same deterministic PRNG as the integer generators.
+`generate_float32` and `generate_float64` use the same deterministic PRNG as the int32 generators.
 They produce values in `[from, to)` and trap on invalid or non-finite bounds. `cryptography` remains
 deferred until there is a stable security and entropy policy. `read` keeps the logical newline in the destination; `read_line` removes it. CRLF is normalized to LF so results are identical on every platform. `@std/strings` is the canonical string domain; `@std/text` is not part of the catalog. Avoid adding
 a domain before its capability has a clear boundary.
@@ -226,7 +226,7 @@ Each domain owns a registry file. Functions are registered declaratively:
 zlang_std_function(
     DOMAIN random
     NAME generate_int32
-    SIGNATURE "function generate_int32(clone integer from, clone integer to): integer"
+    SIGNATURE "function generate_int32(clone int32 from, clone int32 to): int32"
     C_SYMBOL zlang_std_random_generate_int32
     LIFECYCLE DRAFT
     SAFETY UNSAFE

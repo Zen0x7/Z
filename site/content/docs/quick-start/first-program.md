@@ -12,7 +12,7 @@ Write this to `hello.z`:
 ```zlang
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     write("Hello from Zlang");
     write("\n");
     return 0;
@@ -59,7 +59,7 @@ int32_t app_fn_main(void) {
 }
 ```
 
-`zlang_gen_literal_0` holds `"Hello from Zlang"` and `zlang_gen_literal_1` holds `"\n"`. `app_fn_main` comes from `function main(): integer`. The two `zlang_std_io_write_string` calls come from the example's string `write` calls; they do not define another function's behavior. See [Emitted C](/docs/compiler/emitted-c) for the full name mapping.
+`zlang_gen_literal_0` holds `"Hello from Zlang"` and `zlang_gen_literal_1` holds `"\n"`. `app_fn_main` comes from `function main(): int32`. The two `zlang_std_io_write_string` calls come from the example's string `write` calls; they do not define another function's behavior. See [Emitted C](/docs/compiler/emitted-c) for the full name mapping.
 
 ## See also
 

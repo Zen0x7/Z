@@ -4,7 +4,7 @@ Computes `gcd(1071, 462)` with Euclid's algorithm.
 
 This example exercises:
 
-- a function with two `clone integer` parameters;
+- a function with two `clone int32` parameters;
 - `while` iteration and a `return` value;
 - modulo and variable reassignment;
 - calling a user function inside `print`.

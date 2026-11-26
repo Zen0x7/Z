@@ -8,6 +8,6 @@ if(NOT exit_code EQUAL 3)
     message(FATAL_ERROR "expected exit code 3, got '${exit_code}'")
 endif()
 
-if(NOT error_output MATCHES ":1:15: error\\[ZLANG1003\\]: invalid character")
+if(NOT error_output MATCHES ":1:13: error\\[ZLANG1003\\]: invalid character")
     message(FATAL_ERROR "unexpected diagnostic output: '${error_output}'")
 endif()

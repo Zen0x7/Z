@@ -2,7 +2,7 @@
 title: Language
 description: Types, declarations, statements, functions, expressions and errors.
 navigation:
-  title: Language
+  title: Overview
 ---
 
 # Language
@@ -12,9 +12,9 @@ Zlang fixes types and capacities before it emits C. Arrays use an explicit capac
 ```zlang
 import { write } from "@std/io";
 
-function main(): integer {
-    array[4] integer values = {2, 4, 6, 8};
-    integer total = 0;
+function main(): int32 {
+    array[4] int32 values = {2, 4, 6, 8};
+    int32 total = 0;
 
     foreach (value in values) {
         total += value;

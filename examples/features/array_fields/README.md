@@ -1,6 +1,6 @@
 # Array fields
 
-Embeds a fixed `2 x 3` integer array inside a struct and accesses one of its cells.
+Embeds a fixed `2 x 3` int32 array inside a struct and accesses one of its cells.
 
 This example exercises:
 

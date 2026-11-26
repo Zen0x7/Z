@@ -92,7 +92,7 @@ int main(void) {
 import { write } from "@std/io";
 import { generate_int64 } from "@std/random";
 
-function main(): integer {
+function main(): int32 {
     int64 value = generate_int64(1i64, 6i64);
     write(value);
     write("\n");

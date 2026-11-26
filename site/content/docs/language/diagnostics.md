@@ -10,8 +10,8 @@ navigation:
 The compiler prints errors with a stable code and a source location. For this source:
 
 ```zlang
-function main(): integer {
-    integer value = 1 @ 2;
+function main(): int32 {
+    int32 value = 1 @ 2;
     return 0;
 }
 ```

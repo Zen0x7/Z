@@ -1,7 +1,7 @@
 import { write } from "@std/io";
 import { argument_count, argument_at, has_option, option_value, has_flag } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(argument_count(argv));
     write(" ");
     write(argument_at(argv, 1U));

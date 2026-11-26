@@ -1,6 +1,6 @@
 # Multidimensional arrays
 
-Sums every cell of rank-2, rank-3 and rank-4 integer arrays.
+Sums every cell of rank-2, rank-3 and rank-4 int32 arrays.
 
 This example exercises:
 

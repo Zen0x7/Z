@@ -19,7 +19,7 @@ Write `hello.z`:
 ```zlang
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     write("Hello from Zlang");
     write("\n");
     return 0;

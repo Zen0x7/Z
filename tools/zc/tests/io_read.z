@@ -1,18 +1,18 @@
 import { read, read_line, write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     string[16] line;
-    integer first = read_line(line);
+    Result<int32, Status> first = read_line(line);
     write(line);
     write("|");
-    write(first);
+    write(first.value);
     write("\n");
 
     string[16] raw;
-    integer second = read(raw);
+    Result<int32, Status> second = read(raw);
     write(raw);
     write("|");
-    write(second);
+    write(second.value);
     write("\n");
     return 0;
 }

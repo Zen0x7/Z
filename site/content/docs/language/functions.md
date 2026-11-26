@@ -10,11 +10,11 @@ navigation:
 A function has a name, parameters and an optional return type.
 
 ```zlang
-function add(clone integer left, clone integer right): integer {
+function add(clone int32 left, clone int32 right): int32 {
     return left + right;
 }
 
-function bump(reference integer value) {
+function bump(reference int32 value) {
     value += 1;
 }
 ```
@@ -32,7 +32,7 @@ A function without a return type emits `void`.
 `main` is the program entry point. Its parameters use implicit binding modes, so `clone` and `reference` are not written.
 
 ```zlang
-function main(): integer {
+function main(): int32 {
     return 0;
 }
 ```
@@ -40,7 +40,7 @@ function main(): integer {
 With host arguments:
 
 ```zlang
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     return 0;
 }
 ```

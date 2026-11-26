@@ -7,11 +7,12 @@ navigation:
 
 # Documentation
 
-Documentation is split into four guides and one reference section.
+Documentation is split into four guides and two reference sections.
 
 - [Overview](/docs/overview) explains what Zlang is and what it guarantees.
 - [Quick start](/docs/quick-start) builds the compiler and runs a program.
 - [Language](/docs/language) documents source syntax and semantics.
+- [Language specification](/docs/specification) is the normative contract for source and emitted C.
 - [Compiler](/docs/compiler) explains storage planning and emitted C.
 - [Standard library](/docs/standard-library) is the domain and function reference.
 

@@ -1,12 +1,12 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    integer scale = 100000;
-    integer total = 0;
-    integer denominator = 1;
+function main(): int32 {
+    int32 scale = 100000;
+    int32 total = 0;
+    int32 denominator = 1;
     boolean add_term = true;
 
-    for (integer index = 0; index < 200000; index += 1) {
+    for (int32 index = 0; index < 200000; index += 1) {
         if (add_term) {
             total += (4 * scale) / denominator;
         } else {

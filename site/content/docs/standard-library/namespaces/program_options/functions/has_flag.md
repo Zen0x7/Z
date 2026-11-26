@@ -92,7 +92,7 @@ zlang_std_program_options_has_flag(app_param_argv, zlang_gen_literal_2);
 import { write } from "@std/io";
 import { argument_count, has_flag } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(has_flag(argv, "--verbose"));
     write("\n");
     return 0;

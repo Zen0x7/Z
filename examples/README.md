@@ -33,7 +33,7 @@ arrays and functions together.
 | [fizzbuzz](algorithms/fizzbuzz/) | `else if` chains, modulo, scalar printing |
 | [gcd](algorithms/gcd/) | functions, `clone` parameters, `while`, `return` |
 | [matrix_multiply](algorithms/matrix_multiply/) | 2D arrays, nested loops, multidimensional `foreach` |
-| [pi](algorithms/pi/) | integer-only approximation, boolean toggle |
+| [pi](algorithms/pi/) | int32-only approximation, boolean toggle |
 | [sieve](algorithms/sieve/) | boolean arrays, nested loops, prime marking |
 | [sum_of_squares](algorithms/sum_of_squares/) | `foreach`, checked arithmetic |
 
@@ -43,7 +43,7 @@ Small programs focused on one construct or a tight group of related constructs.
 
 | Example | Exercises |
 | --- | --- |
-| [arithmetic](features/arithmetic/) | signed and unsigned arithmetic, compound assignment |
+| [arithmetic](features/arithmetic/) | signed and uint32 arithmetic, compound assignment |
 | [array_fields](features/array_fields/) | arrays embedded in structs |
 | [arrays_1d](features/arrays_1d/) | fixed 1D arrays, indexed writes, `foreach` |
 | [arrays_const_copy](features/arrays_const_copy/) | `const` arrays, whole-array copy |
@@ -64,6 +64,7 @@ Small programs focused on one construct or a tight group of related constructs.
 | [strings](features/strings/) | folding, bounded strings and string indexing |
 | [struct_methods](features/struct_methods/) | structs, constructors, implicit receiver and static methods |
 | [inheritance_traits](features/inheritance_traits/) | inheritance, virtual dispatch and static traits |
+| [generics](features/generics/) | generic structs and functions, compile-time monomorphization |
 
 ## Regenerating a golden
 

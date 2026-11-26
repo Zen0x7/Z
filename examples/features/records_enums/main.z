@@ -1,7 +1,7 @@
 import { write } from "@std/io";
 struct Point {
-    integer x;
-    integer y;
+    int32 x;
+    int32 y;
 }
 
 enum Color {
@@ -10,7 +10,7 @@ enum Color {
     BLUE
 }
 
-function main(): integer {
+function main(): int32 {
     Point point;
     point.x = 3;
     point.y = 4;
@@ -20,7 +20,7 @@ function main(): integer {
     write(" ");
     write(point.y);
     write(" ");
-    write(to_integer(color));
+    write(to_int32(color));
     write("\n");
 
     return 0;

@@ -6,10 +6,10 @@ const total = 4
 
 const presentationCode = String.raw`import { write } from "@std/io";
 
-function main(): integer {
-    array[10] integer fib = {0, 1};
+function main(): int32 {
+    array[10] int32 fib = {0, 1};
 
-    for (integer index = 2; index < 10; index += 1) {
+    for (int32 index = 2; index < 10; index += 1) {
         fib[index] = fib[index - 1] + fib[index - 2];
     }
 
@@ -22,9 +22,9 @@ function main(): integer {
     return 0;
 }`
 
-const buildSource = String.raw`array[10] integer fib = {0, 1};
+const buildSource = String.raw`array[10] int32 fib = {0, 1};
 
-for (integer index = 2; index < 10; index += 1) {
+for (int32 index = 2; index < 10; index += 1) {
     fib[index] = fib[index - 1] + fib[index - 2];
 }
 

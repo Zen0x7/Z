@@ -1,6 +1,7 @@
 add_library(zlang_compiler_core STATIC
     src/diagnostics.c
     src/emitter.c
+    src/generics.c
     src/lexer.c
     src/optimizer.c
     src/parser.c

@@ -1,1 +1,1 @@
-integer var = 10;
+int32 var = 10;

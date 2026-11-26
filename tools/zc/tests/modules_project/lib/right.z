@@ -1,5 +1,5 @@
-integer shared = 20;
+int32 shared = 20;
 
-function right_value(): integer {
+function right_value(): int32 {
     return shared;
 }

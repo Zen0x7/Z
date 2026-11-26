@@ -1,8 +1,8 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    integer value = 27;
-    integer steps = 0;
+function main(): int32 {
+    int32 value = 27;
+    int32 steps = 0;
 
     while (value != 1) {
         if (value % 2 == 0) {

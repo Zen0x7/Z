@@ -38,7 +38,7 @@ cmake --build build-asan
 ctest --test-dir build-asan --output-on-failure
 ```
 
-Supported modes are `address`, `undefined`, `thread`, `leak`, `integer`, `cfi` and `hwaddress`. MSAN is intentionally excluded because it requires an instrumented standard library. Do not combine sanitizer modes in one build.
+Supported modes are `address`, `undefined`, `thread`, `leak`, `int32`, `cfi` and `hwaddress`. MSAN is intentionally excluded because it requires an instrumented standard library. Do not combine sanitizer modes in one build.
 
 ## Coverage
 

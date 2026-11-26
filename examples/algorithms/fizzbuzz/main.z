@@ -1,7 +1,7 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    for (integer value = 1; value <= 15; value += 1) {
+function main(): int32 {
+    for (int32 value = 1; value <= 15; value += 1) {
         if (value % 15 == 0) {
             write("fizzbuzz");
         } else if (value % 3 == 0) {

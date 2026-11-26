@@ -90,7 +90,7 @@ zlang_std_strings_contains(zlang_gen_literal_0, zlang_gen_literal_1);
 import { contains } from "@std/strings";
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     write(contains("abc", "b"));
     write("\n");
     write(contains("abc", "z"));

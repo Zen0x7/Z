@@ -4,8 +4,8 @@ Calls a function that returns a value and another function that mutates a caller
 
 This example exercises:
 
-- `clone integer` parameters and an integer return type;
-- a `reference integer` parameter;
+- `clone int32` parameters and an int32 return type;
+- a `reference int32` parameter;
 - compound assignment through a dereferenced pointer in generated C;
 - calling both functions from `main`.
 

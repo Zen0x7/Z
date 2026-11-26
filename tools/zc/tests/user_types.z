@@ -1,6 +1,6 @@
 struct Point {
-    integer x;
-    integer y;
+    int32 x;
+    int32 y;
 }
 enum Color {
     RED,
@@ -16,7 +16,7 @@ function paint(clone Point value, clone Color color): Point {
     value.x = 2;
     return value;
 }
-function shift(reference Point point, clone integer amount) {
+function shift(reference Point point, clone int32 amount) {
     point.x = point.x + amount;
 }
 Point made = make();

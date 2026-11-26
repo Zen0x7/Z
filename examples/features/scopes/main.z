@@ -1,10 +1,10 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    integer outer = 1;
+function main(): int32 {
+    int32 outer = 1;
 
     {
-        integer inner = 2;
+        int32 inner = 2;
         write(outer);
         write(" ");
         write(inner);

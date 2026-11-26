@@ -15,21 +15,21 @@ Zlang has native loops and block statements. It has no callback-based iteration.
 | `while (...)` | Repeat while a condition holds |
 | `for (init; condition; update)` | Count with an explicit loop |
 | `foreach (item in values)` | Walk an array |
-| `foreach (index, item in values)` | Walk with an `unsigned` index |
+| `foreach (index, item in values)` | Walk with an `uint32` index |
 | `repeat (count)` | Run a counted loop |
 | `break;` / `continue;` | Leave or skip part of a loop |
 | `return` / `return value;` | Leave a function |
 | `name = value;` | Assign a value |
 
-Conditions for `if`, `while` and `for` must be `boolean`. `repeat` takes an `unsigned` count.
+Conditions for `if`, `while` and `for` must be `boolean`. `repeat` takes an `uint32` count.
 
 ## Example
 
 ```zlang
 import { write } from "@std/io";
 
-function main(): integer {
-    for (integer index = 0; index < 3; index += 1) {
+function main(): int32 {
+    for (int32 index = 0; index < 3; index += 1) {
         if (index == 1) {
             continue;
         }

@@ -3,7 +3,10 @@
  */
 
 #include "zlang/compiler/parser.h"
+#include "zlang/compiler/generics.h"
+#include "zlang/compiler/stdlib.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static const zlang_token_t *zlang_parser_current(const zlang_parser_t *parser) {
@@ -14,6 +17,166 @@ static void zlang_parser_advance(zlang_parser_t *parser) {
     if (zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         ++parser->position_;
     }
+}
+
+static bool zlang_parser_expect(zlang_parser_t *parser, const zlang_token_kind_t kind,
+                                const char *message);
+static void zlang_parser_unsupported(zlang_parser_t *parser, const char *message);
+static bool zlang_parser_is_declaration_type(const zlang_parser_t *parser,
+                                             const zlang_token_t *token);
+
+bool zlang_parser_record_generic_application(zlang_parser_t *parser, const char *name,
+                                             const char *base_name, const char *const *arguments,
+                                             size_t argument_count, uint32_t line, uint32_t column,
+                                             bool is_function) {
+    if (name == NULL || base_name == NULL || argument_count == 0U ||
+        argument_count > ZLANG_GENERIC_PARAMETER_CAPACITY ||
+        parser->generic_application_count_ >= ZLANG_MAX_GENERIC_APPLICATIONS) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < parser->generic_application_count_; ++_index) {
+        const zlang_generic_application_t *const _entry_k = &parser->generic_applications_[_index];
+        if (_entry_k->name_ != NULL && strcmp(_entry_k->name_, name) == 0) {
+            return true;
+        }
+    }
+    zlang_generic_application_t *const _entry_k =
+        &parser->generic_applications_[parser->generic_application_count_++];
+    memset(_entry_k, 0, sizeof(*_entry_k));
+    _entry_k->name_ = name;
+    _entry_k->base_name_ = base_name;
+    _entry_k->argument_count_ = argument_count;
+    _entry_k->line_ = line;
+    _entry_k->column_ = column;
+    _entry_k->is_function_ = is_function;
+    for (size_t _index = 0U; _index < argument_count; ++_index) {
+        _entry_k->arguments_[_index] = arguments[_index];
+    }
+    return true;
+}
+
+const zlang_generic_application_t *
+zlang_parser_find_generic_application(const zlang_parser_t *parser, const char *name) {
+    if (parser == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < parser->generic_application_count_; ++_index) {
+        const zlang_generic_application_t *const _entry_k = &parser->generic_applications_[_index];
+        if (_entry_k->name_ != NULL && strcmp(_entry_k->name_, name) == 0) {
+            return _entry_k;
+        }
+    }
+    return NULL;
+}
+
+static bool zlang_parser_store_generic_name(zlang_parser_t *parser, const char *base_name,
+                                            const char *const *arguments, size_t argument_count,
+                                            bool is_function, const char **output) {
+    char _name_k[ZLANG_GENERIC_NAME_CAPACITY];
+    if (!zlang_generic_build_name(base_name, arguments, argument_count, _name_k, sizeof(_name_k))) {
+        zlang_parser_unsupported(parser, "generic type name is too long");
+        return false;
+    }
+    char *const _stored_k = parser->lexer_.scratch_ + parser->lexer_.scratch_length_;
+    const size_t _length_k = strlen(_name_k) + 1U;
+    if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_ ||
+        !zlang_parser_record_generic_application(
+            parser, _stored_k, base_name, arguments, argument_count,
+            zlang_parser_current(parser)->line_, zlang_parser_current(parser)->column_,
+            is_function)) {
+        zlang_parser_unsupported(parser, "generic application capacity exceeded");
+        return false;
+    }
+    memcpy(_stored_k, _name_k, _length_k);
+    parser->lexer_.scratch_length_ += _length_k;
+    *output = _stored_k;
+    return true;
+}
+
+static bool zlang_parser_is_active_generic_parameter(const zlang_parser_t *parser,
+                                                     const zlang_token_t *token) {
+    if (token == NULL || token->kind_ != zlang_token_identifier_ || token->text_ == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < parser->active_generic_parameter_count_; ++_index) {
+        if (strcmp(parser->active_generic_parameters_[_index], token->text_) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_parser_parse_generic_parameters(zlang_parser_t *parser, const char **parameters,
+                                                  size_t *parameter_count) {
+    if (zlang_parser_current(parser)->kind_ != zlang_token_less_) {
+        return true;
+    }
+    zlang_parser_advance(parser);
+    for (;;) {
+        const zlang_token_t *const _parameter_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                 "expected a type parameter name")) {
+            return false;
+        }
+        if (*parameter_count >= ZLANG_GENERIC_PARAMETER_CAPACITY) {
+            zlang_parser_unsupported(parser, "generic parameter capacity exceeded");
+            return false;
+        }
+        parameters[(*parameter_count)++] = _parameter_k->text_;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    return zlang_parser_expect(parser, zlang_token_greater_, "expected '>' after type parameters");
+}
+
+static bool zlang_parser_parse_generic_arguments(zlang_parser_t *parser, const char *base_name,
+                                                 bool is_function, const char **type_name) {
+    if (zlang_parser_current(parser)->kind_ != zlang_token_less_) {
+        *type_name = base_name;
+        return true;
+    }
+    zlang_parser_advance(parser);
+    const char *_arguments_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t _argument_count_k = 0U;
+    for (;;) {
+        if (_argument_count_k >= ZLANG_GENERIC_PARAMETER_CAPACITY) {
+            zlang_parser_unsupported(parser, "generic argument capacity exceeded");
+            return false;
+        }
+        const zlang_token_t *const _argument_k = zlang_parser_current(parser);
+        if (_argument_k->kind_ != zlang_token_identifier_ &&
+            !zlang_parser_is_declaration_type(parser, _argument_k) &&
+            !zlang_parser_is_active_generic_parameter(parser, _argument_k)) {
+            zlang_parser_unsupported(parser, "expected a type argument");
+            return false;
+        }
+        _arguments_k[_argument_count_k++] = _argument_k->text_;
+        zlang_parser_advance(parser);
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    if (!zlang_parser_expect(parser, zlang_token_greater_, "expected '>' after type arguments")) {
+        return false;
+    }
+    return zlang_parser_store_generic_name(parser, base_name, _arguments_k, _argument_count_k,
+                                           is_function, type_name);
+}
+
+static bool zlang_parser_parse_type_reference(zlang_parser_t *parser, const char **type_name,
+                                              bool is_function) {
+    const zlang_token_t *const _base_k = zlang_parser_current(parser);
+    if (!zlang_parser_is_declaration_type(parser, _base_k) &&
+        !zlang_parser_is_active_generic_parameter(parser, _base_k)) {
+        zlang_parser_unsupported(parser, "expected a declaration type");
+        return false;
+    }
+    const char *const _base_name_k = _base_k->text_;
+    zlang_parser_advance(parser);
+    return zlang_parser_parse_generic_arguments(parser, _base_name_k, is_function, type_name);
 }
 
 static bool zlang_parse_call_arguments(zlang_parser_t *parser, size_t *arguments, size_t *count,
@@ -68,20 +231,20 @@ static size_t zlang_parser_add_statement(zlang_parser_t *parser) {
 }
 
 static bool zlang_token_is_type(const zlang_token_t *token) {
-    return token->kind_ == zlang_token_integer_ || token->kind_ == zlang_token_unsigned_ ||
-           token->kind_ == zlang_token_int64_ || token->kind_ == zlang_token_uint64_ ||
-           token->kind_ == zlang_token_float_ || token->kind_ == zlang_token_double_ ||
-           token->kind_ == zlang_token_boolean_ || token->kind_ == zlang_token_string_;
+    return token != NULL &&
+           (token->kind_ == zlang_token_integer_ || token->kind_ == zlang_token_unsigned_ ||
+            token->kind_ == zlang_token_int64_ || token->kind_ == zlang_token_uint64_ ||
+            token->kind_ == zlang_token_float_ || token->kind_ == zlang_token_double_ ||
+            token->kind_ == zlang_token_boolean_ || token->kind_ == zlang_token_string_);
 }
 
 static const char *zlang_conversion_target(const char *name) {
     if (name == NULL) {
         return NULL;
     }
-    static const char *const targets_k[] = {"to_integer", "to_unsigned", "to_int64",
-                                            "to_uint64",  "to_float",    "to_double"};
-    static const char *const types_k[] = {"integer", "unsigned", "int64",
-                                          "uint64",  "float",    "double"};
+    static const char *const targets_k[] = {"to_int32",  "to_uint32", "to_int64",
+                                            "to_uint64", "to_float",  "to_double"};
+    static const char *const types_k[] = {"int32", "uint32", "int64", "uint64", "float", "double"};
     for (size_t _index = 0U; _index < sizeof(targets_k) / sizeof(targets_k[0]); ++_index) {
         if (strcmp(name, targets_k[_index]) == 0) {
             return types_k[_index];
@@ -122,8 +285,36 @@ static const zlang_ast_statement_t *zlang_parser_find_struct(const zlang_parser_
 
 static bool zlang_parser_is_declaration_type(const zlang_parser_t *parser,
                                              const zlang_token_t *token) {
-    return zlang_token_is_type(token) || token->kind_ == zlang_token_arguments_ ||
-           zlang_parser_is_user_type(parser, token);
+    return token != NULL &&
+           (zlang_token_is_type(token) || token->kind_ == zlang_token_arguments_ ||
+            zlang_parser_is_user_type(parser, token) || zlang_std_is_native_type(token->text_) ||
+            zlang_std_is_native_generic_base(token->text_));
+}
+
+static bool zlang_parser_generic_application_ahead(const zlang_parser_t *parser) {
+    size_t _position_k = parser->position_ + 1U;
+    if (_position_k >= parser->token_count_ ||
+        parser->tokens_[_position_k].kind_ != zlang_token_less_) {
+        return false;
+    }
+    ++_position_k;
+    size_t _arguments_k = 0U;
+    while (_position_k < parser->token_count_) {
+        const zlang_token_t *const _token_k = &parser->tokens_[_position_k];
+        if (_token_k->kind_ == zlang_token_greater_) {
+            return _arguments_k > 0U;
+        }
+        if (_token_k->kind_ != zlang_token_comma_ && _token_k->kind_ != zlang_token_identifier_ &&
+            !zlang_parser_is_declaration_type(parser, _token_k) &&
+            !zlang_parser_is_active_generic_parameter(parser, _token_k)) {
+            return false;
+        }
+        if (_token_k->kind_ != zlang_token_comma_) {
+            ++_arguments_k;
+        }
+        ++_position_k;
+    }
+    return false;
 }
 
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
@@ -132,9 +323,24 @@ static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
         zlang_token_is_type(_token_k)) {
         return true;
     }
-    return _token_k->kind_ == zlang_token_identifier_ &&
-           parser->position_ + 1U < parser->token_count_ &&
-           parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_identifier_;
+    if (_token_k->kind_ != zlang_token_identifier_) {
+        return false;
+    }
+    if (parser->position_ + 1U < parser->token_count_ &&
+        parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_identifier_) {
+        return true;
+    }
+    if (!zlang_parser_generic_application_ahead(parser) ||
+        parser->position_ + 2U >= parser->token_count_) {
+        return false;
+    }
+    size_t _position_k = parser->position_ + 2U;
+    while (_position_k < parser->token_count_ &&
+           parser->tokens_[_position_k].kind_ != zlang_token_greater_) {
+        ++_position_k;
+    }
+    return _position_k + 1U < parser->token_count_ &&
+           parser->tokens_[_position_k + 1U].kind_ == zlang_token_identifier_;
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -329,6 +535,50 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         break;
     }
     case zlang_token_identifier_: {
+        bool _generic_call_k = false;
+        if (parser->position_ + 2U < parser->token_count_ &&
+            parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_less_ &&
+            zlang_parser_is_declaration_type(parser, &parser->tokens_[parser->position_ + 2U])) {
+            size_t _position_k = parser->position_ + 3U;
+            while (_position_k < parser->token_count_ &&
+                   parser->tokens_[_position_k].kind_ != zlang_token_greater_ &&
+                   parser->tokens_[_position_k].kind_ != zlang_token_left_paren_) {
+                ++_position_k;
+            }
+            _generic_call_k = _position_k < parser->token_count_ &&
+                              parser->tokens_[_position_k].kind_ == zlang_token_greater_ &&
+                              _position_k + 1U < parser->token_count_ &&
+                              parser->tokens_[_position_k + 1U].kind_ == zlang_token_left_paren_;
+        }
+        if (_generic_call_k) {
+            const char *_generic_name_k = NULL;
+            const char *const _base_name_k = _token_k->text_;
+            zlang_parser_advance(parser);
+            if (!zlang_parser_parse_generic_arguments(parser, _base_name_k, true,
+                                                      &_generic_name_k) ||
+                zlang_parser_current(parser)->kind_ != zlang_token_left_paren_) {
+                return false;
+            }
+            size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
+            size_t _argument_count_k = 0U;
+            if (!zlang_parse_call_arguments(parser, _arguments_k, &_argument_count_k,
+                                            ZLANG_CALL_ARGUMENT_CAPACITY)) {
+                return false;
+            }
+            _expression_k = zlang_parser_add_expression(parser);
+            if (_expression_k == ZLANG_NO_EXPRESSION) {
+                return false;
+            }
+            parser->expressions_[_expression_k].kind_ = zlang_expression_call_;
+            parser->expressions_[_expression_k].name_ = _generic_name_k;
+            parser->expressions_[_expression_k].base_name_ = _base_name_k;
+            for (size_t _argument = 0U; _argument < _argument_count_k; ++_argument) {
+                parser->expressions_[_expression_k].argument_indices_[_argument] =
+                    _arguments_k[_argument];
+            }
+            parser->expressions_[_expression_k].argument_count_ = _argument_count_k;
+            break;
+        }
         if (parser->position_ + 1U < parser->token_count_ &&
             parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&
             zlang_conversion_target(_token_k->text_) != NULL) {
@@ -882,10 +1132,14 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     }
 
     const zlang_token_t *const _type_k = zlang_parser_current(parser);
-    bool _has_element_type_k = zlang_parser_is_declaration_type(parser, _type_k);
-    if (_has_element_type_k) {
-        zlang_parser_advance(parser);
-    } else if (!_is_array_k) {
+    const bool _has_element_type_k = zlang_parser_is_declaration_type(parser, _type_k) ||
+                                     zlang_parser_is_active_generic_parameter(parser, _type_k);
+    const char *_element_type_k = NULL;
+    if (_has_element_type_k &&
+        !zlang_parser_parse_type_reference(parser, &_element_type_k, false)) {
+        return false;
+    }
+    if (!_has_element_type_k && !_is_array_k) {
         zlang_parser_unsupported(parser, "expected a declaration type");
         return false;
     }
@@ -896,7 +1150,7 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     if (zlang_parser_current(parser)->kind_ == zlang_token_left_bracket_) {
         zlang_parser_advance(parser);
         if (zlang_parser_current(parser)->kind_ != zlang_token_integer_literal_) {
-            zlang_parser_unsupported(parser, "type capacity must be an integer literal");
+            zlang_parser_unsupported(parser, "type capacity must be an int32 literal");
             return false;
         }
         _element_capacity_k = (uint32_t)zlang_parser_current(parser)->integer_value_;
@@ -926,7 +1180,7 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
         return false;
     }
     zlang_ast_statement_t *const _statement_ptr_k = &parser->statements_[_statement_k];
-    _statement_ptr_k->type_name_ = _has_element_type_k ? _type_k->text_ : NULL;
+    _statement_ptr_k->type_name_ = _has_element_type_k ? _element_type_k : NULL;
     _statement_ptr_k->name_ = _name_k->text_;
     _statement_ptr_k->line_ = _start_k->line_;
     _statement_ptr_k->column_ = _start_k->column_;
@@ -1008,6 +1262,12 @@ static bool zlang_parse_struct(zlang_parser_t *parser) {
     if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a struct name")) {
         return false;
     }
+    const char *_generic_parameters_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t _generic_parameter_count_k = 0U;
+    if (!zlang_parser_parse_generic_parameters(parser, _generic_parameters_k,
+                                               &_generic_parameter_count_k)) {
+        return false;
+    }
     const char *_base_name_k = NULL;
     if (zlang_parser_current(parser)->kind_ == zlang_token_colon_) {
         zlang_parser_advance(parser);
@@ -1051,9 +1311,26 @@ static bool zlang_parse_struct(zlang_parser_t *parser) {
         parser->statements_[_statement_k].uses_names_[_trait] = _uses_names_k[_trait];
     }
     parser->statements_[_statement_k].uses_count_ = _uses_count_k;
+    parser->statements_[_statement_k].is_generic_ = _generic_parameter_count_k > 0U;
+    parser->statements_[_statement_k].generic_parameter_count_ = _generic_parameter_count_k;
+    for (size_t _generic = 0U; _generic < _generic_parameter_count_k; ++_generic) {
+        parser->statements_[_statement_k].generic_parameters_[_generic] =
+            _generic_parameters_k[_generic];
+    }
     parser->statements_[_statement_k].line_ = _keyword_k->line_;
     parser->statements_[_statement_k].column_ = _keyword_k->column_;
     const size_t _member_start_k = parser->statement_count_;
+    const char *_previous_generic_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    const size_t _previous_generic_count_k = parser->active_generic_parameter_count_;
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        _previous_generic_k[_slot] = parser->active_generic_parameters_[_slot];
+    }
+    if (_generic_parameter_count_k > 0U) {
+        for (size_t _slot = 0U; _slot < _generic_parameter_count_k; ++_slot) {
+            parser->active_generic_parameters_[_slot] = _generic_parameters_k[_slot];
+        }
+        parser->active_generic_parameter_count_ = _generic_parameter_count_k;
+    }
     while (zlang_parser_current(parser)->kind_ != zlang_token_right_brace_ &&
            zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
         const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
@@ -1081,6 +1358,10 @@ static bool zlang_parse_struct(zlang_parser_t *parser) {
     }
     parser->statements_[_statement_k].body_start_ = _member_start_k;
     parser->statements_[_statement_k].body_count_ = parser->statement_count_ - _member_start_k;
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        parser->active_generic_parameters_[_slot] = _previous_generic_k[_slot];
+    }
+    parser->active_generic_parameter_count_ = _previous_generic_count_k;
     for (size_t _member = _member_start_k; _member < parser->statement_count_; ++_member) {
         if (parser->statements_[_member].kind_ == zlang_statement_array_declaration_) {
             parser->statements_[_member].use_canonical_type_ = true;
@@ -1313,7 +1594,7 @@ static const zlang_ast_statement_t *zlang_parser_find_array(const zlang_parser_t
 static const char *zlang_parser_sequence_type(const zlang_parser_t *parser, const char *name) {
     const zlang_ast_statement_t *const _statement_k = zlang_parser_find_array(parser, name);
     return _statement_k != NULL && _statement_k->type_name_ != NULL ? _statement_k->type_name_
-                                                                    : "integer";
+                                                                    : "int32";
 }
 
 static uint32_t zlang_parser_array_rank(const zlang_parser_t *parser, const char *name) {
@@ -1414,7 +1695,28 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         }
         _function_name_k = _name_k->text_;
     }
+    const char *_generic_parameters_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    size_t _generic_parameter_count_k = 0U;
+    if (!is_constructor && !zlang_parser_parse_generic_parameters(parser, _generic_parameters_k,
+                                                                  &_generic_parameter_count_k)) {
+        return false;
+    }
+    const char *_previous_generic_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    const size_t _previous_generic_count_k = parser->active_generic_parameter_count_;
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        _previous_generic_k[_slot] = parser->active_generic_parameters_[_slot];
+    }
+    if (_generic_parameter_count_k > 0U) {
+        for (size_t _slot = 0U; _slot < _generic_parameter_count_k; ++_slot) {
+            parser->active_generic_parameters_[_slot] = _generic_parameters_k[_slot];
+        }
+        parser->active_generic_parameter_count_ = _generic_parameter_count_k;
+    }
     const bool _is_main_k = _name_k != NULL && !is_constructor && zlang_token_is(_name_k, "main");
+    if (_is_main_k && _generic_parameter_count_k > 0U) {
+        zlang_parser_unsupported(parser, "main cannot be generic");
+        return false;
+    }
     if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after function name")) {
         return false;
     }
@@ -1461,17 +1763,18 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         }
         const zlang_token_t *const _type_k = zlang_parser_current(parser);
         const bool _is_array_type_k = _type_k->kind_ == zlang_token_array_;
-        if (!_is_array_type_k && !zlang_parser_is_declaration_type(parser, _type_k)) {
-            zlang_parser_unsupported(parser, "expected a declaration type");
+        const char *_parameter_type_k = NULL;
+        if (_is_array_type_k) {
+            zlang_parser_advance(parser);
+        } else if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
             return false;
         }
-        zlang_parser_advance(parser);
         const zlang_token_t *const _parameter_name_k = zlang_parser_current(parser);
         if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a parameter name")) {
             return false;
         }
         zlang_parameter_t *const _parameter_k = &parser->parameters_[parser->parameter_count_++];
-        _parameter_k->type_name_ = _is_array_type_k ? NULL : _type_k->text_;
+        _parameter_k->type_name_ = _is_array_type_k ? NULL : _parameter_type_k;
         _parameter_k->name_ = _parameter_name_k->text_;
         _parameter_k->is_array_ = _is_array_type_k;
         _parameter_k->line_ = _start_k->line_;
@@ -1500,6 +1803,12 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
     _statement_ptr_k->is_static_ = is_static;
     _statement_ptr_k->is_constructor_ = is_constructor;
     _statement_ptr_k->owner_name_ = owner;
+    _statement_ptr_k->is_generic_ = _generic_parameter_count_k > 0U;
+    _statement_ptr_k->generic_parameter_count_ = _generic_parameter_count_k;
+    for (size_t _generic = 0U; _generic < _generic_parameter_count_k; ++_generic) {
+        _statement_ptr_k->generic_parameters_[_generic] = _generic_parameters_k[_generic];
+    }
+
     _statement_ptr_k->type_name_ = is_constructor ? owner : "void";
     _statement_ptr_k->parameter_start_ = _parameter_start_k;
     _statement_ptr_k->parameter_count_ = parser->parameter_count_ - _parameter_start_k;
@@ -1509,17 +1818,23 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         zlang_parser_advance(parser);
         const zlang_token_t *const _return_k = zlang_parser_current(parser);
         const bool _is_array_return_k = _return_k->kind_ == zlang_token_array_;
-        if (!_is_array_return_k && !zlang_parser_is_declaration_type(parser, _return_k)) {
-            zlang_parser_unsupported(parser, "expected a return type");
+        const char *_return_type_k = NULL;
+        if (_is_array_return_k) {
+            zlang_parser_advance(parser);
+        } else if (!zlang_parser_parse_type_reference(parser, &_return_type_k, false)) {
             return false;
         }
-        _statement_ptr_k->type_name_ = _is_array_return_k ? NULL : _return_k->text_;
+        _statement_ptr_k->type_name_ = _is_array_return_k ? NULL : _return_type_k;
         _statement_ptr_k->is_array_return_ = _is_array_return_k;
-        zlang_parser_advance(parser);
     }
 
     const size_t _body_start_k = parser->statement_count_;
-    if (!zlang_parse_block(parser, _statement_k)) { // NOLINT(misc-no-recursion)
+    const bool _body_ok_k = zlang_parse_block(parser, _statement_k);
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        parser->active_generic_parameters_[_slot] = _previous_generic_k[_slot];
+    }
+    parser->active_generic_parameter_count_ = _previous_generic_count_k;
+    if (!_body_ok_k) { // NOLINT(misc-no-recursion)
         return false;
     }
     _statement_ptr_k->body_start_ = _body_start_k;
@@ -2259,6 +2574,269 @@ static bool zlang_infer_function_array_shapes(zlang_program_t *program,
     return true;
 }
 
+static const char *
+zlang_parser_store_substituted_name(zlang_parser_t *parser, const char *type_name,
+                                    const zlang_ast_statement_t *declaration,
+                                    const zlang_generic_application_t *application) {
+    char _substituted_k[ZLANG_GENERIC_NAME_CAPACITY];
+    if (!zlang_generic_resolve_type(type_name, declaration, application, _substituted_k,
+                                    sizeof(_substituted_k))) {
+        zlang_parser_unsupported(parser, "generic type substitution failed");
+        return NULL;
+    }
+    const size_t _length_k = strlen(_substituted_k) + 1U;
+    if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_) {
+        zlang_parser_unsupported(parser, "scratch buffer too small");
+        return NULL;
+    }
+    char *const _stored_k = parser->lexer_.scratch_ + parser->lexer_.scratch_length_;
+    memcpy(_stored_k, _substituted_k, _length_k);
+    parser->lexer_.scratch_length_ += _length_k;
+    return _stored_k;
+}
+
+static const zlang_ast_statement_t *
+zlang_parser_find_generic_declaration(const zlang_parser_t *parser, const char *name,
+                                      bool is_function) {
+    for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
+        const bool _matches_k = is_function ? _statement_k->kind_ == zlang_statement_function_
+                                            : _statement_k->kind_ == zlang_statement_struct_;
+        if (!_matches_k || !_statement_k->is_generic_ || _statement_k->name_ == NULL ||
+            strcmp(_statement_k->name_, name) != 0) {
+            continue;
+        }
+        return _statement_k;
+    }
+    return NULL;
+}
+
+static bool zlang_parser_instantiate_method(zlang_parser_t *parser,
+                                            const zlang_ast_statement_t *method,
+                                            const zlang_ast_statement_t *declaration,
+                                            const zlang_generic_application_t *application) {
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    zlang_ast_statement_t _copy_k = *method;
+    _copy_k.owner_name_ = application->name_;
+    _copy_k.is_generic_ = false;
+    _copy_k.generic_parameter_count_ = 0U;
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        _copy_k.generic_parameters_[_slot] = NULL;
+    }
+    if (method->is_constructor_ || method->is_static_) {
+        zlang_parser_unsupported(parser,
+                                 "generic struct constructors and static methods are unsupported");
+        return false;
+    }
+    if (!method->is_array_return_ && method->type_name_ != NULL) {
+        const char *const _return_k = zlang_parser_store_substituted_name(
+            parser, method->type_name_, declaration, application);
+        if (_return_k == NULL) {
+            return false;
+        }
+        _copy_k.type_name_ = _return_k;
+    }
+    const size_t _parameter_start_k = parser->parameter_count_;
+    const size_t _parameter_end_k = method->parameter_start_ + method->parameter_count_;
+    for (size_t _index = method->parameter_start_;
+         _index < _parameter_end_k && _index < parser->parameter_capacity_; ++_index) {
+        if (parser->parameter_count_ >= parser->parameter_capacity_) {
+            zlang_parser_unsupported(parser, "parameter capacity exceeded");
+            return false;
+        }
+        zlang_parameter_t _parameter_k = parser->parameters_[_index];
+        if (_parameter_k.type_name_ != NULL) {
+            const char *const _type_k = zlang_parser_store_substituted_name(
+                parser, _parameter_k.type_name_, declaration, application);
+            if (_type_k == NULL) {
+                return false;
+            }
+            _parameter_k.type_name_ = _type_k;
+        }
+        parser->parameters_[parser->parameter_count_++] = _parameter_k;
+    }
+    _copy_k.parameter_start_ = _parameter_start_k;
+    _copy_k.parameter_count_ = parser->parameter_count_ - _parameter_start_k;
+    const size_t _body_start_k = parser->statement_count_;
+    const size_t _end_k = method->body_start_ + method->body_count_;
+    for (size_t _index = method->body_start_; _index < _end_k && _index < parser->statement_count_;
+         ++_index) {
+        const zlang_ast_statement_t *const _body_k = &parser->statements_[_index];
+        if (_body_k->kind_ == zlang_statement_function_ || _body_k->body_count_ > 0U ||
+            _body_k->else_count_ > 0U) {
+            zlang_parser_unsupported(parser,
+                                     "nested constructs in generic methods are unsupported");
+            return false;
+        }
+        const size_t _body_copy_k = zlang_parser_add_statement(parser);
+        if (_body_copy_k == (size_t)-1) {
+            return false;
+        }
+        parser->statements_[_body_copy_k] = *_body_k;
+        if (_body_k->type_name_ != NULL) {
+            const char *const _type_k = zlang_parser_store_substituted_name(
+                parser, _body_k->type_name_, declaration, application);
+            if (_type_k == NULL) {
+                return false;
+            }
+            parser->statements_[_body_copy_k].type_name_ = _type_k;
+        }
+    }
+    _copy_k.body_start_ = _body_start_k;
+    _copy_k.body_count_ = parser->statement_count_ - _body_start_k;
+    parser->statements_[_statement_k] = _copy_k;
+    return true;
+}
+
+static bool zlang_parser_instantiate_struct(zlang_parser_t *parser,
+                                            const zlang_generic_application_t *application,
+                                            const zlang_ast_statement_t *declaration) {
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    zlang_ast_statement_t _copy_k = *declaration;
+    _copy_k.name_ = application->name_;
+    _copy_k.base_name_ = NULL;
+    _copy_k.uses_count_ = 0U;
+    _copy_k.is_generic_ = false;
+    _copy_k.generic_parameter_count_ = 0U;
+    for (size_t _slot = 0U; _slot < 4U; ++_slot) {
+        _copy_k.uses_names_[_slot] = NULL;
+        _copy_k.generic_parameters_[_slot] = NULL;
+    }
+    const size_t _body_start_k = parser->statement_count_;
+    const size_t _end_k = declaration->body_start_ + declaration->body_count_;
+    for (size_t _index = declaration->body_start_;
+         _index < _end_k && _index < parser->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _field_k = &parser->statements_[_index];
+        if (_field_k->kind_ == zlang_statement_function_) {
+            if (!zlang_parser_instantiate_method(parser, _field_k, declaration, application)) {
+                return false;
+            }
+            _index = _field_k->body_start_ + _field_k->body_count_;
+            continue;
+        }
+        const size_t _field_copy_k = zlang_parser_add_statement(parser);
+        if (_field_copy_k == (size_t)-1) {
+            return false;
+        }
+        parser->statements_[_field_copy_k] = *_field_k;
+        if (_field_k->type_name_ != NULL) {
+            const char *const _type_k = zlang_parser_store_substituted_name(
+                parser, _field_k->type_name_, declaration, application);
+            if (_type_k == NULL) {
+                return false;
+            }
+            parser->statements_[_field_copy_k].type_name_ = _type_k;
+        }
+    }
+    _copy_k.body_start_ = _body_start_k;
+    _copy_k.body_count_ = parser->statement_count_ - _body_start_k;
+    parser->statements_[_statement_k] = _copy_k;
+    return true;
+}
+
+static bool zlang_parser_instantiate_function(zlang_parser_t *parser,
+                                              const zlang_generic_application_t *application,
+                                              const zlang_ast_statement_t *declaration) {
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    zlang_ast_statement_t _copy_k = *declaration;
+    _copy_k.name_ = application->name_;
+    _copy_k.is_generic_ = false;
+    _copy_k.generic_parameter_count_ = 0U;
+    _copy_k.is_main_ = false;
+    _copy_k.owner_name_ = NULL;
+    for (size_t _slot = 0U; _slot < ZLANG_GENERIC_PARAMETER_CAPACITY; ++_slot) {
+        _copy_k.generic_parameters_[_slot] = NULL;
+    }
+    if (!declaration->is_array_return_ && declaration->type_name_ != NULL) {
+        const char *const _return_k = zlang_parser_store_substituted_name(
+            parser, declaration->type_name_, declaration, application);
+        if (_return_k == NULL) {
+            return false;
+        }
+        _copy_k.type_name_ = _return_k;
+    }
+    const size_t _parameter_start_k = parser->parameter_count_;
+    const size_t _parameter_end_k = declaration->parameter_start_ + declaration->parameter_count_;
+    for (size_t _index = declaration->parameter_start_;
+         _index < _parameter_end_k && _index < parser->parameter_capacity_; ++_index) {
+        if (parser->parameter_count_ >= parser->parameter_capacity_) {
+            zlang_parser_unsupported(parser, "parameter capacity exceeded");
+            return false;
+        }
+        zlang_parameter_t _parameter_k = parser->parameters_[_index];
+        if (_parameter_k.type_name_ != NULL) {
+            const char *const _type_k = zlang_parser_store_substituted_name(
+                parser, _parameter_k.type_name_, declaration, application);
+            if (_type_k == NULL) {
+                return false;
+            }
+            _parameter_k.type_name_ = _type_k;
+        }
+        parser->parameters_[parser->parameter_count_++] = _parameter_k;
+    }
+    _copy_k.parameter_start_ = _parameter_start_k;
+    _copy_k.parameter_count_ = parser->parameter_count_ - _parameter_start_k;
+    const size_t _body_start_k = parser->statement_count_;
+    const size_t _end_k = declaration->body_start_ + declaration->body_count_;
+    for (size_t _index = declaration->body_start_;
+         _index < _end_k && _index < parser->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _body_k = &parser->statements_[_index];
+        if (_body_k->kind_ == zlang_statement_function_ || _body_k->body_count_ > 0U ||
+            _body_k->else_count_ > 0U) {
+            zlang_parser_unsupported(parser,
+                                     "nested constructs in generic functions are unsupported");
+            return false;
+        }
+        const size_t _body_copy_k = zlang_parser_add_statement(parser);
+        if (_body_copy_k == (size_t)-1) {
+            return false;
+        }
+        parser->statements_[_body_copy_k] = *_body_k;
+        if (_body_k->type_name_ != NULL) {
+            const char *const _type_k = zlang_parser_store_substituted_name(
+                parser, _body_k->type_name_, declaration, application);
+            if (_type_k == NULL) {
+                return false;
+            }
+            parser->statements_[_body_copy_k].type_name_ = _type_k;
+        }
+    }
+    _copy_k.body_start_ = _body_start_k;
+    _copy_k.body_count_ = parser->statement_count_ - _body_start_k;
+    parser->statements_[_statement_k] = _copy_k;
+    return true;
+}
+
+static bool zlang_parser_instantiate_generics(zlang_parser_t *parser) {
+    const size_t _application_count_k = parser->generic_application_count_;
+    for (size_t _index = 0U; _index < _application_count_k; ++_index) {
+        const zlang_generic_application_t _application_k = parser->generic_applications_[_index];
+        const zlang_ast_statement_t *const _declaration_k = zlang_parser_find_generic_declaration(
+            parser, _application_k.base_name_, _application_k.is_function_);
+        if (_declaration_k == NULL ||
+            _application_k.argument_count_ != _declaration_k->generic_parameter_count_) {
+            continue;
+        }
+        const bool _ok_k =
+            _application_k.is_function_
+                ? zlang_parser_instantiate_function(parser, &_application_k, _declaration_k)
+                : zlang_parser_instantiate_struct(parser, &_application_k, _declaration_k);
+        if (!_ok_k) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size_t scratch_capacity,
                  zlang_parse_result_t *result) {
     parser->token_count_ = 0U;
@@ -2266,6 +2844,8 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     parser->statement_count_ = 0U;
     parser->parameter_count_ = 0U;
     parser->string_count_ = 0U;
+    parser->generic_application_count_ = 0U;
+    parser->active_generic_parameter_count_ = 0U;
     parser->position_ = 0U;
     parser->failed_ = false;
 
@@ -2375,6 +2955,13 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     result->program_.expression_count_ = parser->expression_count_;
     result->program_.parameters_ = parser->parameters_;
     result->program_.parameter_count_ = parser->parameter_count_;
+    if (!zlang_parser_instantiate_generics(parser)) {
+        return false;
+    }
+    result->program_.statements_ = parser->statements_;
+    result->program_.statement_count_ = parser->statement_count_;
+    result->program_.parameters_ = parser->parameters_;
+    result->program_.parameter_count_ = parser->parameter_count_;
     if (!zlang_infer_array_shapes(&result->program_, parser->diagnostics_) ||
         !zlang_infer_foreach_shapes(&result->program_, parser->diagnostics_) ||
         !zlang_infer_function_array_shapes(&result->program_, parser->diagnostics_)) {
@@ -2388,6 +2975,9 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
     result->program_.expression_count_ = parser->expression_count_;
     result->program_.parameters_ = parser->parameters_;
     result->program_.parameter_count_ = parser->parameter_count_;
+    memcpy(result->program_.generic_applications_, parser->generic_applications_,
+           sizeof(result->program_.generic_applications_));
+    result->program_.generic_application_count_ = parser->generic_application_count_;
     result->program_.comments_ = parser->lexer_.comments_;
     result->program_.comment_count_ = parser->lexer_.comment_count_;
     return true;

@@ -1,14 +1,14 @@
 import { write } from "@std/io";
-function gcd(clone integer left, clone integer right): integer {
+function gcd(clone int32 left, clone int32 right): int32 {
     while (right != 0) {
-        integer remainder = left % right;
+        int32 remainder = left % right;
         left = right;
         right = remainder;
     }
     return left;
 }
 
-function main(): integer {
+function main(): int32 {
     write(gcd(1071, 462));
     write("\n");
 

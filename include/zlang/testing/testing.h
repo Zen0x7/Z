@@ -35,7 +35,7 @@ ZLANG_STATIC_INLINE void zlang_test_report_failure(zlang_test_context_t *const c
     fprintf(stderr, "%s:%u: check failed: %s\n", file, line, expression);
 }
 
-/** Record a failed integer check and print expected and actual values. */
+/** Record a failed int32 check and print expected and actual values. */
 ZLANG_STATIC_INLINE void
 zlang_test_report_failure_uint(zlang_test_context_t *const context, const char *const file,
                                const unsigned int line, const char *const expression,
@@ -108,7 +108,7 @@ ZLANG_STATIC_INLINE int zlang_test_main(const int argc, char *const *const argv,
         }                                                                                          \
     } while (0)
 
-/** Fail the current case when two unsigned values differ. */
+/** Fail the current case when two uint32 values differ. */
 #define ZLANG_CHECK_UINT(context, expected, actual)                                                \
     do {                                                                                           \
         const uintmax_t _expected_k = (uintmax_t)(expected);                                       \

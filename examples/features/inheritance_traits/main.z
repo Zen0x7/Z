@@ -1,41 +1,41 @@
 import { write } from "@std/io";
 
-trait Named requires integer value {
-    function label(): integer {
+trait Named requires int32 value {
+    function label(): int32 {
         return value;
     }
 }
 
 struct Shape uses Named {
-    integer value;
+    int32 value;
 
-    constructor(clone integer initial) {
+    constructor(clone int32 initial) {
         value = initial;
     }
 
-    function area(): integer {
+    function area(): int32 {
         return value;
     }
 }
 
 struct Square : Shape {
-    integer side;
+    int32 side;
 
-    constructor(clone integer initial, clone integer side_value) {
+    constructor(clone int32 initial, clone int32 side_value) {
         side = side_value;
         value = initial;
     }
 
-    function area(): integer {
+    function area(): int32 {
         return side * side;
     }
 }
 
-function describe(reference Shape shape): integer {
+function describe(reference Shape shape): int32 {
     return shape.area();
 }
 
-function main(): integer {
+function main(): int32 {
     Shape base = Shape(2);
     Square square = Square(3, 4);
     write(describe(base));

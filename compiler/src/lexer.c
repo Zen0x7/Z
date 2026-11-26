@@ -31,7 +31,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"from", zlang_token_from_},
                                              {"if", zlang_token_if_},
                                              {"in", zlang_token_in_},
-                                             {"integer", zlang_token_integer_},
+                                             {"int32", zlang_token_integer_},
                                              {"int64", zlang_token_int64_},
                                              {"uint64", zlang_token_uint64_},
                                              {"float", zlang_token_float_},
@@ -45,7 +45,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"return", zlang_token_return_},
                                              {"string", zlang_token_string_},
                                              {"true", zlang_token_true_},
-                                             {"unsigned", zlang_token_unsigned_},
+                                             {"uint32", zlang_token_unsigned_},
                                              {"while", zlang_token_while_},
                                              {"break", zlang_token_break_},
                                              {"continue", zlang_token_continue_}};
@@ -286,12 +286,12 @@ static bool zlang_lex_number(zlang_lexer_t *lexer, zlang_token_t *token,
     } else if (token->is_unsigned_) {
         if (_overflow_k || _value_k > UINT32_MAX) {
             (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
-                                        column, "unsigned literal out of range");
+                                        column, "uint32 literal out of range");
             return false;
         }
     } else if (_overflow_k || _value_k > (uint64_t)INT32_MAX) {
         (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_LITERAL_OUT_OF_RANGE, line,
-                                    column, "integer literal out of range");
+                                    column, "int32 literal out of range");
         return false;
     }
     token->integer_value_ = (int32_t)_value_k;

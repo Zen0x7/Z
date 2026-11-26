@@ -2,16 +2,16 @@ import { write } from "@std/io";
 // File-level traceability comment.
 struct Point {
     // Field comment.
-    integer x;
+    int32 x;
 }
 
 // Function comment.
-function one(): integer {
+function one(): int32 {
     // Body comment.
     return 1;
 }
 
-function main(): integer {
+function main(): int32 {
     write(one());
     write("\n");
 

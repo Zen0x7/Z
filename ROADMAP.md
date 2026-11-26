@@ -99,13 +99,13 @@ Make 0.1 programs pleasant to write without changing the core promise: no runtim
    Support:
 
    ```zlang
-   integer values[] = {1, 2, 3};
+   int32 values[] = {1, 2, 3};
    ```
 
    The compiler counts the initializers and emits a sequence with capacity 3. An unbounded declaration without an initializer remains a `ZLANG3001` error. Support explicit capacity with a partial initializer:
 
    ```zlang
-   integer values[5] = {1, 2, 3};
+   int32 values[5] = {1, 2, 3};
    ```
 
 4. **Index assignment**
@@ -135,7 +135,7 @@ Make 0.1 programs pleasant to write without changing the core promise: no runtim
 ### Proposed decisions pending confirmation
 
 - Allow shadowing in child blocks and rename generated C identifiers automatically.
-- For `integer values[5] = {1, 2, 3};`, set `capacity_ = 5` and `length_ = 3`.
+- For `int32 values[5] = {1, 2, 3};`, set `capacity_ = 5` and `length_ = 3`.
 - Require `string[N]` when concatenation involves a variable; infer capacity only when every operand is a literal.
 
 These are recommendations, not locked decisions. Once confirmed, append the resolution to this section or to a later version section. Do not rewrite this entry.
@@ -156,9 +156,9 @@ The examples from the 0.2 scope compile and run on the existing CI matrix. Gener
 Status: Locked.
 
 - `1B`: shadowing is rejected with `ZLANG2005 shadowed declaration`.
-- `2A`: `integer values[5] = {1, 2, 3};` means `capacity_ = 5` and `length_ = 3`. An explicit capacity that is never mutated emits a warning so accidental oversized declarations are visible.
+- `2A`: `int32 values[5] = {1, 2, 3};` means `capacity_ = 5` and `length_ = 3`. An explicit capacity that is never mutated emits a warning so accidental oversized declarations are visible.
 - `3A`: string concatenation infers capacity when every operand is a literal. When any operand is a variable, the declaration must use explicit capacity syntax such as `string[32]`. This leaves room for later interpolation.
-- `4A`: `integer values[] = {};` is rejected with `ZLANG3001`.
+- `4A`: `int32 values[] = {};` is rejected with `ZLANG3001`.
 - `5A`: implementation order is comments, scopes, initializers, index assignment, strings, calls, operators.
 
 ## 0.2 — Completion
@@ -184,7 +184,7 @@ operators, and are covered by new conformance cases in `tests/spec`.
 Status: Implemented.
 
 Add `break` and `continue` with loop-context diagnostics, enforce boolean `if`/`while` conditions
-and unsigned `repeat` counts, validate `return` against the enclosing function type, and ensure
+and uint32 `repeat` counts, validate `return` against the enclosing function type, and ensure
 nested statements are analyzed and emitted exactly once. The full language tour in `README.md` is
 compiled as a conformance case.
 
@@ -196,7 +196,7 @@ Status: Locked.
 - Add binary `-`, unary `-`, `*`, `/` and `%` with checked runtime helpers.
 - Add compound assignment for arithmetic operators.
 - Add `length(sequence)`, emitted as the native `length_` field.
-- Add scalar `print` for integer, unsigned and boolean values using fixed-stack helpers.
+- Add scalar `print` for int32, uint32 and boolean values using fixed-stack helpers.
 - Use the leading `sequence[N]` modifier as the only sequence syntax. The postfix form
   `type name[N]` is removed.
 - A bounded scalar string is `string[M] name`; a bounded string element is written as
@@ -217,9 +217,9 @@ Status: Locked.
 
 - Add a native `for (init; condition; update)` statement with scalar initializer, boolean
   condition and expression update.
-- Extend `foreach` to `foreach (index, item in sequence)`, exposing the index as `unsigned`.
+- Extend `foreach` to `foreach (index, item in sequence)`, exposing the index as `uint32`.
 - Add local `const` declarations with mandatory initializer and assignment rejection.
-- Allow read-only string indexing that yields one byte as `unsigned` with a bounds trap.
+- Allow read-only string indexing that yields one byte as `uint32` with a bounds trap.
 - Loops may nest freely, including `for` inside `for` and `foreach` inside `foreach`.
 
 ## 0.5 — Completion
@@ -435,7 +435,7 @@ Status: Locked.
 - Use an index tuple for generic access: `{i}`, `{i, j}`, `{i, j, k}`.
 - Generate offset helpers per rank, not per variable or declaration.
 - Generate typed `get` and `set` helpers per `(rank, generated C type)`, deduplicated by generated
-  C type. A program using only 1D `integer` arrays gets only the 1D `int32_t` helpers.
+  C type. A program using only 1D `int32` arrays gets only the 1D `int32_t` helpers.
 - Reuse one offset helper per rank across different extents by passing extents explicitly.
 - Keep all storage caller-owned and fixed at compile time. No heap and no hidden allocator.
 - Check every dimension before access and trap with `ZLANG_TRAP_BOUNDS`.
@@ -515,14 +515,14 @@ Status: Implemented.
   C function and canonical array typedef.
 - Support nested array initializers:
   ```zlang
-  array integer grid = {
+  array int32 grid = {
       {1, 2, 3},
       {4, 5, 6}
   };
   ```
   The initializer shape contributes rank and extents to inference.
 - Define multidimensional iteration. `foreach (row, col in grid)` visits every index tuple in
-  row-major order; the index variables are unsigned and bounds are compile-time known from the array
+  row-major order; the index variables are uint32 and bounds are compile-time known from the array
   shape.
 - Allow array fields in structs. A struct field may be `array[A][B] T`, emitted as an embedded
   canonical array typedef with its own bounds checks.
@@ -551,7 +551,7 @@ Patch release after the 0.18 array model. Generated C now derives array extents 
 symbol instead of the active function specialization, array fields use literal extents in typed
 helper calls, string capacity macros are emitted without arrays, inferred array function calls
 resolve their return type without an emitter symbol, scalar `reference` parameters are read and
-written through a dereference, `foreach` iterables count as reads, dynamic `integer` indices are
+written through a dereference, `foreach` iterables count as reads, dynamic `int32` indices are
 cast to `uint32_t`, and logical negation of a comparison keeps the comparison grouped.
 
 The `examples/` tree is now a golden suite: every example has committed generated C and expected
@@ -696,13 +696,13 @@ entity identity.
 The entry point is explicit and receives the host arguments:
 
 ```zlang
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     return 0;
 }
 ```
 
 `main` is an ABI-shaped declaration, not an ordinary user function. Parameter qualifiers are omitted
-because the binding modes are fixed by the signature: `argc` is an implicitly cloned `integer`
+because the binding modes are fixed by the signature: `argc` is an implicitly cloned `int32`
 because it is a trivial scalar, and `argv` is an implicitly referenced, read-only `arguments`
 handle because it aliases caller-owned host state. Writing `clone` or `reference` in this signature
 is rejected so there is exactly one canonical form. The mandatory qualifier rule remains unchanged
@@ -744,18 +744,18 @@ The scalar set gains four primitives:
 
 | Zlang type | Width and sign | Generated C type |
 | --- | --- | --- |
-| `integer` | signed 32-bit | `int32_t` |
-| `unsigned` | unsigned 32-bit | `uint32_t` |
+| `int32` | signed 32-bit | `int32_t` |
+| `uint32` | uint32 32-bit | `uint32_t` |
 | `int64` | signed 64-bit | `int64_t` |
-| `uint64` | unsigned 64-bit | `uint64_t` |
+| `uint64` | uint32 64-bit | `uint64_t` |
 | `float` | IEEE-754 binary32 | `float` |
 | `double` | IEEE-754 binary64 | `double` |
 
 `boolean` and `string` keep their 0.21 definitions. `arguments` remains an opaque entry-point
 handle. There is no implicit conversion between any two numeric types. Every widening or narrowing
-uses an explicit conversion call named for the target type: `to_integer`, `to_unsigned`, `to_int64`,
+uses an explicit conversion call named for the target type: `to_int32`, `to_uint32`, `to_int64`,
 `to_uint64`, `to_float` and `to_double`. There is no `reinterpret` or other bit-level conversion form
-in 0.22. Conversion to an integer type traps on an out-of-range value; conversion from a
+in 0.22. Conversion to an int32 type traps on an out-of-range value; conversion from a
 floating-point value truncates toward zero and traps on non-finite input.
 
 Integer literals keep the decimal spelling and the `u` suffix. Literals for 64-bit integers use
@@ -765,7 +765,7 @@ not acquire a floating-point type implicitly.
 
 Arithmetic follows the C/IEEE-754 model for each emitted type. Integer division by zero keeps the
 existing Zlang trap. Floating-point division follows IEEE-754: division by zero produces an
-infinity or NaN according to the standard, with no Zlang trap. `%` remains valid only for integer
+infinity or NaN according to the standard, with no Zlang trap. `%` remains valid only for int32
 types. Comparisons between numeric types require both operands to have exactly the same type.
 Printing uses bounded runtime helpers with deterministic textual forms; generated programs still
 perform no dynamic allocation.
@@ -788,7 +788,7 @@ objects. This is an internal generated-C contract, not a user-visible language f
 ### Inferred array specializations
 
 Inferred array functions are monomorphized by concrete shape: element type, rank and every extent.
-A function called with `array[4] integer` and `array[2][3] integer` emits two C functions with
+A function called with `array[4] int32` and `array[2][3] int32` emits two C functions with
 canonical shape-derived names. Semantic analysis resolves the inferred shape for each call site and
 validates the function body for every distinct shape. Two different shapes are not a conflict;
 they are two specializations. A conflict is reported only when one call site cannot provide a
@@ -809,7 +809,7 @@ unique shape, or when the function body is invalid for one of its inferred shape
 
 ## 0.22 — Completion
 
-Zlang 0.22 is implemented at language level 0.22. The numeric set contains `integer`, `unsigned`,
+Zlang 0.22 is implemented at language level 0.22. The numeric set contains `int32`, `uint32`,
 `int64`, `uint64`, `float`, `double`, `boolean`, `string` and the opaque `arguments` handle. Integer
 literals accept `u`, `i64` and `u64` suffixes; floating literals accept a decimal point or exponent
 and the `f` suffix. There is no implicit numeric conversion. Conversion calls are named for their
@@ -842,7 +842,7 @@ standard APIs. No new primitive type is introduced.
 
 Every binary arithmetic operator requires two operands of exactly the same numeric type. There are
 no hidden promotions in arithmetic or comparisons. `to_*` remains the only conversion form.
-Unary negation is checked for `integer` and `int64`, trapping when the operand is the minimum value
+Unary negation is checked for `int32` and `int64`, trapping when the operand is the minimum value
 of its type; `float` and `double` keep IEEE negation.
 
 ### String discipline
@@ -854,7 +854,7 @@ Mixed string/numeric comparisons are rejected.
 ### Standard APIs
 
 `@std/math` exposes `abs`, `clamp`, `min`, `max` and `sqrt`. The first four are overloaded by
-argument type across `integer`, `unsigned`, `int64`, `uint64`, `float` and `double`; `sqrt` is
+argument type across `int32`, `uint32`, `int64`, `uint64`, `float` and `double`; `sqrt` is
 provided for `float` and `double`. Overload resolution uses the argument types recorded by semantic
 analysis, and each concrete overload has one activation macro and one generated C symbol.
 
@@ -895,10 +895,10 @@ Zlang 0.24 moves output out of the language core. `print` is no longer a keyword
 an undeclared identifier. The only source-level output function is `write`, imported from
 `@std/io`. There is no compatibility spelling.
 
-`@std/io.write` is overloaded by argument type across `string`, `boolean`, `integer`, `unsigned`,
+`@std/io.write` is overloaded by argument type across `string`, `boolean`, `int32`, `uint32`,
 `int64`, `uint64`, `float` and `double`. Each overload has one activation macro and one generated C
 symbol. The wrappers call the existing bounded runtime print primitives, so generated programs keep
-zero dynamic allocation. Enum values use explicit `to_integer(...)` before `write`.
+zero dynamic allocation. Enum values use explicit `to_int32(...)` before `write`.
 
 `@std/streams` remains reserved for future explicit stream handles. `read` is not introduced in this
 release because input source, EOF, bounded destination storage and trap semantics need a separate
@@ -917,7 +917,7 @@ write("hello");
 
 `@std/io.write` is resolved by argument type and emits one of eight bounded wrapper calls. Runtime
 primitives remain available to generated C, but source programs cannot write without importing the
-domain. Enum values are written through explicit `to_integer(...)`. No compatibility path for
+domain. Enum values are written through explicit `to_int32(...)`. No compatibility path for
 `print` exists.
 
 The golden example suite, CLI fixtures, standard-library tests, spec matrix and documentation were
@@ -930,7 +930,7 @@ input contract is specified.
 Status: Locked.
 
 Zlang 0.25 adds bounded input to `@std/io`. Both `read` and `read_line` take one mutable bounded
-string destination and return `integer`: `-1` at EOF, otherwise the number of logical bytes read.
+string destination and return `int32`: `-1` at EOF, otherwise the number of logical bytes read.
 Line endings are normalized across platforms: CRLF is one logical newline. `read` keeps that newline
 in the destination; `read_line` removes it. If the destination cannot hold the logical line, the
 program traps with `ZLANG_TRAP_CAPACITY`. No buffer grows and no allocation occurs.
@@ -949,7 +949,7 @@ through `zc --tto`. The CLI suite includes a stdin-driven test for `read` and `r
 Status: Locked.
 
 Zlang 0.26 adds range-proven index folding to `--tto`. The optimizer recognizes canonical `for`
-loops over signed `integer` variables with constant start, constant `<` or `<=` bound and `+= 1`
+loops over signed `int32` variables with constant start, constant `<` or `<=` bound and `+= 1`
 update. It proves the range of the induction variable and of `variable +/- constant` expressions.
 One-dimensional array reads and writes whose whole proven range is inside the declared extent are
 emitted as direct C `data_[]` accesses. A non-canonical loop, a mutated induction variable or any
@@ -1033,3 +1033,167 @@ Inheritance has a runtime cost: larger structs, tags, vtable pointers and indire
 generated program still performs no dynamic allocation and uses no runtime type registry beyond the
 internal dispatch tables. The emitter derives tags, vtable types, slots and instances directly from
 the AST, so this metadata has no fixed emitter-side capacity and adds no stack storage.
+
+## 0.30 — Design note
+
+Status: Locked.
+
+Zlang 0.30 adds compile-time generics for structs and functions. A generic declaration lists up to
+four type parameters, for example `struct Pair<T, U>` or `function identity<T>(clone T value): T`.
+Type applications use `Pair<int32, boolean>`. The compiler monomorphizes each used application
+into a concrete C99 type or function; there is no heap, no runtime type reflection and no generic
+value representation.
+
+The MVP supports concrete type arguments and type parameters already in scope. Generic methods,
+generic traits, inheritance over generic structs and variadic type packs are not part of 0.30.
+Capacity exhaustion produces a diagnostic instead of a silent failure.
+
+The canonical stdlib result shape is `Result<T, E>`: `T` is the value the function would
+ideally return, `E` is the error code, and `what` carries a bounded message. A function with no
+payload uses `Result<void, Status>`. Stdlib normalization is scheduled for 0.31; 0.30 only
+provides the language mechanism.
+
+
+## 0.30 — Completion
+
+Zlang 0.30 is implemented at language level 0.30. Structs and functions can declare up to four type
+parameters and be applied to up to four concrete type arguments. Applications such as
+`Pair<int32, boolean>` and `identity<int32>(1)` are monomorphized into concrete C99 types and
+functions; no heap, runtime reflection or generic value representation is emitted.
+
+Generic structs cannot inherit, use traits or declare methods. Generic functions must be top-level
+and have flat bodies. Invalid applications, duplicate type parameters and capacity exhaustion are
+reported through diagnostics. The canonical result shape for later stdlib normalization is
+`Result<T, E>`, with `T` as the ideal value, `E` as the error code and `what` as a bounded message.
+
+## 0.31 — Design note
+
+Status: Locked.
+
+Zlang 0.31 adds native generic facilities for the standard library. The compiler registry and the
+public C headers share a closed set of `Result<T, Status>` specializations. `Result<T, E>` keeps `T`
+as the ideal value, `E` as the error code and `what` as a bounded read-only message. A function with
+no payload uses `Result<void, Status>`.
+
+Native result layouts live in `<zlang/standard/result/result.h>`; the compiler maps canonical Zlang
+applications such as `Result<int32, Status>` to those C types. The stdlib registry records
+structured return metadata and parameter modes, including `const reference`. No runtime allocation,
+formatting or reflection is introduced.
+
+Native stdlib parity must be reviewed whenever a native function is added: its compiler registry
+entry, public C header and documentation must agree. A future binary tool should verify registry,
+header and documentation parity mechanically. That tooling is planned but is not required for the
+facility itself.
+
+
+## 0.31 — Completion
+
+Zlang 0.31 is implemented at language level 0.31. Native `Result<T, Status>` applications map to
+canonical C layouts in `<zlang/standard/result/result.h>`. Results expose `code`, `what` and, for
+non-void payloads, `value`. Status constants are available in Zlang source and emit their C enum
+constants.
+
+The compiler registry now carries structured return metadata and parameter modes, including
+`const reference`, while existing stdlib functions keep their 0.30 signatures. Native result types
+activate `ZLANG_STD_RESULT` in generated C. No stdlib function is migrated in 0.31; the facility
+exists so 0.32 can migrate IO without mixing compiler and header contracts.
+
+## 0.32 — Revised IO design note
+
+Status: Locked.
+
+IO will be redesigned around explicit stream handles and byte-transfer results. `write` and `read`
+both return `Result<int32, Status>`: `value` is the number of bytes transferred and `code` is
+`SUCCESS`, `END_OF_INPUT` or `IO_ERROR`. The model matches the `error_code, bytes_transferred`
+shape used by Boost.Asio, adapted to synchronous allocation-free Zlang.
+
+Streams are borrowed handles. `stdin`, `stdout` and `stderr` are ordinary stream values, and the
+same API must support future stream facilities such as sockets. Convenience overloads may use
+implicit stdin or stdout, but the explicit stream overload is canonical.
+
+`read` writes into a bounded destination view at an explicit offset and maximum byte count. `write`
+borrows a bounded source view. Neither operation copies buffer bytes; string and stream parameters
+are views and the docs must say so. Null storage, invalid offsets, zero capacity and capacity
+overflow remain traps. Recoverable stream conditions are returned as `Result<int32, Status>`.
+
+## 0.34 — Design note
+
+Status: Locked.
+
+Zlang 0.34 will rename the built-in scalar types `int32` and `uint32` to their real widths:
+`int32` and `uint32`. The generated C already uses `int32_t` and `uint32_t`; this change makes the
+source-level names match the emitted representation and aligns them with the existing `int64` and
+`uint64` names.
+
+The explicit conversion calls follow the same rule: `to_int32` becomes `to_int32` and
+`to_uint32` becomes `to_uint32`. `to_int64`, `to_uint64`, `to_float` and `to_double` are unchanged.
+
+This is a breaking language rename. No aliases or compatibility layer will be added. The change
+must update the lexer keyword table, parser type checks, semantic type rules, stdlib registry
+signatures, diagnostics docs, tests, goldens and site documentation. Runtime helper names such as
+`zlang_print_i32` and stdlib function names such as `generate_int32` remain unchanged unless a
+separate decision is made.
+
+## Pending implementation checklist
+
+- **0.31 — Native result facilities**: implemented in the working tree; not committed or pushed.
+- **0.32 — IO redesign**:
+  - `write` and `read` return `Result<int32, Status>` with transferred bytes in `value`.
+  - IO accepts explicit stream handles; `stdin`, `stdout` and `stderr` are ordinary streams.
+  - Future sockets must fit the same stream API.
+  - `read` takes destination view, offset and maximum byte count.
+  - String and stream parameters are borrowed views; no buffer bytes are copied.
+  - Recoverable conditions use `Result`; null storage, invalid offsets and capacity failures trap.
+  - Registry, header and docs must stay in parity.
+- **0.33 — Generic methods**:
+  - first target is `Result` helpers: `is_ok()`, `get()` and `message()`;
+  - then general methods on generic structs and functions;
+  - monomorphized per specialization, with no runtime dispatch;
+  - generic traits and generic inheritance remain out of scope.
+- **0.34 — Scalar type rename**:
+  - `int32` becomes `int32`;
+  - `uint32` becomes `uint32`;
+  - `to_int32` becomes `to_int32`;
+  - `to_uint32` becomes `to_uint32`;
+  - no aliases or retrocompatibility;
+  - update compiler, stdlib registry, docs, tests, goldens and site.
+- **Tooling**:
+  - add a future binary verifier for native stdlib parity between compiler registry, public C
+    headers and documentation.
+
+## 0.32 — Completion
+
+Zlang 0.32 is implemented at language level 0.32. `write` and `read` return
+`Result<int32, Status>` with the transferred byte count in `value`. Convenience overloads keep
+implicit stdout and stdin; explicit overloads accept `STDIN`, `STDOUT` and `STDERR` as borrowed
+stream handles. Future stream facilities can use the same native `stream` type.
+
+`write` borrows a bounded string view. Because `zlang_string_t` is a trivially copyable descriptor,
+the convenience overload clones the descriptor and never copies buffer bytes. `read` writes into a
+bounded destination view at an explicit offset and count. Recoverable stream conditions are
+reported as `END_OF_INPUT` or `IO_ERROR`; null storage, invalid offsets, zero capacity and capacity
+overflow remain traps.
+
+Native IO parity is enforced by matching compiler registry entries, public C headers and docs.
+
+## 0.33 — Completion
+
+Zlang 0.33 is implemented at language level 0.33. Native `Result<T, E>` values expose `is_ok()`,
+`get()` and `message()` through direct method syntax. These helpers are lowered to C field reads
+and `zlang_std_status_is_ok`; they add no vtable or runtime dispatch.
+
+Generic structs can declare flat instance methods. Each generic application monomorphizes its
+methods with the same substituted type names used for fields and signatures, and emits ordinary
+`app_fn_<specialization>_<method>` functions. Constructors, static methods, nested control flow in
+generic methods, generic traits and generic inheritance remain outside scope.
+
+## 0.34 — Completion
+
+Zlang 0.34 is implemented at language level 0.34. Built-in signed and unsigned 32-bit types are
+named `int32` and `uint32`, matching their C representations `int32_t` and `uint32_t` and aligning
+with `int64` and `uint64`. Explicit conversions are named `to_int32` and `to_uint32`; the 64-bit and
+floating conversion names are unchanged.
+
+This is a breaking rename with no aliases or compatibility layer. Compiler keywords, AST type
+names, stdlib signatures, diagnostics fixtures, examples, goldens, tests and documentation were
+updated together. Runtime helper names such as `zlang_print_i32` remain unchanged.

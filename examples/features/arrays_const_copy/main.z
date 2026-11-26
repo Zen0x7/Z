@@ -1,8 +1,8 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    const array[3] integer source = {1, 2, 3};
-    array[3] integer target = {0, 0, 0};
+function main(): int32 {
+    const array[3] int32 source = {1, 2, 3};
+    array[3] int32 target = {0, 0, 0};
 
     target = source;
 

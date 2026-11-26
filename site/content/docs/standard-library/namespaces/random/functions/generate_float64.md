@@ -92,7 +92,7 @@ int main(void) {
 import { write } from "@std/io";
 import { generate_float64 } from "@std/random";
 
-function main(): integer {
+function main(): int32 {
     double value = generate_float64(0.0, 1.0);
     write(value);
     write("\n");

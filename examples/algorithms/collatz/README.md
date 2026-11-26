@@ -5,7 +5,7 @@ Computes how many steps the Collatz sequence starting at `27` takes to reach `1`
 This example exercises:
 
 - `while` with a non-trivial condition;
-- modulo and integer division;
+- modulo and int32 division;
 - conditional arithmetic through `if` / `else`;
 - compound assignment for the step counter.
 

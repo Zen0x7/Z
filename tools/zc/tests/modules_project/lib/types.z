@@ -1,6 +1,6 @@
 struct Point {
-    integer x;
-    integer y;
+    int32 x;
+    int32 y;
 }
 
 enum Color {

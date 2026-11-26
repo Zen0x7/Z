@@ -22,7 +22,7 @@ No hay contador de carga. La diapositiva espera a que la persona aprete **Contin
 
 ### 02 · Source
 
-La pantalla se llena con Fibonacci real del repositorio. Los colores hacen que la estructura se vea antes de leerse: `array` e `integer` en coral, `for` y `foreach` en ámbar, `fib`, `index` y `value` en crema, números en rojo, strings en verde.
+La pantalla se llena con Fibonacci real del repositorio. Los colores hacen que la estructura se vea antes de leerse: `array` e `int32` en coral, `for` y `foreach` en ámbar, `fib`, `index` y `value` en crema, números en rojo, strings en verde.
 
 Arriba:
 

@@ -1,6 +1,6 @@
 ---
 title: generate_int32
-description: Generate an integer inside an inclusive signed 32-bit range.
+description: Generate an `int32` inside an inclusive signed 32-bit range.
 domain: random
 kind: function
 status: implemented
@@ -27,7 +27,7 @@ import { generate_int32 } from "@std/random";
 ## Signature
 
 ```zlang
-function generate_int32(clone integer from, clone integer to): integer
+function generate_int32(clone int32 from, clone int32 to): int32
 ```
 
 Both parameters are passed by value.
@@ -36,14 +36,14 @@ Both parameters are passed by value.
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
-| `from` | `integer` | clone | Lower bound of the inclusive range |
-| `to` | `integer` | clone | Upper bound of the inclusive range |
+| `from` | `int32` | clone | Lower bound of the inclusive range |
+| `to` | `int32` | clone | Upper bound of the inclusive range |
 
-`from` must not be greater than `to`. The full `integer` range is allowed.
+`from` must not be greater than `to`. The full `int32` range is allowed.
 
 ## Result
 
-Returns one `integer` in `[from, to]`. Both bounds are reachable. Do not expect a specific value or sequence.
+Returns one `int32` in `[from, to]`. Both bounds are reachable. Do not expect a specific value or sequence.
 
 ## Bounds and ownership
 
@@ -96,8 +96,8 @@ int32_t app_local_value = zlang_std_random_generate_int32(&_zlang_context, 1, 1)
 import { write } from "@std/io";
 import { generate_int32 } from "@std/random";
 
-function main(): integer {
-    integer value = generate_int32(1, 6);
+function main(): int32 {
+    int32 value = generate_int32(1, 6);
     write(value);
     write("\n");
     return 0;

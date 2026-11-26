@@ -10,8 +10,8 @@ navigation:
 A variable declaration names a type and gives it a value or storage shape. The declarations below appear inside a function.
 
 ```zlang
-integer total = 1;
-unsigned limit = 3U;
+int32 total = 1;
+uint32 limit = 3U;
 boolean ready = true;
 string label = "z" + "lang";
 string[32] bounded = label + " value";
@@ -24,9 +24,9 @@ A `const` declaration cannot be assigned to. An uninitialized `const` scalar sta
 These array declarations are also function-body excerpts.
 
 ```zlang
-array[4] integer values;
-array[] integer inferred = {1, 2, 3};
-array[5] integer partial = {1, 2, 3};
+array[4] int32 values;
+array[] int32 inferred = {1, 2, 3};
+array[5] int32 partial = {1, 2, 3};
 array[2] string[8] names = {"a", "b"};
 ```
 
@@ -40,8 +40,8 @@ Struct and enum declarations appear at file scope:
 
 ```zlang
 struct Point {
-    integer x;
-    integer y;
+    int32 x;
+    int32 y;
 }
 
 enum Color {

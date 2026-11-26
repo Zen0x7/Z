@@ -11,8 +11,8 @@ Zlang has eight numeric and scalar primitives, plus structs and enums.
 
 | Zlang | Meaning | Emitted C |
 | --- | --- | --- |
-| `integer` | signed 32-bit | `int32_t` |
-| `unsigned` | unsigned 32-bit | `uint32_t` |
+| `int32` | signed 32-bit | `int32_t` |
+| `uint32` | unsigned 32-bit | `uint32_t` |
 | `int64` | signed 64-bit | `int64_t` |
 | `uint64` | unsigned 64-bit | `uint64_t` |
 | `float` | IEEE-754 binary32 | `float` |
@@ -23,15 +23,15 @@ Zlang has eight numeric and scalar primitives, plus structs and enums.
 There is no implicit conversion between numeric types. Use explicit conversion calls. Each call takes one numeric operand; the declarations below appear inside a function.
 
 ```zlang
-integer a = to_integer(value);
-unsigned b = to_unsigned(value);
+int32 a = to_int32(value);
+uint32 b = to_uint32(value);
 int64 c = to_int64(value);
 uint64 d = to_uint64(value);
 float e = to_float(value);
 double f = to_double(value);
 ```
 
-Conversions to integer types truncate floating-point input toward zero. They trap on non-finite input and when the result is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap.
+Conversions to signed integer types truncate floating-point input toward zero. They trap on non-finite input and when the result is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap.
 
 ## Strings and arrays
 
@@ -40,7 +40,7 @@ A string is a non-owning view over bytes. It never allocates. A string built wit
 An array is fixed-shape. Its capacity is part of its type. Arrays with different extents are different types.
 
 ```zlang
-array[4] integer values;
+array[4] int32 values;
 array[8] string[32] names;
 ```
 

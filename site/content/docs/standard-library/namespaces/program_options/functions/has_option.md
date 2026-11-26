@@ -92,7 +92,7 @@ zlang_std_program_options_has_option(app_param_argv, zlang_gen_literal_1);
 import { write } from "@std/io";
 import { argument_count, has_option } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(has_option(argv, "--verbose"));
     write("\n");
     return 0;

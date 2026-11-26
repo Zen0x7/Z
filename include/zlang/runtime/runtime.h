@@ -104,7 +104,7 @@ ZLANG_STATIC_INLINE uint32_t zlang_add_u32(uint32_t left, uint32_t right) {
 }
 
 /**
- * @brief Print a signed integer using fixed stack storage.
+ * @brief Print a signed int32 using fixed stack storage.
  * @param value Value to write.
  * @return `true` on success.
  */
@@ -126,7 +126,7 @@ ZLANG_STATIC_INLINE bool zlang_print_i32(int32_t value) {
 }
 
 /**
- * @brief Print an unsigned integer using fixed stack storage.
+ * @brief Print an unsigned int32 using fixed stack storage.
  * @param value Value to write.
  * @return `true` on success.
  */
@@ -153,7 +153,7 @@ ZLANG_STATIC_INLINE bool zlang_print_bool(bool value) {
 }
 
 /**
- * @brief Negate a signed 32-bit integer, trapping on overflow.
+ * @brief Negate a signed 32-bit int32, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int32_t zlang_neg_i32(int32_t value) {
     /* cppcheck-suppress integerOverflowCond */
@@ -165,7 +165,7 @@ ZLANG_STATIC_INLINE int32_t zlang_neg_i32(int32_t value) {
 }
 
 /**
- * @brief Negate a signed 64-bit integer, trapping on overflow.
+ * @brief Negate a signed 64-bit int32, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int64_t zlang_neg_i64(int64_t value) {
     /* cppcheck-suppress integerOverflowCond */
@@ -273,7 +273,7 @@ ZLANG_STATIC_INLINE uint32_t zlang_mod_u32(uint32_t left, uint32_t right) {
 }
 
 /**
- * @brief Print a signed 64-bit integer using fixed stack storage.
+ * @brief Print a signed 64-bit int32 using fixed stack storage.
  */
 ZLANG_STATIC_INLINE bool zlang_print_i64(int64_t value) {
     char _digits[24];
@@ -293,7 +293,7 @@ ZLANG_STATIC_INLINE bool zlang_print_i64(int64_t value) {
 }
 
 /**
- * @brief Print an unsigned 64-bit integer using fixed stack storage.
+ * @brief Print an uint32 64-bit int32 using fixed stack storage.
  */
 ZLANG_STATIC_INLINE bool zlang_print_u64(uint64_t value) {
     char _digits[24];
@@ -345,7 +345,7 @@ ZLANG_STATIC_INLINE int64_t zlang_add_i64(int64_t left, int64_t right) {
 }
 
 /**
- * @brief Add two unsigned 64-bit integers, trapping on overflow.
+ * @brief Add two uint32 64-bit integers, trapping on overflow.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_add_u64(uint64_t left, uint64_t right) {
     if (right > UINT64_MAX - left) {
@@ -367,7 +367,7 @@ ZLANG_STATIC_INLINE int64_t zlang_sub_i64(int64_t left, int64_t right) {
 }
 
 /**
- * @brief Subtract two unsigned 64-bit integers, trapping on overflow.
+ * @brief Subtract two uint32 64-bit integers, trapping on overflow.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_sub_u64(uint64_t left, uint64_t right) {
     if (right > left) {
@@ -401,7 +401,7 @@ ZLANG_STATIC_INLINE int64_t zlang_mul_i64(int64_t left, int64_t right) {
 }
 
 /**
- * @brief Multiply two unsigned 64-bit integers, trapping on overflow.
+ * @brief Multiply two uint32 64-bit integers, trapping on overflow.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_mul_u64(uint64_t left, uint64_t right) {
     if (left != 0U && right > UINT64_MAX / left) {
@@ -426,7 +426,7 @@ ZLANG_STATIC_INLINE int64_t zlang_div_i64(int64_t left, int64_t right) {
 }
 
 /**
- * @brief Divide two unsigned 64-bit integers, trapping on zero.
+ * @brief Divide two uint32 64-bit integers, trapping on zero.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_div_u64(uint64_t left, uint64_t right) {
     if (right == 0U) {
@@ -453,7 +453,7 @@ ZLANG_STATIC_INLINE int64_t zlang_mod_i64(int64_t left, int64_t right) {
 }
 
 /**
- * @brief Remainder of two unsigned 64-bit integers.
+ * @brief Remainder of two uint32 64-bit integers.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_mod_u64(uint64_t left, uint64_t right) {
     if (right == 0U) {
@@ -475,7 +475,7 @@ ZLANG_STATIC_INLINE int32_t zlang_to_i32_i64(int64_t value) {
 }
 
 /**
- * @brief Convert an unsigned 32-bit value to int32_t, trapping on overflow.
+ * @brief Convert an uint32 32-bit value to int32_t, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int32_t zlang_to_i32_u32(uint32_t value) {
     if (value > (uint32_t)INT32_MAX) {
@@ -505,7 +505,7 @@ ZLANG_STATIC_INLINE uint32_t zlang_to_u32_i64(int64_t value) {
 }
 
 /**
- * @brief Convert an unsigned 32-bit value to uint32_t.
+ * @brief Convert an uint32 32-bit value to uint32_t.
  */
 ZLANG_STATIC_INLINE uint32_t zlang_to_u32_u32(uint32_t value) { return value; }
 
@@ -520,7 +520,7 @@ ZLANG_STATIC_INLINE uint32_t zlang_to_u32_f64(double value) {
 }
 
 /**
- * @brief Convert an unsigned 64-bit value to int32_t, trapping on overflow.
+ * @brief Convert an uint32 64-bit value to int32_t, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int32_t zlang_to_i32_u64(uint64_t value) {
     if (value > (uint64_t)INT32_MAX) {
@@ -530,7 +530,7 @@ ZLANG_STATIC_INLINE int32_t zlang_to_i32_u64(uint64_t value) {
 }
 
 /**
- * @brief Convert an unsigned 64-bit value to uint32_t, trapping on overflow.
+ * @brief Convert an uint32 64-bit value to uint32_t, trapping on overflow.
  */
 ZLANG_STATIC_INLINE uint32_t zlang_to_u32_u64(uint64_t value) {
     if (value > (uint64_t)UINT32_MAX) {
@@ -540,7 +540,7 @@ ZLANG_STATIC_INLINE uint32_t zlang_to_u32_u64(uint64_t value) {
 }
 
 /**
- * @brief Convert an unsigned 64-bit value to int64_t, trapping on overflow.
+ * @brief Convert an uint32 64-bit value to int64_t, trapping on overflow.
  */
 ZLANG_STATIC_INLINE int64_t zlang_to_i64_u64(uint64_t value) {
     if (value > (uint64_t)INT64_MAX) {
@@ -560,7 +560,7 @@ ZLANG_STATIC_INLINE uint64_t zlang_to_u64_i64(int64_t value) {
 }
 
 /**
- * @brief Convert an unsigned 64-bit value to uint64_t.
+ * @brief Convert an uint32 64-bit value to uint64_t.
  */
 ZLANG_STATIC_INLINE uint64_t zlang_to_u64_u64(uint64_t value) { return value; }
 
@@ -714,7 +714,7 @@ ZLANG_STATIC_INLINE void *zlang_array_get(void *data, uint32_t index, uint32_t l
 }
 
 /**
- * @brief Read a signed integer element with a bounds trap.
+ * @brief Read a signed int32 element with a bounds trap.
  */
 ZLANG_STATIC_INLINE int32_t zlang_array_get_i32(const int32_t *data, uint32_t index,
                                                 uint32_t length) {
@@ -726,7 +726,7 @@ ZLANG_STATIC_INLINE int32_t zlang_array_get_i32(const int32_t *data, uint32_t in
 }
 
 /**
- * @brief Read an unsigned integer element with a bounds trap.
+ * @brief Read an unsigned int32 element with a bounds trap.
  */
 ZLANG_STATIC_INLINE uint32_t zlang_array_get_u32(const uint32_t *data, uint32_t index,
                                                  uint32_t length) {
@@ -821,6 +821,12 @@ ZLANG_STATIC_INLINE void zlang_array_append(void *data, uint32_t *length, uint32
     defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION) ||                                               \
     defined(ZLANG_STD_PROGRAM_OPTIONS_OPTION_VALUE) || defined(ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG)
 #include "zlang/standard/program/options.h"
+#endif
+
+#include "zlang/standard/io/stream.h"
+
+#if defined(ZLANG_STD_RESULT)
+#include "zlang/standard/result/result.h"
 #endif
 
 #if defined(ZLANG_STD_IO_READ) || defined(ZLANG_STD_IO_READ_LINE) ||                               \

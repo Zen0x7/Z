@@ -41,10 +41,10 @@ const destinations = [
     note: 'Syntax, declarations, loops, functions and errors.',
   },
   {
-    label: 'Full specification',
+    label: 'Language specification',
     icon: 'spec',
-    href: 'https://github.com/Zen0x7/Z/blob/master/SPEC.md',
-    note: 'The normative contract for emitted C.',
+    to: '/docs/specification',
+    note: 'The normative contract for Zlang and its emitted C.',
   },
   {
     label: 'Standard library',

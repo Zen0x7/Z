@@ -2,7 +2,7 @@ import { write } from "@std/io";
 import { base } from "@lib/config";
 import { add } from "@lib/math";
 
-function main(): integer {
+function main(): int32 {
     write(add(base));
     write("\n");
     return 0;

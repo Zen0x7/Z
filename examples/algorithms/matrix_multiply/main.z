@@ -1,14 +1,14 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    array[2][2] integer left = {{1, 2}, {3, 4}};
-    array[2][2] integer right = {{5, 6}, {7, 8}};
-    array[2][2] integer result;
+function main(): int32 {
+    array[2][2] int32 left = {{1, 2}, {3, 4}};
+    array[2][2] int32 right = {{5, 6}, {7, 8}};
+    array[2][2] int32 result;
 
-    for (integer row = 0; row < 2; row += 1) {
-        for (integer column = 0; column < 2; column += 1) {
-            integer cell = 0;
-            for (integer inner = 0; inner < 2; inner += 1) {
+    for (int32 row = 0; row < 2; row += 1) {
+        for (int32 column = 0; column < 2; column += 1) {
+            int32 cell = 0;
+            for (int32 inner = 0; inner < 2; inner += 1) {
                 cell += left[row][inner] * right[inner][column];
             }
             result[row][column] = cell;

@@ -2233,6 +2233,12 @@ pre,
   background: transparent;
 }
 
+/* Plain fenced blocks (text, console) reach the page without a .shiki class. */
+.prose-zlang pre:not(.shiki) {
+  padding: 20px 18px;
+  overflow-x: auto;
+}
+
 .prose-zlang table {
   width: 100%;
   margin: 24px 0;

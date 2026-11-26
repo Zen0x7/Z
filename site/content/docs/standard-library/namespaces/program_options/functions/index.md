@@ -16,8 +16,8 @@ navigation:
 
 | Name | Signature | Parameter mode | C symbol | Macro |
 | --- | --- | --- | --- | --- |
-| [`argument_count`](/docs/standard-library/namespaces/program_options/functions/argument_count) | `function argument_count(reference arguments argv): unsigned` | reference | `zlang_std_program_options_argument_count` | `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT` |
-| [`argument_at`](/docs/standard-library/namespaces/program_options/functions/argument_at) | `function argument_at(reference arguments argv, clone unsigned index): string` | reference, clone | `zlang_std_program_options_argument_at` | `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_AT` |
+| [`argument_count`](/docs/standard-library/namespaces/program_options/functions/argument_count) | `function argument_count(reference arguments argv): uint32` | reference | `zlang_std_program_options_argument_count` | `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_COUNT` |
+| [`argument_at`](/docs/standard-library/namespaces/program_options/functions/argument_at) | `function argument_at(reference arguments argv, clone uint32 index): string` | reference, clone | `zlang_std_program_options_argument_at` | `ZLANG_STD_PROGRAM_OPTIONS_ARGUMENT_AT` |
 | [`has_option`](/docs/standard-library/namespaces/program_options/functions/has_option) | `function has_option(reference arguments argv, clone string option): boolean` | reference, clone | `zlang_std_program_options_has_option` | `ZLANG_STD_PROGRAM_OPTIONS_HAS_OPTION` |
 | [`option_value`](/docs/standard-library/namespaces/program_options/functions/option_value) | `function option_value(reference arguments argv, clone string option): string` | reference, clone | `zlang_std_program_options_option_value` | `ZLANG_STD_PROGRAM_OPTIONS_OPTION_VALUE` |
 | [`has_flag`](/docs/standard-library/namespaces/program_options/functions/has_flag) | `function has_flag(reference arguments argv, clone string flag): boolean` | reference, clone | `zlang_std_program_options_has_flag` | `ZLANG_STD_PROGRAM_OPTIONS_HAS_FLAG` |

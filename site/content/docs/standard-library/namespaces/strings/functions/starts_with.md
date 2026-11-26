@@ -90,7 +90,7 @@ zlang_std_strings_starts_with(zlang_gen_literal_0, zlang_gen_literal_1);
 import { starts_with } from "@std/strings";
 import { write } from "@std/io";
 
-function main(): integer {
+function main(): int32 {
     write(starts_with("abc", "ab"));
     write("\n");
     write(starts_with("abc", "bc"));

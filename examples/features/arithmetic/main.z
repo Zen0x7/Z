@@ -1,17 +1,17 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    integer left = 10;
-    integer right = 3;
-    unsigned count = 5U;
+function main(): int32 {
+    int32 left = 10;
+    int32 right = 3;
+    uint32 count = 5U;
 
-    integer sum = left + right;
-    integer difference = left - right;
-    integer product = left * right;
-    integer quotient = left / right;
-    integer remainder = left % right;
-    unsigned grown = count + 2U;
-    integer negative = -sum;
+    int32 sum = left + right;
+    int32 difference = left - right;
+    int32 product = left * right;
+    int32 quotient = left / right;
+    int32 remainder = left % right;
+    uint32 grown = count + 2U;
+    int32 negative = -sum;
 
     left += right;
     left -= right;

@@ -1,6 +1,6 @@
 # Const arrays and whole-array copy
 
-Copies a `const array[3] integer` into a mutable array of the same shape, then prints the target.
+Copies a `const array[3] int32` into a mutable array of the same shape, then prints the target.
 
 This example exercises:
 

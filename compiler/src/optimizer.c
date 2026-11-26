@@ -363,7 +363,7 @@ static bool zlang_tto_eval(const zlang_program_t *program, size_t index, zlang_c
             return false;
         }
         result->known_ = true;
-        result->unsigned_ = strcmp(_array_k->type_name_, "unsigned") == 0;
+        result->unsigned_ = strcmp(_array_k->type_name_, "uint32") == 0;
         return true;
     }
     default:
@@ -486,7 +486,7 @@ static bool zlang_tto_loop_range(const zlang_program_t *program, const zlang_ast
     const zlang_ast_statement_t *const _initializer_k =
         &program->statements_[loop->initializer_statement_];
     if (_initializer_k->kind_ != zlang_statement_declaration_ || _initializer_k->is_const_ ||
-        _initializer_k->type_name_ == NULL || strcmp(_initializer_k->type_name_, "integer") != 0 ||
+        _initializer_k->type_name_ == NULL || strcmp(_initializer_k->type_name_, "int32") != 0 ||
         _initializer_k->name_ == NULL ||
         _initializer_k->expression_ >= program->expression_count_) {
         return false;

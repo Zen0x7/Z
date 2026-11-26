@@ -29,17 +29,17 @@ import { argument_count, argument_at } from "@std/program_options";
 ## Signature
 
 ```zlang
-function argument_at(reference arguments argv, clone unsigned index): string
+function argument_at(reference arguments argv, clone uint32 index): string
 ```
 
-The registry records an `arguments` parameter in reference mode and an `unsigned` parameter in clone mode.
+The registry records an `arguments` parameter in reference mode and an `uint32` parameter in clone mode.
 
 ## Parameters
 
 | Name | Type | Mode | Meaning |
 | --- | --- | --- | --- |
 | `argv` | `arguments` | reference | Host argument view built by generated `main`. |
-| `index` | `unsigned` | clone | Zero-based host argument index. |
+| `index` | `uint32` | clone | Zero-based host argument index. |
 
 Index `0` is the program path when the host supplies one. The first argument after the program name has index `1`.
 
@@ -89,7 +89,7 @@ zlang_std_program_options_argument_at(app_param_argv, 1U);
 import { write } from "@std/io";
 import { argument_count, argument_at } from "@std/program_options";
 
-function main(integer argc, arguments argv): integer {
+function main(int32 argc, arguments argv): int32 {
     write(argument_at(argv, 1U));
     write("\n");
     return 0;

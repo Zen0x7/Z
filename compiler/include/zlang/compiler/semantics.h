@@ -41,6 +41,7 @@ typedef struct zlang_semantic_context_t {
     zlang_diagnostics_t *diagnostics_;
     const zlang_program_t *program_;
     const zlang_ast_statement_t *current_struct_;
+    const zlang_ast_statement_t *current_generic_declaration_;
 } zlang_semantic_context_t;
 
 void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol_t *symbols,

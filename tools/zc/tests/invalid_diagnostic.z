@@ -1,1 +1,1 @@
-integer var = @;
+int32 var = @;

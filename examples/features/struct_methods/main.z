@@ -1,13 +1,13 @@
 import { write } from "@std/io";
 
 struct Counter {
-    integer value;
+    int32 value;
 
-    constructor(clone integer initial) {
+    constructor(clone int32 initial) {
         value = initial;
     }
 
-    function increment(): integer {
+    function increment(): int32 {
         value += 1;
         return value;
     }
@@ -17,7 +17,7 @@ struct Counter {
     }
 }
 
-function main(): integer {
+function main(): int32 {
     Counter counter = Counter(1);
     write(counter.increment());
     write(" ");

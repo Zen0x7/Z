@@ -1,8 +1,8 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    array[5] integer values = {1, 2, 3, 4, 5};
-    integer total = 0;
+function main(): int32 {
+    array[5] int32 values = {1, 2, 3, 4, 5};
+    int32 total = 0;
 
     foreach (value in values) {
         total += value * value;

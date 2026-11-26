@@ -5,14 +5,14 @@
    parser consumes the source strings and the emitter is checked against the
    expected C strings, keeping the contract in one place. */
 
-#define ZLANG_SPEC_SCALAR_SOURCE "integer var = 10;"
+#define ZLANG_SPEC_SCALAR_SOURCE "int32 var = 10;"
 #define ZLANG_SPEC_SCALAR_EXPECTED "int32_t app_local_var = 10;"
 
 #define ZLANG_SPEC_PRINT_SOURCE "write(\"Hello\");"
 #define ZLANG_SPEC_PRINT_EXPECTED "zlang_std_io_write_string(zlang_gen_literal_0);"
 
 #define ZLANG_SPEC_FOREACH_SOURCE                                                                  \
-    "array[4] integer values;\n"                                                                   \
+    "array[4] int32 values;\n"                                                                     \
     "foreach (item in values) {\n"                                                                 \
     "    write(\"Hello\");\n"                                                                      \
     "}"
@@ -25,12 +25,12 @@
     "int32_t app_local_item = app_local_values.data_[zlang_gen_foreach_1];"
 #define ZLANG_SPEC_FOREACH_CALLBACK "zlang_for_each"
 
-#define ZLANG_SPEC_UNBOUNDED_SOURCE "array[] integer values;"
+#define ZLANG_SPEC_UNBOUNDED_SOURCE "array[] int32 values;"
 #define ZLANG_SPEC_UNBOUNDED_EXPECTED_CODE 3001U
 
-#define ZLANG_SPEC_STATIC_SEQUENCE_SOURCE "array[32] integer values;"
+#define ZLANG_SPEC_STATIC_SEQUENCE_SOURCE "array[32] int32 values;"
 #define ZLANG_SPEC_STATIC_SEQUENCE_EXPECTED "static app_array_values_t app_local_values ="
-#define ZLANG_SPEC_ADD_SOURCE "integer total = 1 + 2;"
+#define ZLANG_SPEC_ADD_SOURCE "int32 total = 1 + 2;"
 #define ZLANG_SPEC_ADD_EXPECTED "int32_t app_local_total = zlang_add_i32(1, 2);"
 
 #define ZLANG_SPEC_IF_SOURCE                                                                       \
@@ -49,7 +49,7 @@
     "++zlang_gen_repeat_1) {"
 
 #define ZLANG_SPEC_FUNCTION_SOURCE                                                                 \
-    "function add(clone integer left, clone integer right): integer {\n"                           \
+    "function add(clone int32 left, clone int32 right): int32 {\n"                                 \
     "    return left + right;\n"                                                                   \
     "}"
 #define ZLANG_SPEC_FUNCTION_EXPECTED                                                               \
@@ -57,7 +57,7 @@
 #define ZLANG_SPEC_FUNCTION_RETURN_EXPECTED "return zlang_add_i32(app_param_left, app_param_right);"
 
 #define ZLANG_SPEC_FUNCTION_USER_TYPES_SOURCE                                                      \
-    "struct Point { integer x; integer y; }\n"                                                     \
+    "struct Point { int32 x; int32 y; }\n"                                                         \
     "enum Color { RED, BLUE }\n"                                                                   \
     "function make(): Point {\n"                                                                   \
     "    Point result;\n"                                                                          \
@@ -79,18 +79,18 @@
     "app_struct_point_t app_local_painted = app_fn_paint(app_local_made, app_local_chosen);"
 
 #define ZLANG_SPEC_APPEND_INDEX_SOURCE                                                             \
-    "array[4] integer values;\n"                                                                   \
-    "integer first = values[0];"
+    "array[4] int32 values;\n"                                                                     \
+    "int32 first = values[0];"
 #define ZLANG_SPEC_APPEND_EXPECTED "app_array_values_t app_local_values = "
 #define ZLANG_SPEC_INDEX_EXPECTED "zlang_array_get_i32(app_local_values.data_, 0"
 
 #define ZLANG_SPEC_CONFORMANCE_SOURCE                                                              \
-    "integer first = 1;\n"                                                                         \
-    "unsigned count = 2U;\n"                                                                       \
+    "int32 first = 1;\n"                                                                           \
+    "uint32 count = 2U;\n"                                                                         \
     "boolean ready = false;\n"                                                                     \
     "string label = \"text\";\n"                                                                   \
-    "array[4] integer values;\n"                                                                   \
-    "{ integer scoped = 3; }\n"                                                                    \
+    "array[4] int32 values;\n"                                                                     \
+    "{ int32 scoped = 3; }\n"                                                                      \
     "if (ready) { write(\"yes\"); }\n"                                                             \
     "while (ready) { }\n"                                                                          \
     "foreach (item in values) { write(label); }\n"                                                 \
@@ -118,16 +118,16 @@
 #define ZLANG_SPEC_CONFORMANCE_EQUAL_EXPECTED "app_local_first == 4"
 #define ZLANG_SPEC_CONFORMANCE_IDENTIFIER_EXPECTED "zlang_std_io_write_string(app_local_label);"
 
-#define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "array[] integer values = {1, 2, 3};"
+#define ZLANG_SPEC_INFERRED_INITIALIZER_SOURCE "array[] int32 values = {1, 2, 3};"
 #define ZLANG_SPEC_INFERRED_INITIALIZER_EXPECTED                                                   \
     "zlang_gen_array_i32_3_t app_local_values = { { 1, 2, 3 } };"
 
-#define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "array[5] integer values = {1, 2, 3};"
+#define ZLANG_SPEC_PARTIAL_INITIALIZER_SOURCE "array[5] int32 values = {1, 2, 3};"
 #define ZLANG_SPEC_PARTIAL_INITIALIZER_EXPECTED                                                    \
     "app_array_values_t app_local_values = { { 1, 2, 3, 0, 0 } };"
 
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_SOURCE                                                         \
-    "array[4] integer values;\n"                                                                   \
+    "array[4] int32 values;\n"                                                                     \
     "values[0] = 10;"
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_EXPECTED "app_local_values.data_[zlang_gen_index_0] = 10;"
 #define ZLANG_SPEC_INDEX_ASSIGNMENT_TRAP "zlang_trap(ZLANG_TRAP_BOUNDS);"
@@ -141,14 +141,14 @@
 #define ZLANG_SPEC_VARIABLE_CONCAT_EXPECTED "ZLANG_LABEL_CAPACITY"
 
 #define ZLANG_SPEC_CALL_SOURCE                                                                     \
-    "function add(clone integer left, clone integer right): integer {\n"                           \
+    "function add(clone int32 left, clone int32 right): int32 {\n"                                 \
     "    return left + right;\n"                                                                   \
     "}\n"                                                                                          \
-    "integer total = add(2, 3);"
+    "int32 total = add(2, 3);"
 #define ZLANG_SPEC_CALL_EXPECTED "int32_t app_local_total = app_fn_add(2, 3);"
 
 #define ZLANG_SPEC_OPERATORS_SOURCE                                                                \
-    "integer total = 4;\n"                                                                         \
+    "int32 total = 4;\n"                                                                           \
     "boolean smaller = total < 10;\n"                                                              \
     "boolean bigger = total > 2;\n"                                                                \
     "boolean lower_equal = total <= 4;\n"                                                          \
@@ -158,12 +158,12 @@
 #define ZLANG_SPEC_NOT_EQUAL_EXPECTED "bool app_local_different = app_local_total != 2;"
 
 #define ZLANG_SPEC_SIBLING_SCOPES_SOURCE                                                           \
-    "{ integer item = 1; }\n"                                                                      \
-    "{ integer item = 2; write(item); }"
+    "{ int32 item = 1; }\n"                                                                        \
+    "{ int32 item = 2; write(item); }"
 #define ZLANG_SPEC_SIBLING_SCOPES_EXPECTED "int32_t app_local_item_0 = 2;"
 
 #define ZLANG_SPEC_ELSE_IF_SOURCE                                                                  \
-    "integer value = 2;\n"                                                                         \
+    "int32 value = 2;\n"                                                                           \
     "if (value == 1) { write(\"one\"); }\n"                                                        \
     "else if (value == 2) { write(\"two\"); }\n"                                                   \
     "else if (value == 3) { write(\"three\"); }\n"                                                 \
@@ -179,7 +179,7 @@
     "boolean both = a && b;\n"                                                                     \
     "boolean either = a || b;\n"                                                                   \
     "boolean mixed = !(a && b) || a;\n"                                                            \
-    "integer value = 2;\n"                                                                         \
+    "int32 value = 2;\n"                                                                           \
     "boolean compared = !(value > 10);"
 #define ZLANG_SPEC_LOGICAL_NOT_EXPECTED "bool app_local_negated = (!app_local_a);"
 #define ZLANG_SPEC_LOGICAL_AND_EXPECTED "bool app_local_both = (app_local_a && app_local_b);"
@@ -190,7 +190,7 @@
     "bool app_local_compared = (!(app_local_value > 10));"
 
 #define ZLANG_SPEC_LOOP_JUMPS_SOURCE                                                               \
-    "array[] integer values = {1, 2, 3};\n"                                                        \
+    "array[] int32 values = {1, 2, 3};\n"                                                          \
     "foreach (item in values) {\n"                                                                 \
     "    if (item == 2) { continue; }\n"                                                           \
     "    if (item == 3) { break; }\n"                                                              \
@@ -207,17 +207,17 @@
 #define ZLANG_SPEC_SELF_CONCAT_EXPECTED "(zlang_string_t[]){ app_local_label, "
 
 #define ZLANG_SPEC_NESTED_NO_DUPLICATES_SOURCE                                                     \
-    "array[] integer values = {1};\n"                                                              \
+    "array[] int32 values = {1};\n"                                                                \
     "foreach (item in values) {\n"                                                                 \
     "    if (item == 1) { write(\"once\"); }\n"                                                    \
     "}"
 
 #define ZLANG_SPEC_ARITHMETIC_SOURCE                                                               \
-    "integer total = 10 - 2;\n"                                                                    \
-    "integer product = total * 3;\n"                                                               \
-    "integer quotient = product / 2;\n"                                                            \
-    "integer remainder = product % 5;\n"                                                           \
-    "integer negative = -total;"
+    "int32 total = 10 - 2;\n"                                                                      \
+    "int32 product = total * 3;\n"                                                                 \
+    "int32 quotient = product / 2;\n"                                                              \
+    "int32 remainder = product % 5;\n"                                                             \
+    "int32 negative = -total;"
 #define ZLANG_SPEC_SUB_EXPECTED "int32_t app_local_total = zlang_sub_i32(10, 2);"
 #define ZLANG_SPEC_MUL_EXPECTED "zlang_mul_i32(app_local_total, 3)"
 #define ZLANG_SPEC_DIV_EXPECTED "zlang_div_i32(app_local_product, 2)"
@@ -225,7 +225,7 @@
 #define ZLANG_SPEC_NEGATIVE_EXPECTED "int32_t app_local_negative = zlang_neg_i32(app_local_total);"
 
 #define ZLANG_SPEC_COMPOUND_SOURCE                                                                 \
-    "integer total = 1;\n"                                                                         \
+    "int32 total = 1;\n"                                                                           \
     "total += 2;\n"                                                                                \
     "total -= 1;\n"                                                                                \
     "total *= 3;\n"                                                                                \
@@ -235,8 +235,8 @@
 #define ZLANG_SPEC_COMPOUND_MOD_EXPECTED "app_local_total = zlang_mod_i32(app_local_total, 2);"
 
 #define ZLANG_SPEC_LENGTH_SOURCE                                                                   \
-    "array[4] integer values = {1, 2};\n"                                                          \
-    "unsigned count = length(values);"
+    "array[4] int32 values = {1, 2};\n"                                                            \
+    "uint32 count = length(values);"
 #define ZLANG_SPEC_LENGTH_EXPECTED "uint32_t app_local_count = 4;"
 
 #define ZLANG_SPEC_SCALAR_PRINT_SOURCE                                                             \
@@ -254,11 +254,11 @@
 #define ZLANG_SPEC_STRING_SEQUENCE_APPEND_EXPECTED "_names.data_[0] = zlang_string_concat("
 #define ZLANG_SPEC_STRING_SEQUENCE_STORAGE_EXPECTED "ZLANG_NAMES_ELEMENT_CAPACITY + ZLANG_ONE"
 
-#define ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE "integer values[4];"
+#define ZLANG_SPEC_LEGACY_SEQUENCE_SOURCE "int32 values[4];"
 
 #define ZLANG_SPEC_FOR_SOURCE                                                                      \
-    "array[3] integer values = {1, 2, 3};\n"                                                       \
-    "for (unsigned index = 0U; index < length(values); index += 1U) {\n"                           \
+    "array[3] int32 values = {1, 2, 3};\n"                                                         \
+    "for (uint32 index = 0U; index < length(values); index += 1U) {\n"                             \
     "    write(values[index]);\n"                                                                  \
     "}"
 #define ZLANG_SPEC_FOR_EXPECTED                                                                    \
@@ -266,9 +266,9 @@
     "zlang_add_u32(app_local_index, 1U))"
 
 #define ZLANG_SPEC_NESTED_LOOPS_SOURCE                                                             \
-    "array[2] integer values = {1, 2};\n"                                                          \
-    "for (unsigned outer = 0U; outer < 2U; outer += 1U) {\n"                                       \
-    "    for (unsigned inner = 0U; inner < 2U; inner += 1U) {\n"                                   \
+    "array[2] int32 values = {1, 2};\n"                                                            \
+    "for (uint32 outer = 0U; outer < 2U; outer += 1U) {\n"                                         \
+    "    for (uint32 inner = 0U; inner < 2U; inner += 1U) {\n"                                     \
     "        write(outer);\n"                                                                      \
     "    }\n"                                                                                      \
     "}\n"                                                                                          \
@@ -279,25 +279,25 @@
     "}"
 
 #define ZLANG_SPEC_INDEXED_FOREACH_SOURCE                                                          \
-    "array[2] integer values = {1, 2};\n"                                                          \
+    "array[2] int32 values = {1, 2};\n"                                                            \
     "foreach (index, item in values) {\n"                                                          \
     "    write(index);\n"                                                                          \
     "    write(item);\n"                                                                           \
     "}"
 #define ZLANG_SPEC_INDEXED_FOREACH_EXPECTED "uint32_t app_local_index = zlang_gen_foreach_0;"
 
-#define ZLANG_SPEC_CONST_SOURCE "const integer limit = 10;"
+#define ZLANG_SPEC_CONST_SOURCE "const int32 limit = 10;"
 #define ZLANG_SPEC_CONST_EXPECTED "const int32_t app_local_limit = 10;"
-#define ZLANG_SPEC_CONST_ASSIGN_SOURCE "const integer limit = 10;\nlimit = 11;"
+#define ZLANG_SPEC_CONST_ASSIGN_SOURCE "const int32 limit = 10;\nlimit = 11;"
 
 #define ZLANG_SPEC_STRING_INDEX_SOURCE                                                             \
     "string[8] text = \"abc\";\n"                                                                  \
-    "unsigned first = text[0];"
+    "uint32 first = text[0];"
 #define ZLANG_SPEC_STRING_INDEX_EXPECTED "zlang_string_byte(app_local_text, 0)"
 
 #define ZLANG_SPEC_SIBLING_SEQUENCE_TYPES_SOURCE                                                   \
-    "{ array[2] integer values; }\n"                                                               \
-    "{ array[3] integer values; }"
+    "{ array[2] int32 values; }\n"                                                                 \
+    "{ array[3] int32 values; }"
 #define ZLANG_SPEC_SIBLING_CAPACITY_FIRST "ZLANG_VALUES_CAPACITY 2U"
 #define ZLANG_SPEC_SIBLING_CAPACITY_SECOND "ZLANG_VALUES_0_CAPACITY 3U"
 #define ZLANG_SPEC_SIBLING_TYPE_SECOND "app_array_values_0_t"
@@ -306,8 +306,8 @@
 
 #define ZLANG_SPEC_RECORD_ENUM_SOURCE                                                              \
     "struct Point {\n"                                                                             \
-    "    integer x;\n"                                                                             \
-    "    integer y;\n"                                                                             \
+    "    int32 x;\n"                                                                               \
+    "    int32 y;\n"                                                                               \
     "}\n"                                                                                          \
     "enum Color {\n"                                                                               \
     "    RED,\n"                                                                                   \
@@ -320,7 +320,7 @@
     "points[0].x = 2;\n"                                                                           \
     "write(points[0].y);\n"                                                                        \
     "Color current = GREEN;\n"                                                                     \
-    "write(to_integer(current));"
+    "write(to_int32(current));"
 #define ZLANG_SPEC_RECORD_TYPE_EXPECTED "typedef struct app_struct_point_t"
 #define ZLANG_SPEC_ENUM_TYPE_EXPECTED "typedef enum app_enum_color_t"
 #define ZLANG_SPEC_ENUM_VALUE_EXPECTED "ZLANG_COLOR_GREEN"
@@ -328,15 +328,15 @@
 #define ZLANG_SPEC_SEQUENCE_FIELD_ASSIGN_EXPECTED "zlang_gen_field_ptr_"
 
 #define ZLANG_SPEC_CSE_SOURCE                                                                      \
-    "array[2] integer values = {1, 2};\n"                                                          \
+    "array[2] int32 values = {1, 2};\n"                                                            \
     "if (values[0] > 1) { write(\"a\"); }\n"                                                       \
     "else if (values[0] == 2) { write(\"b\"); }"
 
 #define ZLANG_SPEC_READABLE_LAYOUT_SOURCE                                                          \
-    "const integer base = 2;\n"                                                                    \
-    "array[3] integer values = {1, 2, 3};\n"                                                       \
+    "const int32 base = 2;\n"                                                                      \
+    "array[3] int32 values = {1, 2, 3};\n"                                                         \
     "string label = \"text\";\n"                                                                   \
-    "integer first = values[0];\n"                                                                 \
+    "int32 first = values[0];\n"                                                                   \
     "write(label);"
 
 #define ZLANG_SPEC_TEST_STACK_LIMIT 64U
@@ -344,16 +344,16 @@
 #endif /* ZLANG_SPEC_FIXTURES_H */
 
 #define ZLANG_SPEC_FORWARD_CALL_SOURCE                                                             \
-    "function first(): integer {\n"                                                                \
+    "function first(): int32 {\n"                                                                  \
     "    return second();\n"                                                                       \
     "}\n"                                                                                          \
-    "function second(): integer {\n"                                                               \
+    "function second(): int32 {\n"                                                                 \
     "    return 7;\n"                                                                              \
     "}\n"                                                                                          \
     "write(first());"
 #define ZLANG_SPEC_FORWARD_PROTOTYPE_EXPECTED "int32_t app_fn_second(void);"
 
 #define ZLANG_SPEC_USED_HELPERS_SOURCE                                                             \
-    "array[2][2] integer grid = {{1, 2}, {3, 4}};\n"                                               \
-    "integer value = grid[0][1];"
+    "array[2][2] int32 grid = {{1, 2}, {3, 4}};\n"                                                 \
+    "int32 value = grid[0][1];"
 #define ZLANG_SPEC_UNUSED_HELPER "static inline void zlang_gen_array_set_2_i32"

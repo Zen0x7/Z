@@ -1,7 +1,7 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    integer value = 2;
+function main(): int32 {
+    int32 value = 2;
     boolean ready = true;
 
     if (value == 1) {

@@ -1,8 +1,8 @@
 import { write } from "@std/io";
 
-function main(): integer {
-    array[5] integer values = {4, 5};
-    integer capacity = 5;
+function main(): int32 {
+    array[5] int32 values = {4, 5};
+    int32 capacity = 5;
 
     values[0] = values[1] + 1;
     values[2] = values[0] * 2;

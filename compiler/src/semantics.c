@@ -3,6 +3,7 @@
  */
 
 #include "zlang/compiler/semantics.h"
+#include "zlang/compiler/generics.h"
 #include "zlang/compiler/stdlib.h"
 
 #include <string.h>
@@ -30,6 +31,7 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->diagnostics_ = diagnostics;
     context->program_ = program;
     context->current_struct_ = NULL;
+    context->current_generic_declaration_ = NULL;
 }
 
 static zlang_symbol_t *zlang_find_mutable_symbol(zlang_semantic_context_t *context,
@@ -104,6 +106,9 @@ static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *progr
     }
     return NULL;
 }
+
+static bool zlang_validate_generic_declaration(zlang_semantic_context_t *context,
+                                               const zlang_ast_statement_t *statement);
 
 static const zlang_ast_statement_t *zlang_find_struct_method(const zlang_program_t *program,
                                                              const char *struct_name,
@@ -253,26 +258,57 @@ static bool zlang_is_user_type(const zlang_program_t *program, const char *name)
 }
 
 static bool zlang_is_builtin_type(const char *name) {
-    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+    return name != NULL && (strcmp(name, "int32") == 0 || strcmp(name, "uint32") == 0 ||
                             strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||
                             strcmp(name, "float") == 0 || strcmp(name, "double") == 0 ||
                             strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0 ||
-                            strcmp(name, "arguments") == 0);
+                            strcmp(name, "arguments") == 0 || zlang_std_is_native_type(name));
 }
 
 static bool zlang_is_numeric_type(const char *name) {
-    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+    return name != NULL && (strcmp(name, "int32") == 0 || strcmp(name, "uint32") == 0 ||
                             strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||
                             strcmp(name, "float") == 0 || strcmp(name, "double") == 0);
 }
 
 static bool zlang_is_integral_type(const char *name) {
-    return name != NULL && (strcmp(name, "integer") == 0 || strcmp(name, "unsigned") == 0 ||
+    return name != NULL && (strcmp(name, "int32") == 0 || strcmp(name, "uint32") == 0 ||
                             strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0);
 }
 
-static bool zlang_is_known_type(const zlang_program_t *program, const char *name) {
-    return zlang_is_builtin_type(name) || zlang_is_user_type(program, name);
+static bool zlang_is_known_type(const zlang_semantic_context_t *context, const char *name) {
+    if (zlang_is_builtin_type(name) || zlang_is_user_type(context->program_, name)) {
+        return true;
+    }
+    if (context->current_generic_declaration_ != NULL &&
+        zlang_generic_parameter_index(context->current_generic_declaration_, name, NULL)) {
+        return true;
+    }
+    if (name == NULL || strchr(name, '<') == NULL) {
+        return false;
+    }
+    if (zlang_std_find_result(name) != NULL) {
+        return true;
+    }
+    const zlang_generic_application_t *const _application_k =
+        zlang_generic_find_application(context->program_, name);
+    if (_application_k == NULL) {
+        return false;
+    }
+    const zlang_ast_statement_t *const _declaration_k = zlang_generic_find_declaration(
+        context->program_, _application_k->base_name_, _application_k->is_function_);
+    if (_declaration_k == NULL ||
+        _application_k->argument_count_ != _declaration_k->generic_parameter_count_) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < _application_k->argument_count_; ++_index) {
+        const char *const _argument_k = _application_k->arguments_[_index];
+        if (!zlang_is_builtin_type(_argument_k) &&
+            !zlang_is_user_type(context->program_, _argument_k)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static bool zlang_is_enum_type(const zlang_program_t *program, const char *name) {
@@ -515,6 +551,11 @@ static bool zlang_expression_is_lvalue(const zlang_semantic_context_t *context, 
     return true;
 }
 
+static const char *zlang_native_result_field_type(const char *record_name, const char *field_name) {
+    const zlang_std_result_t *const _result_k = zlang_std_find_result(record_name);
+    return zlang_std_native_result_field_type(_result_k, field_name);
+}
+
 static const char *
 // NOLINTNEXTLINE(misc-no-recursion)
 zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
@@ -531,15 +572,15 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         if (_expression_k->is_uint64_) {
             return "uint64";
         }
-        return _expression_k->is_unsigned_ ? "unsigned" : "integer";
+        return _expression_k->is_unsigned_ ? "uint32" : "int32";
     case zlang_expression_float_literal_:
         return _expression_k->is_float_ ? "float" : "double";
     case zlang_expression_conversion_: {
         const char *const _source_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
         const bool _enum_source_k = zlang_is_enum_type(context->program_, _source_k);
-        const bool _integer_target_k = zlang_type_matches("integer", _expression_k->name_) ||
-                                       zlang_type_matches("unsigned", _expression_k->name_) ||
+        const bool _integer_target_k = zlang_type_matches("int32", _expression_k->name_) ||
+                                       zlang_type_matches("uint32", _expression_k->name_) ||
                                        zlang_type_matches("int64", _expression_k->name_) ||
                                        zlang_type_matches("uint64", _expression_k->name_);
         if ((!zlang_is_numeric_type(_source_k) && !(_enum_source_k && _integer_target_k)) ||
@@ -570,6 +611,15 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                 return _field_k->type_name_;
             }
         }
+        if (zlang_std_is_status_constant(_expression_k->name_)) {
+            return "Status";
+        }
+        if (zlang_std_is_stream_constant(_expression_k->name_)) {
+            return "stream";
+        }
+        if (zlang_std_is_stream_constant(_expression_k->name_)) {
+            return "stream";
+        }
         const zlang_ast_statement_t *const _enum_k =
             zlang_find_enum_owner(context->program_, _expression_k->name_);
         if (_enum_k != NULL) {
@@ -595,7 +645,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->left_, statement);
         const bool _signed_k =
-            zlang_type_matches("integer", _actual_k) || zlang_type_matches("int64", _actual_k) ||
+            zlang_type_matches("int32", _actual_k) || zlang_type_matches("int64", _actual_k) ||
             zlang_type_matches("float", _actual_k) || zlang_type_matches("double", _actual_k);
         if (!_signed_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
@@ -685,7 +735,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                           statement, "length target is not a declared array");
             return NULL;
         }
-        return "unsigned";
+        return "uint32";
     }
     case zlang_expression_equal_:
     case zlang_expression_less_:
@@ -887,16 +937,20 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         } else {
             _record_name_k = zlang_analyze_expression(context, _expression_k->left_, statement);
         }
+        const char *const _native_field_k =
+            zlang_native_result_field_type(_record_name_k, _expression_k->name_);
         const zlang_ast_statement_t *const _record_k =
-            zlang_find_struct(context->program_, _record_name_k);
+            _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
         const zlang_ast_statement_t *const _field_k =
-            zlang_find_field(context->program_, _record_k, _expression_k->name_);
-        if (_field_k == NULL) {
+            _native_field_k != NULL
+                ? NULL
+                : zlang_find_field(context->program_, _record_k, _expression_k->name_);
+        if (_native_field_k == NULL && _field_k == NULL) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "field is not declared on the struct");
             return NULL;
         }
-        if (_field_k->kind_ == zlang_statement_array_declaration_ &&
+        if (_native_field_k == NULL && _field_k->kind_ == zlang_statement_array_declaration_ &&
             _expression_k->argument_count_ > 0U) {
             if (_expression_k->argument_count_ != _field_k->rank_) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
@@ -908,7 +962,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                                statement);
             }
         }
-        return _field_k->type_name_;
+        return _native_field_k != NULL ? _native_field_k : _field_k->type_name_;
     }
     case zlang_expression_field_assignment_: {
         const zlang_ast_expression_t *const _target_k =
@@ -928,16 +982,20 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         } else {
             _record_name_k = zlang_analyze_expression(context, _target_k->left_, statement);
         }
+        const char *const _native_field_k =
+            zlang_native_result_field_type(_record_name_k, _target_k->name_);
         const zlang_ast_statement_t *const _record_k =
-            zlang_find_struct(context->program_, _record_name_k);
+            _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
         const zlang_ast_statement_t *const _field_k =
-            zlang_find_field(context->program_, _record_k, _target_k->name_);
-        if (_field_k == NULL) {
+            _native_field_k != NULL
+                ? NULL
+                : zlang_find_field(context->program_, _record_k, _target_k->name_);
+        if (_native_field_k == NULL && _field_k == NULL) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "field is not declared on the struct");
             return NULL;
         }
-        if (_field_k->kind_ == zlang_statement_array_declaration_ &&
+        if (_native_field_k == NULL && _field_k->kind_ == zlang_statement_array_declaration_ &&
             _target_k->argument_count_ > 0U) {
             if (_target_k->argument_count_ != _field_k->rank_) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index,
@@ -951,7 +1009,9 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
-        if (!zlang_type_matches(_field_k->type_name_, _actual_k)) {
+        const char *const _field_type_k =
+            _native_field_k != NULL ? _native_field_k : _field_k->type_name_;
+        if (!zlang_type_matches(_field_type_k, _actual_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "field value does not match the declared field type");
             return NULL;
@@ -993,7 +1053,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             return NULL;
         }
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
-        return _is_string_k ? "unsigned" : _target_k->type_name_;
+        return _is_string_k ? "uint32" : _target_k->type_name_;
     }
     case zlang_expression_construct_: {
         const zlang_ast_statement_t *const _structure_k =
@@ -1022,6 +1082,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         } else if (zlang_find_struct(context->program_, _expression_k->base_name_) != NULL) {
             _struct_name_k = _expression_k->base_name_;
             _static_k = true;
+        }
+        const zlang_std_result_t *const _native_result_k =
+            _struct_name_k != NULL ? zlang_std_find_result(_struct_name_k) : NULL;
+        if (_native_result_k != NULL) {
+            const char *const _method_type_k =
+                zlang_std_native_result_method_type(_native_result_k, _expression_k->name_);
+            if (_expression_k->argument_count_ != 0U || _method_type_k == NULL) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                              statement, "result method is not declared");
+                return NULL;
+            }
+            return _method_type_k;
         }
         const zlang_ast_statement_t *const _method_k =
             zlang_find_struct_method_any(context->program_, _struct_name_k, _expression_k->name_);
@@ -1072,9 +1144,25 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                               "no standard overload matches the argument types");
                 return NULL;
             }
-            if (_std_k->parameter_count_ == 1U && _std_k->parameter_is_reference_[0] &&
-                strcmp(_std_k->domain_, "io") == 0) {
-                const size_t _argument_index_k = _expression_k->argument_indices_[0];
+            size_t _destination_parameter_k = ZLANG_CALL_ARGUMENT_CAPACITY;
+            for (size_t _parameter = 0U; _parameter < _std_k->parameter_count_; ++_parameter) {
+                if (!_std_k->parameter_is_reference_[_parameter] ||
+                    _std_k->parameter_is_const_[_parameter] ||
+                    _std_k->parameter_types_[_parameter] == NULL ||
+                    strcmp(_std_k->parameter_types_[_parameter], "string") != 0) {
+                    continue;
+                }
+                _destination_parameter_k = _parameter;
+                break;
+            }
+            const bool _needs_bounded_destination_k =
+                _destination_parameter_k < ZLANG_CALL_ARGUMENT_CAPACITY &&
+                _destination_parameter_k < _expression_k->argument_count_ &&
+                strcmp(_std_k->domain_, "io") == 0 &&
+                (strcmp(_std_k->name_, "read") == 0 || strcmp(_std_k->name_, "read_line") == 0);
+            if (_needs_bounded_destination_k) {
+                const size_t _argument_index_k =
+                    _expression_k->argument_indices_[_destination_parameter_k];
                 const zlang_ast_expression_t *const _argument_expression_k =
                     _argument_index_k < context->program_->expression_count_
                         ? &context->program_->expressions_[_argument_index_k]
@@ -1187,6 +1275,14 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
     bool _result_k = true;
     switch (statement->kind_) {
     case zlang_statement_struct_: {
+        if (!zlang_validate_generic_declaration(context, statement)) {
+            return false;
+        }
+        const zlang_ast_statement_t *const _previous_generic_k =
+            context->current_generic_declaration_;
+        if (statement->is_generic_) {
+            context->current_generic_declaration_ = statement;
+        }
         if (statement->base_name_ != NULL) {
             if (zlang_find_struct(context->program_, statement->base_name_) == NULL) {
                 _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
@@ -1280,7 +1376,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             }
             const bool _is_array_field_k = _field_k->kind_ == zlang_statement_array_declaration_;
             if ((!_is_array_field_k && _field_k->kind_ != zlang_statement_declaration_) ||
-                !zlang_is_known_type(context->program_, _field_k->type_name_)) {
+                !zlang_is_known_type(context, _field_k->type_name_)) {
                 _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _field_k,
                                          "struct field has an unknown type");
                 continue;
@@ -1337,6 +1433,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             }
         }
         context->current_struct_ = _previous_struct_k;
+        context->current_generic_declaration_ = _previous_generic_k;
         break;
     }
     case zlang_statement_enum_: {
@@ -1359,7 +1456,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_declaration_: {
-        if (!zlang_is_known_type(context->program_, statement->type_name_)) {
+        if (!zlang_is_known_type(context, statement->type_name_)) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
                                      "declaration uses an unknown type");
             break;
@@ -1390,7 +1487,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_array_declaration_:
-        if (!zlang_is_known_type(context->program_, statement->type_name_)) {
+        if (!zlang_is_known_type(context, statement->type_name_)) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
                                      "array uses an unknown element type");
             break;
@@ -1513,10 +1610,10 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
     case zlang_statement_repeat_: {
         const char *const _actual_k =
             zlang_analyze_expression(context, statement->expression_, statement);
-        if (!zlang_type_matches("unsigned", _actual_k)) {
+        if (!zlang_type_matches("uint32", _actual_k)) {
             _result_k = zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
                                                 statement->expression_, statement,
-                                                "repeat count must be unsigned");
+                                                "repeat count must be uint32");
         }
         ++context->loop_depth_;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_) &&
@@ -1547,7 +1644,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                  _axis < statement->foreach_rank_ && _axis < ZLANG_ARRAY_MAX_RANK; ++_axis) {
                 const zlang_ast_statement_t _coordinate_k = {
                     .kind_ = zlang_statement_declaration_,
-                    .type_name_ = "unsigned",
+                    .type_name_ = "uint32",
                     .name_ = statement->foreach_names_[_axis],
                     .line_ = statement->line_,
                     .column_ = statement->column_,
@@ -1561,7 +1658,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         } else if (statement->index_name_ != NULL) {
             const zlang_ast_statement_t _index_k = {
                 .kind_ = zlang_statement_declaration_,
-                .type_name_ = "unsigned",
+                .type_name_ = "uint32",
                 .name_ = statement->index_name_,
                 .line_ = statement->line_,
                 .column_ = statement->column_,
@@ -1594,6 +1691,9 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_function_: {
+        if (!zlang_validate_generic_declaration(context, statement)) {
+            return false;
+        }
         const bool _member_k = statement->owner_name_ != NULL;
         if (!_member_k && !zlang_add_function_symbol(context, statement)) {
             return false;
@@ -1653,6 +1753,11 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         const char *const _previous_return_k = context->current_return_type_;
         const size_t _previous_loop_k = context->loop_depth_;
+        const zlang_ast_statement_t *const _previous_generic_k =
+            context->current_generic_declaration_;
+        if (statement->is_generic_) {
+            context->current_generic_declaration_ = statement;
+        }
         context->current_return_type_ = statement->is_constructor_ ? "void" : statement->type_name_;
         context->loop_depth_ = 0U;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
@@ -1675,6 +1780,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         context->current_return_type_ = _previous_return_k;
         context->loop_depth_ = _previous_loop_k;
+        context->current_generic_declaration_ = _previous_generic_k;
         context->symbol_count_ = _scope_start_k;
         --context->scope_depth_;
         break;
@@ -1901,9 +2007,82 @@ static bool zlang_validate_inferred_shapes(const zlang_program_t *program,
     return true;
 }
 
+static bool zlang_validate_generic_declaration(zlang_semantic_context_t *context,
+                                               const zlang_ast_statement_t *statement) {
+    bool _result_k = true;
+    if (!statement->is_generic_ || statement->generic_parameter_count_ == 0U) {
+        return true;
+    }
+    for (size_t _index = 0U; _index < statement->generic_parameter_count_; ++_index) {
+        const char *const _parameter_k = statement->generic_parameters_[_index];
+        if (_parameter_k == NULL) {
+            continue;
+        }
+        for (size_t _other = 0U; _other < _index; ++_other) {
+            const char *const _other_k = statement->generic_parameters_[_other];
+            if (_other_k != NULL && strcmp(_parameter_k, _other_k) == 0) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, statement,
+                                         "generic parameter is declared twice");
+            }
+        }
+    }
+    if (statement->kind_ == zlang_statement_struct_) {
+        if (statement->base_name_ != NULL || statement->uses_count_ > 0U) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "generic structs cannot inherit or use traits");
+        }
+    } else if (statement->kind_ == zlang_statement_function_) {
+        if (statement->owner_name_ != NULL || statement->is_main_) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "generic methods and generic main are not supported");
+        }
+    }
+    return _result_k;
+}
+
+static bool zlang_validate_generic_applications(zlang_semantic_context_t *context) {
+    const zlang_program_t *const _program_k = context->program_;
+    bool _result_k = true;
+    for (size_t _index = 0U; _index < _program_k->generic_application_count_; ++_index) {
+        const zlang_generic_application_t *const _application_k =
+            &_program_k->generic_applications_[_index];
+        if (zlang_std_find_result(_application_k->name_) != NULL) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _declaration_k = zlang_generic_find_declaration(
+            _program_k, _application_k->base_name_, _application_k->is_function_);
+        if (_declaration_k == NULL) {
+            (void)zlang_diagnostics_add(
+                context->diagnostics_, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _application_k->line_,
+                _application_k->column_, "generic declaration is not defined");
+            _result_k = false;
+            continue;
+        }
+        if (_application_k->argument_count_ != _declaration_k->generic_parameter_count_) {
+            (void)zlang_diagnostics_add(context->diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                        _application_k->line_, _application_k->column_,
+                                        "generic argument count does not match the declaration");
+            _result_k = false;
+            continue;
+        }
+        for (size_t _argument = 0U; _argument < _application_k->argument_count_; ++_argument) {
+            const char *const _type_k = _application_k->arguments_[_argument];
+            if (!zlang_is_builtin_type(_type_k) && !zlang_is_user_type(_program_k, _type_k)) {
+                (void)zlang_diagnostics_add(context->diagnostics_,
+                                            ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                            _application_k->line_, _application_k->column_,
+                                            "generic argument is not a known type");
+                _result_k = false;
+            }
+        }
+    }
+    return _result_k;
+}
+
 bool zlang_analyze_program(const zlang_program_t *program, zlang_semantic_context_t *context) {
     context->program_ = program;
     if (!zlang_register_imports(program, context) ||
+        !zlang_validate_generic_applications(context) ||
         !zlang_validate_inferred_shapes(program, context->diagnostics_)) {
         return false;
     }

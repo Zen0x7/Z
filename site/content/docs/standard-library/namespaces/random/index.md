@@ -22,8 +22,8 @@ import { generate_int32, generate_float64 } from "@std/random";
 
 ## What it does
 
-- `generate_int32` returns an `integer` in the inclusive range from `from` to `to`.
-- `generate_uint32` returns an `unsigned` in the inclusive range from `from` to `to`.
+- `generate_int32` returns an `int32` in the inclusive range from `from` to `to`.
+- `generate_uint32` returns a `uint32` in the inclusive range from `from` to `to`.
 - `generate_int64` returns an `int64` in the inclusive range from `from` to `to`.
 - `generate_uint64` returns a `uint64` in the inclusive range from `from` to `to`.
 - `generate_float32` returns a `float` from the range before floating-point rounding.

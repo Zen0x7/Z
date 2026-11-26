@@ -13,7 +13,8 @@ watch(
 )
 
 function isDocsActive(to: string) {
-  return to === '/docs' ? route.path === '/docs' : route.path.startsWith(to)
+  if (to === '/docs') return route.path === '/docs'
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 </script>
 

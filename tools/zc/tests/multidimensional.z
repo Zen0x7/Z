@@ -1,13 +1,13 @@
 import { write } from "@std/io";
-array[2][2][2] integer cube = {
+array[2][2][2] int32 cube = {
     {{1, 2}, {3, 4}},
     {{5, 6}, {7, 8}}
 };
-integer sum = 0;
+int32 sum = 0;
 foreach (i, j, k in cube) {
     sum += cube[i][j][k];
 }
-array[2][2][2][2] integer hyper = {
+array[2][2][2][2] int32 hyper = {
     {{{1, 2}, {3, 4}}, {{5, 6}, {7, 8}}},
     {{{9, 10}, {11, 12}}, {{13, 14}, {15, 16}}}
 };

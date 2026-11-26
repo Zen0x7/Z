@@ -11,8 +11,8 @@ made by the compiler.
 
 Identifiers start with a letter or underscore and continue with letters, digits or underscores.
 Keywords are `boolean`, `break`, `clone`, `const`, `continue`, `else`, `enum`, `false`, `for`,
-`double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `integer`, `int64`, `length`,
-`struct`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `unsigned`
+`double`, `foreach`, `from`, `function`, `if`, `import`, `in`, `int32`, `int64`, `length`,
+`struct`, `reference`, `repeat`, `return`, `array`, `float`, `string`, `true`, `uint64`, `uint32`
 and `while`.
 
 Integer literals are decimal and may carry `u`, `i64` or `u64` suffixes. Binary arithmetic and
@@ -38,16 +38,16 @@ modules. Generated C activates only the imported runtime headers.
 ## Declarations
 
 ```zlang
-const integer base = 10;
-integer total = 1;
-unsigned limit = 3U;
+const int32 base = 10;
+int32 total = 1;
+uint32 limit = 3U;
 boolean ready = true;
 string label = "z" + "lang";
 string[32] bounded = label + " value";
 
-array[4] integer values;
-array[] integer inferred = {1, 2, 3};
-array[5] integer partial = {1, 2, 3};
+array[4] int32 values;
+array[] int32 inferred = {1, 2, 3};
+array[5] int32 partial = {1, 2, 3};
 array[2] string[8] names = {"a", "b"};
 ```
 
@@ -63,8 +63,8 @@ types and function return types:
 
 ```zlang
 struct Point {
-    integer x;
-    integer y;
+    int32 x;
+    int32 y;
 }
 
 enum Color {
@@ -81,13 +81,13 @@ A struct can inherit from one previously declared struct:
 
 ```zlang
 struct Shape {
-    integer value;
-    function area(): integer { return value; }
+    int32 value;
+    function area(): int32 { return value; }
 }
 
 struct Square : Shape {
-    integer side;
-    function area(): integer { return side * side; }
+    int32 side;
+    function area(): int32 { return side * side; }
 }
 ```
 
@@ -99,12 +99,12 @@ override must keep the same return type, parameter types and static/instance kin
 Traits provide static behavior reuse:
 
 ```zlang
-trait Named requires integer value {
-    function label(): integer { return value; }
+trait Named requires int32 value {
+    function label(): int32 { return value; }
 }
 
 struct Counter uses Named {
-    integer value;
+    int32 value;
 }
 ```
 
@@ -132,7 +132,7 @@ needed.
 | `while (expression) {...}` | Pre-tested loop |
 | `for (init; condition; update) {...}` | Native C-style loop |
 | `foreach (item in sequence) {...}` | Native indexed loop |
-| `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `unsigned` |
+| `foreach (index, item in sequence) {...}` | Indexed loop exposing the index as `uint32` |
 | `foreach (row, col in grid) {...}` | Multidimensional index loop in row-major order |
 | `repeat (count) {...}` | Native counted loop |
 | `break;` / `continue;` | Loop control, valid only inside a loop |
@@ -154,18 +154,18 @@ to user functions, `write` from `@std/io`, `length`, unary `!` and `-`, and bina
 `==`, `!=`, `<`, `>`, `<=`, `>=`, `&&`, `||`. Compound assignment is available for arithmetic
 operators.
 
-`if`, `while` and `for` conditions must be `boolean`. `repeat` counts must be `unsigned`. A
+`if`, `while` and `for` conditions must be `boolean`. `repeat` counts must be `uint32`. A
 non-void function must return a value of its declared type; a void function must return without a
 value. Loops may nest freely, including `for` inside `for` and `foreach` inside `foreach`.
 
 String concatenation folds literals at compile time. Concatenation involving a variable requires
 an explicit string capacity and copies into caller-owned storage. Indexing a string reads one byte
-as `unsigned` with a bounds trap; string elements are read-only.
+as `uint32` with a bounds trap; string elements are read-only.
 
 ## Builtins
 
-`length(sequence)` emits the native first extent macro as an unsigned value. `write`
-accepts strings, integers, unsigned integers and booleans, using fixed-stack runtime helpers.
+`length(sequence)` emits the native first extent macro as an uint32 value. `write`
+accepts strings, integers, uint32 integers and booleans, using fixed-stack runtime helpers.
 
 ## Diagnostics
 
@@ -188,3 +188,38 @@ accepts strings, integers, unsigned integers and booleans, using fixed-stack run
 
 Runtime traps use fixed codes: `1` overflow, `2` bounds, `3` capacity, `4` invalid argument and
 `5` division by zero.
+
+## Generics (0.30)
+
+Generic declarations list type parameters after the name:
+
+```zlang
+struct Pair<T, U> {
+    T first;
+    U second;
+}
+
+function identity<T>(clone T value): T {
+    return value;
+}
+```
+
+Use `Pair<int32, boolean>` and `identity<int32>(1)` to instantiate them. The compiler
+monomorphizes each application into a concrete C99 type or function. Generic structs cannot inherit,
+use traits or declare methods. Generic functions must be top-level and have flat bodies. Up to four
+type parameters and four arguments per application are supported.
+
+## Native results (0.31)
+
+`Result<T, Status>` is a closed native generic family. Supported applications such as
+`Result<void, Status>` and `Result<int32, Status>` map to canonical C layouts in
+`<zlang/standard/result/result.h>`. Results expose `code`, `what` and, for non-void payloads,
+`value`. Status constants are `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
+`STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`.
+
+0.32 IO operations return `Result<int32, Status>` with the transferred byte count in `value`.
+Convenience overloads use implicit stdout or stdin. Explicit overloads accept `STDIN`, `STDOUT` and
+`STDERR` as borrowed stream handles, so future facilities such as sockets can use the same API.
+`read` takes a bounded destination view, an offset and a maximum byte count. String and stream
+parameters are borrowed views; no buffer bytes are copied. Passing a `string` by `clone` copies only
+the descriptor.

@@ -1,6 +1,6 @@
 # Matrix multiplication
 
-Multiplies two fixed `2 x 2` integer matrices and prints the result in row-major order.
+Multiplies two fixed `2 x 2` int32 matrices and prints the result in row-major order.
 
 This example exercises:
 

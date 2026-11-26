@@ -63,6 +63,7 @@ Small programs focused on one construct or a tight group of related constructs.
 | [scopes](features/scopes/) | user-authored blocks and non-shadowing scope access |
 | [strings](features/strings/) | folding, bounded strings and string indexing |
 | [struct_methods](features/struct_methods/) | structs, constructors, implicit receiver and static methods |
+| [inheritance_traits](features/inheritance_traits/) | inheritance, virtual dispatch and static traits |
 
 ## Regenerating a golden
 

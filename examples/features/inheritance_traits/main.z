@@ -1,0 +1,50 @@
+import { write } from "@std/io";
+
+trait Named requires integer value {
+    function label(): integer {
+        return value;
+    }
+}
+
+struct Shape uses Named {
+    integer value;
+
+    constructor(clone integer initial) {
+        value = initial;
+    }
+
+    function area(): integer {
+        return value;
+    }
+}
+
+struct Square : Shape {
+    integer side;
+
+    constructor(clone integer initial, clone integer side_value) {
+        side = side_value;
+        value = initial;
+    }
+
+    function area(): integer {
+        return side * side;
+    }
+}
+
+function describe(reference Shape shape): integer {
+    return shape.area();
+}
+
+function main(): integer {
+    Shape base = Shape(2);
+    Square square = Square(3, 4);
+    write(describe(base));
+    write(" ");
+    write(describe(square));
+    write(" ");
+    write(base.label());
+    write(" ");
+    write(square.label());
+    write("\n");
+    return 0;
+}

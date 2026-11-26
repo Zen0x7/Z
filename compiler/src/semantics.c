@@ -710,6 +710,43 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         return _actual_k;
     }
+    case zlang_expression_bit_and_:
+    case zlang_expression_bit_or_:
+    case zlang_expression_bit_xor_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_is_integral_type(_left_k) || !zlang_type_matches(_left_k, _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "bitwise operators require matching integral operands");
+            return NULL;
+        }
+        return _left_k;
+    }
+    case zlang_expression_bit_not_: {
+        const char *const _actual_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        if (!zlang_is_integral_type(_actual_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "bitwise negation requires an integral operand");
+            return NULL;
+        }
+        return _actual_k;
+    }
+    case zlang_expression_shift_left_:
+    case zlang_expression_shift_right_: {
+        const char *const _left_k =
+            zlang_analyze_expression(context, _expression_k->left_, statement);
+        const char *const _right_k =
+            zlang_analyze_expression(context, _expression_k->right_, statement);
+        if (!zlang_is_integral_type(_left_k) || !zlang_type_matches("uint32", _right_k)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "shift requires an integral value and uint32 count");
+            return NULL;
+        }
+        return _left_k;
+    }
     case zlang_expression_sub_:
     case zlang_expression_mul_:
     case zlang_expression_div_:

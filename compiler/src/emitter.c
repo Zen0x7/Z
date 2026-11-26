@@ -2601,6 +2601,26 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         }
         return true;
     }
+    case zlang_expression_bit_not_:
+        return zlang_append_text(emitter, "~") &&
+               zlang_emit_expression(program, _expression_k->left_, emitter);
+    case zlang_expression_bit_and_:
+    case zlang_expression_bit_or_:
+    case zlang_expression_bit_xor_:
+    case zlang_expression_shift_left_:
+    case zlang_expression_shift_right_: {
+        const char *const _operator_k = _expression_k->kind_ == zlang_expression_bit_and_   ? " & "
+                                        : _expression_k->kind_ == zlang_expression_bit_or_  ? " | "
+                                        : _expression_k->kind_ == zlang_expression_bit_xor_ ? " ^ "
+                                        : _expression_k->kind_ == zlang_expression_shift_left_
+                                            ? " << "
+                                            : " >> ";
+        return zlang_append_text(emitter, "(") &&
+               zlang_emit_expression(program, _expression_k->left_, emitter) &&
+               zlang_append_text(emitter, _operator_k) &&
+               zlang_emit_expression(program, _expression_k->right_, emitter) &&
+               zlang_append_text(emitter, ")");
+    }
     case zlang_expression_not_: {
         const bool _parenthesize_k =
             zlang_expression_is_comparison(program->expressions_[_expression_k->left_].kind_);

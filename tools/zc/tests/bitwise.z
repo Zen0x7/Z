@@ -1,0 +1,3 @@
+uint32 a = 12U;
+uint32 b = 3U;
+uint32 value = (a & b) | (a ^ b) | (~a) | (a << b) | (a >> b);

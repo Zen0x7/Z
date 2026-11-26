@@ -342,6 +342,13 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         zlang_lexer_advance(lexer);
         return true;
     }
+    if ((_character_k == '<' && _next_k == '<') || (_character_k == '>' && _next_k == '>')) {
+        token->kind_ = _character_k == '<' ? zlang_token_shift_left_ : zlang_token_shift_right_;
+        token->length_ = 2U;
+        zlang_lexer_advance(lexer);
+        zlang_lexer_advance(lexer);
+        return true;
+    }
     if (_next_k == '=' && (_character_k == '+' || _character_k == '-' || _character_k == '*' ||
                            _character_k == '/' || _character_k == '%')) {
         token->kind_ = zlang_compound_token_kind(_character_k);
@@ -398,6 +405,18 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
         break;
     case '.':
         token->kind_ = zlang_token_dot_;
+        break;
+    case '&':
+        token->kind_ = zlang_token_ampersand_;
+        break;
+    case '|':
+        token->kind_ = zlang_token_pipe_;
+        break;
+    case '^':
+        token->kind_ = zlang_token_caret_;
+        break;
+    case '~':
+        token->kind_ = zlang_token_tilde_;
         break;
     case '=':
         token->kind_ = zlang_token_equal_;

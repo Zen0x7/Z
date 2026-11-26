@@ -460,6 +460,24 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
         parser->expressions_[_expression_k].column_ = _column_k;
         break;
     }
+    case zlang_token_tilde_: {
+        const uint32_t _line_k = _token_k->line_;
+        const uint32_t _column_k = _token_k->column_;
+        zlang_parser_advance(parser);
+        size_t _operand_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_primary(parser, &_operand_k)) { // NOLINT(misc-no-recursion)
+            return false;
+        }
+        _expression_k = zlang_parser_add_expression(parser);
+        if (_expression_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_expression_k].kind_ = zlang_expression_bit_not_;
+        parser->expressions_[_expression_k].left_ = _operand_k;
+        parser->expressions_[_expression_k].line_ = _line_k;
+        parser->expressions_[_expression_k].column_ = _column_k;
+        break;
+    }
     case zlang_token_minus_: {
         const uint32_t _line_k = _token_k->line_;
         const uint32_t _column_k = _token_k->column_;
@@ -943,9 +961,43 @@ static bool zlang_parse_additive(zlang_parser_t *parser, size_t *expression) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_relational(zlang_parser_t *parser, size_t *expression) {
+static bool zlang_parse_shift(zlang_parser_t *parser, size_t *expression) {
     size_t _left_k = ZLANG_NO_EXPRESSION;
     if (!zlang_parse_additive(parser, &_left_k)) {
+        return false;
+    }
+    for (;;) {
+        const zlang_token_kind_t _kind_k = zlang_parser_current(parser)->kind_;
+        zlang_expression_kind_t _operator_k = zlang_expression_shift_left_;
+        if (_kind_k == zlang_token_shift_left_) {
+            _operator_k = zlang_expression_shift_left_;
+        } else if (_kind_k == zlang_token_shift_right_) {
+            _operator_k = zlang_expression_shift_right_;
+        } else {
+            break;
+        }
+        zlang_parser_advance(parser);
+        size_t _right_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_additive(parser, &_right_k)) {
+            return false;
+        }
+        const size_t _binary_k = zlang_parser_add_expression(parser);
+        if (_binary_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_binary_k].kind_ = _operator_k;
+        parser->expressions_[_binary_k].left_ = _left_k;
+        parser->expressions_[_binary_k].right_ = _right_k;
+        _left_k = _binary_k;
+    }
+    *expression = _left_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_relational(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_shift(parser, &_left_k)) {
         return false;
     }
     for (;;) {
@@ -1009,9 +1061,84 @@ static bool zlang_parse_equality(zlang_parser_t *parser, size_t *expression) {
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-static bool zlang_parse_logical_and(zlang_parser_t *parser, size_t *expression) {
+static bool zlang_parse_bit_and(zlang_parser_t *parser, size_t *expression) {
     size_t _left_k = ZLANG_NO_EXPRESSION;
     if (!zlang_parse_equality(parser, &_left_k)) {
+        return false;
+    }
+    while (zlang_parser_current(parser)->kind_ == zlang_token_ampersand_) {
+        zlang_parser_advance(parser);
+        size_t _right_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_equality(parser, &_right_k)) {
+            return false;
+        }
+        const size_t _binary_k = zlang_parser_add_expression(parser);
+        if (_binary_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_binary_k].kind_ = zlang_expression_bit_and_;
+        parser->expressions_[_binary_k].left_ = _left_k;
+        parser->expressions_[_binary_k].right_ = _right_k;
+        _left_k = _binary_k;
+    }
+    *expression = _left_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_bit_xor(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_bit_and(parser, &_left_k)) {
+        return false;
+    }
+    while (zlang_parser_current(parser)->kind_ == zlang_token_caret_) {
+        zlang_parser_advance(parser);
+        size_t _right_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_bit_and(parser, &_right_k)) {
+            return false;
+        }
+        const size_t _binary_k = zlang_parser_add_expression(parser);
+        if (_binary_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_binary_k].kind_ = zlang_expression_bit_xor_;
+        parser->expressions_[_binary_k].left_ = _left_k;
+        parser->expressions_[_binary_k].right_ = _right_k;
+        _left_k = _binary_k;
+    }
+    *expression = _left_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_bit_or(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_bit_xor(parser, &_left_k)) {
+        return false;
+    }
+    while (zlang_parser_current(parser)->kind_ == zlang_token_pipe_) {
+        zlang_parser_advance(parser);
+        size_t _right_k = ZLANG_NO_EXPRESSION;
+        if (!zlang_parse_bit_xor(parser, &_right_k)) {
+            return false;
+        }
+        const size_t _binary_k = zlang_parser_add_expression(parser);
+        if (_binary_k == ZLANG_NO_EXPRESSION) {
+            return false;
+        }
+        parser->expressions_[_binary_k].kind_ = zlang_expression_bit_or_;
+        parser->expressions_[_binary_k].left_ = _left_k;
+        parser->expressions_[_binary_k].right_ = _right_k;
+        _left_k = _binary_k;
+    }
+    *expression = _left_k;
+    return true;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+static bool zlang_parse_logical_and(zlang_parser_t *parser, size_t *expression) {
+    size_t _left_k = ZLANG_NO_EXPRESSION;
+    if (!zlang_parse_bit_or(parser, &_left_k)) {
         return false;
     }
     while (zlang_parser_current(parser)->kind_ == zlang_token_and_) {

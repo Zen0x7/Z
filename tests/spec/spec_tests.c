@@ -1760,6 +1760,21 @@ static void emits_ternary_expression(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "app_local_ok ? 1 : 2") != NULL);
 }
 
+static void emits_bitwise_operators(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "uint32 a = 12U;\n"
+                                  "uint32 b = 3U;\n"
+                                  "uint32 value = (a & b) | (a ^ b) | (~a) | (a << b) | (a >> b);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, " & ") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, " | ") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, " ^ ") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "~") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, " << ") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, " >> ") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

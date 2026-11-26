@@ -23,6 +23,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/switch.z ${CMAKE_CURRENT_BINARY_DIR}/switch.z COPYONLY)
     configure_file(tests/match.z ${CMAKE_CURRENT_BINARY_DIR}/match.z COPYONLY)
     configure_file(tests/ternary.z ${CMAKE_CURRENT_BINARY_DIR}/ternary.z COPYONLY)
+    configure_file(tests/bitwise.z ${CMAKE_CURRENT_BINARY_DIR}/bitwise.z COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z --emit-c)
@@ -63,6 +64,18 @@ if(ZLANG_BUILD_TESTS)
                      -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_generated_c PROPERTIES LABELS module:cli)
+
+    add_test(NAME zlang.cli.compiles_bitwise
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/bitwise.z
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DC_COMPILER_FRONTEND=${CMAKE_C_COMPILER_FRONTEND_VARIANT}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
+    set_tests_properties(zlang.cli.compiles_bitwise PROPERTIES LABELS module:cli)
 
     add_test(NAME zlang.cli.compiles_ternary
              COMMAND ${CMAKE_COMMAND}

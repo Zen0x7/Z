@@ -77,6 +77,42 @@ array[4] Point points;
 Color current = GREEN;
 ```
 
+A struct can inherit from one previously declared struct:
+
+```zlang
+struct Shape {
+    integer value;
+    function area(): integer { return value; }
+}
+
+struct Square : Shape {
+    integer side;
+    function area(): integer { return side * side; }
+}
+```
+
+The base is the first subobject of the derived value. `Square` can be passed where `Shape` or
+`reference Shape` is expected, but a `Shape` cannot be assigned to `Square`. Instance methods are
+virtual by default, so a call through a base receiver dispatches to the effective override. An
+override must keep the same return type, parameter types and static/instance kind.
+
+Traits provide static behavior reuse:
+
+```zlang
+trait Named requires integer value {
+    function label(): integer { return value; }
+}
+
+struct Counter uses Named {
+    integer value;
+}
+```
+
+A trait requirement names a field that the using struct must provide with the same type. Trait
+methods are compiled into the using struct, are called directly and never use the vtable. They
+cannot have the same name as an inherited method. Multiple inheritance and downcasting are not
+supported.
+
 Every parameter needs `clone` or `reference`, with optional `const` before the mode. `clone` is a
 local value copy; `reference` aliases caller storage and cannot be stored or returned. Shadowing a
 visible name is rejected;

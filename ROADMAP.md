@@ -1012,3 +1012,23 @@ override inherited methods.
 
 The performance cost of tags, vtables and indirect calls is accepted by the user. The generated C
 still performs no dynamic allocation.
+## 0.29 — Completion
+
+Zlang 0.29 is implemented at language level 0.29. A struct can declare a single base with
+`struct Derived : Base`; the base is emitted as the first C subobject and derived values can be
+used where a base value or `reference Base` is expected. Downcasting is rejected.
+
+All instance methods are virtual by default. Each polymorphic hierarchy has one generated vtable
+type with one slot per virtual method, and each concrete struct gets its own vtable instance. A
+hidden type tag and vtable pointer are emitted in the root subobject. Constructors and default
+struct initializers set them. Calls through a base receiver are lowered to indirect vtable calls;
+calls on a known concrete receiver can still be resolved directly.
+
+Traits use `trait Name requires Type field, ... { methods }` and `struct S uses Name`. Trait methods
+are compiled into the using struct as ordinary C functions and are called directly. They do not use
+the vtable and cannot override inherited methods. The golden suite includes
+`features/inheritance_traits`.
+
+Inheritance has a runtime cost: larger structs, tags, vtable pointers and indirect calls. The
+generated program still performs no dynamic allocation and uses no runtime type registry beyond the
+internal dispatch tables.

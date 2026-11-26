@@ -58,6 +58,7 @@ typedef enum zlang_token_kind_t {
     zlang_token_switch_,
     zlang_token_case_,
     zlang_token_default_,
+    zlang_token_do_,
     zlang_token_match_,
     zlang_token_left_paren_,
     zlang_token_right_paren_,

@@ -1,0 +1,4 @@
+int32 index = 0;
+do {
+    index += 1;
+} while (index < 3);

@@ -4485,7 +4485,8 @@ static bool zlang_is_nested_in_body(const zlang_program_t *program, size_t index
 static bool zlang_is_grouped_statement(const zlang_program_t *program,
                                        const zlang_ast_statement_t *statement) {
     if (statement->kind_ == zlang_statement_if_ || statement->kind_ == zlang_statement_while_ ||
-        statement->kind_ == zlang_statement_for_ || statement->kind_ == zlang_statement_foreach_ ||
+        statement->kind_ == zlang_statement_do_while_ || statement->kind_ == zlang_statement_for_ ||
+        statement->kind_ == zlang_statement_foreach_ ||
         statement->kind_ == zlang_statement_repeat_ ||
         statement->kind_ == zlang_statement_switch_ || statement->kind_ == zlang_statement_block_) {
         return true;
@@ -5422,6 +5423,20 @@ static bool zlang_emit_statement(const zlang_program_t *program,
             return false;
         }
         return true;
+    }
+    case zlang_statement_do_while_: {
+        if (!zlang_append_text(emitter, "do {\n")) {
+            return false;
+        }
+        const zlang_emitter_scope_t _loop_scope_k = zlang_save_scope(emitter);
+        const bool _body_ok_k = zlang_emit_body(program, statement->body_start_,
+                                                statement->body_count_, emitter, depth + 1U) &&
+                                zlang_append_indent(emitter, depth) &&
+                                zlang_append_text(emitter, "} while ") &&
+                                zlang_emit_condition(program, statement->expression_, emitter) &&
+                                zlang_append_text(emitter, ";\n");
+        zlang_restore_scope(emitter, _loop_scope_k);
+        return _body_ok_k;
     }
     case zlang_statement_switch_: {
         if (!zlang_append_text(emitter, "switch (") ||

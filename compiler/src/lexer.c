@@ -53,6 +53,7 @@ static const zlang_keyword_t keywords_k[] = {{"boolean", zlang_token_boolean_},
                                              {"switch", zlang_token_switch_},
                                              {"case", zlang_token_case_},
                                              {"default", zlang_token_default_},
+                                             {"do", zlang_token_do_},
                                              {"match", zlang_token_match_}};
 
 static void zlang_lexer_advance(zlang_lexer_t *lexer) {

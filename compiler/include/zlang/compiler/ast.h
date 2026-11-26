@@ -134,7 +134,8 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_jump_,
     zlang_statement_switch_,
     zlang_statement_case_,
-    zlang_statement_default_
+    zlang_statement_default_,
+    zlang_statement_do_while_
 } zlang_statement_kind_t;
 
 typedef struct zlang_parameter_t {

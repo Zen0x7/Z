@@ -1714,6 +1714,19 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         --context->loop_depth_;
         break;
     }
+    case zlang_statement_do_while_: {
+        const char *const _condition_k =
+            zlang_analyze_expression(context, statement->expression_, statement);
+        if (!zlang_type_matches("boolean", _condition_k)) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                     "do while condition must be boolean");
+        }
+        ++context->loop_depth_;
+        _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_) &&
+                    _result_k;
+        --context->loop_depth_;
+        break;
+    }
     case zlang_statement_break_:
         if (context->loop_depth_ == 0U && context->switch_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,

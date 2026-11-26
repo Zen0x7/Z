@@ -417,6 +417,7 @@ static bool zlang_parse_jump_statement(zlang_parser_t *parser, zlang_statement_k
 static bool zlang_parse_label(zlang_parser_t *parser);
 static bool zlang_parse_jump(zlang_parser_t *parser);
 static bool zlang_parse_switch(zlang_parser_t *parser);
+static bool zlang_parse_do_while(zlang_parser_t *parser);
 static bool zlang_parse_block(zlang_parser_t *parser, size_t statement);
 static bool zlang_parse_statements(zlang_parser_t *parser);
 
@@ -2160,6 +2161,38 @@ static bool zlang_parse_jump(zlang_parser_t *parser) {
     return zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after jump");
 }
 
+static bool zlang_parse_do_while(zlang_parser_t *parser) {
+    const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    if (!zlang_parser_expect(parser, zlang_token_left_brace_, "expected '{' after do")) {
+        return false;
+    }
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    parser->statements_[_statement_k].kind_ = zlang_statement_do_while_;
+    parser->statements_[_statement_k].line_ = _keyword_k->line_;
+    parser->statements_[_statement_k].column_ = _keyword_k->column_;
+    const size_t _body_start_k = parser->statement_count_;
+    if (!zlang_parse_statements(parser)) { // NOLINT(misc-no-recursion)
+        return false;
+    }
+    parser->statements_[_statement_k].body_start_ = _body_start_k;
+    parser->statements_[_statement_k].body_count_ = parser->statement_count_ - _body_start_k;
+    if (!zlang_parser_expect(parser, zlang_token_right_brace_, "expected '}' after do body") ||
+        !zlang_parser_expect(parser, zlang_token_while_, "expected 'while' after do body") ||
+        !zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after do while")) {
+        return false;
+    }
+    if (!zlang_parse_expression(parser, &parser->statements_[_statement_k].expression_)) {
+        return false;
+    }
+    return zlang_parser_expect(parser, zlang_token_right_paren_,
+                               "expected ')' after do while condition") &&
+           zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after do while");
+}
+
 static bool zlang_parse_switch(zlang_parser_t *parser) {
     const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
     zlang_parser_advance(parser);
@@ -2371,6 +2404,10 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
             }
         } else if (_kind_k == zlang_token_switch_) {
             if (!zlang_parse_switch(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_do_) {
+            if (!zlang_parse_do_while(parser)) {
                 return false;
             }
         } else if (zlang_parser_starts_declaration(parser)) {
@@ -3242,6 +3279,10 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
             }
         } else if (_kind_k == zlang_token_switch_) {
             if (!zlang_parse_switch(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_do_) {
+            if (!zlang_parse_do_while(parser)) {
                 return false;
             }
         } else if (zlang_parser_starts_declaration(parser)) {

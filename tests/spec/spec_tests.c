@@ -1775,6 +1775,18 @@ static void emits_bitwise_operators(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, " >> ") != NULL);
 }
 
+static void emits_do_while_statement(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "int32 index = 0;\n"
+                                  "do {\n"
+                                  "    index += 1;\n"
+                                  "} while (index < 3);";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "do {") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "} while (app_local_index < 3);") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

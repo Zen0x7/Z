@@ -1,5 +1,10 @@
-int32 value = 0;
-jump done;
-value = 1;
+function main(int32 argc, arguments argv): int32 {
+    int32 value = 0;
+    if (argc > 1) {
+        jump done;
+    }
+    value = 1;
 done:
-value = 2;
+    value = 2;
+    return value;
+}

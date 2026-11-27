@@ -1,0 +1,17 @@
+import { write } from "@std/io";
+
+function query(): result_type<int32, status_code> {
+    result_type<int32, status_code> result;
+    result.value = 7;
+    return result;
+}
+
+function main(): int32 {
+    auto value = query();
+    result_type<auto, status_code> copied = query();
+    write(value.get());
+    write(" ");
+    write(copied.get());
+    write("\n");
+    return 0;
+}

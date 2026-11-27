@@ -1,0 +1,9 @@
+import { write } from "@std/io";
+
+extern function my_add(clone int32 left, clone int32 right): int32 from @native/my_math;
+
+function main(): int32 {
+    write(my_add(2, 3));
+    write("\n");
+    return 0;
+}

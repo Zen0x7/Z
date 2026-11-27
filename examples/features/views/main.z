@@ -1,0 +1,15 @@
+import { write } from "@std/io";
+
+function sum(clone view[] int32 values): int32 {
+    return values[0] + values[1];
+}
+
+function main(): int32 {
+    array[6] int32 data;
+    view[] window = to_view(data, 2U, 4U);
+    window[0] = 3;
+    window[1] = 4;
+    write(sum(window));
+    write("\n");
+    return 0;
+}

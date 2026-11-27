@@ -1,0 +1,12 @@
+import { write } from "@std/io";
+
+function main(): int32 {
+    int32 value = 2;
+    int32 label = match (value) {
+        1 => 10,
+        default => 20
+    };
+    write(label);
+    write("\n");
+    return 0;
+}

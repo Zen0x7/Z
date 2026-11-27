@@ -43,6 +43,7 @@ Small programs focused on one construct or a tight group of related constructs.
 
 | Example | Exercises |
 | --- | --- |
+| [auto](features/auto/) | local and native generic type inference |
 | [arithmetic](features/arithmetic/) | signed and uint32 arithmetic, compound assignment |
 | [array_fields](features/array_fields/) | arrays embedded in structs |
 | [arrays_1d](features/arrays_1d/) | fixed 1D arrays, indexed writes, `foreach` |
@@ -50,6 +51,7 @@ Small programs focused on one construct or a tight group of related constructs.
 | [arrays_inferred](features/arrays_inferred/) | inferred array shapes, `length`, mixed ranks |
 | [arrays_nd](features/arrays_nd/) | 2D, 3D and 4D arrays |
 | [comments](features/comments/) | source comment preservation |
+| [constraints](features/constraints/) | generic interface constraints and constrained method calls |
 | [conditions](features/conditions/) | comparisons and logical operators |
 | [const_qualifiers](features/const_qualifiers/) | `const clone` and `const reference` parameters |
 | [functions](features/functions/) | function calls, returns and `reference` mutation |
@@ -58,10 +60,13 @@ Small programs focused on one construct or a tight group of related constructs.
 | [functions_user_types](features/functions_user_types/) | structs in signatures and by-reference mutation |
 | [hello](features/hello/) | strings and newline escapes |
 | [loops](features/loops/) | `while`, `repeat`, `for`, `break`, `continue`, `foreach` |
+| [match_default](features/match_default/) | value-producing `match` with a final `default` arm |
 | [modules](features/modules/) | `z.yaml` aliases, relative project modules, explicit `main` |
+| [native_interop](features/native_interop/) | `z.yaml native`, quoted project headers and linked C sources |
 | [structs_enums](features/structs_enums/) | structs, fields and enums |
 | [scopes](features/scopes/) | user-authored blocks and non-shadowing scope access |
 | [strings](features/strings/) | folding, bounded strings and string indexing |
+| [views](features/views/) | bounded borrowed views, indexed writes and view parameters |
 | [struct_methods](features/struct_methods/) | structs, constructors, implicit receiver and static methods |
 | [inheritance_traits](features/inheritance_traits/) | inheritance, virtual dispatch and static traits |
 | [generics](features/generics/) | generic structs and functions, compile-time monomorphization |

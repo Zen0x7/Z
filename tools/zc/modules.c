@@ -804,6 +804,13 @@ static bool zlang_modules_transform(zlang_modules_t *modules, zlang_module_t *mo
             }
             _native_k->used_ = true;
             const char *_header_text_k = _header_k;
+            if (strcmp(modules->root_, ".") != 0) {
+                const size_t _root_length_k = strlen(modules->root_);
+                if (strncmp(_header_text_k, modules->root_, _root_length_k) == 0 &&
+                    _header_text_k[_root_length_k] == '/') {
+                    _header_text_k += _root_length_k + 1U;
+                }
+            }
             if (_header_text_k[0] == '.' && _header_text_k[1] == '/') {
                 _header_text_k += 2U;
             }

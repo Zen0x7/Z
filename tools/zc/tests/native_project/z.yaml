@@ -1,0 +1,7 @@
+native:
+  my_math:
+    header: "./native/my_math.h"
+    include_dirs:
+      - "./native"
+    sources:
+      - "./native/my_math.c"

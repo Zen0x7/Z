@@ -145,6 +145,57 @@ static bool zlang_modules_normalize(const char *path, char *output, size_t capac
     return true;
 }
 
+static bool zlang_modules_within_root(const zlang_modules_t *modules, const char *path);
+
+static bool zlang_modules_find_native(zlang_modules_t *modules, const char *alias,
+                                      zlang_native_t **output) {
+    if (modules == NULL || alias == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < modules->native_count_; ++_index) {
+        if (strcmp(modules->natives_[_index].alias_, alias) == 0) {
+            if (output != NULL) {
+                *output = &modules->natives_[_index];
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_modules_unquote(const char *value, char *output, size_t capacity) {
+    if (value == NULL || output == NULL || capacity == 0U) {
+        return false;
+    }
+    const size_t _length_k = strlen(value);
+    if (_length_k >= 2U && value[0] == '\"' && value[_length_k - 1U] == '\"') {
+        if (_length_k - 2U + 1U > capacity) {
+            return false;
+        }
+        memcpy(output, value + 1U, _length_k - 2U);
+        output[_length_k - 2U] = '\0';
+        return true;
+    }
+    return zlang_modules_copy(output, capacity, value);
+}
+
+static bool zlang_modules_resolve_native_path(const zlang_modules_t *modules, const char *path,
+                                              char *output, size_t capacity) {
+    if (modules == NULL || path == NULL || path[0] == '\0' || output == NULL || capacity == 0U) {
+        return false;
+    }
+    char _path_k[ZLANG_MODULE_PATH_CAPACITY];
+    if (!zlang_modules_unquote(path, _path_k, sizeof(_path_k))) {
+        return false;
+    }
+    char _full_k[ZLANG_MODULE_PATH_CAPACITY];
+    if (!zlang_modules_join(modules->root_, _path_k, _full_k, sizeof(_full_k))) {
+        return false;
+    }
+    return zlang_modules_normalize(_full_k, output, capacity) &&
+           zlang_modules_within_root(modules, output);
+}
+
 static bool zlang_modules_find_config(zlang_modules_t *modules, const char *source_path) {
     char _directory_k[ZLANG_MODULE_PATH_CAPACITY];
     if (!zlang_modules_dirname(source_path, _directory_k, sizeof(_directory_k))) {
@@ -172,6 +223,10 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
     }
     char *_line_k = strtok(_config_k, "\n");
     bool _in_aliases_k = false;
+    bool _in_native_k = false;
+    zlang_native_t *_native_k = NULL;
+    char(*_native_paths_k)[ZLANG_MODULE_PATH_CAPACITY] = NULL;
+    size_t *_native_path_count_k = NULL;
     while (_line_k != NULL) {
         const bool _indented_k = _line_k[0] == ' ' || _line_k[0] == '\t';
         char *_trimmed_k = zlang_modules_trim(_line_k);
@@ -181,11 +236,22 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
         }
         if (strcmp(_trimmed_k, "aliases:") == 0) {
             _in_aliases_k = true;
+            _in_native_k = false;
+            _native_k = NULL;
             _line_k = strtok(NULL, "\n");
             continue;
         }
-        if (_in_aliases_k && !_indented_k) {
+        if (strcmp(_trimmed_k, "native:") == 0) {
+            _in_native_k = true;
             _in_aliases_k = false;
+            _native_k = NULL;
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        if (!_indented_k) {
+            _in_aliases_k = false;
+            _in_native_k = false;
+            _native_k = NULL;
         }
         if (_in_aliases_k) {
             char *_separator_k = strchr(_trimmed_k, ':');
@@ -201,6 +267,65 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
                 }
                 ++modules->alias_count_;
             }
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        if (!_in_native_k) {
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        if (_trimmed_k[0] == '-' && _native_path_count_k != NULL &&
+            *_native_path_count_k < ZLANG_NATIVE_PATH_MAX) {
+            const char *const _value_k = zlang_modules_trim(_trimmed_k + 1);
+            if (!zlang_modules_copy(_native_paths_k[*_native_path_count_k],
+                                    ZLANG_MODULE_PATH_CAPACITY, _value_k)) {
+                return false;
+            }
+            ++*_native_path_count_k;
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        char *_separator_k = strchr(_trimmed_k, ':');
+        if (_separator_k == NULL) {
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        *_separator_k = '\0';
+        const char *const _key_k = zlang_modules_trim(_trimmed_k);
+        const char *const _value_k = zlang_modules_trim(_separator_k + 1);
+        if (*_value_k == '\0') {
+            if (strcmp(_key_k, "include_dirs") == 0 && _native_k != NULL) {
+                _native_paths_k = _native_k->include_dirs_;
+                _native_path_count_k = &_native_k->include_dir_count_;
+            } else if (strcmp(_key_k, "sources") == 0 && _native_k != NULL) {
+                _native_paths_k = _native_k->sources_;
+                _native_path_count_k = &_native_k->source_count_;
+            } else if (_native_k == NULL && modules->native_count_ < ZLANG_NATIVE_MAX) {
+                zlang_native_t *const _entry_k = &modules->natives_[modules->native_count_++];
+                memset(_entry_k, 0, sizeof(*_entry_k));
+                if (!zlang_modules_copy(_entry_k->alias_, ZLANG_MODULE_NAME_CAPACITY, _key_k)) {
+                    return false;
+                }
+                _native_k = _entry_k;
+                _native_paths_k = NULL;
+                _native_path_count_k = NULL;
+            }
+            _line_k = strtok(NULL, "\n");
+            continue;
+        }
+        _native_paths_k = NULL;
+        _native_path_count_k = NULL;
+        if (strcmp(_key_k, "header") == 0 && _native_k != NULL) {
+            if (!zlang_modules_copy(_native_k->header_, ZLANG_MODULE_PATH_CAPACITY, _value_k)) {
+                return false;
+            }
+        } else if (_native_k == NULL && modules->native_count_ < ZLANG_NATIVE_MAX) {
+            zlang_native_t *const _entry_k = &modules->natives_[modules->native_count_++];
+            memset(_entry_k, 0, sizeof(*_entry_k));
+            if (!zlang_modules_copy(_entry_k->alias_, ZLANG_MODULE_NAME_CAPACITY, _key_k)) {
+                return false;
+            }
+            _native_k = _entry_k;
         }
         _line_k = strtok(NULL, "\n");
     }
@@ -619,7 +744,8 @@ static bool zlang_modules_find_declaration(zlang_modules_t *modules, const char 
 static bool zlang_modules_load(zlang_modules_t *modules, const char *path, bool is_root,
                                zlang_diagnostics_t *diagnostics);
 
-static bool zlang_modules_transform(zlang_module_t *module, zlang_diagnostics_t *diagnostics) {
+static bool zlang_modules_transform(zlang_modules_t *modules, zlang_module_t *module,
+                                    zlang_diagnostics_t *diagnostics) {
     size_t _length_k = 0U;
     size_t _cursor_k = 0U;
     for (size_t _index = 0U; _index < module->token_count_; ++_index) {
@@ -652,6 +778,56 @@ static bool zlang_modules_transform(zlang_module_t *module, zlang_diagnostics_t 
         memcpy(module->assembled_ + _length_k, module->source_ + _cursor_k, _gap_k);
         _length_k += _gap_k;
         const char *_replacement_k = NULL;
+        if (_token_k->kind_ == zlang_token_native_specifier_) {
+            char _alias_k[ZLANG_MODULE_NAME_CAPACITY];
+            const char *const _alias_start_k = _token_k->text_ + 8U;
+            const size_t _alias_length_k = strlen(_alias_start_k);
+            if (_alias_length_k == 0U || _alias_length_k + 1U > sizeof(_alias_k)) {
+                zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                   "invalid @native alias");
+                return false;
+            }
+            memcpy(_alias_k, _alias_start_k, _alias_length_k + 1U);
+            zlang_native_t *_native_k = NULL;
+            if (!zlang_modules_find_native(modules, _alias_k, &_native_k)) {
+                zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                   "native alias is not declared in z.yaml");
+                return false;
+            }
+            char _header_k[ZLANG_MODULE_PATH_CAPACITY];
+            if (!zlang_modules_resolve_native_path(modules, _native_k->header_, _header_k,
+                                                   sizeof(_header_k)) ||
+                _header_k[0] == '\0') {
+                zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                   "native header is not declared or is outside the project");
+                return false;
+            }
+            _native_k->used_ = true;
+            const char *_header_text_k = _header_k;
+            if (_header_text_k[0] == '.' && _header_text_k[1] == '/') {
+                _header_text_k += 2U;
+            }
+            const size_t _header_text_length_k = strlen(_header_text_k);
+            const size_t _available_k = ZLANG_MODULE_SOURCE_CAPACITY - _length_k;
+            if (_header_text_length_k + 3U > _available_k) {
+                return false;
+            }
+            module->assembled_[_length_k++] = '\"';
+            memcpy(module->assembled_ + _length_k, _header_text_k, _header_text_length_k);
+            _length_k += _header_text_length_k;
+            module->assembled_[_length_k++] = '\"';
+            if (_length_k >= ZLANG_MODULE_SOURCE_CAPACITY) {
+                return false;
+            }
+            module->assembled_[_length_k++] = ';';
+            _cursor_k = _token_k->offset_ + _token_k->length_;
+            if (_index + 1U < module->token_count_ &&
+                module->tokens_[_index + 1U].kind_ == zlang_token_semicolon_) {
+                _cursor_k = module->tokens_[_index + 1U].offset_ + 1U;
+                ++_index;
+            }
+            continue;
+        }
         if (_token_k->kind_ == zlang_token_identifier_) {
             for (size_t _decl = 0U; _decl < module->declaration_count_; ++_decl) {
                 if (strcmp(module->declaration_names_[_decl], _token_k->text_) == 0) {
@@ -848,7 +1024,7 @@ static bool zlang_modules_load(zlang_modules_t *modules, const char *path, bool 
             return false;
         }
     }
-    if (!zlang_modules_transform(_module_k, diagnostics)) {
+    if (!zlang_modules_transform(modules, _module_k, diagnostics)) {
         return false;
     }
     _module_k->visiting_ = false;
@@ -856,6 +1032,27 @@ static bool zlang_modules_load(zlang_modules_t *modules, const char *path, bool 
 }
 
 void zlang_modules_init(zlang_modules_t *modules) { memset(modules, 0, sizeof(*modules)); }
+
+size_t zlang_modules_native_count(const zlang_modules_t *modules) {
+    return modules != NULL ? modules->native_count_ : 0U;
+}
+
+const zlang_native_t *zlang_modules_native_at(const zlang_modules_t *modules, size_t index) {
+    return modules != NULL && index < modules->native_count_ ? &modules->natives_[index] : NULL;
+}
+
+bool zlang_modules_native_include_dir(const zlang_modules_t *modules, const zlang_native_t *native,
+                                      size_t index, char *output, size_t capacity) {
+    return native != NULL && index < native->include_dir_count_ &&
+           zlang_modules_resolve_native_path(modules, native->include_dirs_[index], output,
+                                             capacity);
+}
+
+bool zlang_modules_native_source(const zlang_modules_t *modules, const zlang_native_t *native,
+                                 size_t index, char *output, size_t capacity) {
+    return native != NULL && index < native->source_count_ &&
+           zlang_modules_resolve_native_path(modules, native->sources_[index], output, capacity);
+}
 
 bool zlang_modules_assemble(zlang_modules_t *modules, const char *source_path,
                             zlang_diagnostics_t *diagnostics, char *output, size_t capacity) {

@@ -2079,6 +2079,20 @@ static void rejects_extern_function_body(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
 }
 
+static void emits_local_extern_include(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "extern function my_add(clone int32 left, clone int32 right): int32 "
+        "from \"native/my_math.h\";\n"
+        "function main(): int32 {\n"
+        "    return my_add(2, 3);\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#include \"native/my_math.h\"") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "return my_add(2, 3);") != NULL);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

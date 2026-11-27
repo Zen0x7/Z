@@ -459,6 +459,48 @@ static bool zlang_lex_operator(zlang_lexer_t *lexer, zlang_token_t *token,
     case '/':
         token->kind_ = zlang_token_slash_;
         break;
+    case '@': {
+        const char *const _start_k = lexer->source_ + lexer->position_;
+        if (strncmp(_start_k, "@native/", 8U) != 0) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_INVALID_CHARACTER, line,
+                                        column, "invalid character");
+            return false;
+        }
+        size_t _length_k = 8U;
+        while (_start_k[_length_k] != '\0' && _start_k[_length_k] != ' ' &&
+               _start_k[_length_k] != '\t' && _start_k[_length_k] != '\r' &&
+               _start_k[_length_k] != '\n' && _start_k[_length_k] != ';' &&
+               _start_k[_length_k] != ')') {
+            const char _specifier_character_k = _start_k[_length_k];
+            const bool _valid_k =
+                (_specifier_character_k >= 'a' && _specifier_character_k <= 'z') ||
+                (_specifier_character_k >= 'A' && _specifier_character_k <= 'Z') ||
+                (_specifier_character_k >= '0' && _specifier_character_k <= '9') ||
+                _specifier_character_k == '_' || _specifier_character_k == '/';
+            if (!_valid_k) {
+                break;
+            }
+            ++_length_k;
+        }
+        if (_length_k == 8U || _length_k > UINT32_MAX || lexer->scratch_ == NULL ||
+            _length_k + 1U > lexer->scratch_capacity_ - lexer->scratch_length_) {
+            (void)zlang_diagnostics_add(diagnostics, ZLANG_DIAGNOSTIC_UNEXPECTED_TOKEN, line,
+                                        column, "expected a native alias after '@native/'");
+            return false;
+        }
+        token->kind_ = zlang_token_native_specifier_;
+        token->text_ = lexer->scratch_ + lexer->scratch_length_;
+        memcpy(lexer->scratch_ + lexer->scratch_length_, _start_k, _length_k);
+        lexer->scratch_[lexer->scratch_length_ + _length_k] = '\0';
+        lexer->scratch_length_ += _length_k + 1U;
+        token->length_ = (uint32_t)_length_k;
+        token->value_length_ = (uint32_t)_length_k;
+        while (_length_k > 0U) {
+            zlang_lexer_advance(lexer);
+            --_length_k;
+        }
+        return true;
+    }
     case '%':
         token->kind_ = zlang_token_percent_;
         break;

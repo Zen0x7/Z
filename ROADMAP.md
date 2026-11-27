@@ -126,7 +126,8 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 - `auto` local declarations and `auto` native generic arguments — delivered.
 - Generic interface constraints with `T implements { Interface, ... }` — delivered.
 - `view[] T` with `to_view(source, offset, count)` — delivered.
-- `extern function` with explicit modes and a header — delivered.
+- `extern function` with explicit modes, a header, quoted local includes and `z.yaml native`
+  include dirs and sources — delivered.
 
 ## Remaining work
 

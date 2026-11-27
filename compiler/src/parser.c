@@ -2347,9 +2347,14 @@ static bool zlang_parse_extern_function(zlang_parser_t *parser) {
         return false;
     }
     const zlang_token_t *const _header_k = zlang_parser_current(parser);
-    if (!zlang_parser_expect(parser, zlang_token_string_literal_,
-                             "expected a header string after 'from'")) {
+    const bool _native_header_k = _header_k->kind_ == zlang_token_native_specifier_;
+    if (!_native_header_k &&
+        !zlang_parser_expect(parser, zlang_token_string_literal_,
+                             "expected a header string or @native alias after 'from'")) {
         return false;
+    }
+    if (_native_header_k) {
+        zlang_parser_advance(parser);
     }
     if (!zlang_parser_expect(parser, zlang_token_semicolon_,
                              "expected ';' after extern declaration")) {

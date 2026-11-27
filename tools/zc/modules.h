@@ -21,6 +21,18 @@
 #define ZLANG_MODULE_NAME_CAPACITY 128U
 #define ZLANG_MODULE_DECLARATION_CAPACITY 64U
 #define ZLANG_ALIAS_MAX 16U
+#define ZLANG_NATIVE_MAX 16U
+#define ZLANG_NATIVE_PATH_MAX 16U
+
+typedef struct zlang_native_t {
+    char alias_[ZLANG_MODULE_NAME_CAPACITY];
+    char header_[ZLANG_MODULE_PATH_CAPACITY];
+    char include_dirs_[ZLANG_NATIVE_PATH_MAX][ZLANG_MODULE_PATH_CAPACITY];
+    size_t include_dir_count_;
+    char sources_[ZLANG_NATIVE_PATH_MAX][ZLANG_MODULE_PATH_CAPACITY];
+    size_t source_count_;
+    bool used_;
+} zlang_native_t;
 
 typedef struct zlang_module_t {
     char path_[ZLANG_MODULE_PATH_CAPACITY];
@@ -53,11 +65,20 @@ typedef struct zlang_modules_t {
     char std_import_names_[ZLANG_MODULE_DECLARATION_CAPACITY][ZLANG_MODULE_NAME_CAPACITY];
     char std_domains_[ZLANG_MODULE_DECLARATION_CAPACITY][ZLANG_MODULE_NAME_CAPACITY];
     size_t std_import_count_;
+    zlang_native_t natives_[ZLANG_NATIVE_MAX];
+    size_t native_count_;
 } zlang_modules_t;
 
 void zlang_modules_init(zlang_modules_t *modules);
 
 bool zlang_modules_assemble(zlang_modules_t *modules, const char *source_path,
                             zlang_diagnostics_t *diagnostics, char *output, size_t capacity);
+
+size_t zlang_modules_native_count(const zlang_modules_t *modules);
+const zlang_native_t *zlang_modules_native_at(const zlang_modules_t *modules, size_t index);
+bool zlang_modules_native_include_dir(const zlang_modules_t *modules, const zlang_native_t *native,
+                                      size_t index, char *output, size_t capacity);
+bool zlang_modules_native_source(const zlang_modules_t *modules, const zlang_native_t *native,
+                                 size_t index, char *output, size_t capacity);
 
 #endif

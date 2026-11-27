@@ -98,6 +98,27 @@ extern function abs(clone int32 value): int32 from "stdlib.h";
 ```
 
 `extern function` declares a C function with explicit Zlang parameter modes and a header. The call
-lowers directly to the named C symbol; no Zlang wrapper is emitted. Extern declarations are
-top-level signatures without a body. Variadics, function pointers, `void *`, automatic `errno`
-handling and implicit conversion to `status_code` are outside the contract.
+lowers directly to the named C symbol; no Zlang wrapper is emitted. A bare header name emits an
+angle-bracket include. A header containing a path separator emits a quoted include.
+
+Project headers and their C implementation are declared in `z.yaml`:
+
+```yaml
+native:
+  my_math:
+    header: "./native/my_math.h"
+    include_dirs:
+      - "./native"
+    sources:
+      - "./native/my_math.c"
+```
+
+```zlang
+extern function my_add(clone int32 left, clone int32 right): int32 from @native/my_math;
+```
+
+`@native/<alias>` resolves through `z.yaml`. The header is emitted with quotes, include dirs are
+passed to the C compiler, and configured sources are linked into the generated executable. Unused
+native entries are not linked. Extern declarations are top-level signatures without a body.
+Variadics, function pointers, `void *`, automatic `errno` handling and implicit conversion to
+`status_code` are outside the contract.

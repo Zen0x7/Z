@@ -6372,9 +6372,13 @@ static bool zlang_emit_prologue(const zlang_program_t *program, zlang_emitter_t 
             return false;
         }
         ++_extern_count_k;
-        if (!zlang_append_text(emitter, "#include <") ||
-            !zlang_append_text(emitter, _statement_k->header_name_) ||
-            !zlang_append_text(emitter, ">\n")) {
+        const char *const _header_k = _statement_k->header_name_;
+        const bool _local_k = strchr(_header_k, '/') != NULL || strchr(_header_k, '\\') != NULL ||
+                              _header_k[0] == '.';
+        if (!zlang_append_text(emitter, "#include ") ||
+            !zlang_append_text(emitter, _local_k ? "\"" : "<") ||
+            !zlang_append_text(emitter, _header_k) ||
+            !zlang_append_text(emitter, _local_k ? "\"\n" : ">\n")) {
             return false;
         }
     }

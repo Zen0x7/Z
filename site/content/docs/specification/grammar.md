@@ -76,7 +76,9 @@ functionSignature = "function" identifier "(" parameters ")" ( ":" type )? ";" ;
 
 functionDeclaration = "function" identifier typeParameters? "(" parameters ")"
                       ( ":" type )? block ;
-externDeclaration = "extern" functionSignature "from" stringLiteral ";" ;
+externDeclaration = "extern" functionSignature "from"
+                    ( stringLiteral | nativeSpecifier ) ";" ;
+nativeSpecifier  = "@native/" identifier ;
 parameterMode  = "clone" | "reference" ;
 parameter      = "const"? parameterMode ( "array" | type ) identifier ;
 parameters     = ( parameter ( "," parameter )* )? ;

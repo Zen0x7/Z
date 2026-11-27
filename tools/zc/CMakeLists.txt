@@ -328,6 +328,17 @@ if(ZLANG_BUILD_TESTS)
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_stateful_calls PROPERTIES LABELS module:cli)
 
+    add_test(NAME zlang.cli.native
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/tests/native_project/main.z
+                     -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/tests/native_project/expected.txt
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/native_project
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_native.cmake)
+    set_tests_properties(zlang.cli.native PROPERTIES LABELS module:cli)
+
     add_test(NAME zlang.cli.modules
              COMMAND ${CMAKE_COMMAND}
                      -DZLANG_COMPILE=$<TARGET_FILE:zc>
@@ -406,6 +417,7 @@ if(ZLANG_BUILD_TESTS)
                              zlang.cli.compiles_forward_calls
                              zlang.cli.tto
                              zlang.cli.compiles_stateful_calls
+                             zlang.cli.native
                              zlang.cli.modules
                              zlang.cli.modules_cycle
                              zlang.cli.modules_escape

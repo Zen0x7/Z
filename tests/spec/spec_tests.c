@@ -1959,6 +1959,34 @@ static void rejects_self_method_in_static_function(zlang_test_context_t *const c
                                  47U);
 }
 
+static void emits_auto_declarations(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function query(): result_type<int32, status_code> {\n"
+                                  "    result_type<int32, status_code> result;\n"
+                                  "    return result;\n"
+                                  "}\n"
+                                  "function main(): int32 {\n"
+                                  "    auto value = query();\n"
+                                  "    result_type<auto, status_code> result = query();\n"
+                                  "    int32 copy = result.get();\n"
+                                  "    return copy;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_occurrences(_session.output_,
+                                                      "zlang_std_result_i32_status_t") >= 3U);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t app_local_copy") != NULL);
+}
+
+static void rejects_auto_without_initializer(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "auto value;";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, 1U,
+                                 1U);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

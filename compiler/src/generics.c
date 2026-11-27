@@ -32,6 +32,45 @@ static bool zlang_generic_append_text(char *output, size_t capacity, size_t *len
     return true;
 }
 
+bool zlang_generic_parse_name(const char *name, zlang_generic_name_t *parsed) {
+    if (name == NULL || parsed == NULL) {
+        return false;
+    }
+    memset(parsed, 0, sizeof(*parsed));
+    const char *const _open_k = strchr(name, '<');
+    if (_open_k == NULL || name[0] == '\0') {
+        return false;
+    }
+    const size_t _base_length_k = (size_t)(_open_k - name);
+    if (_base_length_k >= sizeof(parsed->name_)) {
+        return false;
+    }
+    memcpy(parsed->name_, name, _base_length_k);
+    parsed->name_[_base_length_k] = '\0';
+    parsed->base_name_ = parsed->name_;
+    size_t _offset_k = _base_length_k + 1U;
+    const char *_cursor_k = _open_k + 1U;
+    while (*_cursor_k != '\0' && *_cursor_k != '>' &&
+           parsed->argument_count_ < ZLANG_GENERIC_PARAMETER_CAPACITY) {
+        const char *const _start_k = _cursor_k;
+        while (*_cursor_k != '\0' && *_cursor_k != ',' && *_cursor_k != '>') {
+            ++_cursor_k;
+        }
+        const size_t _argument_length_k = (size_t)(_cursor_k - _start_k);
+        if (_argument_length_k == 0U || _offset_k + _argument_length_k >= sizeof(parsed->name_)) {
+            return false;
+        }
+        memcpy(parsed->name_ + _offset_k, _start_k, _argument_length_k);
+        parsed->name_[_offset_k + _argument_length_k] = '\0';
+        parsed->arguments_[parsed->argument_count_++] = parsed->name_ + _offset_k;
+        _offset_k += _argument_length_k + 1U;
+        if (*_cursor_k == ',') {
+            ++_cursor_k;
+        }
+    }
+    return *_cursor_k == '>' && parsed->argument_count_ > 0U;
+}
+
 bool zlang_generic_build_name(const char *base_name, const char *const *arguments,
                               size_t argument_count, char *output, size_t capacity) {
     if (base_name == NULL || arguments == NULL || output == NULL || capacity == 0U ||

@@ -253,7 +253,7 @@ export const zlangLanguage: LanguageRegistration = {
         },
         {
           name: 'keyword.control.zlang',
-          match: String.raw`\b(interface|implements|use|uses|requires)\b`,
+          match: String.raw`\b(auto|extern|interface|implements|use|uses|requires)\b`,
         },
       ],
     },
@@ -269,7 +269,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'storage.type.zlang',
-          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|array|arguments|stream|status_code|result_type)\b`,
+          match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|array|arguments|stream|status_code|result_type|view)\b`,
         },
         {
           name: 'storage.type.zlang',
@@ -319,7 +319,7 @@ export const zlangLanguage: LanguageRegistration = {
       patterns: [
         {
           name: 'support.function.builtin.zlang',
-          match: String.raw`\b(length|write)\b(?=\s*\()`,
+          match: String.raw`\b(length|to_view|write)\b(?=\s*\()`,
         },
         {
           name: 'support.function.result.zlang',

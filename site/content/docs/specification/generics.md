@@ -54,6 +54,14 @@ The generated identifiers derive from the concrete application. Two applications
 
 `result_type<T, status_code>` uses the same application syntax. Unlike user generics, its applications form a closed family mapped to fixed C layouts. See [Types and values](/docs/specification/types).
 
+`auto` may replace a native generic argument when the initializer fixes it:
+
+```zlang
+result_type<auto, status_code> result = query();
+```
+
+The compiler resolves the argument from the initializer before validation and emits the concrete native result type.
+
 ## Generic methods
 
 A generic struct can declare flat instance methods. The compiler copies the method into each specialization with the same substituted type names used for fields and signatures. Names such as `app_fn_box_int32_get` are emitted as ordinary C functions; no vtable or runtime dispatch is involved.

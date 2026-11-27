@@ -150,6 +150,7 @@ static bool zlang_parser_parse_generic_arguments(zlang_parser_t *parser, const c
         }
         const zlang_token_t *const _argument_k = zlang_parser_current(parser);
         if (_argument_k->kind_ != zlang_token_identifier_ &&
+            _argument_k->kind_ != zlang_token_auto_ &&
             !zlang_parser_is_declaration_type(parser, _argument_k) &&
             !zlang_parser_is_active_generic_parameter(parser, _argument_k)) {
             zlang_parser_unsupported(parser, "expected a type argument");
@@ -238,7 +239,8 @@ static bool zlang_token_is_type(const zlang_token_t *token) {
            (token->kind_ == zlang_token_integer_ || token->kind_ == zlang_token_unsigned_ ||
             token->kind_ == zlang_token_int64_ || token->kind_ == zlang_token_uint64_ ||
             token->kind_ == zlang_token_float_ || token->kind_ == zlang_token_double_ ||
-            token->kind_ == zlang_token_boolean_ || token->kind_ == zlang_token_string_);
+            token->kind_ == zlang_token_boolean_ || token->kind_ == zlang_token_string_ ||
+            token->kind_ == zlang_token_auto_);
 }
 
 static const char *zlang_conversion_target(const char *name) {
@@ -330,7 +332,7 @@ static bool zlang_parser_starts_label(const zlang_parser_t *parser) {
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
     const zlang_token_t *const _token_k = zlang_parser_current(parser);
     if (_token_k->kind_ == zlang_token_const_ || _token_k->kind_ == zlang_token_array_ ||
-        zlang_token_is_type(_token_k)) {
+        _token_k->kind_ == zlang_token_auto_ || zlang_token_is_type(_token_k)) {
         return true;
     }
     if (_token_k->kind_ != zlang_token_identifier_) {
@@ -1473,6 +1475,11 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     }
     zlang_ast_statement_t *const _statement_ptr_k = &parser->statements_[_statement_k];
     _statement_ptr_k->type_name_ = _has_element_type_k ? _element_type_k : NULL;
+    _statement_ptr_k->is_auto_ =
+        _has_element_type_k &&
+        (zlang_token_is(_type_k, "auto") ||
+         (_element_type_k != NULL &&
+          (strstr(_element_type_k, "<auto") != NULL || strstr(_element_type_k, ",auto") != NULL)));
     _statement_ptr_k->name_ = _name_k->text_;
     _statement_ptr_k->line_ = _start_k->line_;
     _statement_ptr_k->column_ = _start_k->column_;

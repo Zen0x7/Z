@@ -1,0 +1,11 @@
+function query(): result_type<int32, status_code> {
+    result_type<int32, status_code> result;
+    return result;
+}
+
+function main(): int32 {
+    auto value = query();
+    result_type<auto, status_code> result = query();
+    int32 copy = result.get();
+    return copy + value.get();
+}

@@ -59,7 +59,7 @@ clang-format --dry-run --Werror \
 step 'cppcheck'
 cppcheck --enable=warning,style,performance,portability --error-exitcode=1 \
     --inline-suppr --suppress=missingIncludeSystem \
-    --suppress=normalCheckLevelMaxBranches --std=c99 \
+    --suppress=normalCheckLevelMaxBranches --suppress=toomanyconfigs --std=c99 \
     -Iinclude -Icompiler/include include compiler tests fuzz tools
 
 step 'clang-tidy'

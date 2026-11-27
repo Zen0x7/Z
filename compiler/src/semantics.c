@@ -562,6 +562,9 @@ static bool zlang_is_literal_string(const zlang_program_t *program,
 static const char *zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                                             const zlang_ast_statement_t *statement);
 
+static bool zlang_resolve_auto_declaration(zlang_semantic_context_t *context,
+                                           const zlang_ast_statement_t *statement);
+
 /* Expression trees are bounded by the caller-owned expression array. */
 static bool zlang_expression_is_lvalue(const zlang_semantic_context_t *context, size_t index,
                                        bool *is_const) {
@@ -1730,6 +1733,10 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     }
     case zlang_statement_declaration_: {
+        if (!zlang_resolve_auto_declaration(context, statement)) {
+            _result_k = false;
+            break;
+        }
         if (!zlang_is_known_type(context, statement->type_name_)) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
                                      "declaration uses an unknown type");
@@ -2390,13 +2397,93 @@ static bool zlang_validate_generic_declaration(zlang_semantic_context_t *context
     return _result_k;
 }
 
+static bool zlang_type_name_has_auto(const char *name) {
+    return name != NULL && (strcmp(name, "auto") == 0 || strstr(name, "<auto") != NULL ||
+                            strstr(name, ",auto") != NULL);
+}
+
+static bool zlang_generic_application_has_auto(const zlang_generic_application_t *application) {
+    if (application == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < application->argument_count_; ++_index) {
+        if (zlang_type_name_has_auto(application->arguments_[_index])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool zlang_resolve_auto_declaration(zlang_semantic_context_t *context,
+                                           const zlang_ast_statement_t *statement) {
+    if (!statement->is_auto_) {
+        return true;
+    }
+    if (statement->expression_ == ZLANG_NO_EXPRESSION) {
+        return zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                            "auto declaration requires an initializer");
+    }
+    const char *const _actual_k =
+        zlang_analyze_expression(context, statement->expression_, statement);
+    if (_actual_k == NULL || !zlang_is_known_type(context, _actual_k) ||
+        zlang_type_name_has_auto(_actual_k)) {
+        return zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                       statement->expression_, statement,
+                                       "auto initializer has no resolvable type");
+    }
+    zlang_ast_statement_t *_mutable_k = NULL;
+    for (size_t _index = 0U; _index < context->program_->statement_count_; ++_index) {
+        if (&context->program_->statements_[_index] == statement) {
+            _mutable_k = &context->program_->statements_[_index];
+            break;
+        }
+    }
+    if (_mutable_k == NULL) {
+        return false;
+    }
+    if (strcmp(statement->type_name_, "auto") == 0) {
+        const size_t _length_k = strlen(_actual_k);
+        if (_length_k >= sizeof(_mutable_k->inferred_type_name_)) {
+            return zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                "inferred type name is too long");
+        }
+        memcpy(_mutable_k->inferred_type_name_, _actual_k, _length_k + 1U);
+        _mutable_k->type_name_ = _mutable_k->inferred_type_name_;
+        return true;
+    }
+    zlang_generic_name_t _declared_k;
+    zlang_generic_name_t _resolved_k;
+    if (!zlang_generic_parse_name(statement->type_name_, &_declared_k) ||
+        !zlang_generic_parse_name(_actual_k, &_resolved_k) ||
+        strcmp(_declared_k.base_name_, _resolved_k.base_name_) != 0 ||
+        _declared_k.argument_count_ != _resolved_k.argument_count_) {
+        return zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                            "auto generic argument cannot be inferred from the initializer");
+    }
+    const char *_arguments_k[ZLANG_GENERIC_PARAMETER_CAPACITY] = {0};
+    for (size_t _index = 0U; _index < _declared_k.argument_count_; ++_index) {
+        _arguments_k[_index] = strcmp(_declared_k.arguments_[_index], "auto") == 0
+                                   ? _resolved_k.arguments_[_index]
+                                   : _declared_k.arguments_[_index];
+    }
+    if (!zlang_generic_build_name(_declared_k.base_name_, _arguments_k, _declared_k.argument_count_,
+                                  _mutable_k->inferred_type_name_,
+                                  sizeof(_mutable_k->inferred_type_name_))) {
+        return zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                            "inferred generic type name is too long");
+    }
+    _mutable_k->type_name_ = _mutable_k->inferred_type_name_;
+    return true;
+}
+
 static bool zlang_validate_generic_applications(zlang_semantic_context_t *context) {
     const zlang_program_t *const _program_k = context->program_;
     bool _result_k = true;
     for (size_t _index = 0U; _index < _program_k->generic_application_count_; ++_index) {
         const zlang_generic_application_t *const _application_k =
             &_program_k->generic_applications_[_index];
-        if (zlang_std_find_result(_application_k->name_) != NULL ||
+        if (zlang_generic_application_has_auto(_application_k) ||
+            zlang_std_find_result(_application_k->name_) != NULL ||
             zlang_generic_result_payload(_program_k, _application_k->name_) != NULL) {
             continue;
         }

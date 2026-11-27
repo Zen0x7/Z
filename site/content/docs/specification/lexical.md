@@ -23,9 +23,9 @@ A source file is UTF-8. Identifiers and keywords use ASCII characters. String li
 These words are reserved and cannot be used as identifiers:
 
 ```text
-arguments array boolean break clone const constructor continue double else enum false float for
-foreach from function if import in int32 int64 length reference repeat requires return static
-string struct trait true uint32 uint64 uses while
+arguments array auto boolean break clone const constructor continue double else enum extern false
+float for foreach from function if import in int32 int64 length reference repeat requires return
+static string struct trait true uint32 uint64 uses view while
 ```
 
 The generated-code namespace is also reserved. An identifier that begins with `zlang`, `_zlang` or `ZLANG` is rejected with `ZLANG1004`.

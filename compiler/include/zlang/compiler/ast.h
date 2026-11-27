@@ -155,6 +155,7 @@ typedef struct zlang_parameter_t {
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 typedef struct zlang_ast_statement_t {
     const char *type_name_;
+    char inferred_type_name_[ZLANG_GENERIC_NAME_CAPACITY];
     const char *name_;
     const char *base_name_;
     const char *index_name_;
@@ -180,6 +181,7 @@ typedef struct zlang_ast_statement_t {
     bool has_element_capacity_;
     bool is_const_;
     bool is_inferred_;
+    bool is_auto_;
     bool use_canonical_type_;
     bool is_array_return_;
     uint32_t return_extents_[ZLANG_ARRAY_MAX_RANK];

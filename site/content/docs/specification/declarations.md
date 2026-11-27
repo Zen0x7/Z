@@ -17,6 +17,15 @@ A declaration introduces a compile-time symbol. Its name is never emitted as a s
 
 Scalars without an initializer are zero-initialized. Strings without an initializer are the empty string. An initializer must have the exact declared type.
 
+`auto` replaces the declared type when the declaration has an initializer. The compiler resolves the initializer type before storage planning; the emitted C always uses the concrete type. A native generic argument may also be inferred:
+
+```zlang
+auto value = query();
+result_type<auto, status_code> result = query();
+```
+
+An `auto` declaration without an initializer is rejected.
+
 ## Arrays and strings with capacity
 
 ```zlang

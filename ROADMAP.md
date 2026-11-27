@@ -121,6 +121,13 @@ interfaces and supplies method bodies. A struct implements interfaces and uses t
 checks that every implemented interface field and method exists on the struct, directly or through
 a used trait, and that every trait requirement is satisfied by an implemented interface.
 
+## 0.40 type inference and interop foundations
+
+- `auto` local declarations and `auto` native generic arguments — planned; first slice delivered.
+- Generic interface constraints with `T implements { Interface, ... }` — planned.
+- `view[] T` with `to_view(source, offset, count)` — planned.
+- `extern function` with explicit modes and a header — planned.
+
 ## Remaining work
 
 Four follow-ups remain after 0.39:
@@ -132,8 +139,8 @@ Four follow-ups remain after 0.39:
    pages fully in line with 0.39 syntax, interfaces and result capabilities.~~ Delivered.
 3. ~~**0.39 hardening.** Validate switch case types against the selector, finish match arm rules,
    check jump/label scope, and verify that labeled break/continue target an enclosing loop.~~ Delivered.
-4. **Publish the local history.** Push the pending 0.38/0.39 commits only when the user authorizes
-   it.
+4. **Publish the local history.** Push the pending 0.38/0.39/0.40 commits only when the user
+   authorizes it.
 
 Standing constraints:
 

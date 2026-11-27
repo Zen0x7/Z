@@ -154,6 +154,32 @@ native results, streams, diagnostics, golden examples and installed-package beha
 - **0.38** — opt-in result capabilities: `time()` and `dump()` selected by compile-time flags.
 - **0.39** — labels, jumps, `switch`, `match`, ternary `?:`, bitwise and shift operators, `do while`,
   range literals, labeled loop jumps, and named interface contracts.
+- **0.40** — `auto` type inference, generic interface constraints, bounded views and explicit C interop.
+
+## 0.40 type inference and interop foundations
+
+Zlang 0.40 adds local type inference with `auto`. A declaration with an initializer may replace its
+type with `auto`; the compiler resolves the initializer type before memory planning and emission.
+A native generic argument may also be `auto`, as in
+`result_type<auto, status_code> value = query();`. The emitted C always uses the concrete type. A
+declaration without an initializer cannot use `auto`.
+
+Generic parameters may declare interface constraints with
+`function describe<T implements { Named, Other }>(clone T value): string`. The compiler checks the
+constraints when a generic application is specialized.
+
+A bounded borrowed array window uses `view[] T` and `to_view(source, offset, count)`. The view is a
+small descriptor with a borrowed data pointer and a runtime length. It cannot be stored in a struct
+or returned from a function. Accesses are bounds-checked.
+
+`extern function` declares a C function with explicit Zlang parameter modes and a header:
+
+```zlang
+extern function abs(clone int32 value): int32 from "stdlib.h";
+```
+
+The call lowers directly to the named C function. Extern declarations have no Zlang body, no
+variadics, no function pointers and no implicit conversion to `status_code`.
 
 Older numbered status sections and duplicated design notes were folded into the site specification
 and removed from this working file.

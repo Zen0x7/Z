@@ -93,7 +93,7 @@ export const zlangLanguage: LanguageRegistration = {
           },
         },
         {
-          match: String.raw`\b(trait|struct|enum)\s+([A-Za-z_]\w*)(<)([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)(>)`,
+          match: String.raw`\b(interface|trait|struct|enum)\s+([A-Za-z_]\w*)(<)([A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*)(>)`,
           captures: {
             1: { name: 'keyword.control.zlang' },
             2: { name: 'entity.name.type.zlang' },
@@ -103,14 +103,21 @@ export const zlangLanguage: LanguageRegistration = {
           },
         },
         {
-          match: String.raw`\b(trait|struct|enum)\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(interface|trait|struct|enum)\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'keyword.control.zlang' },
             2: { name: 'entity.name.type.zlang' },
           },
         },
         {
-          match: String.raw`\b(uses)\s+([A-Za-z_]\w*)`,
+          match: String.raw`\b(implements)\s+([A-Za-z_]\w*)`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'entity.name.type.zlang' },
+          },
+        },
+        {
+          match: String.raw`\b(use|uses)\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'keyword.control.zlang' },
             2: { name: 'entity.name.type.zlang' },
@@ -153,6 +160,10 @@ export const zlangLanguage: LanguageRegistration = {
     variables: {
       patterns: [
         {
+          name: 'variable.language.self.zlang',
+          match: String.raw`\bself\b`,
+        },
+        {
           match: String.raw`\b(boolean|int32|uint32|int64|uint64|float|double|string|arguments|status_code|result_type)(?:(\[)([^\]]*)(\]))?\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'storage.type.zlang' },
@@ -192,7 +203,11 @@ export const zlangLanguage: LanguageRegistration = {
         },
         {
           name: 'keyword.control.zlang',
-          match: String.raw`\b(uses|requires)\b`,
+          match: String.raw`\b(jump|switch|case|default|do|match)\b`,
+        },
+        {
+          name: 'keyword.control.zlang',
+          match: String.raw`\b(interface|implements|use|uses|requires)\b`,
         },
       ],
     },
@@ -216,7 +231,10 @@ export const zlangLanguage: LanguageRegistration = {
         },
         {
           name: 'entity.name.type.zlang',
-          match: String.raw`\buses\s+([A-Z][A-Za-z0-9_]*)\b`,
+          match: String.raw`\b(?:use|uses|implements|requires)\s+([A-Z][A-Za-z0-9_]*)\b`,
+          captures: {
+            1: { name: 'entity.name.type.zlang' },
+          },
         },
         {
           name: 'entity.name.type.zlang',
@@ -242,6 +260,10 @@ export const zlangLanguage: LanguageRegistration = {
           match: String.raw`\b(true|false)\b`,
         },
         {
+          name: 'constant.language.wildcard.zlang',
+          match: String.raw`(?<![A-Za-z0-9_])_(?![A-Za-z0-9_])`,
+        },
+        {
           name: 'constant.language.enum.zlang',
           match: String.raw`\b[A-Z][A-Z0-9_]*\b`,
         },
@@ -252,6 +274,10 @@ export const zlangLanguage: LanguageRegistration = {
         {
           name: 'support.function.builtin.zlang',
           match: String.raw`\b(length|write)\b(?=\s*\()`,
+        },
+        {
+          name: 'support.function.result.zlang',
+          match: String.raw`\b(is_ok|get|message|time|dump)\b(?=\s*\()`,
         },
       ],
     },
@@ -280,8 +306,20 @@ export const zlangLanguage: LanguageRegistration = {
           match: String.raw`(?:\+=|-=|\*=|/=|%=|=)`,
         },
         {
+          name: 'keyword.operator.match.zlang',
+          match: String.raw`=>`,
+        },
+        {
+          name: 'keyword.operator.range.zlang',
+          match: String.raw`\.\.`,
+        },
+        {
+          name: 'keyword.operator.ternary.zlang',
+          match: String.raw`\?`,
+        },
+        {
           name: 'keyword.operator.zlang',
-          match: String.raw`&&|\|\||==|!=|<=|>=|[+\-*/%<>!]`,
+          match: String.raw`&&|\|\||<<|>>|==|!=|<=|>=|[+\-*/%<>!&|^~]`,
         },
       ],
     },

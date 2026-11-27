@@ -1749,20 +1749,6 @@ static bool zlang_parse_interface(zlang_parser_t *parser) {
     return zlang_parser_expect(parser, zlang_token_right_brace_, "expected '}' after interface");
 }
 
-static bool zlang_find_interface_name(const zlang_parser_t *parser, const char *name) {
-    if (parser == NULL || name == NULL) {
-        return false;
-    }
-    for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
-        const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
-        if (_statement_k->kind_ == zlang_statement_interface_ && _statement_k->name_ != NULL &&
-            strcmp(_statement_k->name_, name) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static bool zlang_parse_trait(zlang_parser_t *parser) { // NOLINT(misc-no-recursion)
     const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
     zlang_parser_advance(parser);
@@ -1772,42 +1758,19 @@ static bool zlang_parse_trait(zlang_parser_t *parser) { // NOLINT(misc-no-recurs
     }
     size_t _requires_count_k = 0U;
     const char *_require_names_k[4] = {NULL};
-    const char *_require_type_names_k[4] = {NULL};
     if (zlang_parser_current(parser)->kind_ == zlang_token_requires_) {
         zlang_parser_advance(parser);
         for (;;) {
             const zlang_token_t *const _interface_k = zlang_parser_current(parser);
-            const bool _field_requirement_k =
-                zlang_parser_is_declaration_type(parser, _interface_k) &&
-                parser->position_ + 1U < parser->token_count_ &&
-                parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_identifier_ &&
-                !zlang_find_interface_name(parser, _interface_k->text_);
-            if (_field_requirement_k) {
-                zlang_parser_advance(parser);
-                const zlang_token_t *const _field_k = zlang_parser_current(parser);
-                if (!zlang_parser_expect(parser, zlang_token_identifier_,
-                                         "expected a required field name")) {
-                    return false;
-                }
-                if (_requires_count_k >= 4U) {
-                    zlang_parser_unsupported(parser, "trait requirement capacity exceeded");
-                    return false;
-                }
-                _require_type_names_k[_requires_count_k] = _interface_k->text_;
-                _require_names_k[_requires_count_k++] = _field_k->text_;
-            } else {
-                if (!zlang_parser_expect(parser, zlang_token_identifier_,
-                                         "expected a required interface name")) {
-                    return false;
-                }
-                if (_requires_count_k >= 4U) {
-                    zlang_parser_unsupported(parser, "trait requirement capacity exceeded");
-                    return false;
-                }
-                _require_names_k[_requires_count_k] = _interface_k->text_;
-                _require_type_names_k[_requires_count_k] = _interface_k->text_;
-                ++_requires_count_k;
+            if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                     "expected a required interface name")) {
+                return false;
             }
+            if (_requires_count_k >= 4U) {
+                zlang_parser_unsupported(parser, "trait requirement capacity exceeded");
+                return false;
+            }
+            _require_names_k[_requires_count_k++] = _interface_k->text_;
             ++_requires_count_k;
             if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
                 break;
@@ -1827,8 +1790,6 @@ static bool zlang_parse_trait(zlang_parser_t *parser) { // NOLINT(misc-no-recurs
     for (size_t _requirement = 0U; _requirement < _requires_count_k; ++_requirement) {
         parser->statements_[_statement_k].requires_names_[_requirement] =
             _require_names_k[_requirement];
-        parser->statements_[_statement_k].requires_type_names_[_requirement] =
-            _require_type_names_k[_requirement];
     }
     parser->statements_[_statement_k].requires_count_ = _requires_count_k;
     parser->statements_[_statement_k].line_ = _keyword_k->line_;

@@ -198,7 +198,6 @@ typedef struct zlang_ast_statement_t {
     size_t generic_parameter_count_;
     bool is_generic_;
     const char *requires_names_[4];
-    const char *requires_type_names_[4];
     size_t requires_count_;
     uint32_t line_;
     uint32_t column_;

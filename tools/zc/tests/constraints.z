@@ -1,0 +1,19 @@
+interface Labeled {
+    int32 value;
+    function label(): int32;
+}
+
+struct Counter implements Labeled {
+    int32 value;
+    constructor(clone int32 initial) { value = initial; }
+    function label(): int32 { return value; }
+}
+
+function show<T implements { Labeled }>(clone T item): int32 {
+    return item.label();
+}
+
+function main(): int32 {
+    Counter counter = Counter(7);
+    return show<Counter>(counter);
+}

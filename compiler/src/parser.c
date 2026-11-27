@@ -109,8 +109,11 @@ static bool zlang_parser_is_active_generic_parameter(const zlang_parser_t *parse
     return false;
 }
 
-static bool zlang_parser_parse_generic_parameters(zlang_parser_t *parser, const char **parameters,
-                                                  size_t *parameter_count) {
+static bool
+zlang_parser_parse_generic_parameters(zlang_parser_t *parser, const char **parameters,
+                                      size_t *parameter_count,
+                                      const char *constraints[ZLANG_GENERIC_PARAMETER_CAPACITY][4],
+                                      size_t constraint_counts[ZLANG_GENERIC_PARAMETER_CAPACITY]) {
     if (zlang_parser_current(parser)->kind_ != zlang_token_less_) {
         return true;
     }
@@ -121,11 +124,39 @@ static bool zlang_parser_parse_generic_parameters(zlang_parser_t *parser, const 
                                  "expected a type parameter name")) {
             return false;
         }
-        if (*parameter_count >= ZLANG_GENERIC_PARAMETER_CAPACITY) {
+        const size_t _index_k = *parameter_count;
+        if (_index_k >= ZLANG_GENERIC_PARAMETER_CAPACITY) {
             zlang_parser_unsupported(parser, "generic parameter capacity exceeded");
             return false;
         }
         parameters[(*parameter_count)++] = _parameter_k->text_;
+        if (zlang_parser_current(parser)->kind_ == zlang_token_implements_) {
+            zlang_parser_advance(parser);
+            if (!zlang_parser_expect(parser, zlang_token_left_brace_,
+                                     "expected '{' after generic implements")) {
+                return false;
+            }
+            for (;;) {
+                const zlang_token_t *const _interface_k = zlang_parser_current(parser);
+                if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                         "expected an interface name")) {
+                    return false;
+                }
+                if (constraint_counts[_index_k] >= 4U) {
+                    zlang_parser_unsupported(parser, "generic constraint capacity exceeded");
+                    return false;
+                }
+                constraints[_index_k][constraint_counts[_index_k]++] = _interface_k->text_;
+                if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+                    break;
+                }
+                zlang_parser_advance(parser);
+            }
+            if (!zlang_parser_expect(parser, zlang_token_right_brace_,
+                                     "expected '}' after generic interfaces")) {
+                return false;
+            }
+        }
         if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
             break;
         }
@@ -1567,9 +1598,12 @@ static bool zlang_parse_struct(zlang_parser_t *parser) {
         return false;
     }
     const char *_generic_parameters_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    const char *_generic_constraints_k[ZLANG_GENERIC_PARAMETER_CAPACITY][4] = {{NULL}};
+    size_t _generic_constraint_counts_k[ZLANG_GENERIC_PARAMETER_CAPACITY] = {0};
     size_t _generic_parameter_count_k = 0U;
     if (!zlang_parser_parse_generic_parameters(parser, _generic_parameters_k,
-                                               &_generic_parameter_count_k)) {
+                                               &_generic_parameter_count_k, _generic_constraints_k,
+                                               _generic_constraint_counts_k)) {
         return false;
     }
     const char *_base_name_k = NULL;
@@ -1646,6 +1680,13 @@ static bool zlang_parse_struct(zlang_parser_t *parser) {
     for (size_t _generic = 0U; _generic < _generic_parameter_count_k; ++_generic) {
         parser->statements_[_statement_k].generic_parameters_[_generic] =
             _generic_parameters_k[_generic];
+        parser->statements_[_statement_k].generic_constraint_counts_[_generic] =
+            _generic_constraint_counts_k[_generic];
+        for (size_t _constraint = 0U; _constraint < _generic_constraint_counts_k[_generic];
+             ++_constraint) {
+            parser->statements_[_statement_k].generic_constraint_names_[_generic][_constraint] =
+                _generic_constraints_k[_generic][_constraint];
+        }
     }
     parser->statements_[_statement_k].line_ = _keyword_k->line_;
     parser->statements_[_statement_k].column_ = _keyword_k->column_;
@@ -2191,9 +2232,12 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         _function_name_k = _name_k->text_;
     }
     const char *_generic_parameters_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
+    const char *_generic_constraints_k[ZLANG_GENERIC_PARAMETER_CAPACITY][4] = {{NULL}};
+    size_t _generic_constraint_counts_k[ZLANG_GENERIC_PARAMETER_CAPACITY] = {0};
     size_t _generic_parameter_count_k = 0U;
-    if (!is_constructor && !zlang_parser_parse_generic_parameters(parser, _generic_parameters_k,
-                                                                  &_generic_parameter_count_k)) {
+    if (!is_constructor && !zlang_parser_parse_generic_parameters(
+                               parser, _generic_parameters_k, &_generic_parameter_count_k,
+                               _generic_constraints_k, _generic_constraint_counts_k)) {
         return false;
     }
     const char *_previous_generic_k[ZLANG_GENERIC_PARAMETER_CAPACITY];
@@ -2302,6 +2346,13 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
     _statement_ptr_k->generic_parameter_count_ = _generic_parameter_count_k;
     for (size_t _generic = 0U; _generic < _generic_parameter_count_k; ++_generic) {
         _statement_ptr_k->generic_parameters_[_generic] = _generic_parameters_k[_generic];
+        _statement_ptr_k->generic_constraint_counts_[_generic] =
+            _generic_constraint_counts_k[_generic];
+        for (size_t _constraint = 0U; _constraint < _generic_constraint_counts_k[_generic];
+             ++_constraint) {
+            _statement_ptr_k->generic_constraint_names_[_generic][_constraint] =
+                _generic_constraints_k[_generic][_constraint];
+        }
     }
 
     _statement_ptr_k->type_name_ = is_constructor ? owner : "void";

@@ -112,6 +112,76 @@ static const zlang_ast_statement_t *zlang_find_interface(const zlang_program_t *
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_field(const zlang_program_t *program,
+                                                     const zlang_ast_statement_t *structure,
+                                                     const char *name);
+
+static const zlang_ast_statement_t *
+zlang_find_constraint_field(const zlang_semantic_context_t *context, const char *parameter_name,
+                            const char *field_name) {
+    if (context->current_generic_declaration_ == NULL || parameter_name == NULL ||
+        field_name == NULL) {
+        return NULL;
+    }
+    size_t _parameter_k = 0U;
+    if (!zlang_generic_parameter_index(context->current_generic_declaration_, parameter_name,
+                                       &_parameter_k)) {
+        return NULL;
+    }
+    for (size_t _constraint = 0U;
+         _constraint <
+         context->current_generic_declaration_->generic_constraint_counts_[_parameter_k];
+         ++_constraint) {
+        const zlang_ast_statement_t *const _interface_k = zlang_find_interface(
+            context->program_, context->current_generic_declaration_
+                                   ->generic_constraint_names_[_parameter_k][_constraint]);
+        if (_interface_k == NULL) {
+            continue;
+        }
+        const zlang_ast_statement_t *const _field_k =
+            zlang_find_field(context->program_, _interface_k, field_name);
+        if (_field_k != NULL) {
+            return _field_k;
+        }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *
+zlang_find_constraint_method(const zlang_semantic_context_t *context, const char *parameter_name,
+                             const char *method_name) {
+    if (context->current_generic_declaration_ == NULL || parameter_name == NULL ||
+        method_name == NULL) {
+        return NULL;
+    }
+    size_t _parameter_k = 0U;
+    if (!zlang_generic_parameter_index(context->current_generic_declaration_, parameter_name,
+                                       &_parameter_k)) {
+        return NULL;
+    }
+    for (size_t _constraint = 0U;
+         _constraint <
+         context->current_generic_declaration_->generic_constraint_counts_[_parameter_k];
+         ++_constraint) {
+        const zlang_ast_statement_t *const _interface_k = zlang_find_interface(
+            context->program_, context->current_generic_declaration_
+                                   ->generic_constraint_names_[_parameter_k][_constraint]);
+        if (_interface_k == NULL) {
+            continue;
+        }
+        const size_t _end_k = _interface_k->body_start_ + _interface_k->body_count_;
+        for (size_t _index = _interface_k->body_start_;
+             _index < _end_k && _index < context->program_->statement_count_; ++_index) {
+            const zlang_ast_statement_t *const _method_k = &context->program_->statements_[_index];
+            if (_method_k->kind_ == zlang_statement_function_ && _method_k->name_ != NULL &&
+                strcmp(_method_k->name_, method_name) == 0) {
+                return _method_k;
+            }
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_trait(const zlang_program_t *program,
                                                      const char *name) {
     if (program == NULL || name == NULL) {
@@ -1135,10 +1205,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             zlang_native_result_field_type(context->program_, _record_name_k, _expression_k->name_);
         const zlang_ast_statement_t *const _record_k =
             _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
-        const zlang_ast_statement_t *const _field_k =
+        const zlang_ast_statement_t *_field_k =
             _native_field_k != NULL
                 ? NULL
                 : zlang_find_field(context->program_, _record_k, _expression_k->name_);
+        if (_native_field_k == NULL && _field_k == NULL && _expression_k->base_name_ != NULL) {
+            const zlang_symbol_t *const _base_symbol_k =
+                zlang_find_symbol(context, _expression_k->base_name_);
+            if (_base_symbol_k != NULL) {
+                _field_k = zlang_find_constraint_field(context, _base_symbol_k->type_name_,
+                                                       _expression_k->name_);
+            }
+        }
         if (_native_field_k == NULL && _field_k == NULL) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "field is not declared on the struct");
@@ -1180,10 +1258,18 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             zlang_native_result_field_type(context->program_, _record_name_k, _target_k->name_);
         const zlang_ast_statement_t *const _record_k =
             _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
-        const zlang_ast_statement_t *const _field_k =
+        const zlang_ast_statement_t *_field_k =
             _native_field_k != NULL
                 ? NULL
                 : zlang_find_field(context->program_, _record_k, _target_k->name_);
+        if (_native_field_k == NULL && _field_k == NULL && _target_k->base_name_ != NULL) {
+            const zlang_symbol_t *const _base_symbol_k =
+                zlang_find_symbol(context, _target_k->base_name_);
+            if (_base_symbol_k != NULL) {
+                _field_k = zlang_find_constraint_field(context, _base_symbol_k->type_name_,
+                                                       _target_k->name_);
+            }
+        }
         if (_native_field_k == NULL && _field_k == NULL) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "field is not declared on the struct");
@@ -1314,6 +1400,19 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         const zlang_ast_statement_t *const _method_k =
             zlang_find_struct_method_any(context->program_, _struct_name_k, _expression_k->name_);
+        const zlang_ast_statement_t *const _constraint_method_k =
+            _method_k == NULL && _struct_name_k != NULL
+                ? zlang_find_constraint_method(context, _struct_name_k, _expression_k->name_)
+                : NULL;
+        if (_constraint_method_k != NULL) {
+            for (size_t _argument = 0U; _argument < _expression_k->argument_count_ &&
+                                        _argument < ZLANG_CALL_ARGUMENT_CAPACITY;
+                 ++_argument) {
+                (void)zlang_analyze_expression(context, _expression_k->argument_indices_[_argument],
+                                               statement);
+            }
+            return _constraint_method_k->type_name_;
+        }
         if (_struct_name_k == NULL || _method_k == NULL || _method_k->is_static_ != _static_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement, "method is not declared on the struct");
@@ -2382,6 +2481,15 @@ static bool zlang_validate_generic_declaration(zlang_semantic_context_t *context
                                          "generic parameter is declared twice");
             }
         }
+        for (size_t _constraint = 0U; _constraint < statement->generic_constraint_counts_[_index];
+             ++_constraint) {
+            const char *const _interface_k =
+                statement->generic_constraint_names_[_index][_constraint];
+            if (zlang_find_interface(context->program_, _interface_k) == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "generic constraint is not a declared interface");
+            }
+        }
     }
     if (statement->kind_ == zlang_statement_struct_) {
         if (statement->base_name_ != NULL || statement->uses_count_ > 0U) {
@@ -2511,6 +2619,34 @@ static bool zlang_validate_generic_applications(zlang_semantic_context_t *contex
                                             _application_k->line_, _application_k->column_,
                                             "generic argument is not a known type");
                 _result_k = false;
+                continue;
+            }
+            const zlang_ast_statement_t *const _structure_k =
+                zlang_find_struct(_program_k, _type_k);
+            for (size_t _constraint = 0U;
+                 _constraint < _declaration_k->generic_constraint_counts_[_argument];
+                 ++_constraint) {
+                const char *const _interface_k =
+                    _declaration_k->generic_constraint_names_[_argument][_constraint];
+                bool _satisfied_k = false;
+                if (_structure_k != NULL) {
+                    for (size_t _implemented = 0U; _implemented < _structure_k->implements_count_;
+                         ++_implemented) {
+                        if (_structure_k->implements_names_[_implemented] != NULL &&
+                            strcmp(_structure_k->implements_names_[_implemented], _interface_k) ==
+                                0) {
+                            _satisfied_k = true;
+                            break;
+                        }
+                    }
+                }
+                if (!_satisfied_k) {
+                    (void)zlang_diagnostics_add(
+                        context->diagnostics_, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                        _application_k->line_, _application_k->column_,
+                        "generic argument does not implement a required interface");
+                    _result_k = false;
+                }
             }
         }
     }

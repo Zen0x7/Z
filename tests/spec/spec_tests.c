@@ -1987,6 +1987,46 @@ static void rejects_auto_without_initializer(zlang_test_context_t *const context
                                  1U);
 }
 
+static void emits_generic_interface_constraints(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "interface Labeled {\n"
+                                  "    int32 value;\n"
+                                  "    function label(): int32;\n"
+                                  "}\n"
+                                  "struct Counter implements Labeled {\n"
+                                  "    int32 value;\n"
+                                  "    constructor(clone int32 initial) { value = initial; }\n"
+                                  "    function label(): int32 { return value; }\n"
+                                  "}\n"
+                                  "function show<T implements { Labeled }>(clone T item): int32 {\n"
+                                  "    return item.label();\n"
+                                  "}\n"
+                                  "function main(): int32 {\n"
+                                  "    Counter counter = Counter(7);\n"
+                                  "    return show<Counter>(counter);\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_show_counter") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_label(&app_param_item)") != NULL);
+}
+
+static void rejects_unsatisfied_generic_constraint(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "interface Named { int32 value; }\n"
+        "struct Plain { int32 value; constructor(clone int32 initial) { value = initial; } }\n"
+        "function read_value<T implements { Named }>(clone T item): int32 { return item.value; }\n"
+        "function main(): int32 {\n"
+        "    Plain plain = Plain(7);\n"
+        "    return read_value<Plain>(plain);\n"
+        "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_count_diagnostics(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) > 0U);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

@@ -25,6 +25,20 @@ Pair<int32, boolean> pair;
 int32 value = identity<int32>(pair.first);
 ```
 
+## Interface constraints
+
+A type parameter may require named interfaces inside the generic parameter list:
+
+```zlang
+function describe<T implements { Named, Other }>(clone T value): string {
+    return value.label();
+}
+```
+
+The compiler checks each interface when the generic application is specialized. Inside the generic
+body, fields and methods declared by the required interfaces are available on values of that type.
+Constraints are compile-time checks; they emit no vtable and no runtime lookup.
+
 ## Limits
 
 A declaration may list up to four type parameters. An application may pass up to four concrete type arguments. Nested type arguments are not part of the language. Duplicate type parameters, argument count mismatches and invalid applications are diagnostics. Capacity exhaustion is reported instead of failing silently.

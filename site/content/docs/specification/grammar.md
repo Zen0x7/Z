@@ -43,7 +43,8 @@ builtinType    = "int32" | "uint32" | "int64" | "uint64" | "float" | "double"
                | "boolean" | "string" | "arguments" ;
 typeName       = builtinType | identifier typeArguments? ;
 typeArguments  = "<" typeName ( "," typeName )* ">" ;
-typeParameters = "<" identifier ( "," identifier )* ">" ;
+typeParameters = "<" identifier genericConstraint? ( "," identifier genericConstraint? )* ">" ;
+genericConstraint = "implements" "{" identifier ( "," identifier )* "}" ;
 arrayModifier  = "array" ( "[" integerLiteral "]" )* ;
 type           = typeName ( "[" integerLiteral "]" )? ;
 arrayInitializer = "{" ( expression | arrayInitializer )

@@ -198,6 +198,8 @@ typedef struct zlang_ast_statement_t {
     size_t implements_count_;
     const char *generic_parameters_[ZLANG_GENERIC_PARAMETER_CAPACITY];
     size_t generic_parameter_count_;
+    const char *generic_constraint_names_[ZLANG_GENERIC_PARAMETER_CAPACITY][4];
+    size_t generic_constraint_counts_[ZLANG_GENERIC_PARAMETER_CAPACITY];
     bool is_generic_;
     const char *requires_names_[4];
     size_t requires_count_;

@@ -82,7 +82,7 @@ continue;
 
 A non-void function must return a value whose type matches the declared return type. A void function must return without a value. A `return` outside a function is `ZLANG1004`.
 
-Unlabelled `break` is valid inside `switch`, `while`, `do while`, `repeat`, `foreach` or `for`. Unlabelled `continue` is valid inside loops. Labelled forms require a label on an enclosing loop. Invalid jumps are `ZLANG1004` or `ZLANG2003` when the label is undeclared.
+Unlabelled `break` is valid inside `switch`, `while`, `do while`, `repeat`, `foreach` or `for`. Unlabelled `continue` is valid inside loops. Labelled forms require a label on an enclosing loop. Every jump target must belong to the same function. Duplicate `case` values, duplicate `match` patterns and more than one `default` clause are diagnostics. Other invalid jumps are `ZLANG1004` or `ZLANG2003` when the label is undeclared.
 
 ## Logical operators
 

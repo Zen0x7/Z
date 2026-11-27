@@ -2114,6 +2114,56 @@ static void emits_view_parameter(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "return app_fn_sum(app_local_window);") != NULL);
 }
 
+static void rejects_duplicate_switch_case(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function main(): int32 {\n"
+                                  "    int32 value = 1;\n"
+                                  "    switch (value) {\n"
+                                  "        case 1: value = 2;\n"
+                                  "        case 1: value = 3;\n"
+                                  "        default: value = 4;\n"
+                                  "    }\n"
+                                  "    return value;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(&_session,
+                                                      ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) > 0U);
+}
+
+static void rejects_duplicate_match_pattern(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function main(): int32 {\n"
+                                  "    int32 value = 1;\n"
+                                  "    int32 label = match (value) {\n"
+                                  "        1 => 10,\n"
+                                  "        1 => 20,\n"
+                                  "        default => 30\n"
+                                  "    };\n"
+                                  "    return label;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(&_session,
+                                                      ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) > 0U);
+}
+
+static void rejects_cross_function_jump(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function first(): int32 {\n"
+                                  "    target:\n"
+                                  "    return 1;\n"
+                                  "}\n"
+                                  "function second(): int32 {\n"
+                                  "    jump target;\n"
+                                  "    return 0;\n"
+                                  "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(&_session,
+                                                      ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT) > 0U);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

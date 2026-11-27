@@ -131,6 +131,7 @@ valid for a struct only when its required interfaces are implemented by that str
 Diagnostics use `file:line:column: error[ZLANGxxxx]: message`. Classes are `ZLANG1xxx` syntax,
 `ZLANG2xxx` type, `ZLANG3xxx` resource. Stable codes cover unexpected tokens, unterminated strings,
 invalid characters, unsupported constructs, literal range, duplicate or shadowed declarations,
+duplicate switch cases and match patterns,
 undefined identifiers, type mismatch, missing or excessive string capacity, initializer length and
 unnecessary references. Resource errors point at the declaration that needs a limit. The compiler
 may emit several diagnostics but emits no C when any error is present.

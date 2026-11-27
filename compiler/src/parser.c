@@ -289,6 +289,38 @@ static const char *zlang_conversion_target(const char *name) {
     return NULL;
 }
 
+static bool zlang_parser_parse_view_type(zlang_parser_t *parser, const char **type_name) {
+    if (!zlang_parser_expect(parser, zlang_token_view_, "expected 'view'") ||
+        !zlang_parser_expect(parser, zlang_token_left_bracket_, "expected '[' after view") ||
+        !zlang_parser_expect(parser, zlang_token_right_bracket_, "expected ']' after view")) {
+        return false;
+    }
+    if (!zlang_parser_is_declaration_type(parser, zlang_parser_current(parser)) &&
+        !zlang_parser_is_active_generic_parameter(parser, zlang_parser_current(parser))) {
+        zlang_parser_unsupported(parser, "view parameter requires an element type");
+        return false;
+    }
+    const char *_element_type_k = NULL;
+    if (!zlang_parser_parse_type_reference(parser, &_element_type_k, false)) {
+        return false;
+    }
+    char _name_k[ZLANG_GENERIC_NAME_CAPACITY];
+    if (!zlang_generic_build_name("view", &_element_type_k, 1U, _name_k, sizeof(_name_k))) {
+        zlang_parser_unsupported(parser, "view type name is too long");
+        return false;
+    }
+    const size_t _length_k = strlen(_name_k) + 1U;
+    if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_) {
+        zlang_parser_unsupported(parser, "scratch buffer too small");
+        return false;
+    }
+    char *const _stored_k = parser->lexer_.scratch_ + parser->lexer_.scratch_length_;
+    memcpy(_stored_k, _name_k, _length_k);
+    parser->lexer_.scratch_length_ += _length_k;
+    *type_name = _stored_k;
+    return true;
+}
+
 static bool zlang_parser_is_user_type(const zlang_parser_t *parser, const zlang_token_t *token) {
     if (token == NULL || token->kind_ != zlang_token_identifier_ || token->text_ == NULL) {
         return false;
@@ -2220,9 +2252,14 @@ static bool zlang_parse_function_signature(zlang_parser_t *parser, const char *o
         zlang_parser_advance(parser);
         const zlang_token_t *const _type_k = zlang_parser_current(parser);
         const bool _is_array_type_k = _type_k->kind_ == zlang_token_array_;
+        const bool _is_view_type_k = _type_k->kind_ == zlang_token_view_;
         const char *_parameter_type_k = NULL;
         if (_is_array_type_k) {
             zlang_parser_advance(parser);
+        } else if (_is_view_type_k) {
+            if (!zlang_parser_parse_view_type(parser, &_parameter_type_k)) {
+                return false;
+            }
         } else if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
             return false;
         }
@@ -2235,10 +2272,12 @@ static bool zlang_parse_function_signature(zlang_parser_t *parser, const char *o
         _parameter_k->type_name_ = _is_array_type_k ? NULL : _parameter_type_k;
         _parameter_k->name_ = _parameter_name_k->text_;
         _parameter_k->is_array_ = _is_array_type_k;
+        _parameter_k->is_view_ = _is_view_type_k;
         _parameter_k->line_ = _type_k->line_;
         _parameter_k->column_ = _type_k->column_;
         _parameter_k->is_const_ = _is_const_k;
         _parameter_k->is_reference_ = _is_reference_k;
+        _parameter_k->is_view_ = zlang_std_is_view_type(_parameter_type_k);
         if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
             break;
         }
@@ -2312,7 +2351,11 @@ static bool zlang_parse_extern_function(zlang_parser_t *parser) {
         const bool _is_reference_k = _mode_kind_k == zlang_token_reference_;
         zlang_parser_advance(parser);
         const char *_parameter_type_k = NULL;
-        if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
+        if (zlang_parser_current(parser)->kind_ == zlang_token_view_) {
+            if (!zlang_parser_parse_view_type(parser, &_parameter_type_k)) {
+                return false;
+            }
+        } else if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
             return false;
         }
         const zlang_token_t *const _parameter_name_k = zlang_parser_current(parser);
@@ -2471,9 +2514,14 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         }
         const zlang_token_t *const _type_k = zlang_parser_current(parser);
         const bool _is_array_type_k = _type_k->kind_ == zlang_token_array_;
+        const bool _is_view_type_k = _type_k->kind_ == zlang_token_view_;
         const char *_parameter_type_k = NULL;
         if (_is_array_type_k) {
             zlang_parser_advance(parser);
+        } else if (_is_view_type_k) {
+            if (!zlang_parser_parse_view_type(parser, &_parameter_type_k)) {
+                return false;
+            }
         } else if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
             return false;
         }
@@ -2485,6 +2533,7 @@ static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool
         _parameter_k->type_name_ = _is_array_type_k ? NULL : _parameter_type_k;
         _parameter_k->name_ = _parameter_name_k->text_;
         _parameter_k->is_array_ = _is_array_type_k;
+        _parameter_k->is_view_ = _is_view_type_k;
         _parameter_k->line_ = _start_k->line_;
         _parameter_k->column_ = _start_k->column_;
         _parameter_k->is_const_ = _is_const_k;

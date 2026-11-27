@@ -2093,6 +2093,27 @@ static void emits_local_extern_include(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "return my_add(2, 3);") != NULL);
 }
 
+static void emits_view_parameter(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function sum(clone view[] int32 values): int32 {\n"
+                                  "    return values[0];\n"
+                                  "}\n"
+                                  "function main(): int32 {\n"
+                                  "    array[4] int32 data;\n"
+                                  "    view[] window = to_view(data, 0U, 4U);\n"
+                                  "    return sum(window);\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "app_fn_sum(zlang_view_t app_param_values)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "zlang_array_get(app_param_values.data_, 0, app_param_values.length_") !=
+                    NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "return app_fn_sum(app_local_window);") != NULL);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

@@ -1,6 +1,10 @@
+function sum(clone view[] int32 values): int32 {
+    return values[0];
+}
+
 function main(): int32 {
     array[8] int32 data;
     view[] window = to_view(data, 1U, 4U);
     window[0] = 9;
-    return window[0];
+    return sum(window);
 }

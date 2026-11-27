@@ -169,8 +169,9 @@ Generic parameters may declare interface constraints with
 constraints when a generic application is specialized.
 
 A bounded borrowed array window uses `view[] T` and `to_view(source, offset, count)`. The view is a
-small descriptor with a borrowed data pointer and a runtime length. It cannot be stored in a struct
-or returned from a function. Accesses are bounds-checked.
+small descriptor with a borrowed data pointer and a runtime length. It can be passed by `clone` to a
+function declaring a `view[] T` parameter. It cannot be stored in a struct or returned from a
+function. Accesses are bounds-checked.
 
 `extern function` declares a C function with explicit Zlang parameter modes and a header:
 

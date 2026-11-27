@@ -80,7 +80,7 @@ externDeclaration = "extern" functionSignature "from"
                     ( stringLiteral | nativeSpecifier ) ";" ;
 nativeSpecifier  = "@native/" identifier ;
 parameterMode  = "clone" | "reference" ;
-parameter      = "const"? parameterMode ( "array" | type ) identifier ;
+parameter      = "const"? parameterMode ( "array" | viewModifier | type ) identifier ;
 parameters     = ( parameter ( "," parameter )* )? ;
 returnStatement = "return" expression? ";" ;
 labelStatement  = identifier ":" statement ;

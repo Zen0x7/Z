@@ -1292,13 +1292,24 @@ zlang_parse_expression(zlang_parser_t *parser,
             return false;
         }
         const zlang_expression_kind_t _left_kind_k = parser->expressions_[_left_k].kind_;
-        if (_assignment_kind_k != zlang_token_equal_ &&
-            (_left_kind_k == zlang_expression_index_ || _left_kind_k == zlang_expression_field_)) {
-            zlang_parser_unsupported(parser, "compound assignment requires a scalar target");
-            return false;
+        const bool _compound_lvalue_k =
+            _assignment_kind_k != zlang_token_equal_ &&
+            (_left_kind_k == zlang_expression_index_ || _left_kind_k == zlang_expression_field_);
+        size_t _value_k = _right_k;
+        if (_compound_lvalue_k) {
+            const size_t _operation_k = zlang_parser_add_expression(parser);
+            if (_operation_k == ZLANG_NO_EXPRESSION) {
+                return false;
+            }
+            parser->expressions_[_operation_k].kind_ = zlang_compound_operator(_assignment_kind_k);
+            parser->expressions_[_operation_k].left_ = _left_k;
+            parser->expressions_[_operation_k].right_ = _right_k;
+            parser->expressions_[_operation_k].line_ = parser->expressions_[_left_k].line_;
+            parser->expressions_[_operation_k].column_ = parser->expressions_[_left_k].column_;
+            _value_k = _operation_k;
         }
         zlang_expression_kind_t _assignment_expression_k = zlang_expression_compound_assignment_;
-        if (_assignment_kind_k == zlang_token_equal_) {
+        if (_assignment_kind_k == zlang_token_equal_ || _compound_lvalue_k) {
             if (_left_kind_k == zlang_expression_index_) {
                 _assignment_expression_k = zlang_expression_index_assignment_;
             } else if (_left_kind_k == zlang_expression_field_) {
@@ -1310,7 +1321,7 @@ zlang_parse_expression(zlang_parser_t *parser,
         parser->expressions_[_assignment_k].kind_ = _assignment_expression_k;
         parser->expressions_[_assignment_k].operator_ = zlang_compound_operator(_assignment_kind_k);
         parser->expressions_[_assignment_k].left_ = _left_k;
-        parser->expressions_[_assignment_k].right_ = _right_k;
+        parser->expressions_[_assignment_k].right_ = _value_k;
         _left_k = _assignment_k;
     }
     *expression = _left_k;

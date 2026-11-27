@@ -51,6 +51,7 @@ Imports add their activation macros before these includes.
 | `string s = "Hi";` | `zlang_string_t s = { "Hi", 2U };` |
 | `a + b`, `a - b`, `a * b` | checked arithmetic helper, then the plain operator |
 | `a += b` and other compound assignments | checked operation followed by assignment |
+| `self.field += b`, `value.field += b`, `array[i] += b` | same checked operation on the lvalue |
 | `length(values)` | native capacity expression as `uint32_t` |
 | `a == b` for strings | `zlang_string_equal(a, b)` |
 | scalar comparisons and logic | native C operators with short-circuit behavior |

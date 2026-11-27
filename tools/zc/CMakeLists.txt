@@ -29,6 +29,7 @@ if(ZLANG_BUILD_TESTS)
     configure_file(tests/labeled_loops.z ${CMAKE_CURRENT_BINARY_DIR}/labeled_loops.z COPYONLY)
     configure_file(tests/interfaces.z ${CMAKE_CURRENT_BINARY_DIR}/interfaces.z COPYONLY)
     configure_file(tests/user_result.z ${CMAKE_CURRENT_BINARY_DIR}/user_result.z COPYONLY)
+    configure_file(tests/self_edges.z ${CMAKE_CURRENT_BINARY_DIR}/self_edges.z COPYONLY)
 
     add_test(NAME zlang.cli.emit_c
              COMMAND $<TARGET_FILE:zc> ${CMAKE_CURRENT_BINARY_DIR}/emit_c.z --emit-c)
@@ -69,6 +70,18 @@ if(ZLANG_BUILD_TESTS)
                      -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
     set_tests_properties(zlang.cli.compiles_generated_c PROPERTIES LABELS module:cli)
+
+    add_test(NAME zlang.cli.compiles_self_edges
+             COMMAND ${CMAKE_COMMAND}
+                     -DZLANG_COMPILE=$<TARGET_FILE:zc>
+                     -DSOURCE=${CMAKE_CURRENT_BINARY_DIR}/self_edges.z
+                     -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                     -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
+                     -DC_COMPILER_FRONTEND=${CMAKE_C_COMPILER_FRONTEND_VARIANT}
+                     -DINCLUDE_DIR=${CMAKE_SOURCE_DIR}/include
+                     -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_compile_generated_c.cmake)
+    set_tests_properties(zlang.cli.compiles_self_edges PROPERTIES LABELS module:cli)
 
     add_test(NAME zlang.cli.compiles_user_result
              COMMAND ${CMAKE_COMMAND}
@@ -332,6 +345,7 @@ if(ZLANG_BUILD_TESTS)
         set_tests_properties(zlang.cli.emit_c zlang.cli.emit_c.output zlang.cli.diagnostic_format
                              zlang.cli.disable_comments zlang.cli.disable_comments.output
                              zlang.cli.compiles_generated_c zlang.cli.compiles_user_types
+                             zlang.cli.compiles_self_edges
                              zlang.cli.compiles_multidimensional
                              zlang.cli.compiles_forward_calls
                              zlang.cli.tto

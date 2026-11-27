@@ -32,6 +32,7 @@ void zlang_semantic_context_init(zlang_semantic_context_t *context, zlang_symbol
     context->diagnostics_ = diagnostics;
     context->program_ = program;
     context->current_struct_ = NULL;
+    context->current_function_ = NULL;
     context->current_generic_declaration_ = NULL;
 }
 
@@ -1267,6 +1268,15 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         const char *_struct_name_k = NULL;
         bool _static_k = false;
         const zlang_symbol_t *const _base_k = zlang_find_symbol(context, _expression_k->base_name_);
+        if (_base_k == NULL && _expression_k->base_name_ != NULL &&
+            strcmp(_expression_k->base_name_, "self") == 0 &&
+            ((context->current_function_ != NULL && context->current_function_->is_static_) ||
+             context->current_function_ == NULL)) {
+            (void)zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index, statement,
+                "self is not available in a static function or top-level expression");
+            return NULL;
+        }
         if (_base_k != NULL) {
             _struct_name_k = _base_k->type_name_;
         } else if (zlang_find_struct(context->program_, _expression_k->base_name_) != NULL) {
@@ -2090,12 +2100,14 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         const char *const _previous_return_k = context->current_return_type_;
         const size_t _previous_loop_k = context->loop_depth_;
+        const zlang_ast_statement_t *const _previous_function_k = context->current_function_;
         const zlang_ast_statement_t *const _previous_generic_k =
             context->current_generic_declaration_;
         if (statement->is_generic_) {
             context->current_generic_declaration_ = statement;
         }
         context->current_return_type_ = statement->is_constructor_ ? "void" : statement->type_name_;
+        context->current_function_ = statement;
         context->loop_depth_ = 0U;
         _result_k = zlang_analyze_body(context, statement->body_start_, statement->body_count_);
         for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
@@ -2116,6 +2128,7 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             }
         }
         context->current_return_type_ = _previous_return_k;
+        context->current_function_ = _previous_function_k;
         context->loop_depth_ = _previous_loop_k;
         context->current_generic_declaration_ = _previous_generic_k;
         context->symbol_count_ = _scope_start_k;

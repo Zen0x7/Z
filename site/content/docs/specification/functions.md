@@ -50,7 +50,7 @@ struct Counter {
 }
 ```
 
-Inside a constructor or instance method, fields are referenced without an explicit receiver. The emitter supplies `self` in generated C. Instance calls use `value.method()` and static calls use `Struct.method()`. A method name cannot collide with a field name.
+Inside a constructor or instance method, fields are referenced without an explicit receiver, or through `self.field`. The emitter supplies `self` in generated C. `self.method()` calls a method on the implicit receiver and is unavailable in `static function`. Instance calls from another value use `value.method()` and static calls use `Struct.method()`. Compound assignment accepts a scalar lvalue, including `self.field`, `value.field` and `array[index]`, with the same checked arithmetic as a variable. A method name cannot collide with a field name.
 
 ## Inheritance
 

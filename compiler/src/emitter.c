@@ -551,6 +551,26 @@ static bool zlang_register_symbol(zlang_emitter_t *emitter, const char *source_n
     return true;
 }
 
+static bool zlang_register_self_symbol(zlang_emitter_t *emitter, const char *type_name,
+                                       bool is_pointer) {
+    if (emitter == NULL || type_name == NULL ||
+        emitter->active_symbol_count_ >= ZLANG_EMITTED_SYMBOL_CAPACITY) {
+        return false;
+    }
+    zlang_emitted_symbol_t *const _symbol_k =
+        &emitter->emitted_symbols_[emitter->active_symbol_count_++];
+    memset(_symbol_k, 0, sizeof(*_symbol_k));
+    _symbol_k->source_name_ = "self";
+    _symbol_k->type_name_ = type_name;
+    _symbol_k->is_reference_ = is_pointer;
+    return zlang_copy_name("self", _symbol_k->generated_name_,
+                           sizeof(_symbol_k->generated_name_)) &&
+           zlang_copy_name("self", _symbol_k->storage_name_, sizeof(_symbol_k->storage_name_)) &&
+           (emitter->active_symbol_count_ > emitter->emitted_symbol_count_
+                ? (emitter->emitted_symbol_count_ = emitter->active_symbol_count_, true)
+                : true);
+}
+
 static bool zlang_register_method_parameter(zlang_emitter_t *emitter,
                                             const zlang_parameter_t *parameter, char *generated,
                                             size_t generated_capacity) {
@@ -1910,6 +1930,28 @@ static const char *zlang_expression_type(const zlang_program_t *program,
             zlang_find_function_statement(program, _expression_k->name_);
         return _function_k != NULL ? _function_k->type_name_ : NULL;
     }
+    case zlang_expression_method_call_: {
+        const zlang_emitted_symbol_t *const _receiver_k =
+            zlang_find_active_symbol(emitter, _expression_k->base_name_);
+        const char *_receiver_type_k = NULL;
+        if (_receiver_k != NULL) {
+            _receiver_type_k = _receiver_k->type_name_;
+        } else if (zlang_find_struct_statement(program, _expression_k->base_name_) != NULL) {
+            _receiver_type_k = _expression_k->base_name_;
+        }
+        if (_receiver_type_k == NULL) {
+            return NULL;
+        }
+        const zlang_std_result_t *const _native_k = zlang_std_find_result(_receiver_type_k);
+        if (_native_k != NULL) {
+            return zlang_std_native_result_method_type(_native_k, _expression_k->name_);
+        }
+        const char *_owner_k = NULL;
+        bool _is_trait_k = false;
+        const zlang_ast_statement_t *const _method_k = zlang_find_method(
+            program, _receiver_type_k, _expression_k->name_, &_owner_k, &_is_trait_k);
+        return _method_k != NULL ? _method_k->type_name_ : NULL;
+    }
     default:
         return NULL;
     }
@@ -3224,8 +3266,7 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
                     if (!zlang_append_text(emitter, "(") ||
                         !zlang_append_text(emitter, _owner_type_k->type_name_) ||
                         !zlang_append_text(emitter, " *)") ||
-                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_) ||
-                        !zlang_append_text(emitter, ")")) {
+                        !zlang_append_text(emitter, _receiver_symbol_k->generated_name_)) {
                         return false;
                     }
                 } else {
@@ -7393,7 +7434,9 @@ static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
                 emitter->current_self_is_pointer_ = !_method_k->is_static_;
                 emitter->current_return_type_ = _method_k->type_name_;
                 const zlang_emitter_scope_t _scope_k = zlang_save_scope(emitter);
-                bool _result_k = true;
+                bool _result_k = _method_k->is_static_ ||
+                                 zlang_register_self_symbol(emitter, _structure_k->name_,
+                                                            emitter->current_self_is_pointer_);
                 for (size_t _parameter = 0U; _result_k && _parameter < _method_k->parameter_count_;
                      ++_parameter) {
                     const zlang_parameter_t *const _parameter_k =
@@ -7459,7 +7502,12 @@ static bool zlang_emit_method_definitions(const zlang_program_t *program,
             emitter->current_self_is_pointer_ =
                 !_method_k->is_static_ && !_method_k->is_constructor_;
             const zlang_emitter_scope_t _scope_k = zlang_save_scope(emitter);
-            bool _result_k = true;
+            bool _result_k = _method_k->is_static_ ||
+                             zlang_register_self_symbol(emitter,
+                                                        emitter->current_struct_ != NULL
+                                                            ? emitter->current_struct_->name_
+                                                            : _method_k->owner_name_,
+                                                        emitter->current_self_is_pointer_);
             for (size_t _parameter = 0U; _result_k && _parameter < _method_k->parameter_count_;
                  ++_parameter) {
                 const zlang_parameter_t *const _parameter_k =

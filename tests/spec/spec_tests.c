@@ -17,7 +17,7 @@
 #undef ZLANG_TEST_CASE
 
 typedef struct zlang_spec_session_t {
-    zlang_token_t tokens_[128];
+    zlang_token_t tokens_[256];
     zlang_comment_t comments_[64];
     zlang_ast_expression_t expressions_[64];
     zlang_ast_statement_t statements_[64];
@@ -1884,6 +1884,79 @@ static void emits_generic_struct_method(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "app_fn_box_int32_get") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "return self->value_;") != NULL);
+}
+
+static void emits_compound_assignments_on_lvalues(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "struct Counter {\n"
+        "    int32 value;\n"
+        "    constructor(clone int32 initial) { self.value = initial; self.value += 1; }\n"
+        "}\n"
+        "function main(): int32 {\n"
+        "    array[4] int32 values;\n"
+        "    values[0] += 1;\n"
+        "    Counter counter = Counter(1);\n"
+        "    counter.value += 2;\n"
+        "    return counter.value + values[0];\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "self.value_ = app_param_initial;") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "self.value_ = zlang_add_i32(self.value_, 1);") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "app_local_counter.value_ = zlang_add_i32(app_local_counter.value_, 2);") !=
+                    NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "zlang_add_i32(zlang_array_get_i32(app_local_values.data_, 0, 4),") != NULL);
+}
+
+static void emits_self_method_calls(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "interface Named {\n"
+        "    int32 value;\n"
+        "    function label(): int32;\n"
+        "}\n"
+        "trait NamedTrait requires Named {\n"
+        "    function read(): int32 { return self.value; }\n"
+        "    function label(): int32 { return self.read(); }\n"
+        "}\n"
+        "struct Counter implements Named {\n"
+        "    use NamedTrait;\n"
+        "    int32 value;\n"
+        "    constructor(clone int32 initial) { value = initial; }\n"
+        "    function get(): int32 { return self.value; }\n"
+        "    function twice(): int32 { return self.get() + self.get(); }\n"
+        "}\n"
+        "function main(): int32 {\n"
+        "    Counter counter = Counter(1);\n"
+        "    return counter.twice() + counter.label();\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_,
+                       "zlang_add_i32(app_fn_counter_get((app_struct_counter_t *)self),") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "app_fn_counter_read((app_struct_counter_t *)self)") != NULL);
+}
+
+static void rejects_self_method_in_static_function(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "struct Counter {\n"
+                                  "    int32 value;\n"
+                                  "    function get(): int32 { return value; }\n"
+                                  "    static function bad(): int32 { return self.get(); }\n"
+                                  "}\n"
+                                  "Counter counter = Counter.zero();";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    zlang_spec_expect_diagnostic(context, &_session, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, 4U,
+                                 47U);
 }
 
 #define ZLANG_TEST_CASE(name) {#name, name},

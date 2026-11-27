@@ -1,0 +1,49 @@
+interface Named {
+    int32 value;
+    function label(): int32;
+}
+
+trait NamedTrait requires Named {
+    function read(): int32 {
+        return self.value;
+    }
+
+    function label(): int32 {
+        return self.read();
+    }
+}
+
+struct Counter implements Named {
+    use NamedTrait;
+
+    int32 value;
+
+    constructor(clone int32 initial) {
+        self.value = initial;
+        self.value += 1;
+    }
+
+    function get(): int32 {
+        return self.value;
+    }
+
+    function twice(): int32 {
+        return self.get() + self.get();
+    }
+
+    static function zero(): Counter {
+        return Counter(0);
+    }
+}
+
+function main(): int32 {
+    array[2] int32 values;
+    values[0] = 2;
+    values[0] += 1;
+
+    Counter counter = Counter(1);
+    counter.value += 2;
+    Counter empty = Counter.zero();
+
+    return counter.twice() + counter.label() + values[0] + empty.value;
+}

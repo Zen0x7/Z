@@ -49,8 +49,11 @@ capacity overflow. Arrays have fixed capacity, bounds-checked index access, no l
 no append. Storage at or below `ZLANG_DEFAULT_STACK_LIMIT` is local; larger storage is `static`.
 
 Structs, enums, interfaces, traits and `use` are compile-time constructs. A struct implements named
-interfaces and uses traits. Single inheritance emits internal vtables and type tags; trait calls are
-direct calls. No dynamic allocation is introduced.
+interfaces and uses traits. Inside a non-static method, `self` names the implicit receiver; fields are
+also available without a receiver. Compound assignment accepts scalar identifiers, fields, `self.field`
+and one-dimensional array elements with the same checked arithmetic as plain variables. Single
+inheritance emits internal vtables and type tags; trait calls are direct calls. No dynamic allocation
+is introduced.
 
 ## Generics
 

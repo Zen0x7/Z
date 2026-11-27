@@ -76,6 +76,33 @@ the pinned, checksum-verified Doxygen 1.18.0 binary):
 # output: build/docs/html/index.html
 ```
 
+## Verification
+
+`scripts/verify_all.sh` is the local all-checks runner. It is independent of CI: it creates its own
+`build-verify/` directories, configures each toolchain, runs every check, and exits non-zero on the
+first failure. It does not push, publish, or modify tracked sources. Set `ZLANG_JOBS` to override the
+parallel job count; set `ZLANG_VERIFY_KEEP_BUILD=1` to reuse the existing verification directories.
+
+The runner covers:
+
+- `clang-format --dry-run --Werror` and `cppcheck` with the same source set and options as CI.
+- A clang-tidy build and `clang --analyze` over the analyzer translation units.
+- Debug Clang C99 build plus full CTest suite.
+- GCC Release builds and full CTest suite for C11, C17 and C23.
+- Address, undefined and integer sanitizer builds plus full CTest suites.
+- Valgrind memcheck over every test executable.
+- GCC gcovr coverage build and report generation. Never combine coverage with a sanitizer.
+- Standalone compilation of every public header with Clang and GCC.
+- Install into an isolated prefix and build/run the standalone package consumer.
+- Clang libFuzzer smoke runs for every fuzz target.
+- Doxygen API reference generation with the pinned tool.
+
+Run every check with:
+
+```sh
+./scripts/verify_all.sh
+```
+
 Documentation site and browser playground:
 
 ```sh
@@ -118,7 +145,8 @@ keep the notices current.
 | `tests/consumer/` | Standalone project that verifies `find_package(zlang)` after install |
 | `examples/` | Golden examples in `algorithms/` and `features/` with generated C and expected output |
 | `fuzz/` | Clang libFuzzer harnesses for the public API, lexer, parser and emitter |
-| `scripts/` | Header checks, Doxygen build and generated-file helpers |
+| `scripts/` | Header checks, Doxygen build, generated files and the local verification runner |
+| `scripts/verify_all.sh` | Local all-checks runner; creates isolated `build-verify/` directories |
 | `Doxyfile.in` | Doxygen template used by `scripts/build_docs.sh` |
 | `docs/` | Doxygen landing page and source-level reference material |
 | `site/` | Nuxt documentation site, guides, specification pages and browser playground |

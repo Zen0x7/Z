@@ -184,8 +184,10 @@ extern function abs(clone int32 value): int32 from "stdlib.h";
 The call lowers directly to the named C function. A bare header name emits an angle-bracket
 include; a header containing a path separator emits a quoted include. Project headers and C
 sources are declared in `z.yaml` under `native:` and referenced with `@native/<alias>`; zc adds the
-configured include dirs and links the sources of used aliases. Extern declarations have no Zlang
-body, no variadics, no function pointers and no implicit conversion to `status_code`.
+configured include dirs and links the sources of used aliases. Native entries may also declare
+libraries and link flags. Header and source paths must exist inside the module root, and repeated
+native flags are emitted once. Extern declarations have no Zlang body, no variadics, no function
+pointers and no implicit conversion to `status_code`.
 
 ## 0.41 tagged variants
 

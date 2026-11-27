@@ -1,5 +1,5 @@
-if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT EXPECTED OR NOT WORK_DIR OR NOT C_COMPILER)
-    message(FATAL_ERROR "check_native.cmake requires ZLANG_COMPILE, SOURCE, EXPECTED, WORK_DIR and C_COMPILER")
+if(NOT ZLANG_COMPILE OR NOT SOURCE OR NOT EXPECTED OR NOT WORK_DIR OR NOT C_COMPILER OR NOT C_COMPILER_ID)
+    message(FATAL_ERROR "check_native.cmake requires ZLANG_COMPILE, SOURCE, EXPECTED, WORK_DIR, C_COMPILER and C_COMPILER_ID")
 endif()
 get_filename_component(_stem "${SOURCE}" NAME_WE)
 get_filename_component(_project_dir "${SOURCE}" DIRECTORY)
@@ -7,6 +7,11 @@ set(_source "${WORK_DIR}/${_stem}.z")
 set(_executable "${WORK_DIR}/${_stem}")
 file(MAKE_DIRECTORY "${WORK_DIR}")
 file(COPY "${_project_dir}/" DESTINATION "${WORK_DIR}")
+if(C_COMPILER_ID MATCHES "MSVC")
+    file(WRITE "${WORK_DIR}/z.yaml" "native:\n  my_math:\n    header: \"./native/my_math.h\"\n    include_dirs:\n      - \"./native\"\n    sources:\n      - \"./native/my_math.c\"\n")
+else()
+    file(WRITE "${WORK_DIR}/z.yaml" "native:\n  my_math:\n    header: \"./native/my_math.h\"\n    include_dirs:\n      - \"./native\"\n    sources:\n      - \"./native/my_math.c\"\n    libraries:\n      - \"m\"\n    link_flags:\n      - \"-Wl,-z,now\"\n")
+endif()
 execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env "ZLANG_CC=${C_COMPILER}" "${ZLANG_COMPILE}" "${_stem}.z"
     WORKING_DIRECTORY "${WORK_DIR}"

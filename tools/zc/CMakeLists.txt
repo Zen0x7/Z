@@ -335,6 +335,7 @@ if(ZLANG_BUILD_TESTS)
                      -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/tests/native_project/expected.txt
                      -DWORK_DIR=${CMAKE_CURRENT_BINARY_DIR}/native_project
                      -DC_COMPILER=${CMAKE_C_COMPILER}
+                     -DC_COMPILER_ID=${CMAKE_C_COMPILER_ID}
                      -DEXECUTABLE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
                      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_native.cmake)
     set_tests_properties(zlang.cli.native PROPERTIES LABELS module:cli)

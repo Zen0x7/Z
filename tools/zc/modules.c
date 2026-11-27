@@ -163,6 +163,18 @@ static bool zlang_modules_find_native(zlang_modules_t *modules, const char *alia
     return false;
 }
 
+static bool zlang_modules_file_exists(const char *path) {
+    if (path == NULL || path[0] == '\0') {
+        return false;
+    }
+    FILE *const _stream_k = fopen(path, "rb");
+    if (_stream_k == NULL) {
+        return false;
+    }
+    (void)fclose(_stream_k);
+    return true;
+}
+
 static bool zlang_modules_unquote(const char *value, char *output, size_t capacity) {
     if (value == NULL || output == NULL || capacity == 0U) {
         return false;
@@ -227,6 +239,7 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
     zlang_native_t *_native_k = NULL;
     char(*_native_paths_k)[ZLANG_MODULE_PATH_CAPACITY] = NULL;
     size_t *_native_path_count_k = NULL;
+    const char *_native_list_k = NULL;
     while (_line_k != NULL) {
         const bool _indented_k = _line_k[0] == ' ' || _line_k[0] == '\t';
         char *_trimmed_k = zlang_modules_trim(_line_k);
@@ -277,9 +290,23 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
         if (_trimmed_k[0] == '-' && _native_path_count_k != NULL &&
             *_native_path_count_k < ZLANG_NATIVE_PATH_MAX) {
             const char *const _value_k = zlang_modules_trim(_trimmed_k + 1);
-            if (!zlang_modules_copy(_native_paths_k[*_native_path_count_k],
-                                    ZLANG_MODULE_PATH_CAPACITY, _value_k)) {
-                return false;
+            if (_native_paths_k != NULL) {
+                if (!zlang_modules_copy(_native_paths_k[*_native_path_count_k],
+                                        ZLANG_MODULE_PATH_CAPACITY, _value_k)) {
+                    return false;
+                }
+            } else if (_native_k != NULL &&
+                       strcmp(_native_list_k != NULL ? _native_list_k : "", "libraries") == 0) {
+                if (!zlang_modules_copy(_native_k->libraries_[*_native_path_count_k],
+                                        ZLANG_MODULE_NAME_CAPACITY, _value_k)) {
+                    return false;
+                }
+            } else if (_native_k != NULL &&
+                       strcmp(_native_list_k != NULL ? _native_list_k : "", "link_flags") == 0) {
+                if (!zlang_modules_copy(_native_k->link_flags_[*_native_path_count_k],
+                                        ZLANG_MODULE_PATH_CAPACITY, _value_k)) {
+                    return false;
+                }
             }
             ++*_native_path_count_k;
             _line_k = strtok(NULL, "\n");
@@ -297,9 +324,19 @@ static bool zlang_modules_find_config(zlang_modules_t *modules, const char *sour
             if (strcmp(_key_k, "include_dirs") == 0 && _native_k != NULL) {
                 _native_paths_k = _native_k->include_dirs_;
                 _native_path_count_k = &_native_k->include_dir_count_;
+                _native_list_k = _key_k;
             } else if (strcmp(_key_k, "sources") == 0 && _native_k != NULL) {
                 _native_paths_k = _native_k->sources_;
                 _native_path_count_k = &_native_k->source_count_;
+                _native_list_k = _key_k;
+            } else if (strcmp(_key_k, "libraries") == 0 && _native_k != NULL) {
+                _native_paths_k = NULL;
+                _native_path_count_k = &_native_k->library_count_;
+                _native_list_k = _key_k;
+            } else if (strcmp(_key_k, "link_flags") == 0 && _native_k != NULL) {
+                _native_paths_k = NULL;
+                _native_path_count_k = &_native_k->link_flag_count_;
+                _native_list_k = _key_k;
             } else if (_native_k == NULL && modules->native_count_ < ZLANG_NATIVE_MAX) {
                 zlang_native_t *const _entry_k = &modules->natives_[modules->native_count_++];
                 memset(_entry_k, 0, sizeof(*_entry_k));
@@ -797,10 +834,20 @@ static bool zlang_modules_transform(zlang_modules_t *modules, zlang_module_t *mo
             char _header_k[ZLANG_MODULE_PATH_CAPACITY];
             if (!zlang_modules_resolve_native_path(modules, _native_k->header_, _header_k,
                                                    sizeof(_header_k)) ||
-                _header_k[0] == '\0') {
+                _header_k[0] == '\0' || !zlang_modules_file_exists(_header_k)) {
                 zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
-                                   "native header is not declared or is outside the project");
+                                   "native header is missing or outside the project");
                 return false;
+            }
+            for (size_t _source = 0U; _source < _native_k->source_count_; ++_source) {
+                char _source_path_k[ZLANG_MODULE_PATH_CAPACITY];
+                if (!zlang_modules_resolve_native_path(modules, _native_k->sources_[_source],
+                                                       _source_path_k, sizeof(_source_path_k)) ||
+                    !zlang_modules_file_exists(_source_path_k)) {
+                    zlang_modules_diag(diagnostics, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER,
+                                       "native source is missing or outside the project");
+                    return false;
+                }
             }
             _native_k->used_ = true;
             const char *_header_text_k = _header_k;
@@ -1046,6 +1093,18 @@ size_t zlang_modules_native_count(const zlang_modules_t *modules) {
 
 const zlang_native_t *zlang_modules_native_at(const zlang_modules_t *modules, size_t index) {
     return modules != NULL && index < modules->native_count_ ? &modules->natives_[index] : NULL;
+}
+
+bool zlang_modules_native_library(const zlang_native_t *native, size_t index, char *output,
+                                  size_t capacity) {
+    return native != NULL && index < native->library_count_ && output != NULL && capacity > 0U &&
+           zlang_modules_copy(output, capacity, native->libraries_[index]);
+}
+
+bool zlang_modules_native_link_flag(const zlang_native_t *native, size_t index, char *output,
+                                    size_t capacity) {
+    return native != NULL && index < native->link_flag_count_ && output != NULL && capacity > 0U &&
+           zlang_modules_copy(output, capacity, native->link_flags_[index]);
 }
 
 bool zlang_modules_native_include_dir(const zlang_modules_t *modules, const zlang_native_t *native,

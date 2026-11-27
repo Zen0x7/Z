@@ -119,6 +119,25 @@ extern function my_add(clone int32 left, clone int32 right): int32 from @native/
 
 `@native/<alias>` resolves through `z.yaml`. The header is emitted with quotes, include dirs are
 passed to the C compiler, and configured sources are linked into the generated executable. Unused
-native entries are not linked. Extern declarations are top-level signatures without a body.
-Variadics, function pointers, `void *`, automatic `errno` handling and implicit conversion to
-`status_code` are outside the contract.
+native entries are not linked.
+
+A native entry may also list `libraries` and `link_flags`:
+
+```yaml
+native:
+  my_math:
+    header: "./native/my_math.h"
+    sources:
+      - "./native/my_math.c"
+    libraries:
+      - "m"
+    link_flags:
+      - "-Wl,-z,now"
+```
+
+Library names are prefixed with `-l` for GCC/Clang and appended literally for MSVC-style
+compilers. Link flags are passed after the generated C source. Header and source paths must exist
+and stay inside the module root. Repeated include dirs, sources, libraries and link flags are
+emitted once. Extern declarations are top-level signatures without a body. Variadics, function
+pointers, `void *`, automatic `errno` handling and implicit conversion to `status_code` are outside
+the contract.

@@ -211,10 +211,37 @@ static int zlang_cli_run_compiler(char *command) {
 static int zlang_cli_run_compiler(char *command) { return system(command); }
 #endif
 
+static bool zlang_cli_add_unique(char seen[16][ZLANG_MODULE_PATH_CAPACITY], size_t *count,
+                                 const char *value) {
+    if (value == NULL || *count >= 16U || strlen(value) + 1U > ZLANG_MODULE_PATH_CAPACITY) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < *count; ++_index) {
+        if (strcmp(seen[_index], value) == 0) {
+            return true;
+        }
+    }
+    memcpy(seen[*count], value, strlen(value) + 1U);
+    ++*count;
+    return true;
+}
+
 static bool zlang_cli_add_native_flags(char *command, size_t capacity, size_t *length,
                                        const zlang_modules_t *modules, bool msvc) {
     char _path_k[ZLANG_CLI_PATH_CAPACITY];
     char _quoted_k[ZLANG_CLI_PATH_CAPACITY + 2U];
+    char _seen_includes[16][ZLANG_MODULE_PATH_CAPACITY];
+    char _seen_sources[16][ZLANG_MODULE_PATH_CAPACITY];
+    char _seen_libraries[16][ZLANG_MODULE_PATH_CAPACITY];
+    char _seen_flags[16][ZLANG_MODULE_PATH_CAPACITY];
+    size_t _include_count_k = 0U;
+    size_t _source_count_k = 0U;
+    size_t _library_count_k = 0U;
+    size_t _flag_count_k = 0U;
+    memset(_seen_includes, 0, sizeof(_seen_includes));
+    memset(_seen_sources, 0, sizeof(_seen_sources));
+    memset(_seen_libraries, 0, sizeof(_seen_libraries));
+    memset(_seen_flags, 0, sizeof(_seen_flags));
     for (size_t _native = 0U; _native < zlang_modules_native_count(modules); ++_native) {
         const zlang_native_t *const _entry_k = zlang_modules_native_at(modules, _native);
         if (_entry_k == NULL || !_entry_k->used_) {
@@ -223,6 +250,7 @@ static bool zlang_cli_add_native_flags(char *command, size_t capacity, size_t *l
         for (size_t _include = 0U; _include < _entry_k->include_dir_count_; ++_include) {
             if (!zlang_modules_native_include_dir(modules, _entry_k, _include, _path_k,
                                                   sizeof(_path_k)) ||
+                !zlang_cli_add_unique(_seen_includes, &_include_count_k, _path_k) ||
                 !zlang_cli_quote(_path_k, _quoted_k, sizeof(_quoted_k)) ||
                 !zlang_cli_append(command, capacity, length, msvc ? " /I " : " -I ") ||
                 !zlang_cli_append(command, capacity, length, _quoted_k)) {
@@ -232,9 +260,26 @@ static bool zlang_cli_add_native_flags(char *command, size_t capacity, size_t *l
         for (size_t _source = 0U; _source < _entry_k->source_count_; ++_source) {
             if (!zlang_modules_native_source(modules, _entry_k, _source, _path_k,
                                              sizeof(_path_k)) ||
+                !zlang_cli_add_unique(_seen_sources, &_source_count_k, _path_k) ||
                 !zlang_cli_quote(_path_k, _quoted_k, sizeof(_quoted_k)) ||
                 !zlang_cli_append(command, capacity, length, " ") ||
                 !zlang_cli_append(command, capacity, length, _quoted_k)) {
+                return false;
+            }
+        }
+        for (size_t _library = 0U; _library < _entry_k->library_count_; ++_library) {
+            if (!zlang_modules_native_library(_entry_k, _library, _path_k, sizeof(_path_k)) ||
+                !zlang_cli_add_unique(_seen_libraries, &_library_count_k, _path_k) ||
+                !zlang_cli_append(command, capacity, length, msvc ? " " : " -l") ||
+                !zlang_cli_append(command, capacity, length, _path_k)) {
+                return false;
+            }
+        }
+        for (size_t _flag = 0U; _flag < _entry_k->link_flag_count_; ++_flag) {
+            if (!zlang_modules_native_link_flag(_entry_k, _flag, _path_k, sizeof(_path_k)) ||
+                !zlang_cli_add_unique(_seen_flags, &_flag_count_k, _path_k) ||
+                !zlang_cli_append(command, capacity, length, " ") ||
+                !zlang_cli_append(command, capacity, length, _path_k)) {
                 return false;
             }
         }
@@ -265,10 +310,7 @@ static bool zlang_cli_compile_c(const char *c_path, const char *executable_path,
     size_t _command_length_k = 0U;
     _command[0] = '\0';
     const bool _msvc_k = zlang_cli_compiler_uses_msvc_style(_compiler_k);
-    bool _built_k =
-        zlang_cli_append(_command, sizeof(_command), &_command_length_k, _compiler_arg) &&
-        zlang_cli_add_native_flags(_command, sizeof(_command), &_command_length_k, modules,
-                                   _msvc_k);
+    bool _built_k = zlang_cli_append(_command, sizeof(_command), &_command_length_k, _compiler_arg);
     if (_msvc_k) {
         _built_k =
             _built_k &&
@@ -291,7 +333,8 @@ static bool zlang_cli_compile_c(const char *c_path, const char *executable_path,
             zlang_cli_append(_command, sizeof(_command), &_command_length_k, " -o ") &&
             zlang_cli_append(_command, sizeof(_command), &_command_length_k, _executable_arg);
     }
-    if (!_built_k) {
+    if (!_built_k || !zlang_cli_add_native_flags(_command, sizeof(_command), &_command_length_k,
+                                                 modules, _msvc_k)) {
         (void)fprintf(stderr, "error: compile command is too long\n");
         return false;
     }

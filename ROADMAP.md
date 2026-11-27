@@ -128,7 +128,7 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 - `view[] T` with `to_view(source, offset, count)` — delivered.
 - Duplicate `switch` cases, duplicate `match` patterns, function-scoped jump labels — delivered.
 - `extern function` with explicit modes, a header, quoted local includes and `z.yaml native`
-  include dirs and sources — delivered.
+  include dirs, sources, libraries, link flags, path validation and flag deduplication — delivered.
 
 ## 0.41 tagged variants
 

@@ -31,6 +31,10 @@ typedef struct zlang_native_t {
     size_t include_dir_count_;
     char sources_[ZLANG_NATIVE_PATH_MAX][ZLANG_MODULE_PATH_CAPACITY];
     size_t source_count_;
+    char libraries_[ZLANG_NATIVE_PATH_MAX][ZLANG_MODULE_NAME_CAPACITY];
+    size_t library_count_;
+    char link_flags_[ZLANG_NATIVE_PATH_MAX][ZLANG_MODULE_PATH_CAPACITY];
+    size_t link_flag_count_;
     bool used_;
 } zlang_native_t;
 
@@ -80,5 +84,9 @@ bool zlang_modules_native_include_dir(const zlang_modules_t *modules, const zlan
                                       size_t index, char *output, size_t capacity);
 bool zlang_modules_native_source(const zlang_modules_t *modules, const zlang_native_t *native,
                                  size_t index, char *output, size_t capacity);
+bool zlang_modules_native_library(const zlang_native_t *native, size_t index, char *output,
+                                  size_t capacity);
+bool zlang_modules_native_link_flag(const zlang_native_t *native, size_t index, char *output,
+                                    size_t capacity);
 
 #endif

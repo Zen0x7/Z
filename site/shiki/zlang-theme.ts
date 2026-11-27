@@ -64,9 +64,9 @@ export const zlangTheme: ThemeRegistrationRaw = {
       },
     },
     {
-      scope: ['variable.language.self.zlang', 'variable.language'],
+      scope: ['variable.language.self.zlang', 'variable.language', 'keyword.control.label.zlang'],
       settings: {
-        foreground: '#ffcb6b',
+        foreground: '#f07178',
       },
     },
     {

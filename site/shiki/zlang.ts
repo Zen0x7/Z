@@ -67,6 +67,31 @@ export const zlangLanguage: LanguageRegistration = {
     declarations: {
       patterns: [
         {
+          begin: String.raw`\b(import)\s*(\{)`,
+          beginCaptures: {
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'punctuation.zlang' },
+          },
+          end: String.raw`(\})`,
+          endCaptures: {
+            1: { name: 'punctuation.zlang' },
+          },
+          patterns: [
+            {
+              name: 'entity.name.function.zlang',
+              match: String.raw`\b[a-z_]\w*\b`,
+            },
+            {
+              name: 'entity.name.type.zlang',
+              match: String.raw`\b[A-Z][A-Za-z0-9_]*\b`,
+            },
+            {
+              name: 'punctuation.zlang',
+              match: String.raw`,`,
+            },
+          ],
+        },
+        {
           match: String.raw`^([ \t]*)([A-Za-z_]\w*)(:)\s*$`,
           captures: {
             2: { name: 'keyword.control.label.zlang' },

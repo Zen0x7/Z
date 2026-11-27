@@ -6,6 +6,7 @@
 #include "zlang/compiler/generics.h"
 #include "zlang/compiler/stdlib.h"
 
+#include <stdio.h>
 #include <string.h>
 
 static const char *zlang_semantic_std_domain(const char *specifier) {
@@ -366,6 +367,9 @@ static bool zlang_is_user_type(const zlang_program_t *program, const char *name)
 }
 
 static bool zlang_is_builtin_type(const char *name) {
+    if (zlang_std_is_view_type(name)) {
+        return true;
+    }
     return name != NULL && (strcmp(name, "int32") == 0 || strcmp(name, "uint32") == 0 ||
                             strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||
                             strcmp(name, "float") == 0 || strcmp(name, "double") == 0 ||
@@ -563,8 +567,13 @@ static bool zlang_add_symbol(zlang_semantic_context_t *context,
                             "symbol table capacity exceeded");
     }
     zlang_symbol_t *const _symbol_k = &context->symbols_[context->symbol_count_++];
+    memset(_symbol_k, 0, sizeof(*_symbol_k));
     _symbol_k->name_ = statement->name_;
     _symbol_k->type_name_ = statement->type_name_;
+    if (statement->type_name_ != NULL) {
+        (void)zlang_std_view_element_type(statement->type_name_, _symbol_k->view_element_,
+                                          sizeof(_symbol_k->view_element_));
+    }
     _symbol_k->declaration_ =
         zlang_statement_in_program(context->program_, statement) ? statement : NULL;
     _symbol_k->capacity_ = capacity;
@@ -1063,6 +1072,43 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         return "string";
     }
+    case zlang_expression_view_: {
+        bool _ok_k = _expression_k->argument_count_ == 3U;
+        const zlang_ast_expression_t *const _source_k =
+            _expression_k->argument_indices_[0] < context->program_->expression_count_
+                ? &context->program_->expressions_[_expression_k->argument_indices_[0]]
+                : NULL;
+        const zlang_symbol_t *const _source_symbol_k =
+            _source_k != NULL && _source_k->kind_ == zlang_expression_identifier_
+                ? zlang_find_symbol(context, _source_k->name_)
+                : NULL;
+        if (_source_symbol_k == NULL || !_source_symbol_k->is_sequence_ ||
+            _source_symbol_k->rank_ != 1U || _source_symbol_k->is_const_) {
+            _ok_k = false;
+        }
+        for (size_t _argument = 1U; _argument < 3U && _ok_k; ++_argument) {
+            const char *const _type_k = zlang_analyze_expression(
+                context, _expression_k->argument_indices_[_argument], statement);
+            _ok_k = zlang_type_matches("uint32", _type_k);
+        }
+        if (!_ok_k) {
+            (void)zlang_report_expression(
+                context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                "to_view requires a mutable array and uint32 offset/count");
+            return NULL;
+        }
+        zlang_ast_expression_t *const _mutable_k = &context->program_->expressions_[index];
+        const int _written_k =
+            snprintf(_mutable_k->inferred_type_name_, sizeof(_mutable_k->inferred_type_name_),
+                     "view<%s>", _source_symbol_k->type_name_);
+        if (_written_k < 0 || (size_t)_written_k >= sizeof(_mutable_k->inferred_type_name_)) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
+                                          "view type name is too long");
+            return NULL;
+        }
+        _mutable_k->resolved_type_name_ = _mutable_k->inferred_type_name_;
+        return _mutable_k->resolved_type_name_;
+    }
     case zlang_expression_assignment_: {
         const zlang_ast_expression_t *const _target_k =
             _expression_k->left_ < context->program_->expression_count_
@@ -1153,7 +1199,8 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             _target_k != NULL && _target_k->kind_ == zlang_expression_index_
                 ? zlang_find_symbol(context, _target_k->name_)
                 : NULL;
-        if (_symbol_k == NULL || !_symbol_k->is_sequence_) {
+        const bool _is_view_k = _symbol_k != NULL && _symbol_k->view_element_[0] != '\0';
+        if (_symbol_k == NULL || (!_symbol_k->is_sequence_ && !_is_view_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement,
                                           "index assignment target is not a declared array");
@@ -1167,7 +1214,9 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         (void)zlang_analyze_expression(context, _target_k->right_, statement);
         const char *const _actual_k =
             zlang_analyze_expression(context, _expression_k->right_, statement);
-        if (!zlang_type_matches(_symbol_k->type_name_, _actual_k)) {
+        const char *const _expected_k =
+            _is_view_k ? _symbol_k->view_element_ : _symbol_k->type_name_;
+        if (!zlang_type_matches(_expected_k, _actual_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "indexed value does not match the array element type");
             return NULL;
@@ -1324,8 +1373,13 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
     }
     case zlang_expression_index_: {
         const zlang_symbol_t *const _target_k = zlang_find_symbol(context, _expression_k->name_);
+        const bool _is_view_k = _target_k != NULL && _target_k->view_element_[0] != '\0';
         const bool _is_string_k = _target_k != NULL && !_target_k->is_sequence_ &&
                                   strcmp(_target_k->type_name_, "string") == 0;
+        if (_is_view_k) {
+            (void)zlang_analyze_expression(context, _expression_k->right_, statement);
+            return _target_k->view_element_;
+        }
         if (_target_k == NULL || (!_target_k->is_sequence_ && !_is_string_k)) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                           statement,

@@ -80,7 +80,8 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_bit_not_,
     zlang_expression_shift_left_,
     zlang_expression_shift_right_,
-    zlang_expression_range_
+    zlang_expression_range_,
+    zlang_expression_view_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -96,6 +97,7 @@ typedef struct zlang_ast_expression_t {
     const char *name_;
     const char *base_name_;
     const char *resolved_type_name_;
+    char inferred_type_name_[ZLANG_GENERIC_NAME_CAPACITY];
     zlang_ast_string_value_t string_;
     zlang_expression_kind_t kind_;
     int32_t integer_value_;
@@ -150,6 +152,7 @@ typedef struct zlang_parameter_t {
     bool is_const_;
     bool is_reference_;
     bool is_array_;
+    bool is_view_;
 } zlang_parameter_t;
 
 // NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
@@ -182,6 +185,8 @@ typedef struct zlang_ast_statement_t {
     bool is_const_;
     bool is_inferred_;
     bool is_auto_;
+    bool is_view_;
+    bool is_extern_;
     bool use_canonical_type_;
     bool is_array_return_;
     uint32_t return_extents_[ZLANG_ARRAY_MAX_RANK];
@@ -192,6 +197,7 @@ typedef struct zlang_ast_statement_t {
     bool is_static_;
     bool is_constructor_;
     const char *owner_name_;
+    const char *header_name_;
     const char *uses_names_[4];
     size_t uses_count_;
     const char *implements_names_[4];

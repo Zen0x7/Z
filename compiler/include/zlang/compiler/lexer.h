@@ -52,6 +52,8 @@ typedef enum zlang_token_kind_t {
     zlang_token_array_,
     zlang_token_arguments_,
     zlang_token_auto_,
+    zlang_token_view_,
+    zlang_token_extern_,
     zlang_token_string_,
     zlang_token_true_,
     zlang_token_unsigned_,

@@ -90,6 +90,10 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
         *size = (uint32_t)(sizeof(void *) + sizeof(uint32_t));
         return true;
     }
+    if (zlang_std_is_view_type(type_name)) {
+        *size = (uint32_t)(sizeof(void *) + sizeof(uint32_t) + sizeof(size_t));
+        return true;
+    }
     if (zlang_find_enum(program, type_name) != NULL) {
         *size = 4U;
         return true;

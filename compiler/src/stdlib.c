@@ -1023,10 +1023,32 @@ const char *zlang_std_native_result_field_type(const zlang_std_result_t *result,
     return NULL;
 }
 
-bool zlang_std_is_native_type(const char *name) { return zlang_std_native_c_type(name) != NULL; }
+bool zlang_std_is_native_type(const char *name) {
+    return zlang_std_native_c_type(name) != NULL || zlang_std_is_view_type(name);
+}
 
 bool zlang_std_is_native_generic_base(const char *name) {
     return name != NULL && strcmp(name, "result_type") == 0;
+}
+
+bool zlang_std_is_view_type(const char *name) {
+    if (name == NULL || strncmp(name, "view<", 5U) != 0 || name[strlen(name) - 1U] != '>') {
+        return false;
+    }
+    return strlen(name) > 6U;
+}
+
+bool zlang_std_view_element_type(const char *name, char *output, size_t capacity) {
+    if (!zlang_std_is_view_type(name) || output == NULL || capacity == 0U) {
+        return false;
+    }
+    const size_t _length_k = strlen(name) - 6U;
+    if (_length_k == 0U || _length_k >= capacity) {
+        return false;
+    }
+    memcpy(output, name + 5U, _length_k);
+    output[_length_k] = '\0';
+    return true;
 }
 
 static const char *const status_constants_k[] = {"STATUS_SUCCESS", "STATUS_END_OF_INPUT",
@@ -1140,6 +1162,9 @@ const char *zlang_std_native_result_method_type(const zlang_std_result_t *result
 }
 
 bool zlang_std_is_known_generic_argument(const char *name) {
+    if (zlang_std_is_view_type(name)) {
+        return true;
+    }
     return name != NULL && (strcmp(name, "void") == 0 || strcmp(name, "boolean") == 0 ||
                             strcmp(name, "int32") == 0 || strcmp(name, "uint32") == 0 ||
                             strcmp(name, "int64") == 0 || strcmp(name, "uint64") == 0 ||

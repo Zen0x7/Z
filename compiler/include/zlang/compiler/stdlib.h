@@ -59,6 +59,8 @@ const char *zlang_std_native_result_field_type(const zlang_std_result_t *result,
 const char *zlang_std_native_result_tag(const zlang_std_result_t *result);
 bool zlang_std_is_native_type(const char *name);
 bool zlang_std_is_native_generic_base(const char *name);
+bool zlang_std_is_view_type(const char *name);
+bool zlang_std_view_element_type(const char *name, char *output, size_t capacity);
 bool zlang_std_is_known_generic_argument(const char *name);
 const char *zlang_std_status_constant_c_name(const char *name);
 bool zlang_std_is_status_constant(const char *name);

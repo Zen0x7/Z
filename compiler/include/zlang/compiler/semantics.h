@@ -15,6 +15,7 @@
 typedef struct zlang_symbol_t {
     const char *name_;
     const char *type_name_;
+    char view_element_[ZLANG_GENERIC_NAME_CAPACITY];
     const zlang_ast_statement_t *declaration_;
     size_t scope_depth_;
     size_t parameter_start_;

@@ -324,7 +324,8 @@ static bool zlang_parser_is_declaration_type(const zlang_parser_t *parser,
                                              const zlang_token_t *token) {
     return token != NULL &&
            (zlang_token_is_type(token) || token->kind_ == zlang_token_arguments_ ||
-            zlang_parser_is_user_type(parser, token) || zlang_std_is_native_type(token->text_) ||
+            token->kind_ == zlang_token_view_ || zlang_parser_is_user_type(parser, token) ||
+            zlang_std_is_native_type(token->text_) ||
             zlang_std_is_native_generic_base(token->text_));
 }
 
@@ -363,7 +364,8 @@ static bool zlang_parser_starts_label(const zlang_parser_t *parser) {
 static bool zlang_parser_starts_declaration(const zlang_parser_t *parser) {
     const zlang_token_t *const _token_k = zlang_parser_current(parser);
     if (_token_k->kind_ == zlang_token_const_ || _token_k->kind_ == zlang_token_array_ ||
-        _token_k->kind_ == zlang_token_auto_ || zlang_token_is_type(_token_k)) {
+        _token_k->kind_ == zlang_token_view_ || _token_k->kind_ == zlang_token_auto_ ||
+        zlang_token_is_type(_token_k) || zlang_std_is_native_generic_base(_token_k->text_)) {
         return true;
     }
     if (_token_k->kind_ != zlang_token_identifier_) {
@@ -723,6 +725,35 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                     _arguments_k[_argument];
             }
             parser->expressions_[_expression_k].argument_count_ = _argument_count_k;
+            break;
+        }
+        if (parser->position_ + 1U < parser->token_count_ &&
+            parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&
+            zlang_token_is(_token_k, "to_view")) {
+            zlang_parser_advance(parser);
+            size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
+            size_t _argument_count_k = 0U;
+            if (!zlang_parse_call_arguments(parser, _arguments_k, &_argument_count_k,
+                                            ZLANG_CALL_ARGUMENT_CAPACITY)) {
+                return false;
+            }
+            if (_argument_count_k != 3U) {
+                zlang_parser_unsupported(parser, "to_view requires source, offset and count");
+                return false;
+            }
+            _expression_k = zlang_parser_add_expression(parser);
+            if (_expression_k == ZLANG_NO_EXPRESSION) {
+                return false;
+            }
+            parser->expressions_[_expression_k].kind_ = zlang_expression_view_;
+            parser->expressions_[_expression_k].name_ = _token_k->text_;
+            for (size_t _argument = 0U; _argument < _argument_count_k; ++_argument) {
+                parser->expressions_[_expression_k].argument_indices_[_argument] =
+                    _arguments_k[_argument];
+            }
+            parser->expressions_[_expression_k].argument_count_ = _argument_count_k;
+            parser->expressions_[_expression_k].line_ = _token_k->line_;
+            parser->expressions_[_expression_k].column_ = _token_k->column_;
             break;
         }
         if (parser->position_ + 1U < parser->token_count_ &&
@@ -1421,9 +1452,20 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
         zlang_parser_advance(parser);
     }
     bool _is_array_k = false;
+    bool _is_view_k = false;
     uint32_t _extents_k[ZLANG_ARRAY_MAX_RANK];
     uint32_t _rank_k = 0U;
     bool _has_explicit_extents_k = true;
+    if (zlang_parser_current(parser)->kind_ == zlang_token_view_) {
+        zlang_parser_advance(parser);
+        _is_view_k = true;
+        if (!zlang_parser_expect(parser, zlang_token_left_bracket_, "expected '[' after view")) {
+            return false;
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_bracket_, "expected ']' after view")) {
+            return false;
+        }
+    }
     if (zlang_parser_current(parser)->kind_ == zlang_token_array_) {
         zlang_parser_advance(parser);
         _is_array_k = true;
@@ -1457,10 +1499,15 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     }
 
     const zlang_token_t *const _type_k = zlang_parser_current(parser);
-    const bool _has_element_type_k = zlang_parser_is_declaration_type(parser, _type_k) ||
-                                     zlang_parser_is_active_generic_parameter(parser, _type_k);
+    bool _has_element_type_k = zlang_parser_is_declaration_type(parser, _type_k) ||
+                               zlang_parser_is_active_generic_parameter(parser, _type_k);
     const char *_element_type_k = NULL;
-    if (_has_element_type_k &&
+    char _view_type_k[ZLANG_GENERIC_NAME_CAPACITY];
+    if (_is_view_k && !_has_element_type_k) {
+        _has_element_type_k = true;
+        _element_type_k = "auto";
+    }
+    if (_has_element_type_k && (_element_type_k == NULL || strcmp(_element_type_k, "auto") != 0) &&
         !zlang_parser_parse_type_reference(parser, &_element_type_k, false)) {
         return false;
     }
@@ -1491,6 +1538,23 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
         }
     }
 
+    if (_is_view_k && _has_element_type_k && strcmp(_element_type_k, "auto") != 0) {
+        if (!zlang_generic_build_name("view", &_element_type_k, 1U, _view_type_k,
+                                      sizeof(_view_type_k))) {
+            zlang_parser_unsupported(parser, "view type name is too long");
+            return false;
+        }
+        const size_t _length_k = strlen(_view_type_k) + 1U;
+        if (_length_k >= parser->lexer_.scratch_capacity_ - parser->lexer_.scratch_length_) {
+            zlang_parser_unsupported(parser, "scratch buffer too small");
+            return false;
+        }
+        char *const _stored_k = parser->lexer_.scratch_ + parser->lexer_.scratch_length_;
+        memcpy(_stored_k, _view_type_k, _length_k);
+        parser->lexer_.scratch_length_ += _length_k;
+        _element_type_k = _stored_k;
+    }
+
     const zlang_token_t *const _name_k = zlang_parser_current(parser);
     if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a declaration name")) {
         return false;
@@ -1506,9 +1570,10 @@ static bool zlang_parse_declaration(zlang_parser_t *parser) {
     }
     zlang_ast_statement_t *const _statement_ptr_k = &parser->statements_[_statement_k];
     _statement_ptr_k->type_name_ = _has_element_type_k ? _element_type_k : NULL;
+    _statement_ptr_k->is_view_ = _is_view_k;
     _statement_ptr_k->is_auto_ =
         _has_element_type_k &&
-        (zlang_token_is(_type_k, "auto") ||
+        (zlang_token_is(_type_k, "auto") || strcmp(_element_type_k, "auto") == 0 ||
          (_element_type_k != NULL &&
           (strstr(_element_type_k, "<auto") != NULL || strstr(_element_type_k, ",auto") != NULL)));
     _statement_ptr_k->name_ = _name_k->text_;

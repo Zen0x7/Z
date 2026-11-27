@@ -30,6 +30,7 @@
 typedef struct zlang_emitted_symbol_t {
     const char *source_name_;
     const char *type_name_;
+    char view_element_[ZLANG_GENERIC_NAME_CAPACITY];
     char generated_name_[ZLANG_EMITTED_NAME_CAPACITY];
     char storage_name_[ZLANG_EMITTED_NAME_CAPACITY];
     uint32_t capacity_;

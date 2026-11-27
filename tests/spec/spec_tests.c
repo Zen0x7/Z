@@ -1165,8 +1165,8 @@ static void emits_io_read_calls(zlang_test_context_t *const context) {
 static void rejects_read_without_bounded_string(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "import { read } from \"@std/io\";\n"
-                                  "string view = \"x\";\n"
-                                  "result_type<int32, status_code> n = read(view);";
+                                  "string text = \"x\";\n"
+                                  "result_type<int32, status_code> n = read(text);";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,
@@ -2021,6 +2021,36 @@ static void rejects_unsatisfied_generic_constraint(zlang_test_context_t *const c
         "    Plain plain = Plain(7);\n"
         "    return read_value<Plain>(plain);\n"
         "}";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                zlang_spec_count_diagnostics(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) > 0U);
+}
+
+static void emits_view_access(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function main(): int32 {\n"
+                                  "    array[8] int32 data;\n"
+                                  "    view[] window = to_view(data, 1U, 4U);\n"
+                                  "    window[0] = 9;\n"
+                                  "    return window[0];\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "zlang_view_t app_local_window") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_,
+                                "zlang_view_make(app_local_data.data_, 8, 1U, 4U") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "zlang_array_get(app_local_window.data_") != NULL);
+}
+
+static void rejects_view_from_const_array(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "function main(): int32 {\n"
+                                  "    const array[8] int32 data;\n"
+                                  "    view[] window = to_view(data, 1U, 4U);\n"
+                                  "    return window[0];\n"
+                                  "}";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context,

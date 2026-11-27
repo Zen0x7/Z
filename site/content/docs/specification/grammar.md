@@ -46,10 +46,11 @@ typeArguments  = "<" typeName ( "," typeName )* ">" ;
 typeParameters = "<" identifier genericConstraint? ( "," identifier genericConstraint? )* ">" ;
 genericConstraint = "implements" "{" identifier ( "," identifier )* "}" ;
 arrayModifier  = "array" ( "[" integerLiteral "]" )* ;
+viewModifier   = "view" "[" "]" typeName? ;
 type           = typeName ( "[" integerLiteral "]" )? ;
 arrayInitializer = "{" ( expression | arrayInitializer )
                      ( "," ( expression | arrayInitializer ) )* "}" ;
-declaration    = "const"? ( arrayModifier typeName | type ) identifier
+declaration    = "const"? ( arrayModifier typeName | viewModifier | type ) identifier
                  ( "=" ( expression | arrayInitializer ) )? ";" ;
 
 structDeclaration = "struct" identifier typeParameters? inheritance? implements?

@@ -105,3 +105,15 @@ capabilities are selected by compile-time flags:
 calls. `ZLANG_STD_RESULT_DUMP` adds bounded storage for `dump()`. Neither capability allocates.
 `dump()` includes `code`, `what`, the payload and elapsed time. A user-defined `T` must implement
 `dump(): string` before `result_type<T, status_code>.dump()` is valid.
+
+## Bounded views
+
+```zlang
+view[] window = to_view(data, 1U, 4U);
+```
+
+`to_view(source, offset, count)` creates a bounded borrowed window over a rank-one mutable array.
+The source array and its storage remain owned by the caller. `offset` and `count` are `uint32`; the
+pair is trapped if it exceeds the source capacity. Reading and writing `window[index]` use the
+same bounds-checked element access as arrays. A view cannot be stored in a struct or returned from
+a function, and a const array cannot be the source of a mutable view.

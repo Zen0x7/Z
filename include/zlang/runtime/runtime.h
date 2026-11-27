@@ -669,6 +669,27 @@ ZLANG_STATIC_INLINE zlang_string_t zlang_string_array_append(char *storage, zlan
     return _stored_k;
 }
 
+#if defined(ZLANG_STD_VIEW)
+
+/** @brief Bounded borrowed window over caller-owned contiguous storage. */
+typedef struct zlang_view_t {
+    void *data_;
+    uint32_t length_;
+    size_t element_size_;
+} zlang_view_t;
+
+/** @brief Create a bounded view with an offset and count. */
+ZLANG_STATIC_INLINE zlang_view_t zlang_view_make(void *data, uint32_t capacity, uint32_t offset,
+                                                 uint32_t count, size_t element_size) {
+    if (data == NULL || element_size == 0U || offset > capacity || count > capacity - offset) {
+        zlang_trap(ZLANG_TRAP_BOUNDS);
+    }
+    zlang_view_t _view_k = {(char *)data + ((size_t)offset * element_size), count, element_size};
+    return _view_k;
+}
+
+#endif
+
 /**
  * @brief Read an element pointer with a bounds trap.
  */

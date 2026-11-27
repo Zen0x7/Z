@@ -64,6 +64,12 @@ export const zlangTheme: ThemeRegistrationRaw = {
       },
     },
     {
+      scope: ['variable.language.self.zlang', 'variable.language'],
+      settings: {
+        foreground: '#ffcb6b',
+      },
+    },
+    {
       scope: ['keyword.operator', 'keyword.operator.assignment'],
       settings: {
         foreground: '#ffcb6b',

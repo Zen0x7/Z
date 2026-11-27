@@ -117,6 +117,13 @@ export const zlangLanguage: LanguageRegistration = {
           },
         },
         {
+          match: String.raw`\b(requires)\s+([A-Za-z_]\w*)`,
+          captures: {
+            1: { name: 'keyword.control.zlang' },
+            2: { name: 'entity.name.type.zlang' },
+          },
+        },
+        {
           match: String.raw`\b(use|uses)\s+([A-Za-z_]\w*)`,
           captures: {
             1: { name: 'keyword.control.zlang' },

@@ -124,7 +124,7 @@ expression     = literal
                | conversion "(" expression ")" ;
 
 matchExpression = "match" "(" identifier ")" "{" matchArm ( "," matchArm )* "}" ;
-matchArm      = ( literal | "_" ) "=>" expression ;
+matchArm      = ( literal | "default" ) "=>" expression ;
 conversion     = "to_int32" | "to_uint32" | "to_int64" | "to_uint64"
                | "to_float" | "to_double" ;
 literal        = integerLiteral | floatingLiteral | stringLiteral

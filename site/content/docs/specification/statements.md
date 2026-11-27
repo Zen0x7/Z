@@ -86,4 +86,4 @@ Unlabelled `break` is valid inside `switch`, `while`, `do while`, `repeat`, `for
 
 ## Logical operators
 
-`!`, `&&` and `||` require boolean operands. Bitwise `&`, `|`, `^` and `~` require matching integral operands. Shifts take an integral left operand and a `uint32` count. Ternary `?:` requires a `boolean` condition and identical branch types. `match` arms use literal or enum patterns and require a `_` wildcard. Parentheses may group any expression. `&&` and `||` short-circuit in generated C. Reads that exist only under a short-circuit operator stay inline so trap timing is unchanged.
+`!`, `&&` and `||` require boolean operands. Bitwise `&`, `|`, `^` and `~` require matching integral operands. Shifts take an integral left operand and a `uint32` count. Ternary `?:` requires a `boolean` condition and identical branch types. `match` arms use literal or enum patterns and require a final `default` arm. Parentheses may group any expression. `&&` and `||` short-circuit in generated C. Reads that exist only under a short-circuit operator stay inline so trap timing is unchanged.

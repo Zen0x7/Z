@@ -795,7 +795,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         if (!_valid_k || !_has_wildcard_k) {
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
-                                          "match requires matching arms and a wildcard arm");
+                                          "match requires matching arms and a default arm");
             return NULL;
         }
         for (size_t _arm = 0U; _arm + 2U < _count_k; _arm += 2U) {
@@ -804,7 +804,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             if (_pattern_k->kind_ == zlang_expression_wildcard_) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT,
                                               _expression_k->argument_indices_[_arm], statement,
-                                              "wildcard must be the final match arm");
+                                              "default must be the final match arm");
                 return NULL;
             }
         }

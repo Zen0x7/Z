@@ -1750,7 +1750,7 @@ static void emits_match_expression(zlang_test_context_t *const context) {
     const char *const _source_k = "int32 value = 2;\n"
                                   "int32 label = match (value) {\n"
                                   "    1 => 10,\n"
-                                  "    _ => 20\n"
+                                  "    default => 20\n"
                                   "};";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));

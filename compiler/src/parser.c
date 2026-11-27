@@ -591,9 +591,7 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
             }
             size_t _pattern_k = ZLANG_NO_EXPRESSION;
             const zlang_token_t *const _pattern_k_token_k = zlang_parser_current(parser);
-            const bool _wildcard_k = _pattern_k_token_k->kind_ == zlang_token_identifier_ &&
-                                     _pattern_k_token_k->text_ != NULL &&
-                                     strcmp(_pattern_k_token_k->text_, "_") == 0;
+            const bool _wildcard_k = _pattern_k_token_k->kind_ == zlang_token_default_;
             if (_wildcard_k) {
                 zlang_parser_advance(parser);
                 _pattern_k = zlang_parser_add_expression(parser);
@@ -612,7 +610,8 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                     return false;
                 }
             } else {
-                zlang_parser_unsupported(parser, "expected a literal, enum item or '_' in match");
+                zlang_parser_unsupported(parser,
+                                         "expected a literal, enum item or 'default' in match");
                 return false;
             }
             if (!zlang_parser_expect(parser, zlang_token_arrow_,

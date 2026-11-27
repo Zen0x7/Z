@@ -306,10 +306,6 @@ export const zlangLanguage: LanguageRegistration = {
           match: String.raw`\b(true|false)\b`,
         },
         {
-          name: 'constant.language.wildcard.zlang',
-          match: String.raw`(?<![A-Za-z0-9_])_(?![A-Za-z0-9_])`,
-        },
-        {
           name: 'constant.language.enum.zlang',
           match: String.raw`\b[A-Z][A-Z0-9_]*\b`,
         },

@@ -90,7 +90,7 @@ interfaces.
 | --- | --- | --- |
 | 1 | jump and labels | `label:` and `jump label;` — delivered |
 | 2 | switch | `switch (value) { case literal: ... default: ... }` — delivered |
-| 3 | match | `match (value) { literal => expression, _ => expression }` — delivered |
+| 3 | match | `match (value) { literal => expression, default => expression }` — delivered |
 | 4 | ternary | `condition ? then_expression : else_expression` — delivered |
 | 5 | bitwise and shifts | `&`, `|`, `^`, `~`, `<<`, `>>` — delivered |
 | 6 | do-while | `do { ... } while (condition);` — delivered |

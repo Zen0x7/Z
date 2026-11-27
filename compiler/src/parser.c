@@ -2279,6 +2279,106 @@ static bool zlang_parse_function_signature(zlang_parser_t *parser, const char *o
                                "expected ';' after method signature");
 }
 
+static bool zlang_parse_extern_function(zlang_parser_t *parser) {
+    const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    if (!zlang_parser_expect(parser, zlang_token_function_, "expected 'function' after 'extern'")) {
+        return false;
+    }
+    const zlang_token_t *const _name_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected an extern function name")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_left_paren_,
+                             "expected '(' after extern function name")) {
+        return false;
+    }
+    const size_t _parameter_start_k = parser->parameter_count_;
+    while (zlang_parser_current(parser)->kind_ != zlang_token_right_paren_ &&
+           zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
+        if (parser->parameter_count_ >= parser->parameter_capacity_) {
+            zlang_parser_unsupported(parser, "parameter capacity exceeded");
+            return false;
+        }
+        bool _is_const_k = false;
+        if (zlang_parser_current(parser)->kind_ == zlang_token_const_) {
+            _is_const_k = true;
+            zlang_parser_advance(parser);
+        }
+        const zlang_token_kind_t _mode_kind_k = zlang_parser_current(parser)->kind_;
+        if (_mode_kind_k != zlang_token_clone_ && _mode_kind_k != zlang_token_reference_) {
+            zlang_parser_unsupported(parser, "expected 'clone' or 'reference' parameter qualifier");
+            return false;
+        }
+        const bool _is_reference_k = _mode_kind_k == zlang_token_reference_;
+        zlang_parser_advance(parser);
+        const char *_parameter_type_k = NULL;
+        if (!zlang_parser_parse_type_reference(parser, &_parameter_type_k, false)) {
+            return false;
+        }
+        const zlang_token_t *const _parameter_name_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a parameter name")) {
+            return false;
+        }
+        zlang_parameter_t *const _parameter_k = &parser->parameters_[parser->parameter_count_++];
+        memset(_parameter_k, 0, sizeof(*_parameter_k));
+        _parameter_k->type_name_ = _parameter_type_k;
+        _parameter_k->name_ = _parameter_name_k->text_;
+        _parameter_k->line_ = _name_k->line_;
+        _parameter_k->column_ = _name_k->column_;
+        _parameter_k->is_const_ = _is_const_k;
+        _parameter_k->is_reference_ = _is_reference_k;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                             "expected ')' after extern parameters")) {
+        return false;
+    }
+    const char *_return_type_k = "void";
+    if (zlang_parser_current(parser)->kind_ == zlang_token_colon_) {
+        zlang_parser_advance(parser);
+        if (!zlang_parser_parse_type_reference(parser, &_return_type_k, false)) {
+            return false;
+        }
+    }
+    if (!zlang_parser_expect(parser, zlang_token_from_, "expected 'from' after extern signature")) {
+        return false;
+    }
+    const zlang_token_t *const _header_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_string_literal_,
+                             "expected a header string after 'from'")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_semicolon_,
+                             "expected ';' after extern declaration")) {
+        return false;
+    }
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    zlang_ast_statement_t *const _statement_k_k = &parser->statements_[_statement_k];
+    memset(_statement_k_k, 0, sizeof(*_statement_k_k));
+    _statement_k_k->kind_ = zlang_statement_function_;
+    _statement_k_k->name_ = _name_k->text_;
+    _statement_k_k->type_name_ = _return_type_k;
+    _statement_k_k->parameter_start_ = _parameter_start_k;
+    _statement_k_k->parameter_count_ = parser->parameter_count_ - _parameter_start_k;
+    _statement_k_k->expression_ = ZLANG_NO_EXPRESSION;
+    _statement_k_k->initializer_statement_ = ZLANG_NO_STATEMENT;
+    _statement_k_k->update_expression_ = ZLANG_NO_EXPRESSION;
+    _statement_k_k->body_start_ = ZLANG_NO_STATEMENT;
+    _statement_k_k->body_count_ = 0U;
+    _statement_k_k->is_extern_ = true;
+    _statement_k_k->header_name_ = _header_k->text_;
+    _statement_k_k->line_ = _keyword_k->line_;
+    _statement_k_k->column_ = _keyword_k->column_;
+    return true;
+}
+
 // NOLINTNEXTLINE(misc-no-recursion)
 static bool zlang_parse_function(zlang_parser_t *parser, const char *owner, bool is_static,
                                  bool is_constructor) {
@@ -2765,6 +2865,10 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
             }
         } else if (_kind_k == zlang_token_jump_) {
             if (!zlang_parse_jump(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_extern_) {
+            if (!zlang_parse_extern_function(parser)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_switch_) {
@@ -3667,6 +3771,10 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
             }
         } else if (_kind_k == zlang_token_jump_) {
             if (!zlang_parse_jump(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_extern_) {
+            if (!zlang_parse_extern_function(parser)) {
                 return false;
             }
         } else if (_kind_k == zlang_token_switch_) {

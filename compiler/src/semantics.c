@@ -2201,6 +2201,26 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         if (!zlang_validate_generic_declaration(context, statement)) {
             return false;
         }
+        if (statement->is_extern_) {
+            if (statement->body_count_ != 0U || statement->is_main_ || statement->is_static_ ||
+                statement->is_constructor_ || statement->owner_name_ != NULL) {
+                return zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                    "extern declarations are top-level signatures only");
+            }
+            if (!zlang_is_known_type(context, statement->type_name_)) {
+                return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                    "extern declaration uses an unknown return type");
+            }
+            for (size_t _index = 0U; _index < statement->parameter_count_; ++_index) {
+                const zlang_parameter_t *const _parameter_k =
+                    &context->program_->parameters_[statement->parameter_start_ + _index];
+                if (!zlang_is_known_type(context, _parameter_k->type_name_)) {
+                    return zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                        "extern parameter uses an unknown type");
+                }
+            }
+            return zlang_add_function_symbol(context, statement);
+        }
         const bool _member_k = statement->owner_name_ != NULL;
         if (!_member_k && !zlang_add_function_symbol(context, statement)) {
             return false;

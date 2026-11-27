@@ -2057,6 +2057,28 @@ static void rejects_view_from_const_array(zlang_test_context_t *const context) {
                 zlang_spec_count_diagnostics(&_session, ZLANG_DIAGNOSTIC_TYPE_MISMATCH) > 0U);
 }
 
+static void emits_extern_function_call(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "extern function abs(clone int32 value): int32 from \"stdlib.h\";\n"
+        "function main(): int32 {\n"
+        "    return abs(-7);\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "#include <stdlib.h>") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "return abs(zlang_neg_i32(7));") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_abs") == NULL);
+}
+
+static void rejects_extern_function_body(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "extern function bad(clone int32 value): int32 from \"stdlib.h\" { return value; }";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

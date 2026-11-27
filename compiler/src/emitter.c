@@ -3412,11 +3412,19 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             zlang_find_call_specialization(program, emitter, _expression_k);
         const zlang_ast_statement_t *const _call_function_k =
             zlang_find_function_statement(program, _expression_k->name_);
-        if (_call_function_k == NULL ||
-            !zlang_function_generated_name(program, emitter, _call_function_k,
-                                           _call_specialization_k, _call_name_k,
-                                           sizeof(_call_name_k)) ||
-            !zlang_append_text(emitter, _call_name_k) || !zlang_append_text(emitter, "(")) {
+        if (_call_function_k == NULL) {
+            return false;
+        }
+        if (_call_function_k->is_extern_) {
+            if (!zlang_copy_name(_call_function_k->name_, _call_name_k, sizeof(_call_name_k))) {
+                return false;
+            }
+        } else if (!zlang_function_generated_name(program, emitter, _call_function_k,
+                                                  _call_specialization_k, _call_name_k,
+                                                  sizeof(_call_name_k))) {
+            return false;
+        }
+        if (!zlang_append_text(emitter, _call_name_k) || !zlang_append_text(emitter, "(")) {
             return false;
         }
         if (_expression_k->argument_count_ > ZLANG_CALL_ARGUMENT_CAPACITY) {
@@ -3763,9 +3771,14 @@ static bool zlang_register_function_names(const zlang_program_t *program,
             }
             zlang_emitted_function_t *const _entry_k =
                 &emitter->emitted_functions_[emitter->emitted_function_count_];
-            if (!zlang_function_generated_name(program, emitter, _function_k, _specialization_k,
-                                               _entry_k->generated_name_,
-                                               sizeof(_entry_k->generated_name_))) {
+            if (_function_k->is_extern_) {
+                if (!zlang_copy_name(_function_k->name_, _entry_k->generated_name_,
+                                     sizeof(_entry_k->generated_name_))) {
+                    return false;
+                }
+            } else if (!zlang_function_generated_name(program, emitter, _function_k,
+                                                      _specialization_k, _entry_k->generated_name_,
+                                                      sizeof(_entry_k->generated_name_))) {
                 return false;
             }
             _entry_k->statement_ = _function_k;
@@ -6053,6 +6066,9 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         return _result_k;
     }
     case zlang_statement_function_: {
+        if (statement->is_extern_) {
+            return true;
+        }
         const size_t _function_index_k = zlang_find_function_index(program, statement->name_);
         size_t _specialization_count_k = 0U;
         for (size_t _spec = 0U; _spec < emitter->array_specialization_count_; ++_spec) {
@@ -6317,7 +6333,7 @@ static bool zlang_activate_std_macros(const zlang_program_t *program, zlang_emit
     return true;
 }
 
-static bool zlang_emit_prologue(zlang_emitter_t *emitter) {
+static bool zlang_emit_prologue(const zlang_program_t *program, zlang_emitter_t *emitter) {
     for (size_t _index = 0U; _index < emitter->activated_macro_count_; ++_index) {
         if ((_index > 0U && !zlang_append_text(emitter, "\n")) ||
             !zlang_append_text(emitter, "#define ") ||
@@ -6342,8 +6358,30 @@ static bool zlang_emit_prologue(zlang_emitter_t *emitter) {
             return false;
         }
     }
-    return zlang_append_text(emitter, "#include <stdbool.h>\n#include <stdint.h>\n\n"
-                                      "#include <zlang/runtime/runtime.h>\n\n");
+    if (!zlang_append_text(emitter, "#include <stdbool.h>\n#include <stdint.h>\n")) {
+        return false;
+    }
+    size_t _extern_count_k = 0U;
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_function_ || !_statement_k->is_extern_ ||
+            _statement_k->header_name_ == NULL) {
+            continue;
+        }
+        if (_extern_count_k == 0U && !zlang_append_text(emitter, "\n")) {
+            return false;
+        }
+        ++_extern_count_k;
+        if (!zlang_append_text(emitter, "#include <") ||
+            !zlang_append_text(emitter, _statement_k->header_name_) ||
+            !zlang_append_text(emitter, ">\n")) {
+            return false;
+        }
+    }
+    if (_extern_count_k == 0U && !zlang_append_text(emitter, "\n")) {
+        return false;
+    }
+    return zlang_append_text(emitter, "#include <zlang/runtime/runtime.h>\n\n");
 }
 
 static bool zlang_emit_common_constants(zlang_emitter_t *emitter) {
@@ -7050,6 +7088,9 @@ static bool zlang_emit_function_prototype(const zlang_program_t *program, zlang_
                                           const zlang_emitted_function_t *entry) {
     const zlang_ast_statement_t *const _statement_k = entry->statement_;
     const zlang_array_specialization_t *const _specialization_k = entry->specialization_;
+    if (_statement_k->is_extern_) {
+        return true;
+    }
     char _return_array_type_k[ZLANG_EMITTED_NAME_CAPACITY];
     const char *_return_type_k = NULL;
     if (_statement_k->is_array_return_ && _specialization_k != NULL) {
@@ -7650,7 +7691,7 @@ static bool zlang_is_file_scope(const zlang_emitter_t *emitter,
 static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitter_t *emitter) {
     emitter->program_ = program;
     if (emitter->plan_ == NULL || !zlang_activate_std_macros(program, emitter) ||
-        !zlang_emit_prologue(emitter) || !zlang_emit_common_constants(emitter) ||
+        !zlang_emit_prologue(program, emitter) || !zlang_emit_common_constants(emitter) ||
         !zlang_collect_user_types(emitter, program) ||
         !zlang_collect_user_result_types(emitter, program) ||
         !zlang_collect_array_specializations(program, emitter) ||

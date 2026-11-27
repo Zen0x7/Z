@@ -123,10 +123,10 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 
 ## 0.40 type inference and interop foundations
 
-- `auto` local declarations and `auto` native generic arguments — planned; first slice delivered.
-- Generic interface constraints with `T implements { Interface, ... }` — planned.
-- `view[] T` with `to_view(source, offset, count)` — planned.
-- `extern function` with explicit modes and a header — planned.
+- `auto` local declarations and `auto` native generic arguments — delivered.
+- Generic interface constraints with `T implements { Interface, ... }` — delivered.
+- `view[] T` with `to_view(source, offset, count)` — delivered.
+- `extern function` with explicit modes and a header — delivered.
 
 ## Remaining work
 

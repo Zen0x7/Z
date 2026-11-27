@@ -90,3 +90,14 @@ An interface declares a named contract of fields and method signatures. A trait 
 ## Generic functions
 
 A top-level function may declare type parameters and be applied to concrete type arguments. Generic functions must have flat bodies. See [Generics](/docs/specification/generics) for the full contract.
+
+## C interop
+
+```zlang
+extern function abs(clone int32 value): int32 from "stdlib.h";
+```
+
+`extern function` declares a C function with explicit Zlang parameter modes and a header. The call
+lowers directly to the named C symbol; no Zlang wrapper is emitted. Extern declarations are
+top-level signatures without a body. Variadics, function pointers, `void *`, automatic `errno`
+handling and implicit conversion to `status_code` are outside the contract.

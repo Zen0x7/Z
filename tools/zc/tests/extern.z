@@ -1,0 +1,5 @@
+extern function abs(clone int32 value): int32 from "stdlib.h";
+
+function main(): int32 {
+    return abs(-7);
+}

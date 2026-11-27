@@ -31,6 +31,7 @@ statement      = importDeclaration
                | foreachStatement
                | repeatStatement
                | functionDeclaration
+               | externDeclaration
                | returnStatement
                | block ;
 
@@ -75,6 +76,7 @@ functionSignature = "function" identifier "(" parameters ")" ( ":" type )? ";" ;
 
 functionDeclaration = "function" identifier typeParameters? "(" parameters ")"
                       ( ":" type )? block ;
+externDeclaration = "extern" functionSignature "from" stringLiteral ";" ;
 parameterMode  = "clone" | "reference" ;
 parameter      = "const"? parameterMode ( "array" | type ) identifier ;
 parameters     = ( parameter ( "," parameter )* )? ;

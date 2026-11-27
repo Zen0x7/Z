@@ -253,7 +253,7 @@ export const zlangLanguage: LanguageRegistration = {
         },
         {
           name: 'keyword.control.zlang',
-          match: String.raw`\b(auto|extern|interface|implements|use|uses|requires)\b`,
+          match: String.raw`\b(auto|extern|interface|implements|use|uses|requires|variant)\b`,
         },
       ],
     },

@@ -31,6 +31,21 @@ static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *pro
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_variant(const zlang_program_t *program,
+                                                       const char *name) {
+    if (name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_variant_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_enum(const zlang_program_t *program,
                                                     const char *name) {
     if (name == NULL) {
@@ -134,6 +149,33 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
             return false;
         }
         *size = _total_k + _value_size_k;
+        return true;
+    }
+    const zlang_ast_statement_t *const _variant_k = zlang_find_variant(program, type_name);
+    if (_variant_k != NULL) {
+        uint32_t _payload_k = 0U;
+        const size_t _end_k = _variant_k->body_start_ + _variant_k->body_count_;
+        for (size_t _index = _variant_k->body_start_;
+             _index < _end_k && _index < program->statement_count_; ++_index) {
+            const zlang_ast_statement_t *const _constructor_k = &program->statements_[_index];
+            if (_constructor_k->kind_ != zlang_statement_variant_constructor_) {
+                continue;
+            }
+            const size_t _payload_end_k =
+                _constructor_k->parameter_start_ + _constructor_k->parameter_count_;
+            for (size_t _field = _constructor_k->parameter_start_;
+                 _field < _payload_end_k && _field < program->parameter_count_; ++_field) {
+                uint32_t _field_size_k = 0U;
+                if (!zlang_element_size(program, program->parameters_[_field].type_name_,
+                                        depth + 1U, &_field_size_k)) {
+                    return false;
+                }
+                if (_field_size_k > _payload_k) {
+                    _payload_k = _field_size_k;
+                }
+            }
+        }
+        *size = 4U + _payload_k;
         return true;
     }
     const zlang_ast_statement_t *const _record_k = zlang_find_struct(program, type_name);

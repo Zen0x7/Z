@@ -22,6 +22,7 @@ statement      = importDeclaration
                | structDeclaration
                | interfaceDeclaration
                | enumDeclaration
+               | variantDeclaration
                | traitDeclaration
                | ifStatement
                | whileStatement
@@ -70,6 +71,11 @@ constructorDeclaration = "constructor" "(" parameters ")" block ;
 staticFunctionDeclaration = "static" functionDeclaration ;
 
 enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
+variantDeclaration = "variant" identifier "=" variantConstructor
+                    ( "|" variantConstructor )* ";" ;
+variantConstructor = identifier "(" ( parameter ( "," parameter )* )? ")" ;
+matchArm      = ( literal | variantPattern | "default" ) "=>" expression ;
+variantPattern = identifier "(" ( identifier ( "," identifier )* )? ")" ;
 traitDeclaration = "trait" identifier "requires" identifier ( "," identifier )*
                    "{" functionDeclaration* "}" ;
 functionSignature = "function" identifier "(" parameters ")" ( ":" type )? ";" ;
@@ -126,7 +132,6 @@ expression     = literal
                | conversion "(" expression ")" ;
 
 matchExpression = "match" "(" identifier ")" "{" matchArm ( "," matchArm )* "}" ;
-matchArm      = ( literal | "default" ) "=>" expression ;
 conversion     = "to_int32" | "to_uint32" | "to_int64" | "to_uint64"
                | "to_float" | "to_double" ;
 literal        = integerLiteral | floatingLiteral | stringLiteral

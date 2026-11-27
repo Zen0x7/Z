@@ -329,7 +329,8 @@ static bool zlang_parser_is_user_type(const zlang_parser_t *parser, const zlang_
         const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
         if ((_statement_k->kind_ == zlang_statement_struct_ ||
              _statement_k->kind_ == zlang_statement_enum_ ||
-             _statement_k->kind_ == zlang_statement_interface_) &&
+             _statement_k->kind_ == zlang_statement_interface_ ||
+             _statement_k->kind_ == zlang_statement_variant_) &&
             _statement_k->name_ != NULL && strcmp(_statement_k->name_, token->text_) == 0) {
             return true;
         }
@@ -348,6 +349,26 @@ static const zlang_ast_statement_t *zlang_parser_find_struct(const zlang_parser_
             strcmp(_statement_k->name_, name) == 0) {
             return _statement_k;
         }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *
+zlang_parser_find_variant_constructor(const zlang_parser_t *parser, const char *name,
+                                      const char **variant_name) {
+    if (parser == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < parser->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &parser->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_variant_constructor_ ||
+            _statement_k->name_ == NULL || strcmp(_statement_k->name_, name) != 0) {
+            continue;
+        }
+        if (variant_name != NULL) {
+            *variant_name = _statement_k->owner_name_;
+        }
+        return _statement_k;
     }
     return NULL;
 }
@@ -633,6 +654,57 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
                 parser->expressions_[_pattern_k].kind_ = zlang_expression_wildcard_;
                 parser->expressions_[_pattern_k].line_ = _pattern_k_token_k->line_;
                 parser->expressions_[_pattern_k].column_ = _pattern_k_token_k->column_;
+            } else if (_pattern_k_token_k->kind_ == zlang_token_identifier_ &&
+                       parser->position_ + 1U < parser->token_count_ &&
+                       parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&
+                       zlang_parser_find_variant_constructor(parser, _pattern_k_token_k->text_,
+                                                             NULL) != NULL) {
+                const char *_variant_name_k = NULL;
+                (void)zlang_parser_find_variant_constructor(parser, _pattern_k_token_k->text_,
+                                                            &_variant_name_k);
+                zlang_parser_advance(parser);
+                if (!zlang_parser_expect(parser, zlang_token_left_paren_,
+                                         "expected '(' after variant pattern")) {
+                    return false;
+                }
+                _pattern_k = zlang_parser_add_expression(parser);
+                if (_pattern_k == ZLANG_NO_EXPRESSION) {
+                    return false;
+                }
+                parser->expressions_[_pattern_k].kind_ = zlang_expression_variant_pattern_;
+                parser->expressions_[_pattern_k].name_ = _pattern_k_token_k->text_;
+                parser->expressions_[_pattern_k].base_name_ = _variant_name_k;
+                parser->expressions_[_pattern_k].line_ = _pattern_k_token_k->line_;
+                parser->expressions_[_pattern_k].column_ = _pattern_k_token_k->column_;
+                while (zlang_parser_current(parser)->kind_ != zlang_token_right_paren_ &&
+                       zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
+                    const zlang_token_t *const _binding_k = zlang_parser_current(parser);
+                    if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                             "expected a variant binding name") ||
+                        parser->expressions_[_pattern_k].argument_count_ >=
+                            ZLANG_CALL_ARGUMENT_CAPACITY) {
+                        return false;
+                    }
+                    const size_t _binding_k_index_k = zlang_parser_add_expression(parser);
+                    if (_binding_k_index_k == ZLANG_NO_EXPRESSION) {
+                        return false;
+                    }
+                    parser->expressions_[_binding_k_index_k].kind_ = zlang_expression_identifier_;
+                    parser->expressions_[_binding_k_index_k].name_ = _binding_k->text_;
+                    parser->expressions_[_binding_k_index_k].line_ = _binding_k->line_;
+                    parser->expressions_[_binding_k_index_k].column_ = _binding_k->column_;
+                    parser->expressions_[_pattern_k]
+                        .argument_indices_[parser->expressions_[_pattern_k].argument_count_++] =
+                        _binding_k_index_k;
+                    if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+                        break;
+                    }
+                    zlang_parser_advance(parser);
+                }
+                if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                                         "expected ')' after variant pattern")) {
+                    return false;
+                }
             } else if (_pattern_k_token_k->kind_ == zlang_token_integer_literal_ ||
                        _pattern_k_token_k->kind_ == zlang_token_true_ ||
                        _pattern_k_token_k->kind_ == zlang_token_false_ ||
@@ -809,6 +881,35 @@ static bool zlang_parse_primary(zlang_parser_t *parser,
             parser->expressions_[_expression_k].kind_ = zlang_expression_conversion_;
             parser->expressions_[_expression_k].name_ = _target_k;
             parser->expressions_[_expression_k].left_ = _arguments_k[0];
+            parser->expressions_[_expression_k].line_ = _token_k->line_;
+            parser->expressions_[_expression_k].column_ = _token_k->column_;
+            break;
+        }
+        const char *_variant_name_k = NULL;
+        const zlang_ast_statement_t *const _variant_constructor_k =
+            zlang_parser_find_variant_constructor(parser, _token_k->text_, &_variant_name_k);
+        if (parser->position_ + 1U < parser->token_count_ &&
+            parser->tokens_[parser->position_ + 1U].kind_ == zlang_token_left_paren_ &&
+            _variant_constructor_k != NULL) {
+            zlang_parser_advance(parser);
+            size_t _arguments_k[ZLANG_CALL_ARGUMENT_CAPACITY];
+            size_t _argument_count_k = 0U;
+            if (!zlang_parse_call_arguments(parser, _arguments_k, &_argument_count_k,
+                                            ZLANG_CALL_ARGUMENT_CAPACITY)) {
+                return false;
+            }
+            _expression_k = zlang_parser_add_expression(parser);
+            if (_expression_k == ZLANG_NO_EXPRESSION) {
+                return false;
+            }
+            parser->expressions_[_expression_k].kind_ = zlang_expression_variant_construct_;
+            parser->expressions_[_expression_k].name_ = _token_k->text_;
+            parser->expressions_[_expression_k].base_name_ = _variant_name_k;
+            for (size_t _argument = 0U; _argument < _argument_count_k; ++_argument) {
+                parser->expressions_[_expression_k].argument_indices_[_argument] =
+                    _arguments_k[_argument];
+            }
+            parser->expressions_[_expression_k].argument_count_ = _argument_count_k;
             parser->expressions_[_expression_k].line_ = _token_k->line_;
             parser->expressions_[_expression_k].column_ = _token_k->column_;
             break;
@@ -2019,6 +2120,96 @@ static bool zlang_parse_enum(zlang_parser_t *parser) {
     return zlang_parser_expect(parser, zlang_token_right_brace_, "expected '}' after enum values");
 }
 
+static bool zlang_parse_variant(zlang_parser_t *parser) {
+    const zlang_token_t *const _keyword_k = zlang_parser_current(parser);
+    zlang_parser_advance(parser);
+    const zlang_token_t *const _name_k = zlang_parser_current(parser);
+    if (!zlang_parser_expect(parser, zlang_token_identifier_, "expected a variant name")) {
+        return false;
+    }
+    if (!zlang_parser_expect(parser, zlang_token_equal_, "expected '=' after variant name")) {
+        return false;
+    }
+    const size_t _statement_k = zlang_parser_add_statement(parser);
+    if (_statement_k == (size_t)-1) {
+        return false;
+    }
+    parser->statements_[_statement_k].kind_ = zlang_statement_variant_;
+    parser->statements_[_statement_k].name_ = _name_k->text_;
+    parser->statements_[_statement_k].line_ = _keyword_k->line_;
+    parser->statements_[_statement_k].column_ = _keyword_k->column_;
+    const size_t _constructor_start_k = parser->statement_count_;
+    uint32_t _tag_k = 1U;
+    for (;;) {
+        if (_tag_k > 4U) {
+            zlang_parser_unsupported(parser, "variant constructor capacity exceeded");
+            return false;
+        }
+        const zlang_token_t *const _constructor_k = zlang_parser_current(parser);
+        if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                 "expected a variant constructor name")) {
+            return false;
+        }
+        if (!zlang_parser_expect(parser, zlang_token_left_paren_,
+                                 "expected '(' after variant constructor")) {
+            return false;
+        }
+        const size_t _parameter_start_k = parser->parameter_count_;
+        while (zlang_parser_current(parser)->kind_ != zlang_token_right_paren_ &&
+               zlang_parser_current(parser)->kind_ != zlang_token_end_of_file_) {
+            if (parser->parameter_count_ >= parser->parameter_capacity_ ||
+                parser->parameter_count_ - _parameter_start_k >= 4U) {
+                zlang_parser_unsupported(parser, "variant payload capacity exceeded");
+                return false;
+            }
+            const char *_type_k = NULL;
+            if (!zlang_parser_parse_type_reference(parser, &_type_k, false)) {
+                return false;
+            }
+            const zlang_token_t *const _field_k = zlang_parser_current(parser);
+            if (!zlang_parser_expect(parser, zlang_token_identifier_,
+                                     "expected a variant payload field name")) {
+                return false;
+            }
+            zlang_parameter_t *const _parameter_k =
+                &parser->parameters_[parser->parameter_count_++];
+            memset(_parameter_k, 0, sizeof(*_parameter_k));
+            _parameter_k->type_name_ = _type_k;
+            _parameter_k->name_ = _field_k->text_;
+            _parameter_k->line_ = _constructor_k->line_;
+            _parameter_k->column_ = _constructor_k->column_;
+            if (zlang_parser_current(parser)->kind_ != zlang_token_comma_) {
+                break;
+            }
+            zlang_parser_advance(parser);
+        }
+        if (!zlang_parser_expect(parser, zlang_token_right_paren_,
+                                 "expected ')' after variant payload")) {
+            return false;
+        }
+        const size_t _constructor_statement_k = zlang_parser_add_statement(parser);
+        if (_constructor_statement_k == (size_t)-1) {
+            return false;
+        }
+        parser->statements_[_constructor_statement_k].kind_ = zlang_statement_variant_constructor_;
+        parser->statements_[_constructor_statement_k].name_ = _constructor_k->text_;
+        parser->statements_[_constructor_statement_k].owner_name_ = _name_k->text_;
+        parser->statements_[_constructor_statement_k].parameter_start_ = _parameter_start_k;
+        parser->statements_[_constructor_statement_k].parameter_count_ =
+            parser->parameter_count_ - _parameter_start_k;
+        parser->statements_[_constructor_statement_k].expression_ = (size_t)_tag_k++;
+        parser->statements_[_constructor_statement_k].line_ = _constructor_k->line_;
+        parser->statements_[_constructor_statement_k].column_ = _constructor_k->column_;
+        if (zlang_parser_current(parser)->kind_ != zlang_token_pipe_) {
+            break;
+        }
+        zlang_parser_advance(parser);
+    }
+    parser->statements_[_statement_k].body_start_ = _constructor_start_k;
+    parser->statements_[_statement_k].body_count_ = parser->statement_count_ - _constructor_start_k;
+    return zlang_parser_expect(parser, zlang_token_semicolon_, "expected ';' after variant");
+}
+
 static bool zlang_parse_header_expression(zlang_parser_t *parser, size_t statement) {
     if (!zlang_parser_expect(parser, zlang_token_left_paren_, "expected '(' after keyword")) {
         return false;
@@ -2948,6 +3139,10 @@ static bool zlang_parse_statements(zlang_parser_t *parser) {
             if (!zlang_parse_enum(parser)) {
                 return false;
             }
+        } else if (_kind_k == zlang_token_variant_) {
+            if (!zlang_parse_variant(parser)) {
+                return false;
+            }
         } else if (zlang_parser_starts_declaration(parser)) {
             if (!zlang_parse_declaration(parser)) {
                 return false;
@@ -3852,6 +4047,10 @@ bool zlang_parse(zlang_parser_t *parser, const char *source, char *scratch, size
             }
         } else if (_kind_k == zlang_token_enum_) {
             if (!zlang_parse_enum(parser)) {
+                return false;
+            }
+        } else if (_kind_k == zlang_token_variant_) {
+            if (!zlang_parse_variant(parser)) {
                 return false;
             }
         } else if (zlang_parser_starts_declaration(parser)) {

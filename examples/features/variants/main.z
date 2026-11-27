@@ -1,0 +1,20 @@
+import { write } from "@std/io";
+
+variant Shape = Circle(int32 radius)
+              | Rect(int32 width, int32 height);
+
+function area(clone Shape shape): int32 {
+    return match (shape) {
+        Circle(radius) => radius * radius,
+        Rect(width, height) => width * height,
+        default => 0
+    };
+}
+
+function main(): int32 {
+    write(area(Circle(7)));
+    write(" ");
+    write(area(Rect(3, 4)));
+    write("\n");
+    return 0;
+}

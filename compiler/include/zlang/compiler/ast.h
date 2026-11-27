@@ -81,7 +81,9 @@ typedef enum zlang_expression_kind_t {
     zlang_expression_shift_left_,
     zlang_expression_shift_right_,
     zlang_expression_range_,
-    zlang_expression_view_
+    zlang_expression_view_,
+    zlang_expression_variant_construct_,
+    zlang_expression_variant_pattern_
 } zlang_expression_kind_t;
 
 typedef struct zlang_ast_string_value_t {
@@ -139,7 +141,9 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_switch_,
     zlang_statement_case_,
     zlang_statement_default_,
-    zlang_statement_do_while_
+    zlang_statement_do_while_,
+    zlang_statement_variant_,
+    zlang_statement_variant_constructor_
 } zlang_statement_kind_t;
 
 typedef struct zlang_parameter_t {

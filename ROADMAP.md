@@ -130,6 +130,13 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 - `extern function` with explicit modes, a header, quoted local includes and `z.yaml native`
   include dirs and sources — delivered.
 
+## 0.41 tagged variants
+
+- Variant declarations with named constructors and flat scalar or enum payloads — planned.
+- Constructor calls that produce a variant value — planned.
+- Destructuring `match` patterns with a final `default` arm — planned.
+- C99 tag + union layout with no heap, vtable or runtime lookup — planned.
+
 ## Remaining work
 
 Four follow-ups remain after 0.39:

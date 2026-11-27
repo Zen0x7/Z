@@ -118,3 +118,25 @@ pair is trapped if it exceeds the source capacity. Reading and writing `window[i
 same bounds-checked element access as arrays. A view can be passed by `clone` to a function that
 declares `view[] T` parameter. A view cannot be stored in a struct or returned from a function, and
 a const array cannot be the source of a mutable view.
+
+## Tagged variants
+
+A variant is a closed tagged union with named constructors and flat payload fields:
+
+```zlang
+variant Shape = Circle(int32 radius)
+              | Rect(int32 width, int32 height);
+```
+
+Constructors produce a variant value. `match` can destructure payloads:
+
+```zlang
+return match (shape) {
+    Circle(radius) => radius * radius,
+    Rect(width, height) => width * height,
+    default => 0
+};
+```
+
+The runtime representation is an internal tag plus a C99 union. No heap allocation, vtable or
+runtime name lookup is emitted. Variant payload fields are scalar or enum values.

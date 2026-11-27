@@ -156,6 +156,7 @@ native results, streams, diagnostics, golden examples and installed-package beha
 - **0.39** — labels, jumps, `switch`, `match`, ternary `?:`, bitwise and shift operators, `do while`,
   range literals, labeled loop jumps, and named interface contracts.
 - **0.40** — `auto` type inference, generic interface constraints, bounded views and explicit C interop.
+- **0.41** — tagged variants with destructuring `match` and a final `default` arm.
 
 ## 0.40 type inference and interop foundations
 
@@ -185,6 +186,30 @@ include; a header containing a path separator emits a quoted include. Project he
 sources are declared in `z.yaml` under `native:` and referenced with `@native/<alias>`; zc adds the
 configured include dirs and links the sources of used aliases. Extern declarations have no Zlang
 body, no variadics, no function pointers and no implicit conversion to `status_code`.
+
+## 0.41 tagged variants
+
+A variant declaration names a closed set of constructors with flat payload fields:
+
+```zlang
+variant Shape = Circle(int32 radius)
+              | Rect(int32 width, int32 height);
+```
+
+`Shape` is a compile-time tagged union. A constructor call such as `Circle(7)` produces a `Shape`
+value. `match (value)` can destructure variants with binding patterns:
+
+```zlang
+return match (shape) {
+    Circle(radius) => radius * radius,
+    Rect(width, height) => width * height,
+    default => 0
+};
+```
+
+`match` remains a value expression; arms produce values and contain no `return`. Payload fields are
+plain scalar or enum values. The C99 layout uses an internal tag and a union. No heap, vtable or
+runtime type lookup is emitted. Duplicate constructors and duplicate match patterns are diagnostics.
 
 Older numbered status sections and duplicated design notes were folded into the site specification
 and removed from this working file.

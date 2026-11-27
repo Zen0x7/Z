@@ -101,6 +101,41 @@ static const zlang_ast_statement_t *zlang_find_label(const zlang_program_t *prog
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_variant(const zlang_program_t *program,
+                                                       const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_variant_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
+static const zlang_ast_statement_t *
+zlang_find_variant_constructor(const zlang_program_t *program, const char *name,
+                               const zlang_ast_statement_t **variant) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ != zlang_statement_variant_constructor_ ||
+            _statement_k->name_ == NULL || strcmp(_statement_k->name_, name) != 0) {
+            continue;
+        }
+        if (variant != NULL) {
+            *variant = zlang_find_variant(program, _statement_k->owner_name_);
+        }
+        return _statement_k;
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *program,
                                                       const char *name) {
     if (program == NULL || name == NULL) {
@@ -381,7 +416,8 @@ static bool zlang_type_accepts(const zlang_program_t *program, const char *expec
 }
 
 static bool zlang_is_user_type(const zlang_program_t *program, const char *name) {
-    return zlang_find_struct(program, name) != NULL || zlang_find_enum(program, name) != NULL;
+    return zlang_find_struct(program, name) != NULL || zlang_find_enum(program, name) != NULL ||
+           zlang_find_variant(program, name) != NULL;
 }
 
 static bool zlang_is_builtin_type(const char *name) {
@@ -393,6 +429,16 @@ static bool zlang_is_builtin_type(const char *name) {
                             strcmp(name, "float") == 0 || strcmp(name, "double") == 0 ||
                             strcmp(name, "boolean") == 0 || strcmp(name, "string") == 0 ||
                             strcmp(name, "arguments") == 0 || zlang_std_is_native_type(name));
+}
+
+static bool zlang_is_numeric_type(const char *name);
+
+static bool zlang_is_variant_payload_type(const zlang_program_t *program, const char *name) {
+    if (name == NULL || zlang_std_is_view_type(name) || zlang_std_find_result(name) != NULL) {
+        return false;
+    }
+    return zlang_is_numeric_type(name) || strcmp(name, "boolean") == 0 ||
+           strcmp(name, "status_code") == 0 || zlang_find_enum(program, name) != NULL;
 }
 
 static bool zlang_is_numeric_type(const char *name) {
@@ -821,11 +867,49 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
                     _patterns_k[_pattern_count_k++] = _pattern_index_k;
                 }
             }
-            const char *const _pattern_type_k =
-                _arm_wildcard_k ? _selector_k
-                                : zlang_analyze_expression(context, _pattern_index_k, statement);
+            const bool _variant_pattern_k =
+                _pattern_k != NULL && _pattern_k->kind_ == zlang_expression_variant_pattern_;
+            const char *_pattern_type_k = _selector_k;
+            const size_t _scope_start_k = context->symbol_count_;
+            const size_t _scope_depth_k = context->scope_depth_;
+            if (_variant_pattern_k) {
+                const zlang_ast_statement_t *_variant_k = NULL;
+                const zlang_ast_statement_t *const _constructor_k = zlang_find_variant_constructor(
+                    context->program_, _pattern_k->name_, &_variant_k);
+                if (_constructor_k == NULL || _variant_k == NULL ||
+                    strcmp(_variant_k->name_, _selector_k) != 0 ||
+                    _pattern_k->argument_count_ != _constructor_k->parameter_count_) {
+                    _valid_k = false;
+                    (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                                  _pattern_index_k, statement,
+                                                  "variant pattern does not match the selector");
+                    break;
+                }
+                ++context->scope_depth_;
+                for (size_t _binding = 0U; _binding < _pattern_k->argument_count_; ++_binding) {
+                    const zlang_ast_expression_t *const _binding_k =
+                        &context->program_->expressions_[_pattern_k->argument_indices_[_binding]];
+                    const zlang_parameter_t *const _payload_k =
+                        &context->program_
+                             ->parameters_[_constructor_k->parameter_start_ + _binding];
+                    zlang_ast_statement_t _binding_statement_k = {0};
+                    _binding_statement_k.kind_ = zlang_statement_declaration_;
+                    _binding_statement_k.type_name_ = _payload_k->type_name_;
+                    _binding_statement_k.name_ = _binding_k->name_;
+                    _binding_statement_k.line_ = _binding_k->line_;
+                    _binding_statement_k.column_ = _binding_k->column_;
+                    if (!zlang_add_symbol(context, &_binding_statement_k, 0U, false, false)) {
+                        _valid_k = false;
+                        break;
+                    }
+                }
+            } else if (!_arm_wildcard_k) {
+                _pattern_type_k = zlang_analyze_expression(context, _pattern_index_k, statement);
+            }
             const char *const _value_type_k =
-                zlang_analyze_expression(context, _value_index_k, statement);
+                _valid_k ? zlang_analyze_expression(context, _value_index_k, statement) : NULL;
+            context->symbol_count_ = _scope_start_k;
+            context->scope_depth_ = _scope_depth_k;
             _valid_k = _valid_k && _pattern_type_k != NULL &&
                        zlang_type_matches(_selector_k, _pattern_type_k) && _value_type_k != NULL &&
                        (_result_k == NULL || zlang_type_matches(_result_k, _value_type_k));
@@ -1429,6 +1513,32 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         (void)zlang_analyze_expression(context, _expression_k->right_, statement);
         return _is_string_k ? "uint32" : _target_k->type_name_;
     }
+    case zlang_expression_variant_construct_: {
+        const zlang_ast_statement_t *_variant_k = NULL;
+        const zlang_ast_statement_t *const _constructor_k =
+            zlang_find_variant_constructor(context->program_, _expression_k->name_, &_variant_k);
+        if (_constructor_k == NULL || _variant_k == NULL ||
+            _expression_k->argument_count_ != _constructor_k->parameter_count_) {
+            (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
+                                          statement, "variant constructor is not declared");
+            return NULL;
+        }
+        for (size_t _argument = 0U;
+             _argument < _expression_k->argument_count_ && _argument < ZLANG_CALL_ARGUMENT_CAPACITY;
+             ++_argument) {
+            const zlang_parameter_t *const _parameter_k =
+                &context->program_->parameters_[_constructor_k->parameter_start_ + _argument];
+            const char *const _actual_k = zlang_analyze_expression(
+                context, _expression_k->argument_indices_[_argument], statement);
+            if (!zlang_type_matches(_parameter_k->type_name_, _actual_k)) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH,
+                                              _expression_k->argument_indices_[_argument],
+                                              statement,
+                                              "variant payload does not match the field type");
+            }
+        }
+        return _variant_k->name_;
+    }
     case zlang_expression_construct_: {
         const zlang_ast_statement_t *const _structure_k =
             zlang_find_struct(context->program_, _expression_k->name_);
@@ -1684,6 +1794,63 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
                         const zlang_ast_statement_t *statement) { // NOLINT(misc-no-recursion)
     bool _result_k = true;
     switch (statement->kind_) {
+    case zlang_statement_variant_: {
+        if (statement->body_count_ == 0U || statement->body_count_ > 4U) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                     "variant requires between one and four constructors");
+            break;
+        }
+        const size_t _end_k = statement->body_start_ + statement->body_count_;
+        for (size_t _index = statement->body_start_;
+             _index < _end_k && _index < context->program_->statement_count_; ++_index) {
+            const zlang_ast_statement_t *const _constructor_k =
+                &context->program_->statements_[_index];
+            if (_constructor_k->kind_ != zlang_statement_variant_constructor_ ||
+                _constructor_k->owner_name_ == NULL ||
+                strcmp(_constructor_k->owner_name_, statement->name_) != 0 ||
+                _constructor_k->expression_ != _index - statement->body_start_ + 1U) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
+                                         "variant constructor table is invalid");
+                continue;
+            }
+            for (size_t _other = 0U; _other < _index; ++_other) {
+                const zlang_ast_statement_t *const _previous_k =
+                    &context->program_->statements_[_other];
+                if (_previous_k->kind_ == zlang_statement_variant_constructor_ &&
+                    _previous_k->name_ != NULL && _constructor_k->name_ != NULL &&
+                    strcmp(_previous_k->name_, _constructor_k->name_) == 0) {
+                    _result_k =
+                        zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION,
+                                     _constructor_k, "variant constructor is declared twice");
+                }
+            }
+            const size_t _payload_end_k =
+                _constructor_k->parameter_start_ + _constructor_k->parameter_count_;
+            for (size_t _field = _constructor_k->parameter_start_;
+                 _field < _payload_end_k && _field < context->program_->parameter_count_;
+                 ++_field) {
+                const zlang_parameter_t *const _payload_k = &context->program_->parameters_[_field];
+                if (!zlang_is_variant_payload_type(context->program_, _payload_k->type_name_)) {
+                    _result_k =
+                        zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _constructor_k,
+                                     "variant payload must be a scalar or enum");
+                    continue;
+                }
+                for (size_t _previous = _constructor_k->parameter_start_; _previous < _field;
+                     ++_previous) {
+                    const zlang_parameter_t *const _previous_k =
+                        &context->program_->parameters_[_previous];
+                    if (_previous_k->name_ != NULL && _payload_k->name_ != NULL &&
+                        strcmp(_previous_k->name_, _payload_k->name_) == 0) {
+                        _result_k =
+                            zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION,
+                                         _constructor_k, "variant payload field is declared twice");
+                    }
+                }
+            }
+        }
+        break;
+    }
     case zlang_statement_struct_: {
         if (!zlang_validate_generic_declaration(context, statement)) {
             return false;

@@ -2164,6 +2164,40 @@ static void rejects_cross_function_jump(zlang_test_context_t *const context) {
                                                       ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT) > 0U);
 }
 
+static void emits_variant_destructuring(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "variant Shape = Circle(int32 radius)\n"
+                                  "              | Rect(int32 width, int32 height);\n"
+                                  "function area(clone Shape shape): int32 {\n"
+                                  "    return match (shape) {\n"
+                                  "        Circle(radius) => radius * radius,\n"
+                                  "        Rect(width, height) => width * height,\n"
+                                  "        default => 0\n"
+                                  "    };\n"
+                                  "}\n"
+                                  "function main(): int32 {\n"
+                                  "    Shape shape = Circle(7);\n"
+                                  "    return area(shape);\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "typedef enum app_variant_shape_tag_t") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "APP_VARIANT_SHAPE_CIRCLE") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_variant_shape_circle(7)") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "app_param_shape.value_.circle_.radius_") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_param_shape.value_.rect_.width_") != NULL);
+}
+
+static void rejects_duplicate_variant_constructor(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "variant Shape = Circle(int32 radius) | Circle(int32 radius);";
+
+    ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, zlang_spec_count_diagnostics(&_session,
+                                                      ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION) > 0U);
+}
+
 #define ZLANG_TEST_CASE(name) {#name, name},
 static const zlang_test_case_t cases_k[] = {
 #include "test_cases.h"

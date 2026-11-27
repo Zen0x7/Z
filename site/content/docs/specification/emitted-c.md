@@ -39,6 +39,7 @@ Imports add their activation macros before these includes.
 | `struct S` | generated C struct typedef |
 | `enum E` | generated named constants |
 | generic application | one concrete C99 type or function per application |
+| `result_type<T, status_code>` with user `T` | generated `app_result_<T>_status_t` typedef |
 
 ## Construct mapping
 
@@ -59,7 +60,13 @@ Imports add their activation macros before these includes.
 | `values[i]` | bounded typed getter or direct access with a proven index |
 | `text[i]` | `zlang_string_byte(text, i)` |
 | `values[i] = x` | checked index statement, then a direct store |
-| `foreach`, `if`, `while`, `repeat`, `for` | native C `for`, `if`, `while` and `for` |
+| `foreach`, `if`, `while`, `do while`, `repeat`, `for` | native C `for`, `if`, `while` and `for` |
+| `switch`, `case`, `default` | native C `switch` with an inserted `break;` after each body |
+| `match (...) { ... }` | nested C conditional expressions over literal and enum comparisons |
+| `condition ? a : b` | native C `?:` expression |
+| `&`, `|`, `^`, `~`, `<<`, `>>` | native C integral operators |
+| `label:`, `jump label;` | native C label and `goto` |
+| `break label;`, `continue label;` | native C `goto` to the labelled loop's break or continue label |
 | method call | direct C call, or vtable slot call through a base receiver |
 | trait call | direct C call into the using struct |
 | `function f(...)` | C function with the `app_fn_` prefix |
@@ -68,7 +75,7 @@ Imports add their activation macros before these includes.
 
 ## Generated layout
 
-Generated C appears in this order: activation macros, includes, generated value constants, generated capacity and extent macros, generated array typedefs, generated struct and enum types, generated string literals, function prototypes, user functions and `main`.
+Generated C appears in this order: activation macros, includes, generated value constants, generated capacity and extent macros, generated array typedefs, generated struct and enum types, generated user result typedefs and capability helpers, generated string literals, function prototypes, user functions and `main`.
 
 Local variables use the `app_local_` prefix. Parameters use `app_param_`. Struct members use a trailing `_`. User functions use `app_fn_`, generated types use `app_`, compiler temporaries use `zlang_gen_`, generated macros use `ZLANG_`, and runtime calls use `zlang_`.
 

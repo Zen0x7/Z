@@ -85,7 +85,7 @@ struct Shape implements Named {
 }
 ```
 
-A trait declares required fields and methods. A struct opts in with `uses`. Trait methods become concrete methods of the using struct and are called directly. They do not use the vtable and cannot override inherited methods. Trait method collisions and invalid overrides are rejected.
+An interface declares a named contract of fields and method signatures. A trait requires one or more interfaces and supplies method bodies. A struct declares `implements` interfaces and opts into behavior with `use`. The compiler checks that every implemented interface field and method exists directly or through a used trait, and that every required interface is implemented. Trait methods become concrete methods of the using struct and are called directly. They do not use the vtable and cannot override inherited methods. Trait method collisions and invalid overrides are rejected.
 
 ## Generic functions
 

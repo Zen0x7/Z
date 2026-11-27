@@ -21,6 +21,14 @@ These operations define meaning. A program cannot call them.
 
 `CheckCapacity(storage, capacity, needed)` traps with `ZLANG_TRAP_CAPACITY` when a bounded string concatenation would exceed `capacity`. It returns the storage to write into when the operation fits. Arrays are fixed at compile time and never grow.
 
+## CheckResultContract
+
+`CheckResultContract(result_type<T, status_code>)` requires `status_code` as the error type. For a user payload `T`, `T` must be a struct that implements `dump(): string`. Native payloads use the public layouts in `<zlang/standard/result/result.h>`.
+
+## CheckLabel
+
+`CheckLabel(label, jump)` requires a function-scoped label declaration before its `jump`, and requires a labelled loop for `break label;` and `continue label;`.
+
 ## Trap
 
 `Trap(code)` terminates the process by calling `zlang_trap(code)`. The runtime must not construct a message, allocate memory or perform output. The codes are fixed:
@@ -35,4 +43,4 @@ These operations define meaning. A program cannot call them.
 
 ## EmitForEach
 
-`EmitForEach(node)` validates that the iterable is an array and that each iteration variable has the required `uint32` index type or the array element type. It emits a native C `for` loop over the fixed extent. The loop must not become a runtime callback.
+`EmitForEach(node)` validates that the iterable is an array or exclusive `uint32` range and that each iteration variable has the required `uint32` index type or the array element type. It emits a native C `for` loop over the fixed extent or range. The loop must not become a runtime callback.

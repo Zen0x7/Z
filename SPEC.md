@@ -48,8 +48,9 @@ Strings are borrowed views. Variable concatenation requires `string[N]` storage 
 capacity overflow. Arrays have fixed capacity, bounds-checked index access, no logical length and
 no append. Storage at or below `ZLANG_DEFAULT_STACK_LIMIT` is local; larger storage is `static`.
 
-Structs, enums, traits and `uses` are compile-time constructs. Single inheritance emits internal
-vtables and type tags; trait calls are direct calls. No dynamic allocation is introduced.
+Structs, enums, interfaces, traits and `use` are compile-time constructs. A struct implements named
+interfaces and uses traits. Single inheritance emits internal vtables and type tags; trait calls are
+direct calls. No dynamic allocation is introduced.
 
 ## Generics
 
@@ -148,6 +149,8 @@ native results, streams, diagnostics, golden examples and installed-package beha
 - **0.36** — built-in result names become `result_type<T, status_code>` and `status_code`.
 - **0.37** — every registered stdlib function returns `result_type<T, status_code>`.
 - **0.38** — opt-in result capabilities: `time()` and `dump()` selected by compile-time flags.
+- **0.39** — labels, jumps, `switch`, `match`, ternary `?:`, bitwise and shift operators, `do while`,
+  range literals, labeled loop jumps, and named interface contracts.
 
 Older numbered status sections and duplicated design notes were folded into the site specification
 and removed from this working file.

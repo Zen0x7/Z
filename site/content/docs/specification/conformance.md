@@ -36,6 +36,7 @@ These assertions keep the specification tied to the emitter. If the translation 
 | result capabilities | `emits_native_result_time_method`, `emits_native_result_dump_method` |
 | 0.39 syntax | `emits_jump_and_label`, `emits_switch_statement`, `emits_match_expression`, `emits_ternary_expression`, `emits_bitwise_operators`, `emits_do_while_statement`, `emits_range_foreach`, `emits_labeled_loop_jumps` |
 | interfaces and traits | `emits_interface_trait_and_struct`, `zlang.cli.compiles_interfaces` |
+| user result payloads | `emits_user_result_dump`, `zlang.cli.compiles_user_result` |
 | stdlib contract verifier | `stdlib_registry_is_uniform`, `native_result_registry_is_complete` |
 | uniform stdlib result contract | `emits_stream_read_result`, `emits_stream_write_result`, `emits_stream_string_write_result`, `emits_native_result_methods` |
 | imports and modules | `emits_a_write_call`, `zlang.cli.modules`, `zlang.cli.modules_cycle`, `zlang.cli.modules_escape` |

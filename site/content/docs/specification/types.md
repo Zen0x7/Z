@@ -7,7 +7,7 @@ navigation:
 
 # Types and values
 
-Zlang has scalar primitives, fixed arrays, user-defined types and a closed family of native results.
+Zlang has scalar primitives, fixed arrays, user-defined types, named interface contracts and a closed family of native results.
 
 ## Primitive types
 
@@ -53,11 +53,11 @@ float e = to_float(value);
 double f = to_double(value);
 ```
 
-Conversions to signed integer types truncate floating-point input toward zero. They trap on non-finite input and when the result is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap. The `%` operator accepts only integral types. Unary negation of `int32` and `int64` traps on the signed minimum value.
+Conversions to signed integer types truncate floating-point input toward zero. They trap on non-finite input and when the result is out of range. Floating arithmetic follows IEEE-754, so division by zero produces infinity or NaN instead of a Zlang trap. The `%` operator accepts only integral types. Bitwise `&`, `|`, `^` and `~` accept integral operands. Shifts accept an integral left operand and a `uint32` count. Unary negation of `int32` and `int64` traps on the signed minimum value.
 
 ## User-defined types
 
-A struct type matches only the same user-defined name, including in parameters, returns and initializers. A struct declares fields, one constructor, instance methods and `static function` methods. An enum declares named constants and emits named C constants.
+A struct type matches only the same user-defined name, including in parameters, returns and initializers. A struct declares fields, one constructor, instance methods and `static function` methods. It may declare `implements` interfaces and `use` traits inside its body. An interface declares fields and method signatures as a named contract. An enum declares named constants and emits named C constants.
 
 A derived struct may be used where its base struct or `reference Base` is expected. The reverse conversion is rejected. See [Functions, methods and traits](/docs/specification/functions) for method and inheritance rules.
 
@@ -79,7 +79,7 @@ A declaration may list up to four type parameters. An application may pass up to
 
 ## Native results
 
-`result_type<T, status_code>` is a closed native generic family. `T` is the ideal value and `status_code` is the error code. A function with no payload uses `result_type<void, status_code>`. Every result exposes `code`, `what` and, for non-void payloads, `value`.
+`result_type<T, status_code>` is a closed native generic family. Registered standard-library applications use native payloads. Source programs may declare `result_type<T, status_code>` for a user struct `T` only when `T` implements `dump(): string`. `T` is the ideal value and `status_code` is the error code. A function with no payload uses `result_type<void, status_code>`. Every result exposes `code`, `what` and, for non-void payloads, `value`.
 
 | Constant | Meaning |
 | --- | --- |
@@ -89,7 +89,7 @@ A declaration may list up to four type parameters. An application may pass up to
 | `STATUS_INVALID_ARGUMENT` | invalid argument |
 | `STATUS_CAPACITY` | capacity exceeded |
 
-The compiler maps canonical applications to the layouts in `<zlang/standard/result/result.h>`. `what` is a read-only view of a fixed literal message. No runtime formatting or allocation is performed. Since Zlang 0.37 every registered standard library function returns `result_type<T, status_code>`; `T` is its obvious ideal value, pure and total functions report `STATUS_SUCCESS` for valid input, and programmer and resource errors remain traps.
+The compiler maps native applications to the layouts in `<zlang/standard/result/result.h>` and emits a concrete C99 typedef for user payload applications. `what` is a read-only view of a fixed literal message. No allocation or runtime formatting is performed unless `dump()` is compiled in. Since Zlang 0.37 every registered standard library function returns `result_type<T, status_code>`; `T` is its obvious ideal value, pure and total functions report `STATUS_SUCCESS` for valid input, and programmer and resource errors remain traps.
 
 ## Result capabilities
 

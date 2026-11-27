@@ -15,13 +15,18 @@ program        = statement* ;
 statement      = importDeclaration
                | declaration
                | expression ";"
-               | "break" ";"
-               | "continue" ";"
+               | labelStatement
+               | jumpStatement
+               | breakStatement
+               | continueStatement
                | structDeclaration
+               | interfaceDeclaration
                | enumDeclaration
                | traitDeclaration
                | ifStatement
                | whileStatement
+               | doWhileStatement
+               | switchStatement
                | forStatement
                | foreachStatement
                | repeatStatement
@@ -46,11 +51,15 @@ arrayInitializer = "{" ( expression | arrayInitializer )
 declaration    = "const"? ( arrayModifier typeName | type ) identifier
                  ( "=" ( expression | arrayInitializer ) )? ";" ;
 
-structDeclaration = "struct" identifier typeParameters? inheritance? traitUses?
+structDeclaration = "struct" identifier typeParameters? inheritance? implements?
                     "{" structMember* "}" ;
 inheritance    = ":" identifier ;
-traitUses      = "uses" identifier ;
-structMember   = declaration
+implements     = "implements" identifier ( "," identifier )* ;
+interfaceDeclaration = "interface" identifier "{" interfaceMember* "}" ;
+interfaceMember = declaration | functionSignature ;
+traitUses      = "uses" identifier ( "," identifier )* ";" ;
+structMember   = traitUses
+               | declaration
                | constructorDeclaration
                | functionDeclaration
                | staticFunctionDeclaration ;
@@ -58,9 +67,9 @@ constructorDeclaration = "constructor" "(" parameters ")" block ;
 staticFunctionDeclaration = "static" functionDeclaration ;
 
 enumDeclaration = "enum" identifier "{" identifier ( "," identifier )* "}" ;
-traitDeclaration = "trait" identifier "requires" fieldRequirement*
+traitDeclaration = "trait" identifier "requires" identifier ( "," identifier )*
                    "{" functionDeclaration* "}" ;
-fieldRequirement = type identifier ;
+functionSignature = "function" identifier "(" parameters ")" ( ":" type )? ";" ;
 
 functionDeclaration = "function" identifier typeParameters? "(" parameters ")"
                       ( ":" type )? block ;
@@ -68,6 +77,14 @@ parameterMode  = "clone" | "reference" ;
 parameter      = "const"? parameterMode ( "array" | type ) identifier ;
 parameters     = ( parameter ( "," parameter )* )? ;
 returnStatement = "return" expression? ";" ;
+labelStatement  = identifier ":" statement ;
+jumpStatement   = "jump" identifier ";" ;
+breakStatement  = "break" identifier? ";" ;
+continueStatement = "continue" identifier? ";" ;
+doWhileStatement = "do" block "while" "(" expression ")" ";" ;
+switchStatement = "switch" "(" expression ")" "{" caseClause* defaultClause? "}" ;
+caseClause      = "case" expression ":" statement* ;
+defaultClause   = "default" ":" statement* ;
 
 ifStatement    = "if" "(" expression ")" block
                  ( "else" ( block | ifStatement ) )? ;
@@ -75,7 +92,8 @@ whileStatement = "while" "(" expression ")" block ;
 forStatement   = "for" "(" ( declaration | expression? ) ";"
                  expression ";" expression ")" block ;
 foreachStatement = "foreach" "(" identifier ( "," identifier )* "in"
-                    identifier ")" block ;
+                    ( identifier | rangeExpression ) ")" block ;
+rangeExpression = expression ".." expression ;
 repeatStatement = "repeat" "(" expression ")" block ;
 
 expression     = literal
@@ -85,7 +103,11 @@ expression     = literal
                | "-" expression
                | expression "&&" expression
                | expression "||" expression
-               | expression ( "+" | "-" | "*" | "/" | "%" ) expression
+               | expression ( "+" | "-" | "*" | "/" | "%"
+                              | "&" | "|" | "^" | "<<" | ">>" ) expression
+               | "~" expression
+               | expression "?" expression ":" expression
+               | matchExpression
                | expression ( "==" | "!=" | "<" | ">" | "<=" | ">=" ) expression
                | identifier "=" expression
                | identifier ( "+=" | "-=" | "*=" | "/=" | "%=" ) expression
@@ -97,14 +119,16 @@ expression     = literal
                | "length" "(" identifier ")"
                | conversion "(" expression ")" ;
 
+matchExpression = "match" "(" identifier ")" "{" matchArm ( "," matchArm )* "}" ;
+matchArm      = ( literal | "_" ) "=>" expression ;
 conversion     = "to_int32" | "to_uint32" | "to_int64" | "to_uint64"
                | "to_float" | "to_double" ;
 literal        = integerLiteral | floatingLiteral | stringLiteral
                | "true" | "false" ;
 ```
 
-A `foreach` over a rank-N array takes either N index names or N index names followed by one value name. `else if` is nested `ifStatement` and emits as a native C `else if` chain.
+A `foreach` over a rank-N array takes either N index names or N index names followed by one value name. A `foreach` over `start..end` takes one index name and iterates the exclusive `uint32` range. `else if` is nested `ifStatement` and emits as a native C `else if` chain.
 
-`!` binds tighter than comparisons. `&&` binds tighter than `||`. Assignment has the lowest precedence. Parentheses may group any expression.
+`!`, `-` and `~` bind tighter than bitwise operators; shifts bind tighter than comparisons; `&`, `^` and `|` bind tighter than `&&`, which binds tighter than `||`. Ternary `?:` binds above assignment. Parentheses may group any expression.
 
-Generic applications, including `result_type<T, status_code>`, use `typeArguments`. The compiler checks the arity and the closed result family after parsing.
+Generic applications, including `result_type<T, status_code>`, use `typeArguments`. The compiler checks the arity, the result family and, for user payloads, that `T` implements `dump(): string`.

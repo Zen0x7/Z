@@ -1477,7 +1477,7 @@ static void emits_trait_method_direct_call(zlang_test_context_t *const context) 
         "trait NamedTrait requires Named {\n"
         "    function label(): int32 { return self.value; }\n"
         "}\n"
-        "struct Counter implements Named { int32 value; use NamedTrait; }\n"
+        "struct Counter implements Named { use NamedTrait; int32 value; }\n"
         "function main(): int32 {\n"
         "    Counter counter;\n"
         "    int32 result = counter.label();\n"
@@ -1521,7 +1521,7 @@ static void rejects_trait_override_of_inherited_method(zlang_test_context_t *con
         "trait Area requires AreaContract {\n"
         "    function area(): int32 { return self.value; }\n"
         "}\n"
-        "struct Derived : Base implements AreaContract { int32 value; use Area; }";
+        "struct Derived : Base implements AreaContract { use Area; int32 value; }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_find_diagnostic(
@@ -1831,9 +1831,10 @@ static void emits_interface_trait_and_struct(zlang_test_context_t *const context
                                   "    function label(): int32 { return self.value; }\n"
                                   "}\n"
                                   "struct Counter implements Named {\n"
+                                  "    use NamedTrait;\n"
+                                  "\n"
                                   "    int32 value;\n"
                                   "    constructor(clone int32 initial) { value = initial; }\n"
-                                  "    use NamedTrait;\n"
                                   "}\n"
                                   "function main(): int32 {\n"
                                   "    Counter counter = Counter(7);\n"

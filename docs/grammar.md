@@ -109,8 +109,9 @@ trait NamedTrait requires Named {
 }
 
 struct Counter implements Named {
-    int32 value;
     use NamedTrait;
+
+    int32 value;
 }
 ```
 

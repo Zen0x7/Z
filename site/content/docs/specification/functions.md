@@ -79,8 +79,9 @@ trait NamedTrait requires Named {
 }
 
 struct Shape implements Named {
-    int32 value;
     use NamedTrait;
+
+    int32 value;
 }
 ```
 

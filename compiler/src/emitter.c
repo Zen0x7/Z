@@ -1315,6 +1315,37 @@ static const zlang_ast_statement_t *zlang_find_struct_statement(const zlang_prog
     return NULL;
 }
 
+static bool zlang_statement_implements_interface(const zlang_program_t *program,
+                                                 const zlang_ast_statement_t *structure,
+                                                 const char *interface_name) {
+    if (structure == NULL || interface_name == NULL) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < structure->implements_count_; ++_index) {
+        const char *const _name_k = structure->implements_names_[_index];
+        if (_name_k != NULL && strcmp(_name_k, interface_name) == 0) {
+            return true;
+        }
+    }
+    (void)program;
+    return false;
+}
+
+static const zlang_ast_statement_t *zlang_find_interface(const zlang_program_t *program,
+                                                         const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_interface_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_trait_statement(const zlang_program_t *program,
                                                                const char *name) {
     if (program == NULL || name == NULL) {
@@ -2333,6 +2364,11 @@ static bool zlang_emit_expression_as(const zlang_program_t *program, size_t inde
         return zlang_append_text(emitter, _symbol_k->generated_name_) &&
                zlang_emit_base_chain(emitter, _depth_k, false);
     }
+    if (_symbol_k != NULL && _symbol_k->is_reference_) {
+        return zlang_append_text(emitter, "(*") &&
+               zlang_append_text(emitter, _symbol_k->generated_name_) &&
+               zlang_append_text(emitter, ")") && zlang_emit_base_chain(emitter, _depth_k, false);
+    }
     if (!zlang_emit_expression(program, index, emitter)) {
         return false;
     }
@@ -2580,7 +2616,6 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
         return zlang_append_text(emitter, ")");
     }
     case zlang_expression_range_:
-        return false;
     case zlang_expression_wildcard_:
         return false;
     case zlang_expression_equal_:
@@ -2611,12 +2646,16 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
     case zlang_expression_bit_xor_:
     case zlang_expression_shift_left_:
     case zlang_expression_shift_right_: {
-        const char *const _operator_k = _expression_k->kind_ == zlang_expression_bit_and_   ? " & "
-                                        : _expression_k->kind_ == zlang_expression_bit_or_  ? " | "
-                                        : _expression_k->kind_ == zlang_expression_bit_xor_ ? " ^ "
-                                        : _expression_k->kind_ == zlang_expression_shift_left_
-                                            ? " << "
-                                            : " >> ";
+        const char *_operator_k = " >> ";
+        if (_expression_k->kind_ == zlang_expression_bit_and_) {
+            _operator_k = " & ";
+        } else if (_expression_k->kind_ == zlang_expression_bit_or_) {
+            _operator_k = " | ";
+        } else if (_expression_k->kind_ == zlang_expression_bit_xor_) {
+            _operator_k = " ^ ";
+        } else if (_expression_k->kind_ == zlang_expression_shift_left_) {
+            _operator_k = " << ";
+        }
         return zlang_append_text(emitter, "(") &&
                zlang_emit_expression(program, _expression_k->left_, emitter) &&
                zlang_append_text(emitter, _operator_k) &&
@@ -2768,6 +2807,19 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             const char *const _generated_type_k =
                 _symbol_k != NULL ? zlang_generated_type(program, emitter, _symbol_k->type_name_)
                                   : NULL;
+            if (_symbol_k == NULL && emitter->current_self_name_ != NULL &&
+                zlang_same_text(_field_k->base_name_, emitter->current_self_name_) &&
+                emitter->current_struct_ != NULL) {
+                uint32_t _self_field_depth_k = 0U;
+                const zlang_ast_statement_t *const _field_statement_k = zlang_find_field_owner(
+                    program, emitter->current_struct_, _field_k->name_, &_self_field_depth_k, 0U);
+                if (_field_statement_k == NULL) {
+                    return false;
+                }
+                return zlang_append_text(emitter, emitter->current_self_name_) &&
+                       zlang_append_text(emitter, emitter->current_self_is_pointer_ ? "->" : ".") &&
+                       zlang_append_field_name(emitter, _field_k->name_);
+            }
             if (_symbol_k == NULL || _generated_type_k == NULL) {
                 return false;
             }
@@ -5904,6 +5956,9 @@ static bool zlang_emit_statement(const zlang_program_t *program,
         zlang_restore_scope(emitter, _block_scope_k);
         return _result_k;
     }
+    case zlang_statement_interface_:
+    case zlang_statement_trait_:
+        return true;
     default:
         return false;
     }
@@ -6966,12 +7021,27 @@ static bool zlang_emit_trait_method_prototypes(const zlang_program_t *program,
             if (_trait_k == NULL) {
                 continue;
             }
+            bool _requirements_met_k = true;
+            for (size_t _requirement = 0U; _requirement < _trait_k->requires_count_;
+                 ++_requirement) {
+                const char *const _interface_name_k = _trait_k->requires_names_[_requirement];
+                if (zlang_find_interface(program, _interface_name_k) != NULL &&
+                    !zlang_statement_implements_interface(program, _structure_k,
+                                                          _interface_name_k)) {
+                    _requirements_met_k = false;
+                }
+            }
+            if (!_requirements_met_k) {
+                continue;
+            }
             const size_t _end_k = _trait_k->body_start_ + _trait_k->body_count_;
             for (size_t _member = _trait_k->body_start_;
                  _member < _end_k && _member < program->statement_count_; ++_member) {
                 const zlang_ast_statement_t *const _method_k = &program->statements_[_member];
                 if (_method_k->kind_ != zlang_statement_function_ ||
-                    zlang_statement_in_method(program, _trait_k, _member)) {
+                    zlang_statement_in_method(program, _trait_k, _member) ||
+                    _method_k->body_count_ == 0U ||
+                    _method_k->body_start_ >= program->statement_count_) {
                     continue;
                 }
                 char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
@@ -7037,12 +7107,27 @@ static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
             if (_trait_k == NULL) {
                 continue;
             }
+            bool _requirements_met_k = true;
+            for (size_t _requirement = 0U; _requirement < _trait_k->requires_count_;
+                 ++_requirement) {
+                const char *const _interface_name_k = _trait_k->requires_names_[_requirement];
+                if (zlang_find_interface(program, _interface_name_k) != NULL &&
+                    !zlang_statement_implements_interface(program, _structure_k,
+                                                          _interface_name_k)) {
+                    _requirements_met_k = false;
+                }
+            }
+            if (!_requirements_met_k) {
+                continue;
+            }
             const size_t _end_k = _trait_k->body_start_ + _trait_k->body_count_;
             for (size_t _member = _trait_k->body_start_;
                  _member < _end_k && _member < program->statement_count_; ++_member) {
                 const zlang_ast_statement_t *const _method_k = &program->statements_[_member];
                 if (_method_k->kind_ != zlang_statement_function_ ||
-                    zlang_statement_in_method(program, _trait_k, _member)) {
+                    zlang_statement_in_method(program, _trait_k, _member) ||
+                    _method_k->body_count_ == 0U ||
+                    _method_k->body_start_ >= program->statement_count_) {
                     continue;
                 }
                 char _name_k[ZLANG_EMITTED_NAME_CAPACITY];
@@ -7056,9 +7141,11 @@ static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
                 const zlang_ast_statement_t *const _previous_struct_k = emitter->current_struct_;
                 const char *const _previous_self_k = emitter->current_self_name_;
                 const bool _previous_pointer_k = emitter->current_self_is_pointer_;
+                const char *const _previous_return_k = emitter->current_return_type_;
                 emitter->current_struct_ = _structure_k;
                 emitter->current_self_name_ = "self";
                 emitter->current_self_is_pointer_ = !_method_k->is_static_;
+                emitter->current_return_type_ = _method_k->type_name_;
                 const zlang_emitter_scope_t _scope_k = zlang_save_scope(emitter);
                 bool _result_k = true;
                 for (size_t _parameter = 0U; _result_k && _parameter < _method_k->parameter_count_;
@@ -7077,6 +7164,7 @@ static bool zlang_emit_trait_method_definitions(const zlang_program_t *program,
                 emitter->current_struct_ = _previous_struct_k;
                 emitter->current_self_name_ = _previous_self_k;
                 emitter->current_self_is_pointer_ = _previous_pointer_k;
+                emitter->current_return_type_ = _previous_return_k;
                 if (!_result_k || !zlang_append_text(emitter, "}\n\n")) {
                     return false;
                 }

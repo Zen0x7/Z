@@ -128,6 +128,7 @@ typedef enum zlang_statement_kind_t {
     zlang_statement_for_,
     zlang_statement_struct_,
     zlang_statement_trait_,
+    zlang_statement_interface_,
     zlang_statement_enum_,
     zlang_statement_break_,
     zlang_statement_continue_,
@@ -191,6 +192,8 @@ typedef struct zlang_ast_statement_t {
     const char *owner_name_;
     const char *uses_names_[4];
     size_t uses_count_;
+    const char *implements_names_[4];
+    size_t implements_count_;
     const char *generic_parameters_[ZLANG_GENERIC_PARAMETER_CAPACITY];
     size_t generic_parameter_count_;
     bool is_generic_;

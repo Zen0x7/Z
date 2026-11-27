@@ -1,13 +1,19 @@
 import { write } from "@std/io";
 
-trait Named requires int32 value {
+interface Named {
+    int32 value;
+    function label(): int32;
+}
+
+trait NamedTrait requires Named {
     function label(): int32 {
-        return value;
+        return self.value;
     }
 }
 
-struct Shape uses Named {
+struct Shape implements Named {
     int32 value;
+    use NamedTrait;
 
     constructor(clone int32 initial) {
         value = initial;

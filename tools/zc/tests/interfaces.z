@@ -1,0 +1,23 @@
+interface Named {
+    int32 value;
+    function label(): int32;
+}
+
+trait NamedTrait requires Named {
+    function label(): int32 {
+        return self.value;
+    }
+}
+
+struct Counter implements Named {
+    int32 value;
+    constructor(clone int32 initial) {
+        value = initial;
+    }
+    use NamedTrait;
+}
+
+function main(): int32 {
+    Counter counter = Counter(7);
+    return counter.label();
+}

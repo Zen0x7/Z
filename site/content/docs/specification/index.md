@@ -7,7 +7,7 @@ navigation:
 
 # Language Specification
 
-Current Version: v0.38
+Current Version: v0.39
 
 This specification defines Zlang. It fixes source syntax, static meaning and the C that `zc` emits. It does not define compiler internals, command-line options or CI. `ROADMAP.md` records how the language reached this state.
 
@@ -50,16 +50,12 @@ No external language standard is incorporated by reference. Zlang defines its ow
 - “Emits” states the exact C form. Whitespace may differ; tokens may not.
 - Line and column numbers are one-based and refer to the original source file.
 
-## Planned 0.39 work
+## 0.39 syntax
 
-Labeled jumps, `switch`, value-producing `match`, ternary `?:`, bitwise operators, shifts,
-`do while` and range literals are implemented in this working tree. The remaining planned syntax
-form is
-bitwise and shift operators, `do while`, exclusive `uint32` range literals, and labeled loop jumps.
-The trait model is also planned to change: interfaces become named field-and-method contracts,
-traits require interfaces, and structs declare `implements` interfaces and `use` traits.
-
-These forms are not part of 0.38 and are not accepted by `zc` until the 0.39 emitter lands.
+Zlang 0.39 accepts labeled jumps, `switch`, value-producing `match`, ternary `?:`, bitwise
+operators, shifts, `do while`, range literals and labeled loop jumps. Interfaces are named
+field-and-method contracts; traits require interfaces; structs declare implemented interfaces and
+used traits.
 
 ## Language limits
 

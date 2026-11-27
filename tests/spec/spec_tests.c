@@ -1472,15 +1472,17 @@ static void emits_dynamic_dispatch_call(zlang_test_context_t *const context) {
 
 static void emits_trait_method_direct_call(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "trait Named requires int32 value {\n"
-                                  "    function label(): int32 { return value; }\n"
-                                  "}\n"
-                                  "struct Counter uses Named { int32 value; }\n"
-                                  "function main(): int32 {\n"
-                                  "    Counter counter;\n"
-                                  "    int32 result = counter.label();\n"
-                                  "    return result;\n"
-                                  "}";
+    const char *const _source_k =
+        "interface Named { int32 value; function label(): int32; }\n"
+        "trait NamedTrait requires Named {\n"
+        "    function label(): int32 { return self.value; }\n"
+        "}\n"
+        "struct Counter implements Named { int32 value; use NamedTrait; }\n"
+        "function main(): int32 {\n"
+        "    Counter counter;\n"
+        "    int32 result = counter.label();\n"
+        "    return result;\n"
+        "}";
 
     ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, strstr(_session.output_, "app_fn_counter_label") != NULL);
@@ -1513,11 +1515,13 @@ static void rejects_override_signature_mismatch(zlang_test_context_t *const cont
 
 static void rejects_trait_override_of_inherited_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "struct Base { function area(): int32 { return 1; } }\n"
-                                  "trait Area requires int32 value {\n"
-                                  "    function area(): int32 { return value; }\n"
-                                  "}\n"
-                                  "struct Derived : Base uses Area { int32 value; }";
+    const char *const _source_k =
+        "interface AreaContract { int32 value; function area(): int32; }\n"
+        "struct Base { function area(): int32 { return 1; } }\n"
+        "trait Area requires AreaContract {\n"
+        "    function area(): int32 { return self.value; }\n"
+        "}\n"
+        "struct Derived : Base implements AreaContract { int32 value; use Area; }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_find_diagnostic(
@@ -1526,13 +1530,15 @@ static void rejects_trait_override_of_inherited_method(zlang_test_context_t *con
 
 static void rejects_conflicting_trait_methods(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
-    const char *const _source_k = "trait Left requires int32 value {\n"
-                                  "    function label(): int32 { return value; }\n"
-                                  "}\n"
-                                  "trait Right requires int32 value {\n"
-                                  "    function label(): int32 { return value + 1; }\n"
-                                  "}\n"
-                                  "struct Both uses Left, Right { int32 value; }";
+    const char *const _source_k =
+        "interface Labeled { int32 value; function label(): int32; }\n"
+        "trait Left requires Labeled {\n"
+        "    function label(): int32 { return self.value; }\n"
+        "}\n"
+        "trait Right requires Labeled {\n"
+        "    function label(): int32 { return self.value + 1; }\n"
+        "}\n"
+        "struct Both implements Labeled { int32 value; use Left, Right; }";
 
     ZLANG_CHECK(context, !zlang_spec_transpile(&_session, _source_k));
     ZLANG_CHECK(context, zlang_spec_find_diagnostic(
@@ -1813,6 +1819,32 @@ static void emits_labeled_loop_jumps(zlang_test_context_t *const context) {
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_outer_continue: ;") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "goto zlang_label_outer_continue;") != NULL);
     ZLANG_CHECK(context, strstr(_session.output_, "zlang_label_outer_break: ;") == NULL);
+}
+
+static void emits_interface_trait_and_struct(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k = "interface Named {\n"
+                                  "    int32 value;\n"
+                                  "    function label(): int32;\n"
+                                  "}\n"
+                                  "trait NamedTrait requires Named {\n"
+                                  "    function label(): int32 { return self.value; }\n"
+                                  "}\n"
+                                  "struct Counter implements Named {\n"
+                                  "    int32 value;\n"
+                                  "    constructor(clone int32 initial) { value = initial; }\n"
+                                  "    use NamedTrait;\n"
+                                  "}\n"
+                                  "function main(): int32 {\n"
+                                  "    Counter counter = Counter(7);\n"
+                                  "    return counter.label();\n"
+                                  "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context, strstr(_session.output_, "typedef struct app_struct_counter_t") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "int32_t app_fn_counter_label(") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "app_fn_counter_label(&app_local_counter)") != NULL);
 }
 
 static void emits_generic_struct_method(zlang_test_context_t *const context) {

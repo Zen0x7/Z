@@ -99,12 +99,18 @@ override must keep the same return type, parameter types and static/instance kin
 Traits provide static behavior reuse:
 
 ```zlang
-trait Named requires int32 value {
-    function label(): int32 { return value; }
+interface Named {
+    int32 value;
+    function label(): int32;
 }
 
-struct Counter uses Named {
+trait NamedTrait requires Named {
+    function label(): int32 { return self.value; }
+}
+
+struct Counter implements Named {
     int32 value;
+    use NamedTrait;
 }
 ```
 
@@ -240,11 +246,11 @@ borrowed handle. `reference` is a mutable caller-owned destination; `const refer
 view.
 
 
-## Planned 0.39 grammar
+## 0.39 grammar
 
 All eight syntax forms are accepted: labels and `jump label;`, `switch`, `match`, ternary `?:`,
 bitwise/shift operators, `do while`, range literals and labeled loop jumps. The interface model is
-planned:
+implemented:
 
 ```text
 labelStatement    = identifier ":" statement ;

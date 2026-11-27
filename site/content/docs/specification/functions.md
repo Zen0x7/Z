@@ -67,14 +67,20 @@ Instance methods are virtual by default. A polymorphic hierarchy emits one inter
 ## Traits
 
 ```zlang
-trait Named requires int32 value {
+interface Named {
+    int32 value;
+    function label(): int32;
+}
+
+trait NamedTrait requires Named {
     function label(): int32 {
-        return value;
+        return self.value;
     }
 }
 
-struct Shape uses Named {
+struct Shape implements Named {
     int32 value;
+    use NamedTrait;
 }
 ```
 

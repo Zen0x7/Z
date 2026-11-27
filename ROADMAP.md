@@ -1,6 +1,6 @@
 # Zlang roadmap
 
-Current version: **0.38**
+Current version: **0.39**
 
 This file is a compact record of delivered language levels, locked decisions and remaining work. The
 published specification at <https://z.iantorres.cl/docs/specification> is normative. Detailed design
@@ -45,6 +45,7 @@ at runtime that could have been decided at compile time.
 | 0.36 | Built-in result rename to `result_type<T, status_code>` and `status_code` |
 | 0.37 | Uniform `result_type<T, status_code>` contract across all registered stdlib domains |
 | 0.38 | Compile-time result capabilities: `time()` and `dump()` |
+| 0.39 | Eight syntax forms and named interface/trait/struct contracts |
 
 ## Current shape
 
@@ -63,6 +64,13 @@ are reported through `status_code`.
 
 ## Browser toolchain
 
+## Implemented 0.39 contract
+
+Zlang 0.39 accepts labeled jumps, `switch`, value-producing `match`, ternary `?:`, bitwise and
+shift operators, `do while`, exclusive `uint32` range literals and labeled loop jumps. Interfaces
+are named field-and-method contracts. Traits require interfaces and provide method bodies. Structs
+implement interfaces and use traits.
+
 The playground builds Zlang entirely in the browser:
 
 ```text
@@ -73,10 +81,10 @@ Build scripts in `tools/wasm/` produce artifacts from pinned upstream LLVM, Emsc
 sources. Artifacts are static files under `site/public/compiler/`, with notices in
 `site/THIRD_PARTY_NOTICES.md`. No source or binary is sent to a server.
 
-## Planned 0.39 — syntax and interface contracts
+## 0.39 — syntax and interface contracts
 
-The next language level adds eight syntax features and replaces field-only trait requirements with
-named interfaces. These forms are planned, not yet accepted by `zc` in 0.38.
+Zlang 0.39 adds eight syntax features and replaces field-only trait requirements with named
+interfaces.
 
 | # | Feature | Syntax |
 | --- | --- | --- |
@@ -115,9 +123,7 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 
 ## Remaining work
 
-- Add a binary verifier for native stdlib parity between registry entries, public headers and docs.
 - Extend `dump()` to user-defined `T` only when `T` implements `dump(): string`.
-- Implement planned 0.39 syntax in order, one feature at a time.
 - Add new IO domains only through the existing native `stream` contract.
 - Keep generic traits, generic inheritance and variadic type packs out of scope until explicitly
   locked.

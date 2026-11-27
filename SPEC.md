@@ -1,6 +1,6 @@
 # Zlang working specification notes
 
-Current version: **0.38**
+Current version: **0.39**
 
 The normative specification is published at <https://z.iantorres.cl/docs/specification>. This file is
 a compact working note for agents: it records the current contract and the decisions that produced
@@ -80,15 +80,13 @@ Status constants are `STATUS_SUCCESS`, `STATUS_END_OF_INPUT`, `STATUS_IO_ERROR`,
 `STATUS_INVALID_ARGUMENT` and `STATUS_CAPACITY`. C symbols and status enum constants remain
 stable across the Zlang-facing lowercase type rename.
 
-## Planned 0.39 syntax
+## 0.39 syntax and interfaces
 
-Zlang 0.39 adds eight syntax forms. Point 1, labeled jumps with `jump label;`, is delivered in
-this working tree; all eight syntax points are delivered. The interface model also changes:
-ternary `?:`, bitwise and shift operators,
-`do { ... } while (...)`, exclusive `uint32` range literals `start..end`, and labeled
-`break`/`continue`.
+Zlang 0.39 adds eight syntax forms: `label:` with `jump label;`, `switch`, value-producing
+`match`, ternary `?:`, bitwise and shift operators, `do { ... } while (...)`, exclusive `uint32`
+range literals `start..end`, and labeled `break`/`continue`.
 
-It also replaces field-only trait requirements with named interfaces:
+It replaces field-only trait requirements with named interfaces:
 
 ```zlang
 interface MyInterface {

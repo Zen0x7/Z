@@ -93,6 +93,21 @@ static const zlang_ast_statement_t *zlang_find_struct(const zlang_program_t *pro
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_find_interface(const zlang_program_t *program,
+                                                         const char *name) {
+    if (program == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < program->statement_count_; ++_index) {
+        const zlang_ast_statement_t *const _statement_k = &program->statements_[_index];
+        if (_statement_k->kind_ == zlang_statement_interface_ && _statement_k->name_ != NULL &&
+            strcmp(_statement_k->name_, name) == 0) {
+            return _statement_k;
+        }
+    }
+    return NULL;
+}
+
 static const zlang_ast_statement_t *zlang_find_trait(const zlang_program_t *program,
                                                      const char *name) {
     if (program == NULL || name == NULL) {
@@ -1422,13 +1437,57 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
             }
             for (size_t _requirement = 0U; _requirement < _trait_k->requires_count_;
                  ++_requirement) {
-                const zlang_ast_statement_t *const _field_k = zlang_find_field(
-                    context->program_, statement, _trait_k->requires_names_[_requirement]);
-                if (_field_k == NULL ||
-                    !zlang_type_matches(_trait_k->requires_type_names_[_requirement],
-                                        _field_k->type_name_)) {
+                const char *const _interface_name_k = _trait_k->requires_names_[_requirement];
+                if (zlang_find_interface(context->program_, _interface_name_k) == NULL) {
+                    continue;
+                }
+                bool _implemented_k = false;
+                for (size_t _interface = 0U; _interface < statement->implements_count_;
+                     ++_interface) {
+                    if (statement->implements_names_[_interface] != NULL &&
+                        strcmp(statement->implements_names_[_interface], _interface_name_k) == 0) {
+                        _implemented_k = true;
+                    }
+                }
+                if (!_implemented_k) {
                     _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
-                                             "struct does not satisfy trait requirements");
+                                             "struct does not implement a required interface");
+                }
+            }
+        }
+        for (size_t _interface = 0U; _interface < statement->implements_count_; ++_interface) {
+            const zlang_ast_statement_t *const _interface_k =
+                zlang_find_interface(context->program_, statement->implements_names_[_interface]);
+            if (_interface_k == NULL) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
+                                         "implemented interface is not declared");
+                continue;
+            }
+            const size_t _interface_end_k = _interface_k->body_start_ + _interface_k->body_count_;
+            for (size_t _member = _interface_k->body_start_;
+                 _member < _interface_end_k && _member < context->program_->statement_count_;
+                 ++_member) {
+                const zlang_ast_statement_t *const _member_k =
+                    &context->program_->statements_[_member];
+                if (_member_k->kind_ == zlang_statement_declaration_) {
+                    const zlang_ast_statement_t *const _field_k =
+                        zlang_find_field(context->program_, statement, _member_k->name_);
+                    if (_field_k == NULL ||
+                        !zlang_type_matches(_member_k->type_name_, _field_k->type_name_)) {
+                        _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                                 "struct does not satisfy interface fields");
+                    }
+                    continue;
+                }
+                if (_member_k->kind_ != zlang_statement_function_) {
+                    continue;
+                }
+                const zlang_ast_statement_t *const _method_k = zlang_find_struct_method_any(
+                    context->program_, statement->name_, _member_k->name_);
+                if (_method_k == NULL ||
+                    !zlang_method_signature_matches(_member_k, _method_k, context->program_)) {
+                    _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                             "struct does not satisfy interface methods");
                 }
             }
         }
@@ -1554,6 +1613,22 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         context->current_struct_ = _previous_struct_k;
         context->current_generic_declaration_ = _previous_generic_k;
+        break;
+    }
+    case zlang_statement_interface_: {
+        const size_t _end_k = statement->body_start_ + statement->body_count_;
+        for (size_t _member = statement->body_start_;
+             _member < _end_k && _member < context->program_->statement_count_; ++_member) {
+            const zlang_ast_statement_t *const _member_k = &context->program_->statements_[_member];
+            if (_member_k->kind_ == zlang_statement_function_) {
+                continue;
+            }
+            if (_member_k->kind_ != zlang_statement_declaration_ ||
+                !zlang_is_known_type(context, _member_k->type_name_)) {
+                _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, _member_k,
+                                         "interface member has an unknown type");
+            }
+        }
         break;
     }
     case zlang_statement_enum_: {

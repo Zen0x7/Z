@@ -1848,6 +1848,29 @@ static void emits_interface_trait_and_struct(zlang_test_context_t *const context
                 strstr(_session.output_, "app_fn_counter_label(&app_local_counter)") != NULL);
 }
 
+static void emits_user_result_dump(zlang_test_context_t *const context) {
+    zlang_spec_session_t _session;
+    const char *const _source_k =
+        "interface Dumpable { function dump(): string; }\n"
+        "struct Point implements Dumpable {\n"
+        "    int32 x;\n"
+        "    constructor(clone int32 initial) { x = initial; }\n"
+        "    function dump(): string { if (x > 0) { return \"point\"; } return \"other\"; }\n"
+        "}\n"
+        "function main(): int32 {\n"
+        "    result_type<Point, status_code> value;\n"
+        "    string text = value.dump();\n"
+        "    return 0;\n"
+        "}";
+
+    ZLANG_CHECK(context, zlang_spec_transpile(&_session, _source_k));
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "typedef struct app_result_point_status_t") != NULL);
+    ZLANG_CHECK(context,
+                strstr(_session.output_, "app_result_point_status_dump(&app_local_value)") != NULL);
+    ZLANG_CHECK(context, strstr(_session.output_, "app_fn_point_dump(&result->value_)") != NULL);
+}
+
 static void emits_generic_struct_method(zlang_test_context_t *const context) {
     zlang_spec_session_t _session;
     const char *const _source_k = "struct Box<T> {\n"

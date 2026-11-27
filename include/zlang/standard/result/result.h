@@ -238,7 +238,6 @@ zlang_std_result_string(const zlang_std_status_t code, const zlang_string_t valu
     return _result_k;
 }
 
-#if defined(ZLANG_STD_RESULT_DUMP)
 ZLANG_STATIC_INLINE zlang_string_t zlang_std_result_dump_view(char *storage, const int written) {
     if (written < 0) {
         zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
@@ -249,6 +248,23 @@ ZLANG_STATIC_INLINE zlang_string_t zlang_std_result_dump_view(char *storage, con
     }
     storage[_length_k] = '\0';
     return (zlang_string_t){storage, (uint32_t)_length_k};
+}
+#if defined(ZLANG_STD_RESULT_DUMP)
+ZLANG_STATIC_INLINE zlang_string_t zlang_std_result_dump_compose(const zlang_std_status_t code,
+                                                                 const zlang_string_t value,
+                                                                 const zlang_string_t what,
+                                                                 const uint64_t elapsed_ns,
+                                                                 char *storage) {
+    if (value.data_ == NULL && value.length_ != 0U) {
+        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);
+    }
+    const int _value_length_k = value.length_ > (uint32_t)INT_MAX ? 0 : (int)value.length_;
+    const int _what_length_k = what.length_ > (uint32_t)INT_MAX ? 0 : (int)what.length_;
+    const int _written_k =
+        snprintf(storage, ZLANG_STD_RESULT_DUMP_CAPACITY, "code=%d value=%.*s what=%.*s time=%llu",
+                 (int)code, _value_length_k, value.data_, _what_length_k, what.data_,
+                 (unsigned long long)elapsed_ns);
+    return zlang_std_result_dump_view(storage, _written_k);
 }
 
 #define ZLANG_STD_RESULT_DUMP_FN_VOID(tag, type)                                                   \

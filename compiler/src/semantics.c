@@ -145,6 +145,9 @@ static const zlang_ast_statement_t *zlang_find_struct_method(const zlang_program
                                                              const char *struct_name,
                                                              const char *method_name);
 
+static const char *zlang_generic_result_payload(const zlang_program_t *program,
+                                                const char *record_name);
+
 static bool zlang_method_signature_matches(const zlang_ast_statement_t *left,
                                            const zlang_ast_statement_t *right,
                                            const zlang_program_t *program) {
@@ -318,7 +321,8 @@ static bool zlang_is_known_type(const zlang_semantic_context_t *context, const c
     if (name == NULL || strchr(name, '<') == NULL) {
         return false;
     }
-    if (zlang_std_find_result(name) != NULL) {
+    if (zlang_std_find_result(name) != NULL ||
+        zlang_generic_result_payload(context->program_, name) != NULL) {
         return true;
     }
     const zlang_generic_application_t *const _application_k =
@@ -582,7 +586,45 @@ static bool zlang_expression_is_lvalue(const zlang_semantic_context_t *context, 
     return true;
 }
 
-static const char *zlang_native_result_field_type(const char *record_name, const char *field_name) {
+static const char *zlang_generic_result_payload(const zlang_program_t *program,
+                                                const char *record_name) {
+    const zlang_generic_application_t *const _application_k =
+        record_name != NULL ? zlang_generic_find_application(program, record_name) : NULL;
+    if (_application_k == NULL || _application_k->base_name_ == NULL ||
+        strcmp(_application_k->base_name_, "result_type") != 0 ||
+        _application_k->argument_count_ != 2U || _application_k->arguments_[1] == NULL ||
+        strcmp(_application_k->arguments_[1], "status_code") != 0) {
+        return NULL;
+    }
+    const char *const _payload_k = _application_k->arguments_[0];
+    const zlang_ast_statement_t *const _payload_struct_k = zlang_find_struct(program, _payload_k);
+    if (_payload_struct_k == NULL) {
+        return NULL;
+    }
+    const zlang_ast_statement_t *const _dump_k =
+        zlang_find_struct_method_any(program, _payload_k, "dump");
+    if (_dump_k == NULL || _dump_k->parameter_count_ != 0U || _dump_k->is_static_ ||
+        _dump_k->type_name_ == NULL || strcmp(_dump_k->type_name_, "string") != 0) {
+        return NULL;
+    }
+    return _payload_k;
+}
+
+static const char *zlang_native_result_field_type(const zlang_program_t *program,
+                                                  const char *record_name, const char *field_name) {
+    const char *const _payload_k = zlang_generic_result_payload(program, record_name);
+    if (_payload_k != NULL) {
+        if (strcmp(field_name, "code") == 0) {
+            return "status_code";
+        }
+        if (strcmp(field_name, "value") == 0) {
+            return _payload_k;
+        }
+        if (strcmp(field_name, "what") == 0) {
+            return "string";
+        }
+        return NULL;
+    }
     const zlang_std_result_t *const _result_k = zlang_std_find_result(record_name);
     return zlang_std_native_result_field_type(_result_k, field_name);
 }
@@ -1073,7 +1115,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             _record_name_k = zlang_analyze_expression(context, _expression_k->left_, statement);
         }
         const char *const _native_field_k =
-            zlang_native_result_field_type(_record_name_k, _expression_k->name_);
+            zlang_native_result_field_type(context->program_, _record_name_k, _expression_k->name_);
         const zlang_ast_statement_t *const _record_k =
             _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
         const zlang_ast_statement_t *const _field_k =
@@ -1118,7 +1160,7 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             _record_name_k = zlang_analyze_expression(context, _target_k->left_, statement);
         }
         const char *const _native_field_k =
-            zlang_native_result_field_type(_record_name_k, _target_k->name_);
+            zlang_native_result_field_type(context->program_, _record_name_k, _target_k->name_);
         const zlang_ast_statement_t *const _record_k =
             _native_field_k != NULL ? NULL : zlang_find_struct(context->program_, _record_name_k);
         const zlang_ast_statement_t *const _field_k =
@@ -1220,9 +1262,23 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
         }
         const zlang_std_result_t *const _native_result_k =
             _struct_name_k != NULL ? zlang_std_find_result(_struct_name_k) : NULL;
-        if (_native_result_k != NULL) {
-            const char *const _method_type_k =
-                zlang_std_native_result_method_type(_native_result_k, _expression_k->name_);
+        const char *const _generic_payload_k =
+            zlang_generic_result_payload(context->program_, _struct_name_k);
+        if (_native_result_k != NULL || _generic_payload_k != NULL) {
+            const char *_method_type_k = NULL;
+            if (_native_result_k != NULL) {
+                _method_type_k =
+                    zlang_std_native_result_method_type(_native_result_k, _expression_k->name_);
+            } else if (strcmp(_expression_k->name_, "is_ok") == 0) {
+                _method_type_k = "boolean";
+            } else if (strcmp(_expression_k->name_, "get") == 0) {
+                _method_type_k = _generic_payload_k;
+            } else if (strcmp(_expression_k->name_, "message") == 0 ||
+                       strcmp(_expression_k->name_, "dump") == 0) {
+                _method_type_k = "string";
+            } else if (strcmp(_expression_k->name_, "time") == 0) {
+                _method_type_k = "uint64";
+            }
             if (_expression_k->argument_count_ != 0U || _method_type_k == NULL) {
                 (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, index,
                                               statement, "result method is not declared");
@@ -2291,7 +2347,8 @@ static bool zlang_validate_generic_applications(zlang_semantic_context_t *contex
     for (size_t _index = 0U; _index < _program_k->generic_application_count_; ++_index) {
         const zlang_generic_application_t *const _application_k =
             &_program_k->generic_applications_[_index];
-        if (zlang_std_find_result(_application_k->name_) != NULL) {
+        if (zlang_std_find_result(_application_k->name_) != NULL ||
+            zlang_generic_result_payload(_program_k, _application_k->name_) != NULL) {
             continue;
         }
         const zlang_ast_statement_t *const _declaration_k = zlang_generic_find_declaration(

@@ -77,6 +77,8 @@ void zlang_emitter_init(zlang_emitter_t *emitter, char *buffer, size_t capacity,
     emitter->emitted_literal_count_ = 0U;
     emitter->emitted_capacity_count_ = 0U;
     emitter->emitted_user_type_count_ = 0U;
+    memset(emitter->emitted_user_results_, 0, sizeof(emitter->emitted_user_results_));
+    emitter->emitted_user_result_count_ = 0U;
     emitter->emitted_enum_item_count_ = 0U;
     emitter->cse_count_ = 0U;
     emitter->cse_pointer_count_ = 0U;
@@ -1192,8 +1194,36 @@ static const zlang_emitted_user_type_t *zlang_find_user_type(const zlang_emitter
     return NULL;
 }
 
+static bool zlang_is_user_result_type(const zlang_program_t *program, const char *type_name) {
+    const zlang_generic_application_t *const _application_k =
+        type_name != NULL ? zlang_generic_find_application(program, type_name) : NULL;
+    return _application_k != NULL && _application_k->base_name_ != NULL &&
+           strcmp(_application_k->base_name_, "result_type") == 0 &&
+           _application_k->argument_count_ == 2U && _application_k->arguments_[1] != NULL &&
+           strcmp(_application_k->arguments_[1], "status_code") == 0;
+}
+
+static const zlang_emitted_user_result_t *zlang_find_user_result(const zlang_emitter_t *emitter,
+                                                                 const char *name) {
+    if (emitter == NULL || name == NULL) {
+        return NULL;
+    }
+    for (size_t _index = 0U; _index < emitter->emitted_user_result_count_; ++_index) {
+        const zlang_emitted_user_result_t *const _entry_k = &emitter->emitted_user_results_[_index];
+        if (_entry_k->name_ != NULL && strcmp(_entry_k->name_, name) == 0) {
+            return _entry_k;
+        }
+    }
+    return NULL;
+}
+
 static const char *zlang_generated_type(const zlang_program_t *program,
                                         const zlang_emitter_t *emitter, const char *type_name) {
+    const zlang_emitted_user_result_t *const _result_k = zlang_find_user_result(emitter, type_name);
+    if (_result_k != NULL) {
+        return _result_k->type_name_;
+    }
+    (void)program;
     const zlang_emitted_user_type_t *const _entry_k = zlang_find_user_type(emitter, type_name);
     if (_entry_k != NULL) {
         return _entry_k->type_name_;
@@ -1210,7 +1240,6 @@ static const char *zlang_generated_type(const zlang_program_t *program,
          strcmp(type_name, "arguments") == 0 || strcmp(type_name, "void") == 0)) {
         return zlang_c_type(type_name);
     }
-    (void)program;
     return NULL;
 }
 
@@ -1226,6 +1255,68 @@ static const char *zlang_generated_enum_item(const zlang_emitter_t *emitter,
         }
     }
     return NULL;
+}
+
+static bool zlang_has_dump_method(const zlang_program_t *program, const char *type_name) {
+    const char *_owner_k = NULL;
+    bool _is_trait_k = false;
+    const zlang_ast_statement_t *const _method_k =
+        zlang_find_method(program, type_name, "dump", &_owner_k, &_is_trait_k);
+    return _method_k != NULL && _method_k->parameter_count_ == 0U &&
+           _method_k->type_name_ != NULL && strcmp(_method_k->type_name_, "string") == 0;
+}
+
+static const char *zlang_user_result_payload(const zlang_program_t *program,
+                                             const char *type_name) {
+    const zlang_generic_application_t *const _application_k =
+        type_name != NULL ? zlang_generic_find_application(program, type_name) : NULL;
+    if (_application_k == NULL || _application_k->base_name_ == NULL ||
+        strcmp(_application_k->base_name_, "result_type") != 0 ||
+        _application_k->argument_count_ != 2U || _application_k->arguments_[1] == NULL ||
+        strcmp(_application_k->arguments_[1], "status_code") != 0) {
+        return NULL;
+    }
+    const char *const _payload_k = _application_k->arguments_[0];
+    return zlang_has_dump_method(program, _payload_k) ? _payload_k : NULL;
+}
+
+static bool zlang_collect_user_result_types(zlang_emitter_t *emitter,
+                                            const zlang_program_t *program) {
+    for (size_t _index = 0U; _index < program->generic_application_count_; ++_index) {
+        const zlang_generic_application_t *const _application_k =
+            &program->generic_applications_[_index];
+        if (zlang_find_user_result(emitter, _application_k->name_) != NULL) {
+            continue;
+        }
+        const char *const _payload_k = zlang_user_result_payload(program, _application_k->name_);
+        if (_payload_k == NULL) {
+            continue;
+        }
+        if (emitter->emitted_user_result_count_ >= ZLANG_EMITTED_USER_TYPE_CAPACITY) {
+            return false;
+        }
+        zlang_emitted_user_result_t *const _entry_k =
+            &emitter->emitted_user_results_[emitter->emitted_user_result_count_++];
+        memset(_entry_k, 0, sizeof(*_entry_k));
+        _entry_k->name_ = _application_k->name_;
+        _entry_k->payload_name_ = _payload_k;
+        char _lower_k[ZLANG_EMITTED_NAME_CAPACITY];
+        char _base_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_generic_emitted_name(_payload_k, _lower_k, sizeof(_lower_k)) ||
+            !zlang_assemble_name("app_result_", _lower_k, "_status_t", _base_k, sizeof(_base_k)) ||
+            !zlang_make_unique_name(emitter, _base_k, _entry_k->type_name_,
+                                    sizeof(_entry_k->type_name_))) {
+            return false;
+        }
+        char _dump_base_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_assemble_name("app_result_", _lower_k, "_status_dump", _dump_base_k,
+                                 sizeof(_dump_base_k)) ||
+            !zlang_make_unique_name(emitter, _dump_base_k, _entry_k->dump_name_,
+                                    sizeof(_entry_k->dump_name_))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static bool zlang_collect_user_types(zlang_emitter_t *emitter, const zlang_program_t *program) {
@@ -2992,6 +3083,60 @@ static bool zlang_emit_expression(const zlang_program_t *program, size_t index,
             }
             if (!_is_ok_k && !_is_message_k && strcmp(_expression_k->name_, "get") != 0) {
                 return false;
+            }
+            const char *_field_k = "value";
+            if (_is_ok_k) {
+                _field_k = "code";
+            } else if (_is_message_k) {
+                _field_k = "what";
+            }
+            if (_is_ok_k && !zlang_append_text(emitter, "zlang_std_status_is_ok(")) {
+                return false;
+            }
+            if (!zlang_emit_symbol_value(emitter, _receiver_symbol_k->source_name_) ||
+                !zlang_append_text(emitter, ".") || !zlang_append_field_name(emitter, _field_k)) {
+                return false;
+            }
+            return !_is_ok_k || zlang_append_text(emitter, ")");
+        }
+        const zlang_emitted_user_result_t *const _user_result_k =
+            zlang_find_user_result(emitter, _receiver_type_k);
+        if (_user_result_k != NULL) {
+            if (_expression_k->argument_count_ != 0U || _receiver_symbol_k == NULL) {
+                return false;
+            }
+            const bool _is_ok_k = strcmp(_expression_k->name_, "is_ok") == 0;
+            const bool _is_message_k = strcmp(_expression_k->name_, "message") == 0;
+            const bool _is_time_k = strcmp(_expression_k->name_, "time") == 0;
+            const bool _is_dump_k = strcmp(_expression_k->name_, "dump") == 0;
+            const bool _is_get_k = strcmp(_expression_k->name_, "get") == 0;
+            if (!_is_ok_k && !_is_message_k && !_is_time_k && !_is_dump_k && !_is_get_k) {
+                return false;
+            }
+            if (_is_time_k || _is_dump_k) {
+                char _helper_k[ZLANG_EMITTED_NAME_CAPACITY];
+                if (_is_time_k) {
+                    const size_t _length_k = strlen(_user_result_k->type_name_);
+                    if (_length_k + 6U > sizeof(_helper_k)) {
+                        return false;
+                    }
+                    memcpy(_helper_k, _user_result_k->type_name_, _length_k);
+                    memcpy(_helper_k + _length_k, "_time", 6U);
+                } else {
+                    zlang_copy_name(_user_result_k->dump_name_, _helper_k, sizeof(_helper_k));
+                }
+                if (!zlang_append_text(emitter, _helper_k) || !zlang_append_text(emitter, "(") ||
+                    (_is_dump_k && !zlang_append_text(emitter, "&")) ||
+                    !zlang_emit_symbol_value(emitter, _receiver_symbol_k->source_name_) ||
+                    !zlang_append_text(emitter, ")")) {
+                    return false;
+                }
+                if (_is_time_k) {
+                    emitter->emit_timing_ = true;
+                } else {
+                    emitter->emit_dump_ = true;
+                }
+                return true;
             }
             const char *_field_k = "value";
             if (_is_ok_k) {
@@ -5268,6 +5413,7 @@ static bool zlang_emit_statement(const zlang_program_t *program,
                 return false;
             }
         } else if (zlang_std_find_result(statement->type_name_) != NULL ||
+                   zlang_is_user_result_type(program, statement->type_name_) ||
                    zlang_find_struct_statement(program, statement->type_name_) != NULL) {
             if (zlang_find_struct_statement(program, statement->type_name_) != NULL &&
                 zlang_struct_is_polymorphic(program, statement->type_name_)) {
@@ -6013,7 +6159,8 @@ static bool zlang_activate_std_macros(const zlang_program_t *program, zlang_emit
         }
     }
     for (size_t _index = 0U; _index < program->generic_application_count_; ++_index) {
-        if (zlang_std_find_result(program->generic_applications_[_index].name_) != NULL &&
+        if ((zlang_std_find_result(program->generic_applications_[_index].name_) != NULL ||
+             zlang_is_user_result_type(program, program->generic_applications_[_index].name_)) &&
             !zlang_activate_macro(emitter, "ZLANG_STD_RESULT")) {
             return false;
         }
@@ -6662,6 +6809,104 @@ static bool zlang_emit_user_types(const zlang_program_t *program, zlang_emitter_
     return true;
 }
 
+static bool zlang_emit_user_result_types(const zlang_program_t *program, zlang_emitter_t *emitter) {
+    if (emitter->emitted_user_result_count_ == 0U) {
+        return true;
+    }
+    if (!zlang_append_text(emitter, "/* generated user result types */\n")) {
+        return false;
+    }
+    for (size_t _index = 0U; _index < emitter->emitted_user_result_count_; ++_index) {
+        const zlang_emitted_user_result_t *const _entry_k = &emitter->emitted_user_results_[_index];
+        const zlang_emitted_user_type_t *const _payload_k =
+            zlang_find_user_type(emitter, _entry_k->payload_name_);
+        if (_payload_k == NULL || !zlang_append_text(emitter, "typedef struct ") ||
+            !zlang_append_text(emitter, _entry_k->type_name_) ||
+            !zlang_append_text(emitter, " {\n    zlang_std_status_t code_;\n    ") ||
+            !zlang_append_text(emitter, _payload_k->type_name_) ||
+            !zlang_append_text(emitter, " value_;\n    zlang_string_t what_;\n"
+                                        "    ZLANG_STD_RESULT_TIME_FIELD\n"
+                                        "    ZLANG_STD_RESULT_DUMP_FIELD\n} ") ||
+            !zlang_append_text(emitter, _entry_k->type_name_) ||
+            !zlang_append_text(emitter, ";\n\n")) {
+            return false;
+        }
+    }
+    (void)program;
+    return true;
+}
+
+static bool zlang_emit_user_result_helpers(const zlang_program_t *program,
+                                           zlang_emitter_t *emitter) {
+    if (emitter->emitted_user_result_count_ == 0U || emitter->collecting_array_helpers_ ||
+        (!emitter->emit_timing_ && !emitter->emit_dump_)) {
+        return true;
+    }
+    bool _header_k = false;
+    for (size_t _index = 0U; _index < emitter->emitted_user_result_count_; ++_index) {
+        const zlang_emitted_user_result_t *const _entry_k = &emitter->emitted_user_results_[_index];
+        const char *_owner_k = NULL;
+        bool _is_trait_k = false;
+        const zlang_ast_statement_t *const _dump_k =
+            zlang_find_method(program, _entry_k->payload_name_, "dump", &_owner_k, &_is_trait_k);
+        if (_dump_k == NULL || _owner_k == NULL) {
+            return false;
+        }
+        char _dump_symbol_k[ZLANG_EMITTED_NAME_CAPACITY];
+        if (!zlang_method_generated_name(_owner_k, "dump", false, _dump_symbol_k,
+                                         sizeof(_dump_symbol_k))) {
+            return false;
+        }
+        if (!_header_k) {
+            if (!zlang_append_text(emitter, "/* generated user result capabilities */\n\n")) {
+                return false;
+            }
+            _header_k = true;
+        }
+        if (emitter->emit_timing_) {
+            if (!zlang_append_text(emitter, "ZLANG_STATIC_INLINE uint64_t ") ||
+                !zlang_append_text(emitter, _entry_k->type_name_) ||
+                !zlang_append_text(emitter, "_time(") ||
+                !zlang_append_text(emitter, _entry_k->type_name_) ||
+                !zlang_append_text(emitter,
+                                   " result) {\n"
+                                   "    (void)result;\n"
+                                   "    return (uint64_t)ZLANG_STD_RESULT_DUMP_TIME(&result);\n"
+                                   "}\n")) {
+                return false;
+            }
+        }
+        if (emitter->emit_dump_) {
+            if (!zlang_append_text(emitter, "ZLANG_STATIC_INLINE zlang_string_t ") ||
+                !zlang_append_text(emitter, _entry_k->dump_name_) ||
+                !zlang_append_text(emitter, "(") ||
+                !zlang_append_text(emitter, _entry_k->type_name_) ||
+                !zlang_append_text(emitter, " *result) {\n"
+                                            "    if (result == NULL) {\n"
+                                            "        zlang_trap(ZLANG_TRAP_INVALID_ARGUMENT);\n"
+                                            "    }\n"
+                                            "#if defined(ZLANG_STD_RESULT_DUMP)\n"
+                                            "    const zlang_string_t payload = ") ||
+                !zlang_append_text(emitter, _dump_symbol_k) ||
+                !zlang_append_text(
+                    emitter,
+                    "(&result->value_);\n"
+                    "    return zlang_std_result_dump_compose(\n"
+                    "        result->code_, payload, zlang_std_status_message(result->code_),\n"
+                    "        ZLANG_STD_RESULT_DUMP_TIME(result),\n"
+                    "        result->dump_storage_);\n"
+                    "#else\n"
+                    "    (void)result;\n"
+                    "    return (zlang_string_t){\"\", 0U};\n"
+                    "#endif\n"
+                    "}\n\n")) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 static bool zlang_emit_generated_declarations(const zlang_program_t *program,
                                               zlang_emitter_t *emitter) {
     return zlang_emit_capacity_macros(emitter) &&
@@ -6670,6 +6915,7 @@ static bool zlang_emit_generated_declarations(const zlang_program_t *program,
            zlang_emit_vtable_type_declarations(program, emitter) &&
            zlang_emit_array_typedefs(emitter, program, true) &&
            zlang_emit_user_types(program, emitter) &&
+           zlang_emit_user_result_types(program, emitter) &&
            zlang_emit_vtable_definitions(program, emitter) &&
            zlang_emit_array_typedefs(emitter, program, false) &&
            zlang_emit_literal_declarations(emitter, program);
@@ -7274,6 +7520,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
     if (emitter->plan_ == NULL || !zlang_activate_std_macros(program, emitter) ||
         !zlang_emit_prologue(emitter) || !zlang_emit_common_constants(emitter) ||
         !zlang_collect_user_types(emitter, program) ||
+        !zlang_collect_user_result_types(emitter, program) ||
         !zlang_collect_array_specializations(program, emitter) ||
         !zlang_register_function_names(program, emitter) ||
         !zlang_collect_stateful_usage(program, emitter) ||
@@ -7283,6 +7530,7 @@ static bool zlang_emit_program_pass(const zlang_program_t *program, zlang_emitte
         !zlang_emit_generated_declarations(program, emitter) ||
         !zlang_emit_method_prototypes(program, emitter) ||
         !zlang_emit_trait_method_prototypes(program, emitter) ||
+        !zlang_emit_user_result_helpers(program, emitter) ||
         !zlang_emit_vtable_thunk_prototypes(program, emitter) ||
         !zlang_emit_vtable_instances(program, emitter) ||
         !zlang_emit_function_prototypes(program, emitter)) {

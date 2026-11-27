@@ -116,6 +116,22 @@ static bool zlang_element_size(const zlang_program_t *program, const char *type_
         *size = _total_k;
         return true;
     }
+    const zlang_generic_application_t *const _application_k =
+        zlang_generic_find_application(program, type_name);
+    if (_application_k != NULL && _application_k->base_name_ != NULL &&
+        strcmp(_application_k->base_name_, "result_type") == 0 &&
+        _application_k->argument_count_ == 2U && _application_k->arguments_[1] != NULL &&
+        strcmp(_application_k->arguments_[1], "status_code") == 0) {
+        uint32_t _total_k = (uint32_t)(sizeof(void *) + (sizeof(uint32_t) * 2U));
+        uint32_t _value_size_k = 0U;
+        if (!zlang_element_size(program, _application_k->arguments_[0], depth + 1U,
+                                &_value_size_k) ||
+            _total_k > UINT32_MAX - _value_size_k) {
+            return false;
+        }
+        *size = _total_k + _value_size_k;
+        return true;
+    }
     const zlang_ast_statement_t *const _record_k = zlang_find_struct(program, type_name);
     if (_record_k == NULL) {
         return false;

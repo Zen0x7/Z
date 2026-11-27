@@ -69,6 +69,13 @@ typedef struct zlang_emitted_user_type_t {
     char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
 } zlang_emitted_user_type_t;
 
+typedef struct zlang_emitted_user_result_t {
+    const char *name_;
+    const char *payload_name_;
+    char type_name_[ZLANG_EMITTED_NAME_CAPACITY];
+    char dump_name_[ZLANG_EMITTED_NAME_CAPACITY];
+} zlang_emitted_user_result_t;
+
 typedef struct zlang_emitted_enum_item_t {
     const char *source_name_;
     const char *type_name_;
@@ -114,6 +121,8 @@ typedef struct zlang_emitter_t {
     size_t emitted_capacity_count_;
     zlang_emitted_user_type_t emitted_user_types_[ZLANG_EMITTED_USER_TYPE_CAPACITY];
     size_t emitted_user_type_count_;
+    zlang_emitted_user_result_t emitted_user_results_[ZLANG_EMITTED_USER_TYPE_CAPACITY];
+    size_t emitted_user_result_count_;
     zlang_emitted_enum_item_t emitted_enum_items_[ZLANG_EMITTED_ENUM_ITEM_CAPACITY];
     size_t emitted_enum_item_count_;
     size_t cse_expression_indices_[ZLANG_EMITTED_CSE_CAPACITY];

@@ -1,0 +1,27 @@
+import { write } from "@std/io";
+
+interface Dumpable {
+    function dump(): string;
+}
+
+struct Point implements Dumpable {
+    int32 x;
+
+    constructor(clone int32 initial) {
+        x = initial;
+    }
+
+    function dump(): string {
+        if (x > 0) {
+            return "point";
+        }
+        return "other";
+    }
+}
+
+function main(): int32 {
+    result_type<Point, status_code> value;
+    string text = value.dump();
+    write(text);
+    return 0;
+}

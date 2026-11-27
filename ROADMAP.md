@@ -125,8 +125,9 @@ a used trait, and that every trait requirement is satisfied by an implemented in
 
 Four follow-ups remain after 0.39:
 
-1. **User payload dumps.** Extend `dump()` to user-defined `T` only when `T` implements
-   `function dump(): string`. Native payloads keep their current bounded canonical representation.
+1. ~~**User payload dumps.** Extend `dump()` to user-defined `T` only when `T` implements
+   `function dump(): string`. Native payloads keep their current bounded canonical representation.~~
+   Delivered.
 2. ~~**Site specification sync.** Bring `grammar`, `statements`, `types`, `operations` and generated-C
    pages fully in line with 0.39 syntax, interfaces and result capabilities.~~ Delivered.
 3. ~~**0.39 hardening.** Validate switch case types against the selector, finish match arm rules,

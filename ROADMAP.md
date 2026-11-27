@@ -129,8 +129,8 @@ Four follow-ups remain after 0.39:
    `function dump(): string`. Native payloads keep their current bounded canonical representation.
 2. ~~**Site specification sync.** Bring `grammar`, `statements`, `types`, `operations` and generated-C
    pages fully in line with 0.39 syntax, interfaces and result capabilities.~~ Delivered.
-3. **0.39 hardening.** Validate switch case types against the selector, finish match arm rules,
-   check jump/label scope, and verify that labeled break/continue target an enclosing loop.
+3. ~~**0.39 hardening.** Validate switch case types against the selector, finish match arm rules,
+   check jump/label scope, and verify that labeled break/continue target an enclosing loop.~~ Delivered.
 4. **Publish the local history.** Push the pending 0.38/0.39 commits only when the user authorizes
    it.
 

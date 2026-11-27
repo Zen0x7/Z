@@ -70,7 +70,7 @@ done:
 write("done");
 ```
 
-A label is a statement marker. `jump label;` emits native C `goto`. Labels are function-scoped and must be declared before use. `break label;` and `continue label;` target a labelled enclosing loop; unlabelled forms target the innermost loop or switch.
+A label is a statement marker. `jump label;` emits native C `goto`. Labels are function-scoped. `break label;` and `continue label;` target a labelled enclosing loop; unlabelled forms target the innermost loop or switch.
 
 ## Returns and loop jumps
 

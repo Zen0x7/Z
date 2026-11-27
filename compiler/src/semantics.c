@@ -63,6 +63,9 @@ static const zlang_symbol_t *zlang_find_symbol(const zlang_semantic_context_t *c
     return NULL;
 }
 
+static const zlang_ast_statement_t *zlang_labelled_loop(const zlang_program_t *program,
+                                                        const char *name);
+
 static const zlang_ast_statement_t *zlang_find_label(const zlang_program_t *program,
                                                      const char *name) {
     if (program == NULL || name == NULL) {
@@ -711,6 +714,16 @@ zlang_analyze_expression(zlang_semantic_context_t *context, size_t index,
             (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, index, statement,
                                           "match requires matching arms and a wildcard arm");
             return NULL;
+        }
+        for (size_t _arm = 0U; _arm + 2U < _count_k; _arm += 2U) {
+            const zlang_ast_expression_t *const _pattern_k =
+                &context->program_->expressions_[_expression_k->argument_indices_[_arm]];
+            if (_pattern_k->kind_ == zlang_expression_wildcard_) {
+                (void)zlang_report_expression(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT,
+                                              _expression_k->argument_indices_[_arm], statement,
+                                              "wildcard must be the final match arm");
+                return NULL;
+            }
         }
         return _result_k;
     }
@@ -1887,9 +1900,9 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
     }
     case zlang_statement_break_:
         if (statement->name_ != NULL) {
-            if (zlang_find_label(context->program_, statement->name_) == NULL) {
+            if (zlang_labelled_loop(context->program_, statement->name_) == NULL) {
                 _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                                         "break label is not a declared label");
+                                         "break label is not a labelled loop");
             }
         } else if (context->loop_depth_ == 0U && context->switch_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
@@ -1898,9 +1911,9 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         break;
     case zlang_statement_continue_:
         if (statement->name_ != NULL) {
-            if (zlang_find_label(context->program_, statement->name_) == NULL) {
+            if (zlang_labelled_loop(context->program_, statement->name_) == NULL) {
                 _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNDEFINED_IDENTIFIER, statement,
-                                         "continue label is not a declared label");
+                                         "continue label is not a labelled loop");
             }
         } else if (context->loop_depth_ == 0U) {
             _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_UNSUPPORTED_CONSTRUCT, statement,
@@ -1908,19 +1921,42 @@ zlang_analyze_statement(zlang_semantic_context_t *context,
         }
         break;
     case zlang_statement_switch_: {
-        (void)zlang_analyze_expression(context, statement->expression_, statement);
+        const char *const _selector_k =
+            zlang_analyze_expression(context, statement->expression_, statement);
+        const bool _selector_ok_k =
+            _selector_k != NULL &&
+            (zlang_is_integral_type(_selector_k) || zlang_type_matches("boolean", _selector_k) ||
+             zlang_is_enum_type(context->program_, _selector_k));
+        if (!_selector_ok_k) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, statement,
+                                     "switch selector must be integral, boolean or enum");
+        }
+        size_t _default_count_k = 0U;
         ++context->switch_depth_;
         const size_t _end_k = statement->body_start_ + statement->body_count_;
         for (size_t _clause = statement->body_start_;
              _clause < _end_k && _clause < context->program_->statement_count_; ++_clause) {
             const zlang_ast_statement_t *const _clause_k = &context->program_->statements_[_clause];
+            if (_clause_k->kind_ == zlang_statement_default_) {
+                ++_default_count_k;
+            }
             if (_clause_k->kind_ == zlang_statement_case_ &&
                 _clause_k->expression_ != ZLANG_NO_EXPRESSION) {
-                (void)zlang_analyze_expression(context, _clause_k->expression_, _clause_k);
+                const char *const _case_k =
+                    zlang_analyze_expression(context, _clause_k->expression_, _clause_k);
+                if (!_selector_ok_k || !zlang_type_matches(_selector_k, _case_k)) {
+                    _result_k = zlang_report_expression(
+                        context, ZLANG_DIAGNOSTIC_TYPE_MISMATCH, _clause_k->expression_, _clause_k,
+                        "case type does not match the switch selector");
+                }
             }
             _result_k =
                 zlang_analyze_body(context, _clause_k->body_start_, _clause_k->body_count_) &&
                 _result_k;
+        }
+        if (_default_count_k > 1U) {
+            _result_k = zlang_report(context, ZLANG_DIAGNOSTIC_DUPLICATE_DECLARATION, statement,
+                                     "switch has more than one default clause");
         }
         --context->switch_depth_;
         break;
@@ -2379,6 +2415,21 @@ static bool zlang_validate_generic_applications(zlang_semantic_context_t *contex
         }
     }
     return _result_k;
+}
+
+static const zlang_ast_statement_t *zlang_labelled_loop(const zlang_program_t *program,
+                                                        const char *name) {
+    const zlang_ast_statement_t *const _label_k = zlang_find_label(program, name);
+    if (_label_k == NULL || _label_k->body_count_ != 1U ||
+        _label_k->body_start_ >= program->statement_count_) {
+        return NULL;
+    }
+    const zlang_ast_statement_t *const _loop_k = &program->statements_[_label_k->body_start_];
+    const bool _loop_kind_k =
+        _loop_k->kind_ == zlang_statement_while_ || _loop_k->kind_ == zlang_statement_do_while_ ||
+        _loop_k->kind_ == zlang_statement_for_ || _loop_k->kind_ == zlang_statement_foreach_ ||
+        _loop_k->kind_ == zlang_statement_repeat_;
+    return _loop_kind_k ? _loop_k : NULL;
 }
 
 static bool zlang_validate_jumps(const zlang_program_t *program, zlang_diagnostics_t *diagnostics) {
